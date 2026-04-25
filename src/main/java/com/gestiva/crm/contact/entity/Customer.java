@@ -1,7 +1,10 @@
 package com.gestiva.crm.contact.entity;
 
 import com.gestiva.common.model.TenantAwareEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "customer",

@@ -1,7 +1,10 @@
 package com.gestiva.sales.order.entity;
 
 import com.gestiva.common.model.TenantAwareEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+
 import java.math.BigDecimal;
 
 @Entity

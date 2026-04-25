@@ -1,7 +1,10 @@
 package com.gestiva.ai.audit.entity;
 
 import com.gestiva.common.model.TenantAwareEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Lob;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "ai_conversation_log")

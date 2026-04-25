@@ -1,7 +1,9 @@
 package com.gestiva.platform.tenant.entity;
 
 import com.gestiva.common.model.BaseEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "tenant")

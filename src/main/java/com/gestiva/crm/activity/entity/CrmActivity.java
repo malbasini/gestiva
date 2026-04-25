@@ -1,7 +1,11 @@
 package com.gestiva.crm.activity.entity;
 
 import com.gestiva.common.model.TenantAwareEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Lob;
+import jakarta.persistence.Table;
+
 import java.time.LocalDateTime;
 
 @Entity
