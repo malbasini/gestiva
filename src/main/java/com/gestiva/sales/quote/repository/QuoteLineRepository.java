@@ -10,4 +10,6 @@ public interface QuoteLineRepository extends JpaRepository<QuoteLine, Long> {
     List<QuoteLine> findByTenantIdAndQuoteIdOrderByLineNoAsc(Long tenantId, Long quoteId);
 
     void deleteByTenantIdAndQuoteId(Long tenantId, Long quoteId);
+
+    boolean existsByTenantIdAndQuoteId(Long tenantId, Long quoteId);
 }

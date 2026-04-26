@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "lead")
+@Table(name = "crm_lead")
 public class Lead extends TenantAwareEntity {
 
     @Column(nullable = false, length = 180)

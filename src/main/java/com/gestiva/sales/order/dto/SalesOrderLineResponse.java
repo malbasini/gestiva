@@ -1,46 +1,24 @@
-package com.gestiva.sales.order.entity;
-
-import com.gestiva.common.model.TenantAwareEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+package com.gestiva.sales.order.dto;
 
 import java.math.BigDecimal;
 
-@Entity
-@Table(name = "sales_order_line")
-public class SalesOrderLine extends TenantAwareEntity {
+public class SalesOrderLineResponse {
 
-    @Column(name = "sales_order_id", nullable = false)
-    private Long salesOrderId;
-
-    @Column(name = "line_no", nullable = false)
+    private Long id;
     private Integer lineNo;
-
-    @Column(nullable = false, length = 255)
     private String description;
-
-    @Column(precision = 15, scale = 3, nullable = false)
     private BigDecimal quantity;
-
-    @Column(name = "unit_price", precision = 15, scale = 2, nullable = false)
     private BigDecimal unitPrice;
-
-    @Column(name = "line_total", precision = 15, scale = 2, nullable = false)
     private BigDecimal lineTotal;
-
-    @Column(name = "discount_pct", precision = 15, scale = 2)
     private BigDecimal discountPct;
-
-    @Column(name = "tax_pct", precision = 15, scale = 2)
     private BigDecimal taxPct;
 
-    public Long getSalesOrderId() {
-        return salesOrderId;
+    public Long getId() {
+        return id;
     }
 
-    public void setSalesOrderId(Long salesOrderId) {
-        this.salesOrderId = salesOrderId;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Integer getLineNo() {

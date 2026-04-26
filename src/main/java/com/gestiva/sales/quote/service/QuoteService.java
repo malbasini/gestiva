@@ -6,6 +6,7 @@ import com.gestiva.crm.contact.repository.CustomerRepository;
 import com.gestiva.sales.quote.dto.QuoteCreateRequest;
 import com.gestiva.sales.quote.dto.QuoteLineRequest;
 import com.gestiva.sales.quote.dto.QuoteResponse;
+import com.gestiva.sales.quote.dto.QuoteUpdateRequest;
 import com.gestiva.sales.quote.entity.Quote;
 import com.gestiva.sales.quote.entity.QuoteLine;
 import com.gestiva.sales.quote.mapper.QuoteMapper;
@@ -21,6 +22,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -29,6 +31,8 @@ public class QuoteService {
     private static final String SEQUENCE_CODE = "QUOTE";
     private static final String DEFAULT_STATUS = "DRAFT";
     private static final String DEFAULT_CURRENCY = "EUR";
+    private static final Set<String> ALLOWED_STATUSES =
+            Set.of("DRAFT", "SENT", "ACCEPTED", "REJECTED");
 
     private final QuoteRepository quoteRepository;
     private final QuoteLineRepository quoteLineRepository;
@@ -75,7 +79,6 @@ public class QuoteService {
         validateLines(request.getLines());
 
         String quoteNumber = nextQuoteNumber(tenantId, request.getQuoteDate());
-
         Totals totals = calculateTotals(request.getLines());
 
         Quote quote = new Quote();
@@ -92,7 +95,34 @@ public class QuoteService {
         quote.setNotes(request.getNotes());
 
         Quote savedQuote = quoteRepository.save(quote);
+        List<QuoteLine> savedLines = saveQuoteLines(tenantId, savedQuote.getId(), request.getLines());
 
+        return quoteMapper.toResponse(savedQuote, savedLines);
+    }
+
+    public QuoteResponse update(Long tenantId, Long id, QuoteUpdateRequest request) {
+        Quote quote = quoteRepository.findByTenantIdAndId(tenantId, id)
+                .orElseThrow(() -> new NotFoundException("Preventivo non trovato"));
+
+        validateCustomerExists(tenantId, request.getCustomerId());
+        validateLines(request.getLines());
+        validateStatus(request.getStatus());
+
+        Totals totals = calculateTotals(request.getLines());
+
+        quote.setCustomerId(request.getCustomerId());
+        quote.setQuoteDate(request.getQuoteDate());
+        quote.setValidUntil(request.getValidUntil());
+        quote.setStatus(defaultIfBlank(request.getStatus(), DEFAULT_STATUS));
+        quote.setCurrencyCode(defaultIfBlank(request.getCurrencyCode(), DEFAULT_CURRENCY));
+        quote.setSubtotalAmount(totals.subtotal());
+        quote.setTaxAmount(totals.tax());
+        quote.setTotalAmount(totals.total());
+        quote.setNotes(request.getNotes());
+
+        Quote savedQuote = quoteRepository.save(quote);
+
+        quoteLineRepository.deleteByTenantIdAndQuoteId(tenantId, savedQuote.getId());
         List<QuoteLine> savedLines = saveQuoteLines(tenantId, savedQuote.getId(), request.getLines());
 
         return quoteMapper.toResponse(savedQuote, savedLines);
@@ -111,6 +141,16 @@ public class QuoteService {
                 .orElseThrow(() -> new BusinessException("Cliente non valido per il tenant corrente"));
     }
 
+    private void validateStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return;
+        }
+
+        if (!ALLOWED_STATUSES.contains(status)) {
+            throw new BusinessException("Stato preventivo non valido: " + status);
+        }
+    }
+
     private void validateLines(List<QuoteLineRequest> lines) {
         if (lines == null || lines.isEmpty()) {
             throw new BusinessException("Il preventivo deve contenere almeno una riga");
@@ -118,6 +158,10 @@ public class QuoteService {
 
         for (int i = 0; i < lines.size(); i++) {
             QuoteLineRequest line = lines.get(i);
+
+            if (line.getDescription() == null || line.getDescription().isBlank()) {
+                throw new BusinessException("La descrizione della riga " + (i + 1) + " è obbligatoria");
+            }
 
             if (line.getQuantity() == null || line.getQuantity().compareTo(BigDecimal.ZERO) <= 0) {
                 throw new BusinessException("La quantità della riga " + (i + 1) + " deve essere maggiore di zero");
@@ -166,7 +210,6 @@ public class QuoteService {
 
         subtotal = subtotal.setScale(2, RoundingMode.HALF_UP);
         tax = tax.setScale(2, RoundingMode.HALF_UP);
-
         BigDecimal total = subtotal.add(tax).setScale(2, RoundingMode.HALF_UP);
 
         return new Totals(subtotal, tax, total);
@@ -192,7 +235,7 @@ public class QuoteService {
             line.setTenantId(tenantId);
             line.setQuoteId(quoteId);
             line.setLineNo(i + 1);
-            line.setDescription(request.getDescription());
+            line.setDescription(request.getDescription().trim());
             line.setQuantity(quantity);
             line.setUnitPrice(unitPrice);
             line.setDiscountPct(discountPct);
@@ -242,5 +285,11 @@ public class QuoteService {
     }
 
     private record Totals(BigDecimal subtotal, BigDecimal tax, BigDecimal total) {
+    }
+
+    public void validateDates(LocalDate quoteDate, LocalDate validUntil) {
+        if (validUntil.isBefore(quoteDate)) {
+            throw new BusinessException("La data di validità non può essere precedente alla data del preventivo");
+        }
     }
 }

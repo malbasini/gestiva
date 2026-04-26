@@ -2,6 +2,7 @@ package com.gestiva.sales.quote.controller;
 
 import com.gestiva.sales.quote.dto.QuoteCreateRequest;
 import com.gestiva.sales.quote.dto.QuoteResponse;
+import com.gestiva.sales.quote.dto.QuoteUpdateRequest;
 import com.gestiva.sales.quote.service.QuoteService;
 import com.gestiva.security.usercontext.TenantContext;
 import jakarta.validation.Valid;
@@ -28,8 +29,11 @@ public class QuoteController {
     }
 
     @GetMapping
+
     public List<QuoteResponse> findAll() {
+
         return quoteService.findAll(getTenantId());
+
     }
 
     @GetMapping("/{id}")
@@ -40,12 +44,24 @@ public class QuoteController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public QuoteResponse create(@Valid @RequestBody QuoteCreateRequest request) {
+        quoteService.validateDates(request.getQuoteDate(), request.getValidUntil());
         return quoteService.create(getTenantId(), request);
+    }
+    @PutMapping("/{id}")
+    public QuoteResponse update(@PathVariable Long id,
+                                @Valid @RequestBody QuoteUpdateRequest request) {
+
+        quoteService.validateDates(request.getQuoteDate(), request.getValidUntil());
+        return quoteService.update(getTenantId(), id, request);
+
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
+
         quoteService.delete(getTenantId(), id);
+
     }
+
 }
