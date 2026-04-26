@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="'Preventivo ' + ${quote.quoteNumber}">Preventivo</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 24mm 16mm 20mm 16mm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #222;
+        }
+
+        .header {
+            margin-bottom: 24px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .muted {
+            color: #666;
+        }
+
+        .block {
+            margin-bottom: 18px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            border-bottom: 1px solid #999;
+            padding: 8px 6px;
+            font-size: 11px;
+        }
+
+        td {
+            border-bottom: 1px solid #ddd;
+            padding: 8px 6px;
+            vertical-align: top;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .totals {
+            width: 320px;
+            margin-left: auto;
+            margin-top: 18px;
+        }
+
+        .totals td {
+            border: none;
+            padding: 5px 0;
+        }
+
+        .grand-total {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .notes {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="title">Preventivo</div>
+    <div class="muted" th:text="${quote.quoteNumber}">PRE-2026-00001</div>
+</div>
+
+<div class="block">
+    <table>
+        <tr>
+            <td style="width: 50%; vertical-align: top;">
+                <strong>Da</strong><br/>
+                <span th:text="${quote.companyName}">Gestiva Srl</span><br/>
+                <span th:text="${quote.companyVatNumber}">IT00000000000</span><br/>
+                <span th:text="${quote.companyEmail}">info@example.com</span><br/>
+                <span th:text="${quote.companyPhone}">+39 000 000000</span>
+            </td>
+            <td style="width: 50%; vertical-align: top;">
+                <strong>A</strong><br/>
+                <span th:text="${quote.customerName}">Cliente Srl</span><br/>
+                <span th:text="${quote.customerVatNumber}">IT11111111111</span><br/>
+                <span th:text="${quote.customerEmail}">cliente@example.com</span>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div class="block">
+    <table>
+        <tr>
+            <td><strong>Data preventivo:</strong> <span th:text="${quote.quoteDate}">2026-04-26</span></td>
+            <td><strong>Valido fino al:</strong> <span th:text="${quote.validUntil}">2026-05-26</span></td>
+            <td><strong>Valuta:</strong> <span th:text="${quote.currencyCode}">EUR</span></td>
+        </tr>
+    </table>
+</div>
+
+<div class="block">
+    <table>
+        <thead>
+        <tr>
+            <th style="width: 5%;">#</th>
+            <th style="width: 43%;">Descrizione</th>
+            <th style="width: 10%;" class="text-right">Qtà</th>
+            <th style="width: 14%;" class="text-right">Prezzo</th>
+            <th style="width: 10%;" class="text-right">Sconto %</th>
+            <th style="width: 8%;" class="text-right">IVA %</th>
+            <th style="width: 10%;" class="text-right">Totale</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="line : ${quote.lines}">
+            <td th:text="${line.lineNo}">1</td>
+            <td th:text="${line.description}">Servizio</td>
+            <td class="text-right" th:text="${line.quantity}">1.000</td>
+            <td class="text-right" th:text="${line.unitPrice}">100.00</td>
+            <td class="text-right" th:text="${line.discountPct}">0.00</td>
+            <td class="text-right" th:text="${line.taxPct}">22.00</td>
+            <td class="text-right" th:text="${line.lineTotal}">100.00</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<table class="totals">
+    <tr>
+        <td>Imponibile</td>
+        <td class="text-right" th:text="${quote.subtotalAmount}">1000.00</td>
+    </tr>
+    <tr>
+        <td>IVA</td>
+        <td class="text-right" th:text="${quote.taxAmount}">220.00</td>
+    </tr>
+    <tr class="grand-total">
+        <td>Totale</td>
+        <td class="text-right" th:text="${quote.totalAmount}">1220.00</td>
+    </tr>
+</table>
+
+<div class="notes" th:if="${quote.notes != null and !#strings.isEmpty(quote.notes)}">
+    <strong>Note</strong><br/>
+    <span th:text="${quote.notes}">Note del preventivo</span>
+</div>
+
+</body>
+</html>
