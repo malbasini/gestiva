@@ -14,8 +14,8 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/quotes/*/preview").permitAll()
-                        .requestMatchers("/api/quotes/*/pdf").permitAll()
+                        .requestMatchers("/quotes/**").permitAll()
+                        .requestMatchers("/api/quotes/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(Customizer.withDefaults())

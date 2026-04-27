@@ -21,15 +21,14 @@ public class QuotePreviewController {
     }
 
     @GetMapping("/{id}/preview")
-    public String previewQuote(@PathVariable Long id, Model model) {
-        Long tenantId = tenantContext.getCurrentTenantId();
+    public String previewQuote(@PathVariable Long id,
+                               @RequestParam Long tenantId,
+                               Model model) {
         QuotePdfView quote = quotePdfDataService.buildView(tenantId, id);
-
         model.addAttribute("quote", quote);
         model.addAttribute("previewMode", true);
         model.addAttribute("quoteId", id);
         model.addAttribute("tenantId", tenantId);
-
         return "quote/quote-preview";
     }
 }
