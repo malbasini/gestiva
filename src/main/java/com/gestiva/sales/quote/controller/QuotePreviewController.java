@@ -20,15 +20,16 @@ public class QuotePreviewController {
         this.tenantContext = tenantContext;
     }
 
-    public Long getTenantId() {
-        return tenantContext.getCurrentTenantId();
-    }
-
     @GetMapping("/{id}/preview")
     public String previewQuote(@PathVariable Long id, Model model) {
-        QuotePdfView quote = quotePdfDataService.buildView(getTenantId(), id);
+        Long tenantId = tenantContext.getCurrentTenantId();
+        QuotePdfView quote = quotePdfDataService.buildView(tenantId, id);
+
         model.addAttribute("quote", quote);
         model.addAttribute("previewMode", true);
+        model.addAttribute("quoteId", id);
+        model.addAttribute("tenantId", tenantId);
+
         return "quote/quote-preview";
     }
 }

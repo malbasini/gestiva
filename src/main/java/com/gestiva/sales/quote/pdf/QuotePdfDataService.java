@@ -3,8 +3,11 @@ package com.gestiva.sales.quote.pdf;
 import com.gestiva.common.exception.NotFoundException;
 import com.gestiva.crm.contact.entity.Customer;
 import com.gestiva.crm.contact.repository.CustomerRepository;
+import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.platform.company.entity.CompanyProfile;
 import com.gestiva.platform.company.repository.CompanyProfileRepository;
+import com.gestiva.platform.tenant.entity.Tenant;
+import com.gestiva.platform.tenant.repository.TenantRepository;
 import com.gestiva.sales.quote.entity.Quote;
 import com.gestiva.sales.quote.entity.QuoteLine;
 import com.gestiva.sales.quote.repository.QuoteLineRepository;
@@ -22,15 +25,18 @@ public class QuotePdfDataService {
     private final QuoteLineRepository quoteLineRepository;
     private final CustomerRepository customerRepository;
     private final CompanyProfileRepository companyProfileRepository;
+    private final TenantRepository tenantRepository;
 
     public QuotePdfDataService(QuoteRepository quoteRepository,
                                QuoteLineRepository quoteLineRepository,
                                CustomerRepository customerRepository,
-                               CompanyProfileRepository companyProfileRepository) {
+                               CompanyProfileRepository companyProfileRepository,
+                               TenantRepository tenantRepository) {
         this.quoteRepository = quoteRepository;
         this.quoteLineRepository = quoteLineRepository;
         this.customerRepository = customerRepository;
         this.companyProfileRepository = companyProfileRepository;
+        this.tenantRepository = tenantRepository;
     }
 
     public QuotePdfView buildView(Long tenantId, Long quoteId) {
@@ -42,8 +48,8 @@ public class QuotePdfDataService {
         Customer customer = customerRepository.findByTenantIdAndId(tenantId, quote.getCustomerId())
                 .orElseThrow(() -> new NotFoundException("Cliente non trovato"));
 
-        CompanyProfile company = companyProfileRepository.findByTenantId(tenantId)
-                .orElse(null);
+        CompanyProfile company = companyProfileRepository.findByTenantId(tenantId).orElse(null);
+        Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
 
         QuotePdfView view = new QuotePdfView();
 
@@ -52,6 +58,16 @@ public class QuotePdfDataService {
             view.setCompanyEmail(company.getEmail());
             view.setCompanyPhone(company.getPhone());
             view.setCompanyVatNumber(company.getVatNumber());
+        } else if (tenant != null) {
+            view.setCompanyName(tenant.getName());
+            view.setCompanyEmail(tenant.getEmail());
+            view.setCompanyPhone("");
+            view.setCompanyVatNumber("");
+        } else {
+            view.setCompanyName("Azienda Demo");
+            view.setCompanyEmail("");
+            view.setCompanyPhone("");
+            view.setCompanyVatNumber("");
         }
 
         view.setCustomerName(customer.getName());
@@ -67,6 +83,12 @@ public class QuotePdfDataService {
         view.setTaxAmount(quote.getTaxAmount());
         view.setTotalAmount(quote.getTotalAmount());
 
+        view.setFormattedQuoteDate(PdfFormatUtils.formatDate(quote.getQuoteDate()));
+        view.setFormattedValidUntil(PdfFormatUtils.formatDate(quote.getValidUntil()));
+        view.setFormattedSubtotalAmount(PdfFormatUtils.formatMoney(quote.getSubtotalAmount()));
+        view.setFormattedTaxAmount(PdfFormatUtils.formatMoney(quote.getTaxAmount()));
+        view.setFormattedTotalAmount(PdfFormatUtils.formatMoney(quote.getTotalAmount()));
+
         view.setLines(lines.stream().map(line -> {
             QuotePdfLineView l = new QuotePdfLineView();
             l.setLineNo(line.getLineNo());
@@ -76,6 +98,12 @@ public class QuotePdfDataService {
             l.setDiscountPct(line.getDiscountPct());
             l.setTaxPct(line.getTaxPct());
             l.setLineTotal(line.getLineTotal());
+
+            l.setFormattedQuantity(PdfFormatUtils.formatDecimal(line.getQuantity()));
+            l.setFormattedUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
+            l.setFormattedDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct()));
+            l.setFormattedTaxPct(PdfFormatUtils.formatDecimal(line.getTaxPct()));
+            l.setFormattedLineTotal(PdfFormatUtils.formatMoney(line.getLineTotal()));
             return l;
         }).toList());
 

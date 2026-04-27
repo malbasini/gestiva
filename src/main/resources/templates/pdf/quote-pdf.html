@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4;
-            margin: 24mm 16mm 20mm 16mm;
+            margin: 22mm 16mm 20mm 16mm;
         }
 
         body {
@@ -16,13 +16,13 @@
         }
 
         .header {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .title {
             font-size: 24px;
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .muted {
@@ -43,6 +43,7 @@
             border-bottom: 1px solid #999;
             padding: 8px 6px;
             font-size: 11px;
+            background: #f7f7f7;
         }
 
         td {
@@ -55,8 +56,25 @@
             text-align: right;
         }
 
+        .nowrap {
+            white-space: nowrap;
+        }
+
+        .compact {
+            font-size: 11px;
+        }
+
+        .party-block strong {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .party-line {
+            margin-bottom: 2px;
+        }
+
         .totals {
-            width: 320px;
+            width: 340px;
             margin-left: auto;
             margin-top: 18px;
         }
@@ -69,6 +87,7 @@
         .grand-total {
             font-weight: bold;
             font-size: 14px;
+            border-top: 1px solid #999;
         }
 
         .notes {
@@ -88,18 +107,45 @@
 <div class="block">
     <table>
         <tr>
-            <td style="width: 50%; vertical-align: top;">
-                <strong>Da</strong><br/>
-                <span th:text="${quote.companyName}">Gestiva Srl</span><br/>
-                <span th:text="${quote.companyVatNumber}">IT00000000000</span><br/>
-                <span th:text="${quote.companyEmail}">info@example.com</span><br/>
-                <span th:text="${quote.companyPhone}">+39 000 000000</span>
+            <td style="width: 50%; vertical-align: top;" class="party-block">
+                <strong>Da</strong>
+
+                <div class="party-line">
+                    <span th:text="${quote.companyName}">La tua azienda</span>
+                </div>
+
+                <div class="party-line"
+                     th:if="${quote.companyVatNumber != null and !#strings.isEmpty(quote.companyVatNumber)}">
+                    <span th:text="${quote.companyVatNumber}">IT00000000000</span>
+                </div>
+
+                <div class="party-line"
+                     th:if="${quote.companyEmail != null and !#strings.isEmpty(quote.companyEmail)}">
+                    <span th:text="${quote.companyEmail}">info@example.com</span>
+                </div>
+
+                <div class="party-line"
+                     th:if="${quote.companyPhone != null and !#strings.isEmpty(quote.companyPhone)}">
+                    <span th:text="${quote.companyPhone}">+39 000 000000</span>
+                </div>
             </td>
-            <td style="width: 50%; vertical-align: top;">
-                <strong>A</strong><br/>
-                <span th:text="${quote.customerName}">Cliente Srl</span><br/>
-                <span th:text="${quote.customerVatNumber}">IT11111111111</span><br/>
-                <span th:text="${quote.customerEmail}">cliente@example.com</span>
+
+            <td style="width: 50%; vertical-align: top;" class="party-block">
+                <strong>A</strong>
+
+                <div class="party-line">
+                    <span th:text="${quote.customerName}">Cliente Srl</span>
+                </div>
+
+                <div class="party-line"
+                     th:if="${quote.customerVatNumber != null and !#strings.isEmpty(quote.customerVatNumber)}">
+                    <span th:text="${quote.customerVatNumber}">IT11111111111</span>
+                </div>
+
+                <div class="party-line"
+                     th:if="${quote.customerEmail != null and !#strings.isEmpty(quote.customerEmail)}">
+                    <span th:text="${quote.customerEmail}">cliente@example.com</span>
+                </div>
             </td>
         </tr>
     </table>
@@ -108,8 +154,8 @@
 <div class="block">
     <table>
         <tr>
-            <td><strong>Data preventivo:</strong> <span th:text="${quote.quoteDate}">2026-04-26</span></td>
-            <td><strong>Valido fino al:</strong> <span th:text="${quote.validUntil}">2026-05-26</span></td>
+            <td><strong>Data preventivo:</strong> <span th:text="${quote.formattedQuoteDate}">26/04/2026</span></td>
+            <td><strong>Valido fino al:</strong> <span th:text="${quote.formattedValidUntil}">26/05/2026</span></td>
             <td><strong>Valuta:</strong> <span th:text="${quote.currencyCode}">EUR</span></td>
         </tr>
     </table>
@@ -120,23 +166,33 @@
         <thead>
         <tr>
             <th style="width: 5%;">#</th>
-            <th style="width: 43%;">Descrizione</th>
+            <th style="width: 39%;">Descrizione</th>
             <th style="width: 10%;" class="text-right">Qtà</th>
             <th style="width: 14%;" class="text-right">Prezzo</th>
             <th style="width: 10%;" class="text-right">Sconto %</th>
-            <th style="width: 8%;" class="text-right">IVA %</th>
-            <th style="width: 10%;" class="text-right">Totale</th>
+            <th style="width: 10%;" class="text-right">IVA %</th>
+            <th style="width: 12%;" class="text-right">Totale</th>
         </tr>
         </thead>
         <tbody>
         <tr th:each="line : ${quote.lines}">
             <td th:text="${line.lineNo}">1</td>
             <td th:text="${line.description}">Servizio</td>
-            <td class="text-right" th:text="${line.quantity}">1.000</td>
-            <td class="text-right" th:text="${line.unitPrice}">100.00</td>
-            <td class="text-right" th:text="${line.discountPct}">0.00</td>
-            <td class="text-right" th:text="${line.taxPct}">22.00</td>
-            <td class="text-right" th:text="${line.lineTotal}">100.00</td>
+            <td class="text-right">
+                <span class="nowrap" th:text="${line.formattedQuantity}">1,00</span>
+            </td>
+            <td class="text-right">
+                <span class="nowrap" th:text="${line.formattedUnitPrice}">100,00 €</span>
+            </td>
+            <td class="text-right compact">
+                <span class="nowrap" th:text="${line.formattedDiscountPct + '%'}">10,00%</span>
+            </td>
+            <td class="text-right compact">
+                <span class="nowrap" th:text="${line.formattedTaxPct + '%'}">22,00%</span>
+            </td>
+            <td class="text-right">
+                <span class="nowrap" th:text="${line.formattedLineTotal}">900,00 €</span>
+            </td>
         </tr>
         </tbody>
     </table>
@@ -145,15 +201,15 @@
 <table class="totals">
     <tr>
         <td>Imponibile</td>
-        <td class="text-right" th:text="${quote.subtotalAmount}">1000.00</td>
+        <td class="text-right" th:text="${quote.formattedSubtotalAmount}">1.100,00 €</td>
     </tr>
     <tr>
         <td>IVA</td>
-        <td class="text-right" th:text="${quote.taxAmount}">220.00</td>
+        <td class="text-right" th:text="${quote.formattedTaxAmount}">242,00 €</td>
     </tr>
     <tr class="grand-total">
         <td>Totale</td>
-        <td class="text-right" th:text="${quote.totalAmount}">1220.00</td>
+        <td class="text-right" th:text="${quote.formattedTotalAmount}">1.342,00 €</td>
     </tr>
 </table>
 

@@ -26,6 +26,11 @@ public class QuotePdfView {
     private BigDecimal totalAmount;
 
     private List<QuotePdfLineView> lines;
+    private String formattedQuoteDate;
+    private String formattedValidUntil;
+    private String formattedSubtotalAmount;
+    private String formattedTaxAmount;
+    private String formattedTotalAmount;
 
     public String getCompanyName() { return companyName; }
     public void setCompanyName(String companyName) { this.companyName = companyName; }
@@ -74,4 +79,47 @@ public class QuotePdfView {
 
     public List<QuotePdfLineView> getLines() { return lines; }
     public void setLines(List<QuotePdfLineView> lines) { this.lines = lines; }
+
+    public String getFormattedQuoteDate() {
+        return formattedQuoteDate;
+    }
+
+    public void setFormattedQuoteDate(String formattedQuoteDate) {
+        this.formattedQuoteDate = formattedQuoteDate;
+    }
+
+    public String getFormattedValidUntil() {
+        return formattedValidUntil;
+    }
+
+    public void setFormattedValidUntil(String formattedValidUntil) {
+        this.formattedValidUntil = formattedValidUntil;
+    }
+
+    public String getFormattedSubtotalAmount() {
+        return formattedSubtotalAmount;
+    }
+
+    public void setFormattedSubtotalAmount(String formattedSubtotalAmount) {
+        this.formattedSubtotalAmount = formattedSubtotalAmount;
+    }
+
+    public String getFormattedTaxAmount() {
+        return formattedTaxAmount;
+    }
+
+    public void setFormattedTaxAmount(String formattedTaxAmount) {
+        this.formattedTaxAmount = formattedTaxAmount;
+    }
+
+    public String getFormattedTotalAmount() {
+        return formattedTotalAmount;
+    }
+
+    public void setFormattedTotalAmount(String formattedTotalAmount) {
+        this.formattedTotalAmount = formattedTotalAmount;
+    }
+
+
+
 }
