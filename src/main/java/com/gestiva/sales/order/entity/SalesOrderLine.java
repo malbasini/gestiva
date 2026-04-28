@@ -35,6 +35,9 @@ public class SalesOrderLine extends TenantAwareEntity {
     @Column(name = "tax_pct", precision = 15, scale = 2)
     private BigDecimal taxPct;
 
+    @Column(name = "tax_amount", precision = 15, scale = 2)
+    private BigDecimal taxAmount;
+    
     public Long getSalesOrderId() {
         return salesOrderId;
     }
@@ -97,5 +100,13 @@ public class SalesOrderLine extends TenantAwareEntity {
 
     public void setTaxPct(BigDecimal taxPct) {
         this.taxPct = taxPct;
+    }
+
+    public BigDecimal getTaxAmount() {
+        return taxAmount;
+    }
+
+    public void setTaxAmount(BigDecimal taxAmount) {
+        this.taxAmount = taxAmount;
     }
 }

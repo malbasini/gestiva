@@ -35,6 +35,12 @@ public class SalesOrder extends TenantAwareEntity {
     @Column(name = "total_amount", precision = 15, scale = 2, nullable = false)
     private BigDecimal totalAmount;
 
+    @Column(name = "subtotal_amount", precision = 15, scale = 2, nullable = false)
+    private BigDecimal subtotalAmount;
+
+    @Column(name = "tax_amount", precision = 15, scale = 2, nullable = false)
+    private BigDecimal taxAmount;
+
     public Long getCustomerId() {
         return customerId;
     }
@@ -90,4 +96,21 @@ public class SalesOrder extends TenantAwareEntity {
     public void setTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
     }
+
+    public BigDecimal getSubtotalAmount() {
+        return subtotalAmount;
+    }
+
+    public void setSubtotalAmount(BigDecimal subtotalAmount) {
+        this.subtotalAmount = subtotalAmount;
+    }
+
+    public BigDecimal getTaxAmount() {
+        return taxAmount;
+    }
+
+    public void setTaxAmount(BigDecimal taxAmount) {
+        this.taxAmount = taxAmount;
+    }
+
 }

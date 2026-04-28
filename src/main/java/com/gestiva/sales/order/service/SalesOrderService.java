@@ -17,6 +17,8 @@ import com.gestiva.sales.sequence.repository.DocumentSequenceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -73,6 +75,8 @@ public class SalesOrderService {
         order.setOrderDate(LocalDate.now());
         order.setStatus(DEFAULT_ORDER_STATUS);
         order.setCurrencyCode(quote.getCurrencyCode());
+        order.setSubtotalAmount(quote.getSubtotalAmount());
+        order.setTaxAmount(quote.getTaxAmount());
         order.setTotalAmount(quote.getTotalAmount());
 
         SalesOrder savedOrder = salesOrderRepository.save(order);
@@ -136,9 +140,19 @@ public class SalesOrderService {
             orderLine.setDescription(quoteLine.getDescription());
             orderLine.setQuantity(quoteLine.getQuantity());
             orderLine.setUnitPrice(quoteLine.getUnitPrice());
-            orderLine.setLineTotal(quoteLine.getLineTotal());
             orderLine.setDiscountPct(quoteLine.getDiscountPct());
             orderLine.setTaxPct(quoteLine.getTaxPct());
+            orderLine.setLineTotal(quoteLine.getLineTotal());
+
+            BigDecimal taxPct = quoteLine.getTaxPct() == null
+                    ? BigDecimal.ZERO
+                    : quoteLine.getTaxPct();
+
+            BigDecimal taxAmount = quoteLine.getLineTotal()
+                    .multiply(taxPct)
+                    .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+
+            orderLine.setTaxAmount(taxAmount);
 
             orderLines.add(orderLine);
         }

@@ -292,4 +292,32 @@ public class QuoteService {
             throw new BusinessException("La data di validità non può essere precedente alla data del preventivo");
         }
     }
+    @Transactional(readOnly = true)
+    public com.gestiva.common.dto.PageResponse<QuoteResponse> search(Long tenantId,
+                                                                     com.gestiva.sales.quote.dto.QuoteSearchRequest request,
+                                                                     org.springframework.data.domain.Pageable pageable) {
+
+        var specification = com.gestiva.sales.quote.repository.QuoteSpecifications.hasTenantId(tenantId)
+                .and(com.gestiva.sales.quote.repository.QuoteSpecifications.hasStatus(request.getStatus()))
+                .and(com.gestiva.sales.quote.repository.QuoteSpecifications.hasCustomerId(request.getCustomerId()))
+                .and(com.gestiva.sales.quote.repository.QuoteSpecifications.matchesSearch(request.getSearch()));
+
+        var page = quoteRepository.findAll(specification, pageable);
+
+        var content = page.getContent().stream().map(quote -> {
+            var lines = quoteLineRepository.findByTenantIdAndQuoteIdOrderByLineNoAsc(tenantId, quote.getId());
+            return quoteMapper.toResponse(quote, lines);
+        }).toList();
+
+        com.gestiva.common.dto.PageResponse<QuoteResponse> response = new com.gestiva.common.dto.PageResponse<>();
+        response.setContent(content);
+        response.setPage(page.getNumber());
+        response.setSize(page.getSize());
+        response.setTotalElements(page.getTotalElements());
+        response.setTotalPages(page.getTotalPages());
+        response.setFirst(page.isFirst());
+        response.setLast(page.isLast());
+
+        return response;
+    }
 }
