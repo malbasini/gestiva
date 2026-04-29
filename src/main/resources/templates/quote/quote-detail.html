@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="'Preventivo ' + ${quote.quoteNumber}">Dettaglio preventivo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f6f8;
+            color: #222;
+            margin: 0;
+            padding: 24px;
+        }
+
+        .page {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 24px;
+        }
+
+        .actions {
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: #1f6feb;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .btn.secondary {
+            background: #4b5563;
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+
+        .muted {
+            color: #6b7280;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .info-box {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+
+        .value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        th, td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        th {
+            background: #f9fafb;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .totals {
+            width: 360px;
+            margin-left: auto;
+            margin-top: 20px;
+        }
+
+        .totals td {
+            border: none;
+            padding: 6px 0;
+        }
+
+        .grand-total {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .notes {
+            margin-top: 24px;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="card">
+
+        <div class="actions">
+            <a class="btn secondary" th:href="@{/quotes(tenantId=${tenantId})}">← Torna alla lista</a>
+            <a class="btn" th:href="@{/quotes/{id}/preview(id=${quote.id}, tenantId=${tenantId})}" target="_blank">Preview</a>
+            <a class="btn" th:href="@{/api/quotes/{id}/pdf(id=${quote.id}, tenantId=${tenantId})}">PDF</a>
+        </div>
+
+        <h1>Preventivo</h1>
+        <div class="muted" th:text="${quote.quoteNumber}">PRE-2026-00001</div>
+
+        <div class="info-grid">
+            <div class="info-box">
+                <div class="label">Cliente</div>
+                <div class="value" th:text="${quote.customerName}">Rossi Srl</div>
+            </div>
+            <div class="info-box">
+                <div class="label">Data</div>
+                <div class="value" th:text="${quote.formattedQuoteDate}">29/04/2026</div>
+            </div>
+            <div class="info-box">
+                <div class="label">Validità</div>
+                <div class="value" th:text="${quote.formattedValidUntil}">29/05/2026</div>
+            </div>
+            <div class="info-box">
+                <div class="label">Stato</div>
+                <div class="value" th:text="${quote.status}">ACCEPTED</div>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Descrizione</th>
+                <th class="text-right">Qtà</th>
+                <th class="text-right">Prezzo</th>
+                <th class="text-right">Sconto %</th>
+                <th class="text-right">IVA %</th>
+                <th class="text-right">Totale</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="line : ${quote.lines}">
+                <td th:text="${line.lineNo}">1</td>
+                <td th:text="${line.description}">Modulo CRM</td>
+                <td class="text-right" th:text="${line.formattedQuantity}">1,00</td>
+                <td class="text-right" th:text="${line.formattedUnitPrice}">500,00 €</td>
+                <td class="text-right" th:text="${line.formattedDiscountPct + '%'}">0,00%</td>
+                <td class="text-right" th:text="${line.formattedTaxPct + '%'}">22,00%</td>
+                <td class="text-right" th:text="${line.formattedLineTotal}">610,00 €</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <table class="totals">
+            <tr>
+                <td>Imponibile</td>
+                <td class="text-right" th:text="${quote.formattedSubtotalAmount}">500,00 €</td>
+            </tr>
+            <tr>
+                <td>IVA</td>
+                <td class="text-right" th:text="${quote.formattedTaxAmount}">110,00 €</td>
+            </tr>
+            <tr class="grand-total">
+                <td>Totale</td>
+                <td class="text-right" th:text="${quote.formattedTotalAmount}">610,00 €</td>
+            </tr>
+        </table>
+
+        <div class="notes" th:if="${quote.notes != null and !#strings.isEmpty(quote.notes)}">
+            <strong>Note</strong><br/>
+            <span th:text="${quote.notes}">Note del preventivo</span>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>

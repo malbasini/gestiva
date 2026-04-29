@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title th:text="'Ordine ' + ${order.orderNumber}">Dettaglio ordine</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f6f8;
+      color: #222;
+      margin: 0;
+      padding: 24px;
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 24px;
+    }
+
+    .actions {
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: #1f6feb;
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+
+    .btn.secondary {
+      background: #4b5563;
+    }
+
+    h1 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .muted {
+      color: #6b7280;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .info-box {
+      background: #f9fafb;
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+
+    .value {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+    }
+
+    th {
+      background: #f9fafb;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    .totals {
+      width: 360px;
+      margin-left: auto;
+      margin-top: 20px;
+    }
+
+    .totals td {
+      border: none;
+      padding: 6px 0;
+    }
+
+    .grand-total {
+      font-weight: bold;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="card">
+
+    <div class="actions">
+      <a class="btn secondary" th:href="@{/orders(tenantId=${tenantId})}">← Torna alla lista</a>
+      <a class="btn" th:href="@{/orders/{id}/preview(id=${order.id}, tenantId=${tenantId})}" target="_blank">Preview</a>
+      <a class="btn" th:href="@{/api/orders/{id}/pdf(id=${order.id}, tenantId=${tenantId})}">PDF</a>
+    </div>
+
+    <h1>Ordine cliente</h1>
+    <div class="muted" th:text="${order.orderNumber}">ORD-2026-00001</div>
+
+    <div class="info-grid">
+      <div class="info-box">
+        <div class="label">Cliente</div>
+        <div class="value" th:text="${order.customerName}">Rossi Srl</div>
+      </div>
+      <div class="info-box">
+        <div class="label">Data</div>
+        <div class="value" th:text="${order.formattedOrderDate}">29/04/2026</div>
+      </div>
+      <div class="info-box">
+        <div class="label">Stato</div>
+        <div class="value" th:text="${order.status}">CONFIRMED</div>
+      </div>
+      <div class="info-box">
+        <div class="label">Preventivo origine</div>
+        <div class="value" th:text="${order.quoteId}">74</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+      <tr>
+        <th>#</th>
+        <th>Descrizione</th>
+        <th class="text-right">Qtà</th>
+        <th class="text-right">Prezzo</th>
+        <th class="text-right">Sconto %</th>
+        <th class="text-right">IVA %</th>
+        <th class="text-right">Totale</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="line : ${order.lines}">
+        <td th:text="${line.lineNo}">1</td>
+        <td th:text="${line.description}">Modulo CRM</td>
+        <td class="text-right" th:text="${line.formattedQuantity}">1,00</td>
+        <td class="text-right" th:text="${line.formattedUnitPrice}">500,00 €</td>
+        <td class="text-right" th:text="${line.formattedDiscountPct + '%'}">0,00%</td>
+        <td class="text-right" th:text="${line.formattedTaxPct + '%'}">22,00%</td>
+        <td class="text-right" th:text="${line.formattedLineTotal}">610,00 €</td>
+      </tr>
+      </tbody>
+    </table>
+
+    <table class="totals">
+      <tr>
+        <td>Imponibile</td>
+        <td class="text-right" th:text="${order.formattedSubtotalAmount}">500,00 €</td>
+      </tr>
+      <tr>
+        <td>IVA</td>
+        <td class="text-right" th:text="${order.formattedTaxAmount}">110,00 €</td>
+      </tr>
+      <tr class="grand-total">
+        <td>Totale ordine</td>
+        <td class="text-right" th:text="${order.formattedTotalAmount}">610,00 €</td>
+      </tr>
+    </table>
+
+  </div>
+</div>
+</body>
+</html>

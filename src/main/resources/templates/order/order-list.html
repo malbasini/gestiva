@@ -160,6 +160,7 @@
         <td th:text="${order.quoteId}">58</td>
         <td class="text-right" th:text="${order.formattedTotalAmount}">1.342,00 €</td>
         <td class="actions">
+          <a th:href="@{/orders/{id}(id=${order.id}, tenantId=${tenantId})}">Dettaglio</a>
           <a th:href="@{/orders/{id}/preview(id=${order.id}, tenantId=${tenantId})}">Preview</a>
           <a th:href="@{/api/orders/{id}/pdf(id=${order.id}, tenantId=${tenantId})}">PDF</a>
         </td>

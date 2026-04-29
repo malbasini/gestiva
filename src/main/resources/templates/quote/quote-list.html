@@ -159,6 +159,7 @@
                 <td th:text="${quote.status}">SENT</td>
                 <td class="text-right" th:text="${quote.formattedTotalAmount}">1.342,00 €</td>
                 <td class="actions">
+                    <a th:href="@{/quotes/{id}(id=${quote.id}, tenantId=${tenantId})}">Dettaglio</a>
                     <a th:href="@{/quotes/{id}/preview(id=${quote.id}, tenantId=${tenantId})}">Preview</a>
                     <a th:href="@{/api/quotes/{id}/pdf(id=${quote.id}, tenantId=${tenantId})}">PDF</a>
                 </td>
