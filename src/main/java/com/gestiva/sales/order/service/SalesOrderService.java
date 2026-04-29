@@ -185,4 +185,37 @@ public class SalesOrderService {
 
         return prefix + "-" + year + "-" + String.format("%05d", progressive);
     }
+
+    @Transactional(readOnly = true)
+    public com.gestiva.common.dto.PageResponse<com.gestiva.sales.order.dto.SalesOrderResponse> search(
+            Long tenantId,
+            com.gestiva.sales.order.dto.SalesOrderSearchRequest request,
+            org.springframework.data.domain.Pageable pageable) {
+
+        var specification = com.gestiva.sales.order.repository.SalesOrderSpecifications.hasTenantId(tenantId)
+                .and(com.gestiva.sales.order.repository.SalesOrderSpecifications.hasStatus(request.getStatus()))
+                .and(com.gestiva.sales.order.repository.SalesOrderSpecifications.hasCustomerId(request.getCustomerId()))
+                .and(com.gestiva.sales.order.repository.SalesOrderSpecifications.hasQuoteId(request.getQuoteId()))
+                .and(com.gestiva.sales.order.repository.SalesOrderSpecifications.matchesSearch(request.getSearch()));
+
+        var page = salesOrderRepository.findAll(specification, pageable);
+
+        var content = page.getContent().stream().map(order -> {
+            var lines = salesOrderLineRepository.findByTenantIdAndSalesOrderIdOrderByLineNoAsc(tenantId, order.getId());
+            return salesOrderMapper.toResponse(order, lines);
+        }).toList();
+
+        com.gestiva.common.dto.PageResponse<com.gestiva.sales.order.dto.SalesOrderResponse> response =
+                new com.gestiva.common.dto.PageResponse<>();
+
+        response.setContent(content);
+        response.setPage(page.getNumber());
+        response.setSize(page.getSize());
+        response.setTotalElements(page.getTotalElements());
+        response.setTotalPages(page.getTotalPages());
+        response.setFirst(page.isFirst());
+        response.setLast(page.isLast());
+
+        return response;
+    }
 }
