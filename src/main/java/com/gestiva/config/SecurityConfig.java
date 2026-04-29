@@ -18,6 +18,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/quotes/**").permitAll()
                         .requestMatchers("/api/orders/**").permitAll()
                         .requestMatchers("/orders/**").permitAll()
+                        .requestMatchers("/customers/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(Customizer.withDefaults())

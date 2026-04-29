@@ -1,52 +1,26 @@
-package com.gestiva.crm.contact.entity;
+package com.gestiva.crm.contact.web;
 
-import com.gestiva.common.model.TenantAwareEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
+public class CustomerDetailView {
 
-@Entity
-@Table(name = "customer",
-        indexes = @Index(name = "idx_customer_tenant_name", columnList = "tenant_id, name"))
-public class Customer extends TenantAwareEntity {
-
-    @Column(nullable = false, length = 180)
+    private Long id;
     private String name;
-
-    @Column(length = 30)
-    private String vatNumber;
-
-    @Column(length = 30)
-    private String taxCode;
-
-    @Column(length = 180)
     private String email;
-
-    @Column(length = 50)
     private String phone;
-
-    @Column(length = 30)
-    private String type; // COMPANY, INDIVIDUAL
-
-    @Column(length = 30)
-    private String status; // ACTIVE, INACTIVE, PROSPECT
-
-    @Column(name="address_line_1", length = 2000)
+    private String vatNumber;
+    private String type;
+    private String status;
     private String addressLine1;
-
-    @Column(name="city", length = 300)
     private String city;
-
-    @Column(name="postal_code", length = 100)
     private String postalCode;
-
-    @Column(name="country_code", length = 20)
     private String countryCode;
 
+    public Long getId() {
+        return id;
+    }
 
-
-
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;
@@ -54,22 +28,6 @@ public class Customer extends TenantAwareEntity {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getVatNumber() {
-        return vatNumber;
-    }
-
-    public void setVatNumber(String vatNumber) {
-        this.vatNumber = vatNumber;
-    }
-
-    public String getTaxCode() {
-        return taxCode;
-    }
-
-    public void setTaxCode(String taxCode) {
-        this.taxCode = taxCode;
     }
 
     public String getEmail() {
@@ -86,6 +44,14 @@ public class Customer extends TenantAwareEntity {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getVatNumber() {
+        return vatNumber;
+    }
+
+    public void setVatNumber(String vatNumber) {
+        this.vatNumber = vatNumber;
     }
 
     public String getType() {
