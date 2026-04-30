@@ -3,133 +3,73 @@
 <head>
   <meta charset="UTF-8"/>
   <title th:text="'Cliente ' + ${customer.name}">Dettaglio cliente</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f6f8;
-      color: #222;
-      margin: 0;
-      padding: 24px;
-    }
-
-    .page {
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-      padding: 24px;
-    }
-
-    .actions {
-      margin-bottom: 20px;
-    }
-
-    .btn {
-      display: inline-block;
-      padding: 10px 14px;
-      border-radius: 8px;
-      background: #1f6feb;
-      color: white;
-      text-decoration: none;
-      font-weight: bold;
-      margin-right: 8px;
-    }
-
-    .btn.secondary {
-      background: #4b5563;
-    }
-
-    h1 {
-      margin-top: 0;
-      margin-bottom: 8px;
-    }
-
-    .muted {
-      color: #6b7280;
-    }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      margin-top: 24px;
-    }
-
-    .info-box {
-      background: #f9fafb;
-      border-radius: 10px;
-      padding: 14px;
-    }
-
-    .label {
-      font-size: 12px;
-      color: #6b7280;
-      margin-bottom: 6px;
-    }
-
-    .value {
-      font-size: 18px;
-      font-weight: bold;
-    }
-  </style>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
 </head>
 <body>
-<div class="page">
-  <div class="card">
+<div class="app-shell">
 
-    <div class="actions">
-      <a class="btn secondary" th:href="@{/customers(tenantId=${tenantId})}">← Torna alla lista</a>
-      <a class="btn" th:href="@{/quotes(customerId=${customer.id}, tenantId=${tenantId})}">Preventivi</a>
-      <a class="btn" th:href="@{/orders(customerId=${customer.id}, tenantId=${tenantId})}">Ordini</a>
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+  <main class="app-main">
+    <div class="page">
+      <div class="card">
+        <div th:replace="~{fragments/layout :: flashMessages}"></div>
+        <br>
+        <div class="actions">
+          <a class="btn btn-secondary" th:href="@{/customers(tenantId=${tenantId})}">← Torna alla lista</a>
+          <a class="btn" th:href="@{/customers/{id}/edit(id=${customer.id}, tenantId=${tenantId})}">Modifica</a>
+          <a class="btn" th:href="@{/quotes(customerId=${customer.id}, tenantId=${tenantId})}">Preventivi</a>
+          <a class="btn" th:href="@{/orders(customerId=${customer.id}, tenantId=${tenantId})}">Ordini</a>
+        </div>
+
+        <h1 class="page-title" th:text="${customer.name}">Rossi Srl</h1>
+        <div class="muted">Dettaglio cliente</div>
+
+        <div class="info-grid three-cols">
+          <div class="info-box">
+            <div class="label">Email</div>
+            <div class="value" th:text="${customer.email}">rossi@example.com</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Telefono</div>
+            <div class="value" th:text="${customer.phone}">+39 123456789</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Partita IVA</div>
+            <div class="value" th:text="${customer.vatNumber}">IT12345678901</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Tipo</div>
+            <div class="value" th:text="${customer.type}">COMPANY</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Stato</div>
+            <div class="value" th:text="${customer.status}">ACTIVE</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Paese</div>
+            <div class="value" th:text="${customer.countryCode}">IT</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Indirizzo</div>
+            <div class="value" th:text="${customer.addressLine1}">Via Roma 1</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Città</div>
+            <div class="value" th:text="${customer.city}">Roma</div>
+          </div>
+          <div class="info-box">
+            <div class="label">CAP</div>
+            <div class="value" th:text="${customer.postalCode}">00100</div>
+          </div>
+        </div>
+
+      </div>
     </div>
+  </main>
 
-    <h1 th:text="${customer.name}">Rossi Srl</h1>
-    <div class="muted">Dettaglio cliente</div>
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
 
-    <div class="info-grid">
-      <div class="info-box">
-        <div class="label">Email</div>
-        <div class="value" th:text="${customer.email}">rossi@example.com</div>
-      </div>
-      <div class="info-box">
-        <div class="label">Telefono</div>
-        <div class="value" th:text="${customer.phone}">+39 123456789</div>
-      </div>
-      <div class="info-box">
-        <div class="label">Partita IVA</div>
-        <div class="value" th:text="${customer.vatNumber}">IT12345678901</div>
-      </div>
-      <div class="info-box">
-        <div class="label">Tipo</div>
-        <div class="value" th:text="${customer.type}">COMPANY</div>
-      </div>
-      <div class="info-box">
-        <div class="label">Stato</div>
-        <div class="value" th:text="${customer.status}">ACTIVE</div>
-      </div>
-      <div class="info-box">
-        <div class="label">Paese</div>
-        <div class="value" th:text="${customer.countryCode}">IT</div>
-      </div>
-      <div class="info-box">
-        <div class="label">Indirizzo</div>
-        <div class="value" th:text="${customer.addressLine1}">Via Roma 1</div>
-      </div>
-      <div class="info-box">
-        <div class="label">Città</div>
-        <div class="value" th:text="${customer.city}">Roma</div>
-      </div>
-      <div class="info-box">
-        <div class="label">CAP</div>
-        <div class="value" th:text="${customer.postalCode}">00100</div>
-      </div>
-    </div>
-
-  </div>
 </div>
 </body>
 </html>

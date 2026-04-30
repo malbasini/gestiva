@@ -3,189 +3,97 @@
 <head>
   <meta charset="UTF-8"/>
   <title>Ordini</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f6f8;
-      color: #222;
-      margin: 0;
-      padding: 24px;
-    }
-
-    .page {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-      padding: 24px;
-    }
-
-    h1 {
-      margin-top: 0;
-      margin-bottom: 20px;
-    }
-
-    .filters {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-
-    .filters input,
-    .filters select {
-      padding: 10px 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      min-width: 180px;
-    }
-
-    .filters button,
-    .btn-link {
-      padding: 10px 14px;
-      border: none;
-      border-radius: 8px;
-      background: #1f6feb;
-      color: white;
-      text-decoration: none;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .btn-link.secondary {
-      background: #4b5563;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      padding: 12px 10px;
-      border-bottom: 1px solid #e5e7eb;
-      text-align: left;
-      vertical-align: middle;
-    }
-
-    th {
-      background: #f9fafb;
-    }
-
-    .text-right {
-      text-align: right;
-    }
-
-    .actions a {
-      margin-right: 8px;
-      text-decoration: none;
-      color: #1f6feb;
-      font-weight: bold;
-    }
-
-    .pagination {
-      margin-top: 20px;
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .pagination a {
-      padding: 8px 12px;
-      border-radius: 8px;
-      background: #e5e7eb;
-      color: #111827;
-      text-decoration: none;
-    }
-
-    .muted {
-      color: #6b7280;
-    }
-  </style>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
 </head>
 <body>
-<div class="page">
-  <div class="card">
-    <h1>Ordini</h1>
+<div class="app-shell">
 
-    <form method="get" th:action="@{/orders}" class="filters">
-      <input type="hidden" name="tenantId" th:value="${tenantId}"/>
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
 
-      <input type="text" name="search" placeholder="Cerca numero ordine" th:value="${search}"/>
+  <main class="app-main">
+    <div class="page">
+      <div class="card">
+        <h1 class="page-title">Ordini</h1>
 
-      <select name="status">
-        <option value="">Tutti gli stati</option>
-        <option value="CONFIRMED" th:selected="${status == 'CONFIRMED'}">CONFIRMED</option>
-        <option value="DRAFT" th:selected="${status == 'DRAFT'}">DRAFT</option>
-        <option value="FULFILLED" th:selected="${status == 'FULFILLED'}">FULFILLED</option>
-        <option value="CANCELLED" th:selected="${status == 'CANCELLED'}">CANCELLED</option>
-      </select>
+        <form method="get" th:action="@{/orders}" class="filters">
+          <input type="hidden" name="tenantId" th:value="${tenantId}"/>
 
-      <input type="number" name="customerId" placeholder="Customer ID" th:value="${customerId}"/>
-      <input type="number" name="quoteId" placeholder="Quote ID" th:value="${quoteId}"/>
+          <input type="text" name="search" placeholder="Cerca numero ordine" th:value="${search}"/>
 
-      <button type="submit">Filtra</button>
+          <select name="status">
+            <option value="">Tutti gli stati</option>
+            <option value="CONFIRMED" th:selected="${status == 'CONFIRMED'}">CONFIRMED</option>
+            <option value="DRAFT" th:selected="${status == 'DRAFT'}">DRAFT</option>
+            <option value="FULFILLED" th:selected="${status == 'FULFILLED'}">FULFILLED</option>
+            <option value="CANCELLED" th:selected="${status == 'CANCELLED'}">CANCELLED</option>
+          </select>
 
-      <a class="btn-link secondary"
-         th:href="@{/orders(tenantId=${tenantId})}">
-        Reset
-      </a>
-    </form>
+          <input type="number" name="customerId" placeholder="Customer ID" th:value="${customerId}"/>
+          <input type="number" name="quoteId" placeholder="Quote ID" th:value="${quoteId}"/>
 
-    <table>
-      <thead>
-      <tr>
-        <th>ID</th>
-        <th>Numero</th>
-        <th>Data</th>
-        <th>Stato</th>
-        <th>Quote ID</th>
-        <th class="text-right">Totale</th>
-        <th>Azioni</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr th:if="${#lists.isEmpty(ordersPage.content)}">
-        <td colspan="7" class="muted">Nessun ordine trovato.</td>
-      </tr>
-      <tr th:each="order : ${ordersPage.content}">
-        <td th:text="${order.id}">1</td>
-        <td th:text="${order.orderNumber}">ORD-2026-00001</td>
-        <td th:text="${order.formattedOrderDate}">28/04/2026</td>
-        <td th:text="${order.status}">CONFIRMED</td>
-        <td th:text="${order.quoteId}">58</td>
-        <td class="text-right" th:text="${order.formattedTotalAmount}">1.342,00 €</td>
-        <td class="actions">
-          <a th:href="@{/orders/{id}(id=${order.id}, tenantId=${tenantId})}">Dettaglio</a>
-          <a th:href="@{/orders/{id}/preview(id=${order.id}, tenantId=${tenantId})}">Preview</a>
-          <a th:href="@{/api/orders/{id}/pdf(id=${order.id}, tenantId=${tenantId})}">PDF</a>
-        </td>
-      </tr>
-      </tbody>
-    </table>
+          <button type="submit" class="btn">Filtra</button>
 
-    <div class="pagination">
-      <a th:if="${!ordersPage.first}"
-         th:href="@{/orders(page=${ordersPage.page - 1}, size=${ordersPage.size}, search=${search}, status=${status}, customerId=${customerId}, quoteId=${quoteId}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
-        ← Precedente
-      </a>
+          <a class="btn btn-secondary"
+             th:href="@{/orders(tenantId=${tenantId})}">
+            Reset
+          </a>
+        </form>
 
-      <span>
-                Pagina <strong th:text="${ordersPage.page + 1}">1</strong>
-                di <strong th:text="${ordersPage.totalPages}">1</strong>
-                — Totale elementi: <strong th:text="${ordersPage.totalElements}">0</strong>
-            </span>
+        <table class="table">
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Numero</th>
+            <th>Data</th>
+            <th>Stato</th>
+            <th>Quote ID</th>
+            <th class="text-right">Totale</th>
+            <th>Azioni</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:if="${#lists.isEmpty(ordersPage.content)}">
+            <td colspan="7" class="muted">Nessun ordine trovato.</td>
+          </tr>
+          <tr th:each="order : ${ordersPage.content}">
+            <td th:text="${order.id}">1</td>
+            <td th:text="${order.orderNumber}">ORD-2026-00001</td>
+            <td th:text="${order.formattedOrderDate}">28/04/2026</td>
+            <td th:text="${order.status}">CONFIRMED</td>
+            <td th:text="${order.quoteId}">58</td>
+            <td class="text-right" th:text="${order.formattedTotalAmount}">1.342,00 €</td>
+            <td>
+              <a th:href="@{/orders/{id}(id=${order.id}, tenantId=${tenantId})}">Dettaglio</a>
+              <a th:href="@{/orders/{id}/preview(id=${order.id}, tenantId=${tenantId})}">Preview</a>
+              <a th:href="@{/api/orders/{id}/pdf(id=${order.id}, tenantId=${tenantId})}">PDF</a>
+            </td>
+          </tr>
+          </tbody>
+        </table>
 
-      <a th:if="${!ordersPage.last}"
-         th:href="@{/orders(page=${ordersPage.page + 1}, size=${ordersPage.size}, search=${search}, status=${status}, customerId=${customerId}, quoteId=${quoteId}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
-        Successiva →
-      </a>
+        <div class="pagination">
+          <a th:if="${!ordersPage.first}"
+             th:href="@{/orders(page=${ordersPage.page - 1}, size=${ordersPage.size}, search=${search}, status=${status}, customerId=${customerId}, quoteId=${quoteId}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
+            ← Precedente
+          </a>
+
+          <span>
+                        Pagina <strong th:text="${ordersPage.page + 1}">1</strong>
+                        di <strong th:text="${ordersPage.totalPages}">1</strong>
+                        — Totale elementi: <strong th:text="${ordersPage.totalElements}">0</strong>
+                    </span>
+
+          <a th:if="${!ordersPage.last}"
+             th:href="@{/orders(page=${ordersPage.page + 1}, size=${ordersPage.size}, search=${search}, status=${status}, customerId=${customerId}, quoteId=${quoteId}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
+            Successiva →
+          </a>
+        </div>
+      </div>
     </div>
-  </div>
+  </main>
+
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
+
 </div>
 </body>
 </html>

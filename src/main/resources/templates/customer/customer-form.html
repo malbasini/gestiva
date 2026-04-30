@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title th:text="${formMode == 'create'} ? 'Nuovo cliente' : 'Modifica cliente'">Cliente</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <style>
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .form-field label {
+      font-weight: bold;
+    }
+
+    .form-field input,
+    .form-field select {
+      padding: 10px 12px;
+      border: 1px solid #cfcfcf;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 15px;
+    }
+
+    .field-error {
+      color: #991b1b;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    @media (max-width: 900px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+  <main class="app-main">
+    <div class="page">
+      <div class="card">
+
+        <div th:replace="~{fragments/layout :: flashMessages}"></div>
+
+        <div class="actions">
+          <a class="btn btn-secondary" th:href="@{/customers(tenantId=${tenantId})}">← Torna alla lista</a>
+        </div>
+
+        <h1 class="page-title" th:text="${formMode == 'create'} ? 'Nuovo cliente' : 'Modifica cliente'">Cliente</h1>
+        <div class="muted" th:text="${formMode == 'create'} ? 'Inserisci i dati del cliente' : 'Aggiorna i dati del cliente'">
+          Inserisci i dati del cliente
+        </div>
+
+        <form th:action="${formMode == 'create'} ? @{/customers} : @{/customers/{id}(id=${customerId})}"
+              th:object="${customerForm}"
+              method="post">
+
+          <input type="hidden" name="tenantId" th:value="${tenantId}"/>
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+          <div class="form-grid">
+
+            <div class="form-field full">
+              <label for="name">Nome</label>
+              <input id="name" type="text" th:field="*{name}" placeholder="Ragione sociale o nominativo"/>
+              <div class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Errore nome</div>
+            </div>
+
+            <div class="form-field">
+              <label for="email">Email</label>
+              <input id="email" type="email" th:field="*{email}" placeholder="cliente@example.com"/>
+              <div class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Errore email</div>
+            </div>
+
+            <div class="form-field">
+              <label for="phone">Telefono</label>
+              <input id="phone" type="text" th:field="*{phone}" placeholder="+39 3331234567"/>
+              <div class="field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}">Errore telefono</div>
+            </div>
+
+            <div class="form-field">
+              <label for="vatNumber">Partita IVA</label>
+              <input id="vatNumber" type="text" th:field="*{vatNumber}" placeholder="IT12345678901"/>
+              <div class="field-error" th:if="${#fields.hasErrors('vatNumber')}" th:errors="*{vatNumber}">Errore P.IVA</div>
+            </div>
+
+            <div class="form-field">
+              <label for="type">Tipo</label>
+              <select id="type" th:field="*{type}">
+                <option value="COMPANY">COMPANY</option>
+                <option value="PERSON">PERSON</option>
+              </select>
+              <div class="field-error" th:if="${#fields.hasErrors('type')}" th:errors="*{type}">Errore tipo</div>
+            </div>
+
+            <div class="form-field">
+              <label for="status">Stato</label>
+              <select id="status" th:field="*{status}">
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="INACTIVE">INACTIVE</option>
+              </select>
+              <div class="field-error" th:if="${#fields.hasErrors('status')}" th:errors="*{status}">Errore stato</div>
+            </div>
+
+            <div class="form-field">
+              <label for="countryCode">Paese</label>
+              <input id="countryCode" type="text" th:field="*{countryCode}" placeholder="IT"/>
+              <div class="field-error" th:if="${#fields.hasErrors('countryCode')}" th:errors="*{countryCode}">Errore paese</div>
+            </div>
+
+            <div class="form-field full">
+              <label for="addressLine1">Indirizzo</label>
+              <input id="addressLine1" type="text" th:field="*{addressLine1}" placeholder="Via Roma 1"/>
+              <div class="field-error" th:if="${#fields.hasErrors('addressLine1')}" th:errors="*{addressLine1}">Errore indirizzo</div>
+            </div>
+
+            <div class="form-field">
+              <label for="city">Città</label>
+              <input id="city" type="text" th:field="*{city}" placeholder="Roma"/>
+              <div class="field-error" th:if="${#fields.hasErrors('city')}" th:errors="*{city}">Errore città</div>
+            </div>
+
+            <div class="form-field">
+              <label for="postalCode">CAP</label>
+              <input id="postalCode" type="text" th:field="*{postalCode}" placeholder="00100"/>
+              <div class="field-error" th:if="${#fields.hasErrors('postalCode')}" th:errors="*{postalCode}">Errore CAP</div>
+            </div>
+
+          </div>
+
+          <div class="actions" style="margin-top: 24px;">
+            <button type="submit" class="btn"
+                    th:text="${formMode == 'create'} ? 'Crea cliente' : 'Salva modifiche'">
+              Salva
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
+
+</div>
+</body>
+</html>

@@ -3,186 +3,102 @@
 <head>
   <meta charset="UTF-8"/>
   <title>Clienti</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f6f8;
-      color: #222;
-      margin: 0;
-      padding: 24px;
-    }
-
-    .page {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-      padding: 24px;
-    }
-
-    h1 {
-      margin-top: 0;
-      margin-bottom: 20px;
-    }
-
-    .filters {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-
-    .filters input,
-    .filters select {
-      padding: 10px 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      min-width: 180px;
-    }
-
-    .filters button,
-    .btn-link {
-      padding: 10px 14px;
-      border: none;
-      border-radius: 8px;
-      background: #1f6feb;
-      color: white;
-      text-decoration: none;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .btn-link.secondary {
-      background: #4b5563;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      padding: 12px 10px;
-      border-bottom: 1px solid #e5e7eb;
-      text-align: left;
-      vertical-align: middle;
-    }
-
-    th {
-      background: #f9fafb;
-    }
-
-    .actions a {
-      margin-right: 8px;
-      text-decoration: none;
-      color: #1f6feb;
-      font-weight: bold;
-    }
-
-    .pagination {
-      margin-top: 20px;
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .pagination a {
-      padding: 8px 12px;
-      border-radius: 8px;
-      background: #e5e7eb;
-      color: #111827;
-      text-decoration: none;
-    }
-
-    .muted {
-      color: #6b7280;
-    }
-  </style>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
 </head>
 <body>
-<div class="page">
-  <div class="card">
-    <h1>Clienti</h1>
+<div class="app-shell">
 
-    <form method="get" th:action="@{/customers}" class="filters">
-      <input type="hidden" name="tenantId" th:value="${tenantId}"/>
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
 
-      <input type="text" name="search" placeholder="Cerca nome, email o P.IVA" th:value="${search}"/>
+  <main class="app-main">
+    <div class="page">
+      <div class="card">
+        <h1 class="page-title">Clienti</h1>
+        <br>
+        <div class="actions">
+          <a class="btn" th:href="@{/customers/new(tenantId=${tenantId})}">Nuovo cliente</a>
+        </div>
+        <br>
+        <form method="get" th:action="@{/customers}" class="filters">
+          <input type="hidden" name="tenantId" th:value="${tenantId}"/>
 
-      <select name="status">
-        <option value="">Tutti gli stati</option>
-        <option value="ACTIVE" th:selected="${status == 'ACTIVE'}">ACTIVE</option>
-        <option value="INACTIVE" th:selected="${status == 'INACTIVE'}">INACTIVE</option>
-      </select>
+          <input type="text" name="search" placeholder="Cerca nome, email o P.IVA" th:value="${search}"/>
 
-      <select name="type">
-        <option value="">Tutti i tipi</option>
-        <option value="COMPANY" th:selected="${type == 'COMPANY'}">COMPANY</option>
-        <option value="PERSON" th:selected="${type == 'PERSON'}">PERSON</option>
-      </select>
+          <select name="status">
+            <option value="">Tutti gli stati</option>
+            <option value="ACTIVE" th:selected="${status == 'ACTIVE'}">ACTIVE</option>
+            <option value="INACTIVE" th:selected="${status == 'INACTIVE'}">INACTIVE</option>
+          </select>
 
-      <button type="submit">Filtra</button>
+          <select name="type">
+            <option value="">Tutti i tipi</option>
+            <option value="COMPANY" th:selected="${type == 'COMPANY'}">COMPANY</option>
+            <option value="PERSON" th:selected="${type == 'PERSON'}">PERSON</option>
+          </select>
 
-      <a class="btn-link secondary"
-         th:href="@{/customers(tenantId=${tenantId})}">
-        Reset
-      </a>
-    </form>
+          <button type="submit" class="btn">Filtra</button>
 
-    <table>
-      <thead>
-      <tr>
-        <th>ID</th>
-        <th>Nome</th>
-        <th>Email</th>
-        <th>P.IVA</th>
-        <th>Tipo</th>
-        <th>Stato</th>
-        <th>Azioni</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr th:if="${#lists.isEmpty(customersPage.content)}">
-        <td colspan="7" class="muted">Nessun cliente trovato.</td>
-      </tr>
-      <tr th:each="customer : ${customersPage.content}">
-        <td th:text="${customer.id}">1</td>
-        <td th:text="${customer.name}">Rossi Srl</td>
-        <td th:text="${customer.email}">rossi@example.com</td>
-        <td th:text="${customer.vatNumber}">IT12345678901</td>
-        <td th:text="${customer.type}">COMPANY</td>
-        <td th:text="${customer.status}">ACTIVE</td>
-        <td class="actions">
-          <a th:href="@{/customers/{id}(id=${customer.id}, tenantId=${tenantId})}">Dettaglio</a>
-          <a th:href="@{/quotes(customerId=${customer.id}, tenantId=${tenantId})}">Preventivi</a>
-          <a th:href="@{/orders(customerId=${customer.id}, tenantId=${tenantId})}">Ordini</a>
-        </td>
-      </tr>
-      </tbody>
-    </table>
+          <a class="btn btn-secondary"
+             th:href="@{/customers(tenantId=${tenantId})}">
+            Reset
+          </a>
+        </form>
 
-    <div class="pagination">
-      <a th:if="${!customersPage.first}"
-         th:href="@{/customers(page=${customersPage.page - 1}, size=${customersPage.size}, search=${search}, status=${status}, type=${type}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
-        ← Precedente
-      </a>
+        <table class="table">
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>P.IVA</th>
+            <th>Tipo</th>
+            <th>Stato</th>
+            <th>Azioni</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:if="${#lists.isEmpty(customersPage.content)}">
+            <td colspan="7" class="muted">Nessun cliente trovato.</td>
+          </tr>
+          <tr th:each="customer : ${customersPage.content}">
+            <td th:text="${customer.id}">1</td>
+            <td th:text="${customer.name}">Rossi Srl</td>
+            <td th:text="${customer.email}">rossi@example.com</td>
+            <td th:text="${customer.vatNumber}">IT12345678901</td>
+            <td th:text="${customer.type}">COMPANY</td>
+            <td th:text="${customer.status}">ACTIVE</td>
+            <td>
+              <a th:href="@{/customers/{id}(id=${customer.id}, tenantId=${tenantId})}">Dettaglio</a>
+              <a th:href="@{/quotes(customerId=${customer.id}, tenantId=${tenantId})}">Preventivi</a>
+              <a th:href="@{/orders(customerId=${customer.id}, tenantId=${tenantId})}">Ordini</a>
+            </td>
+          </tr>
+          </tbody>
+        </table>
 
-      <span>
-                Pagina <strong th:text="${customersPage.page + 1}">1</strong>
-                di <strong th:text="${customersPage.totalPages}">1</strong>
-                — Totale elementi: <strong th:text="${customersPage.totalElements}">0</strong>
-            </span>
+        <div class="pagination">
+          <a th:if="${!customersPage.first}"
+             th:href="@{/customers(page=${customersPage.page - 1}, size=${customersPage.size}, search=${search}, status=${status}, type=${type}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
+            ← Precedente
+          </a>
 
-      <a th:if="${!customersPage.last}"
-         th:href="@{/customers(page=${customersPage.page + 1}, size=${customersPage.size}, search=${search}, status=${status}, type=${type}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
-        Successiva →
-      </a>
+          <span>
+                        Pagina <strong th:text="${customersPage.page + 1}">1</strong>
+                        di <strong th:text="${customersPage.totalPages}">1</strong>
+                        — Totale elementi: <strong th:text="${customersPage.totalElements}">0</strong>
+                    </span>
+
+          <a th:if="${!customersPage.last}"
+             th:href="@{/customers(page=${customersPage.page + 1}, size=${customersPage.size}, search=${search}, status=${status}, type=${type}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
+            Successiva →
+          </a>
+        </div>
+      </div>
     </div>
-  </div>
+  </main>
+
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
+
 </div>
 </body>
 </html>

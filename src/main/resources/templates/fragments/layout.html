@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<header th:fragment="appHeader" class="app-header">
+    <div class="app-header-inner">
+        <a th:href="@{/}" class="brand">Gestiva</a>
+
+        <nav class="top-nav">
+            <a th:href="@{/customers(tenantId=${tenantId})}">Clienti</a>
+            <a th:href="@{/quotes(tenantId=${tenantId})}">Preventivi</a>
+            <a th:href="@{/orders(tenantId=${tenantId})}">Ordini</a>
+        </nav>
+    </div>
+</header>
+
+<footer th:fragment="appFooter" class="app-footer">
+    <div class="app-footer-inner">
+        Gestiva — gestionale modulare in sviluppo
+    </div>
+</footer>
+
+<div th:fragment="flashMessages">
+    <div th:if="${successMessage}" class="alert alert-success">
+        <span th:text="${successMessage}">Operazione completata con successo.</span>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-error">
+        <span th:text="${errorMessage}">Si è verificato un errore.</span>
+    </div>
+</div>
+
+</body>
+</html>
