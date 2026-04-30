@@ -10,4 +10,6 @@ public interface QuoteRepository extends JpaRepository<Quote, Long>, JpaSpecific
 
     List<Quote> findByTenantIdOrderByQuoteDateDescIdDesc(Long tenantId);
     Optional<Quote> findByTenantIdAndId(Long tenantId, Long id);
+    long countByTenantId(Long tenantId);
+    java.util.List<com.gestiva.sales.quote.entity.Quote> findTop5ByTenantIdOrderByQuoteDateDescIdDesc(Long tenantId);
 }

@@ -4,12 +4,34 @@
 
 <header th:fragment="appHeader" class="app-header">
     <div class="app-header-inner">
-        <a th:href="@{/}" class="brand">Gestiva</a>
+        <a th:href="@{/dashboard(tenantId=${tenantId})}" class="brand">
+            <span>Gestiva</span>
+        </a>
 
         <nav class="top-nav">
-            <a th:href="@{/customers(tenantId=${tenantId})}">Clienti</a>
-            <a th:href="@{/quotes(tenantId=${tenantId})}">Preventivi</a>
-            <a th:href="@{/orders(tenantId=${tenantId})}">Ordini</a>
+            <a th:href="@{/dashboard(tenantId=${tenantId})}"
+               th:classappend="${activeMenu == 'dashboard'} ? ' active' : ''">
+                <span class="nav-icon">⌂</span>
+                <span>Dashboard</span>
+            </a>
+
+            <a th:href="@{/customers(tenantId=${tenantId})}"
+               th:classappend="${activeMenu == 'customers'} ? ' active' : ''">
+                <span class="nav-icon">👥</span>
+                <span>Clienti</span>
+            </a>
+
+            <a th:href="@{/quotes(tenantId=${tenantId})}"
+               th:classappend="${activeMenu == 'quotes'} ? ' active' : ''">
+                <span class="nav-icon">🧾</span>
+                <span>Preventivi</span>
+            </a>
+
+            <a th:href="@{/orders(tenantId=${tenantId})}"
+               th:classappend="${activeMenu == 'orders'} ? ' active' : ''">
+                <span class="nav-icon">📦</span>
+                <span>Ordini</span>
+            </a>
         </nav>
     </div>
 </header>

@@ -30,7 +30,7 @@ public class QuoteDetailPageController {
 
         model.addAttribute("quote", quote);
         model.addAttribute("tenantId", resolvedTenantId);
-
+        model.addAttribute("activeMenu", "quotes");
         return "quote/quote-detail";
     }
 }

@@ -57,6 +57,7 @@ public class QuotePageController {
         model.addAttribute("sortBy", sortBy);
         model.addAttribute("sortDir", sortDir);
         model.addAttribute("tenantId", resolvedTenantId);
+        model.addAttribute("activeMenu", "quotes");
 
         return "quote/quote-list";
     }

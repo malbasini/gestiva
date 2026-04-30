@@ -13,7 +13,18 @@
   <main class="app-main">
     <div class="page">
       <div class="card">
-        <h1 class="page-title">Ordini</h1>
+
+        <div class="breadcrumb">
+          <a th:href="@{/dashboard(tenantId=${tenantId})}">Dashboard</a> /
+          <span>Ordini</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title">Ordini</h1>
+            <div class="muted">Gestione ordini cliente</div>
+          </div>
+        </div>
 
         <form method="get" th:action="@{/orders}" class="filters">
           <input type="hidden" name="tenantId" th:value="${tenantId}"/>
@@ -59,10 +70,18 @@
             <td th:text="${order.id}">1</td>
             <td th:text="${order.orderNumber}">ORD-2026-00001</td>
             <td th:text="${order.formattedOrderDate}">28/04/2026</td>
-            <td th:text="${order.status}">CONFIRMED</td>
+            <td>
+                            <span class="badge"
+                                  th:classappend="${order.status == 'CONFIRMED'} ? ' badge-confirmed' :
+                                                  (${order.status == 'FULFILLED'} ? ' badge-fulfilled' :
+                                                  (${order.status == 'CANCELLED'} ? ' badge-cancelled' : ' badge-draft'))"
+                                  th:text="${order.status}">
+                                CONFIRMED
+                            </span>
+            </td>
             <td th:text="${order.quoteId}">58</td>
             <td class="text-right" th:text="${order.formattedTotalAmount}">1.342,00 €</td>
-            <td>
+            <td class="link-actions">
               <a th:href="@{/orders/{id}(id=${order.id}, tenantId=${tenantId})}">Dettaglio</a>
               <a th:href="@{/orders/{id}/preview(id=${order.id}, tenantId=${tenantId})}">Preview</a>
               <a th:href="@{/api/orders/{id}/pdf(id=${order.id}, tenantId=${tenantId})}">PDF</a>
@@ -88,6 +107,7 @@
             Successiva →
           </a>
         </div>
+
       </div>
     </div>
   </main>

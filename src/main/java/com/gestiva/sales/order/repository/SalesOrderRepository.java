@@ -10,4 +10,6 @@ public interface SalesOrderRepository extends JpaRepository<SalesOrder, Long>, J
     List<SalesOrder> findByTenantIdOrderByOrderDateDescIdDesc(Long tenantId);
     Optional<SalesOrder> findByTenantIdAndId(Long tenantId, Long id);
     boolean existsByTenantIdAndQuoteId(Long tenantId, Long quoteId);
+    long countByTenantId(Long tenantId);
+    java.util.List<com.gestiva.sales.order.entity.SalesOrder> findTop5ByTenantIdOrderByOrderDateDescIdDesc(Long tenantId);
 }

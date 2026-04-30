@@ -13,17 +13,28 @@
   <main class="app-main">
     <div class="page">
       <div class="card">
+
         <div th:replace="~{fragments/layout :: flashMessages}"></div>
-        <br>
-        <div class="actions">
-          <a class="btn btn-secondary" th:href="@{/customers(tenantId=${tenantId})}">← Torna alla lista</a>
-          <a class="btn" th:href="@{/customers/{id}/edit(id=${customer.id}, tenantId=${tenantId})}">Modifica</a>
-          <a class="btn" th:href="@{/quotes(customerId=${customer.id}, tenantId=${tenantId})}">Preventivi</a>
-          <a class="btn" th:href="@{/orders(customerId=${customer.id}, tenantId=${tenantId})}">Ordini</a>
+
+        <div class="breadcrumb">
+          <a th:href="@{/dashboard(tenantId=${tenantId})}">Dashboard</a> /
+          <a th:href="@{/customers(tenantId=${tenantId})}">Clienti</a> /
+          <span th:text="${customer.name}">Rossi Srl</span>
         </div>
 
-        <h1 class="page-title" th:text="${customer.name}">Rossi Srl</h1>
-        <div class="muted">Dettaglio cliente</div>
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title" th:text="${customer.name}">Rossi Srl</h1>
+            <div class="muted">Dettaglio cliente</div>
+          </div>
+
+          <div class="page-header-right">
+            <a class="btn btn-secondary" th:href="@{/customers(tenantId=${tenantId})}">← Torna alla lista</a>
+            <a class="btn" th:href="@{/customers/{id}/edit(id=${customer.id}, tenantId=${tenantId})}">Modifica</a>
+            <a class="btn" th:href="@{/quotes(customerId=${customer.id}, tenantId=${tenantId})}">Preventivi</a>
+            <a class="btn" th:href="@{/orders(customerId=${customer.id}, tenantId=${tenantId})}">Ordini</a>
+          </div>
+        </div>
 
         <div class="info-grid three-cols">
           <div class="info-box">
@@ -44,7 +55,13 @@
           </div>
           <div class="info-box">
             <div class="label">Stato</div>
-            <div class="value" th:text="${customer.status}">ACTIVE</div>
+            <div class="value">
+                            <span class="badge"
+                                  th:classappend="${customer.status == 'ACTIVE'} ? ' badge-active' : ' badge-inactive'"
+                                  th:text="${customer.status}">
+                                ACTIVE
+                            </span>
+            </div>
           </div>
           <div class="info-box">
             <div class="label">Paese</div>

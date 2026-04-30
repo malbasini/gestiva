@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Dashboard</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body>
+<div class="app-shell">
+
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+  <main class="app-main">
+    <div class="page">
+      <div class="card">
+
+        <div class="breadcrumb">
+          <span>Dashboard</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title">Dashboard</h1>
+            <div class="muted">Panoramica generale del gestionale</div>
+          </div>
+
+          <div class="page-header-right">
+            <a class="btn" th:href="@{/customers/new(tenantId=${tenantId})}">
+              <span class="btn-icon">＋</span>
+              <span>Nuovo cliente</span>
+            </a>
+            <a class="btn" th:href="@{/quotes(tenantId=${tenantId})}">
+              <span class="btn-icon">🧾</span>
+              <span>Vai ai preventivi</span>
+            </a>
+            <a class="btn" th:href="@{/orders(tenantId=${tenantId})}">
+              <span class="btn-icon">📦</span>
+              <span>Vai agli ordini</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Clienti</div>
+            <div class="kpi-value" th:text="${dashboard.customersCount}">0</div>
+            <div class="kpi-subtext">Anagrafiche clienti registrate</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-label">Preventivi</div>
+            <div class="kpi-value" th:text="${dashboard.quotesCount}">0</div>
+            <div class="kpi-subtext">Documenti commerciali creati</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-label">Ordini</div>
+            <div class="kpi-value" th:text="${dashboard.ordersCount}">0</div>
+            <div class="kpi-subtext">Ordini cliente confermati</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-label">Tenant</div>
+            <div class="kpi-value" th:text="${tenantId}">1</div>
+            <div class="kpi-subtext">Ambiente attualmente attivo</div>
+          </div>
+        </div>
+
+        <div class="dashboard-columns">
+          <div class="panel">
+            <h2 class="section-title">Ultimi preventivi</h2>
+
+            <table class="table">
+              <thead>
+              <tr>
+                <th>Numero</th>
+                <th>Data</th>
+                <th>Stato</th>
+                <th class="text-right">Totale</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr th:if="${#lists.isEmpty(dashboard.latestQuotes)}">
+                <td colspan="4" class="muted">Nessun preventivo.</td>
+              </tr>
+              <tr th:each="quote : ${dashboard.latestQuotes}">
+                <td>
+                  <a th:href="@{/quotes/{id}(id=${quote.id}, tenantId=${tenantId})}"
+                     th:text="${quote.quoteNumber}">PRE-2026-00001</a>
+                </td>
+                <td th:text="${quote.formattedQuoteDate}">29/04/2026</td>
+                <td>
+                                    <span class="badge"
+                                          th:classappend="${quote.status == 'DRAFT'} ? ' badge-draft' :
+                                                          (${quote.status == 'SENT'} ? ' badge-sent' :
+                                                          (${quote.status == 'ACCEPTED'} ? ' badge-accepted' : ' badge-rejected'))"
+                                          th:text="${quote.status}">
+                                        SENT
+                                    </span>
+                </td>
+                <td class="text-right" th:text="${quote.formattedTotalAmount}">610,00 €</td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="panel">
+            <h2 class="section-title">Ultimi ordini</h2>
+
+            <table class="table">
+              <thead>
+              <tr>
+                <th>Numero</th>
+                <th>Data</th>
+                <th>Stato</th>
+                <th class="text-right">Totale</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr th:if="${#lists.isEmpty(dashboard.latestOrders)}">
+                <td colspan="4" class="muted">Nessun ordine.</td>
+              </tr>
+              <tr th:each="order : ${dashboard.latestOrders}">
+                <td>
+                  <a th:href="@{/orders/{id}(id=${order.id}, tenantId=${tenantId})}"
+                     th:text="${order.orderNumber}">ORD-2026-00001</a>
+                </td>
+                <td th:text="${order.formattedOrderDate}">29/04/2026</td>
+                <td>
+                                    <span class="badge"
+                                          th:classappend="${order.status == 'CONFIRMED'} ? ' badge-confirmed' :
+                                                          (${order.status == 'FULFILLED'} ? ' badge-fulfilled' :
+                                                          (${order.status == 'CANCELLED'} ? ' badge-cancelled' : ' badge-draft'))"
+                                          th:text="${order.status}">
+                                        CONFIRMED
+                                    </span>
+                </td>
+                <td class="text-right" th:text="${order.formattedTotalAmount}">610,00 €</td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
+
+</div>
+</body>
+</html>

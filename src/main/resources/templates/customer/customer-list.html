@@ -13,12 +13,23 @@
   <main class="app-main">
     <div class="page">
       <div class="card">
-        <h1 class="page-title">Clienti</h1>
-        <br>
-        <div class="actions">
-          <a class="btn" th:href="@{/customers/new(tenantId=${tenantId})}">Nuovo cliente</a>
+
+        <div class="breadcrumb">
+          <a th:href="@{/dashboard(tenantId=${tenantId})}">Dashboard</a> /
+          <span>Clienti</span>
         </div>
-        <br>
+
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title">Clienti</h1>
+            <div class="muted">Gestione anagrafiche clienti</div>
+          </div>
+
+          <div class="page-header-right">
+            <a class="btn" th:href="@{/customers/new(tenantId=${tenantId})}">Nuovo cliente</a>
+          </div>
+        </div>
+
         <form method="get" th:action="@{/customers}" class="filters">
           <input type="hidden" name="tenantId" th:value="${tenantId}"/>
 
@@ -66,8 +77,14 @@
             <td th:text="${customer.email}">rossi@example.com</td>
             <td th:text="${customer.vatNumber}">IT12345678901</td>
             <td th:text="${customer.type}">COMPANY</td>
-            <td th:text="${customer.status}">ACTIVE</td>
             <td>
+                            <span class="badge"
+                                  th:classappend="${customer.status == 'ACTIVE'} ? ' badge-active' : ' badge-inactive'"
+                                  th:text="${customer.status}">
+                                ACTIVE
+                            </span>
+            </td>
+            <td class="link-actions">
               <a th:href="@{/customers/{id}(id=${customer.id}, tenantId=${tenantId})}">Dettaglio</a>
               <a th:href="@{/quotes(customerId=${customer.id}, tenantId=${tenantId})}">Preventivi</a>
               <a th:href="@{/orders(customerId=${customer.id}, tenantId=${tenantId})}">Ordini</a>
@@ -93,6 +110,7 @@
             Successiva →
           </a>
         </div>
+
       </div>
     </div>
   </main>

@@ -16,20 +16,30 @@
 
                 <div th:replace="~{fragments/layout :: flashMessages}"></div>
 
-                <div class="actions">
-                    <a class="btn btn-secondary" th:href="@{/quotes(tenantId=${tenantId})}">← Torna alla lista</a>
-                    <a class="btn" th:href="@{/quotes/{id}/preview(id=${quote.id}, tenantId=${tenantId})}" target="_blank">Preview</a>
-                    <a class="btn" th:href="@{/api/quotes/{id}/pdf(id=${quote.id}, tenantId=${tenantId})}">PDF</a>
-
-                    <form th:action="@{/quotes/{id}/convert(id=${quote.id})}" method="post" style="display:inline-block; margin:0;">
-                        <input type="hidden" name="tenantId" th:value="${tenantId}"/>
-                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                        <button type="submit" class="btn">Converti in ordine</button>
-                    </form>
+                <div class="breadcrumb">
+                    <a th:href="@{/dashboard(tenantId=${tenantId})}">Dashboard</a> /
+                    <a th:href="@{/quotes(tenantId=${tenantId})}">Preventivi</a> /
+                    <span th:text="${quote.quoteNumber}">PRE-2026-00001</span>
                 </div>
 
-                <h1 class="page-title">Preventivo</h1>
-                <div class="muted" th:text="${quote.quoteNumber}">PRE-2026-00001</div>
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1 class="page-title">Preventivo</h1>
+                        <div class="muted" th:text="${quote.quoteNumber}">PRE-2026-00001</div>
+                    </div>
+
+                    <div class="page-header-right">
+                        <a class="btn btn-secondary" th:href="@{/quotes(tenantId=${tenantId})}">← Torna alla lista</a>
+                        <a class="btn" th:href="@{/quotes/{id}/preview(id=${quote.id}, tenantId=${tenantId})}" target="_blank">Preview</a>
+                        <a class="btn" th:href="@{/api/quotes/{id}/pdf(id=${quote.id}, tenantId=${tenantId})}">PDF</a>
+
+                        <form th:action="@{/quotes/{id}/convert(id=${quote.id})}" method="post">
+                            <input type="hidden" name="tenantId" th:value="${tenantId}"/>
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="btn">Converti in ordine</button>
+                        </form>
+                    </div>
+                </div>
 
                 <div class="info-grid">
                     <div class="info-box">
@@ -46,7 +56,15 @@
                     </div>
                     <div class="info-box">
                         <div class="label">Stato</div>
-                        <div class="value" th:text="${quote.status}">ACCEPTED</div>
+                        <div class="value">
+                            <span class="badge"
+                                  th:classappend="${quote.status == 'DRAFT'} ? ' badge-draft' :
+                                                  (${quote.status == 'SENT'} ? ' badge-sent' :
+                                                  (${quote.status == 'ACCEPTED'} ? ' badge-accepted' : ' badge-rejected'))"
+                                  th:text="${quote.status}">
+                                ACCEPTED
+                            </span>
+                        </div>
                     </div>
                 </div>
 

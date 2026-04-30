@@ -55,7 +55,7 @@ public class CustomerPageController {
         model.addAttribute("sortBy", sortBy);
         model.addAttribute("sortDir", sortDir);
         model.addAttribute("tenantId", resolvedTenantId);
-
+        model.addAttribute("activeMenu", "customers");
         return "customer/customer-list";
     }
 }

@@ -58,7 +58,7 @@ public class SalesOrderPageController {
         model.addAttribute("sortBy", sortBy);
         model.addAttribute("sortDir", sortDir);
         model.addAttribute("tenantId", resolvedTenantId);
-
+        model.addAttribute("activeMenu", "orders");
         return "order/order-list";
     }
 }

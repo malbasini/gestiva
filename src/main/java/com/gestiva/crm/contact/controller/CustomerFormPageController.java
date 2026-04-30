@@ -40,7 +40,7 @@ public class CustomerFormPageController {
         model.addAttribute("customerId", id);
         model.addAttribute("formMode", "edit");
         model.addAttribute("tenantId", resolvedTenantId);
-
+        model.addAttribute("activeMenu", "customers");
         return "customer/customer-form";
     }
 }

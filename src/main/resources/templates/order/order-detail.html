@@ -16,14 +16,24 @@
 
         <div th:replace="~{fragments/layout :: flashMessages}"></div>
 
-        <div class="actions">
-          <a class="btn btn-secondary" th:href="@{/orders(tenantId=${tenantId})}">← Torna alla lista</a>
-          <a class="btn" th:href="@{/orders/{id}/preview(id=${order.id}, tenantId=${tenantId})}" target="_blank">Preview</a>
-          <a class="btn" th:href="@{/api/orders/{id}/pdf(id=${order.id}, tenantId=${tenantId})}">PDF</a>
+        <div class="breadcrumb">
+          <a th:href="@{/dashboard(tenantId=${tenantId})}">Dashboard</a> /
+          <a th:href="@{/orders(tenantId=${tenantId})}">Ordini</a> /
+          <span th:text="${order.orderNumber}">ORD-2026-00001</span>
         </div>
 
-        <h1 class="page-title">Ordine cliente</h1>
-        <div class="muted" th:text="${order.orderNumber}">ORD-2026-00001</div>
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title">Ordine cliente</h1>
+            <div class="muted" th:text="${order.orderNumber}">ORD-2026-00001</div>
+          </div>
+
+          <div class="page-header-right">
+            <a class="btn btn-secondary" th:href="@{/orders(tenantId=${tenantId})}">← Torna alla lista</a>
+            <a class="btn" th:href="@{/orders/{id}/preview(id=${order.id}, tenantId=${tenantId})}" target="_blank">Preview</a>
+            <a class="btn" th:href="@{/api/orders/{id}/pdf(id=${order.id}, tenantId=${tenantId})}">PDF</a>
+          </div>
+        </div>
 
         <div class="info-grid">
           <div class="info-box">
@@ -36,7 +46,15 @@
           </div>
           <div class="info-box">
             <div class="label">Stato</div>
-            <div class="value" th:text="${order.status}">CONFIRMED</div>
+            <div class="value">
+                            <span class="badge"
+                                  th:classappend="${order.status == 'CONFIRMED'} ? ' badge-confirmed' :
+                                                  (${order.status == 'FULFILLED'} ? ' badge-fulfilled' :
+                                                  (${order.status == 'CANCELLED'} ? ' badge-cancelled' : ' badge-draft'))"
+                                  th:text="${order.status}">
+                                CONFIRMED
+                            </span>
+            </div>
           </div>
           <div class="info-box">
             <div class="label">Preventivo origine</div>

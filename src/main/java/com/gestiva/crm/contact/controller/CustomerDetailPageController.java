@@ -25,12 +25,10 @@ public class CustomerDetailPageController {
                          Model model) {
 
         Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
-
         var customer = customerDetailWebService.getDetail(resolvedTenantId, id);
-
         model.addAttribute("customer", customer);
         model.addAttribute("tenantId", resolvedTenantId);
-
+        model.addAttribute("activeMenu", "customers");
         return "customer/customer-detail";
     }
 }

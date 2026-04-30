@@ -58,6 +58,7 @@ public class CustomerFormSubmitController {
             model.addAttribute("formMode", "edit");
             model.addAttribute("customerId", id);
             model.addAttribute("tenantId", resolvedTenantId);
+            model.addAttribute("activeMenu", "customers");
             return "customer/customer-form";
         }
 

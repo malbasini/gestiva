@@ -13,7 +13,25 @@
     <main class="app-main">
         <div class="page">
             <div class="card">
-                <h1 class="page-title">Preventivi</h1>
+
+                <div class="breadcrumb">
+                    <a th:href="@{/dashboard(tenantId=${tenantId})}">Dashboard</a> /
+                    <span>Preventivi</span>
+                </div>
+
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1 class="page-title">Preventivi</h1>
+                        <div class="muted">Gestione documenti preventivi</div>
+                    </div>
+
+                    <div class="page-header-right">
+                        <a class="btn" th:href="@{/quotes/new(tenantId=${tenantId})}">
+                            <span class="btn-icon">＋</span>
+                            <span>Nuovo preventivo</span>
+                        </a>
+                    </div>
+                </div>
 
                 <form method="get" th:action="@{/quotes}" class="filters">
                     <input type="hidden" name="tenantId" th:value="${tenantId}"/>
@@ -59,9 +77,17 @@
                         <td th:text="${quote.quoteNumber}">PRE-2026-00001</td>
                         <td th:text="${quote.formattedQuoteDate}">28/04/2026</td>
                         <td th:text="${quote.formattedValidUntil}">28/05/2026</td>
-                        <td th:text="${quote.status}">SENT</td>
-                        <td class="text-right" th:text="${quote.formattedTotalAmount}">1.342,00 €</td>
                         <td>
+                            <span class="badge"
+                                  th:classappend="${quote.status == 'DRAFT'} ? ' badge-draft' :
+                                                  (${quote.status == 'SENT'} ? ' badge-sent' :
+                                                  (${quote.status == 'ACCEPTED'} ? ' badge-accepted' : ' badge-rejected'))"
+                                  th:text="${quote.status}">
+                                SENT
+                            </span>
+                        </td>
+                        <td class="text-right" th:text="${quote.formattedTotalAmount}">1.342,00 €</td>
+                        <td class="link-actions">
                             <a th:href="@{/quotes/{id}(id=${quote.id}, tenantId=${tenantId})}">Dettaglio</a>
                             <a th:href="@{/quotes/{id}/preview(id=${quote.id}, tenantId=${tenantId})}">Preview</a>
                             <a th:href="@{/api/quotes/{id}/pdf(id=${quote.id}, tenantId=${tenantId})}">PDF</a>
@@ -87,6 +113,7 @@
                         Successiva →
                     </a>
                 </div>
+
             </div>
         </div>
     </main>

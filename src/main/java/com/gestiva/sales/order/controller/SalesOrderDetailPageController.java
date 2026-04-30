@@ -30,7 +30,7 @@ public class SalesOrderDetailPageController {
 
         model.addAttribute("order", order);
         model.addAttribute("tenantId", resolvedTenantId);
-
+        model.addAttribute("activeMenu", "orders");
         return "order/order-detail";
     }
 }
