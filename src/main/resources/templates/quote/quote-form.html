@@ -50,8 +50,15 @@
 
           <div class="form-grid">
             <div class="form-field">
-              <label for="customerId">Cliente ID</label>
-              <input id="customerId" type="number" th:field="*{customerId}" placeholder="1"/>
+              <label for="customerId">Cliente</label>
+              <select id="customerId" th:field="*{customerId}">
+                <option value="">Seleziona cliente</option>
+                <option th:each="customer : ${customerOptions}"
+                        th:value="${customer.id}"
+                        th:text="${customer.label}">
+                  Rossi Srl - IT12345678901
+                </option>
+              </select>
               <div class="field-error" th:if="${#fields.hasErrors('customerId')}" th:errors="*{customerId}">Errore cliente</div>
             </div>
 
