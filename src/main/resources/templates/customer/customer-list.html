@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <title>Clienti</title>
   <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
 </head>
 <body>
 <div class="app-shell">
@@ -26,7 +27,10 @@
           </div>
 
           <div class="page-header-right">
-            <a class="btn" th:href="@{/customers/new(tenantId=${tenantId})}">Nuovo cliente</a>
+            <a class="btn" th:href="@{/customers/new(tenantId=${tenantId})}">
+              <i class="bi bi-plus-lg"></i>
+              <span>Nuovo cliente</span>
+            </a>
           </div>
         </div>
 
@@ -85,9 +89,18 @@
                             </span>
             </td>
             <td class="link-actions">
-              <a th:href="@{/customers/{id}(id=${customer.id}, tenantId=${tenantId})}">Dettaglio</a>
-              <a th:href="@{/quotes(customerId=${customer.id}, tenantId=${tenantId})}">Preventivi</a>
-              <a th:href="@{/orders(customerId=${customer.id}, tenantId=${tenantId})}">Ordini</a>
+              <a th:href="@{/customers/{id}(id=${customer.id}, tenantId=${tenantId})}">
+                <i class="bi bi-person-vcard"></i>
+                <span>Dettaglio</span>
+              </a>
+              <a th:href="@{/quotes(customerId=${customer.id}, tenantId=${tenantId})}">
+                <i class="bi bi-receipt"></i>
+                <span>Preventivi</span>
+              </a>
+              <a th:href="@{/orders(customerId=${customer.id}, tenantId=${tenantId})}">
+                <i class="bi bi-box-seam"></i>
+                <span>Ordini</span>
+              </a>
             </td>
           </tr>
           </tbody>

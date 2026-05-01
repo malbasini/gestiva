@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <title>Dashboard</title>
   <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
 </head>
 <body>
 <div class="app-shell">
@@ -26,15 +27,15 @@
 
           <div class="page-header-right">
             <a class="btn" th:href="@{/customers/new(tenantId=${tenantId})}">
-              <span class="btn-icon">＋</span>
+              <i class="bi bi-plus-lg"></i>
               <span>Nuovo cliente</span>
             </a>
             <a class="btn" th:href="@{/quotes(tenantId=${tenantId})}">
-              <span class="btn-icon">🧾</span>
+              <i class="bi bi-receipt"></i>
               <span>Vai ai preventivi</span>
             </a>
             <a class="btn" th:href="@{/orders(tenantId=${tenantId})}">
-              <span class="btn-icon">📦</span>
+              <i class="bi bi-box-seam"></i>
               <span>Vai agli ordini</span>
             </a>
           </div>

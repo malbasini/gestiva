@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <title th:text="'Ordine ' + ${order.orderNumber}">Dettaglio ordine</title>
   <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
 </head>
 <body>
 <div class="app-shell">
@@ -29,9 +30,18 @@
           </div>
 
           <div class="page-header-right">
-            <a class="btn btn-secondary" th:href="@{/orders(tenantId=${tenantId})}">← Torna alla lista</a>
-            <a class="btn" th:href="@{/orders/{id}/preview(id=${order.id}, tenantId=${tenantId})}" target="_blank">Preview</a>
-            <a class="btn" th:href="@{/api/orders/{id}/pdf(id=${order.id}, tenantId=${tenantId})}">PDF</a>
+            <a class="btn btn-secondary" th:href="@{/orders(tenantId=${tenantId})}">
+              <i class="bi bi-arrow-left"></i>
+              <span>Torna alla lista</span>
+            </a>
+            <a class="btn" th:href="@{/orders/{id}/preview(id=${order.id}, tenantId=${tenantId})}" target="_blank">
+              <i class="bi bi-eye"></i>
+              <span>Preview</span>
+            </a>
+            <a class="btn" th:href="@{/api/orders/{id}/pdf(id=${order.id}, tenantId=${tenantId})}">
+              <i class="bi bi-file-earmark-pdf"></i>
+              <span>PDF</span>
+            </a>
           </div>
         </div>
 

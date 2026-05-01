@@ -577,4 +577,32 @@ a:hover {
         align-items: center;
         gap: 8px;
     }
+    .top-nav a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .top-nav a i {
+        font-size: 15px;
+        line-height: 1;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn i {
+        font-size: 14px;
+        line-height: 1;
+    }
+
+    .link-actions a {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
 }

@@ -1,5 +1,11 @@
 <!DOCTYPE html>
 <html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Gestiva</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
 <body>
 
 <header th:fragment="appHeader" class="app-header">
@@ -11,25 +17,25 @@
         <nav class="top-nav">
             <a th:href="@{/dashboard(tenantId=${tenantId})}"
                th:classappend="${activeMenu == 'dashboard'} ? ' active' : ''">
-                <span class="nav-icon">⌂</span>
+                <i class="bi bi-speedometer2"></i>
                 <span>Dashboard</span>
             </a>
 
             <a th:href="@{/customers(tenantId=${tenantId})}"
                th:classappend="${activeMenu == 'customers'} ? ' active' : ''">
-                <span class="nav-icon">👥</span>
+                <i class="bi bi-people"></i>
                 <span>Clienti</span>
             </a>
 
             <a th:href="@{/quotes(tenantId=${tenantId})}"
                th:classappend="${activeMenu == 'quotes'} ? ' active' : ''">
-                <span class="nav-icon">🧾</span>
+                <i class="bi bi-receipt"></i>
                 <span>Preventivi</span>
             </a>
 
             <a th:href="@{/orders(tenantId=${tenantId})}"
                th:classappend="${activeMenu == 'orders'} ? ' active' : ''">
-                <span class="nav-icon">📦</span>
+                <i class="bi bi-box-seam"></i>
                 <span>Ordini</span>
             </a>
         </nav>

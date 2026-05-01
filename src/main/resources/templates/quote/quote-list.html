@@ -4,6 +4,7 @@
     <meta charset="UTF-8"/>
     <title>Preventivi</title>
     <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
 </head>
 <body>
 <div class="app-shell">
@@ -27,7 +28,7 @@
 
                     <div class="page-header-right">
                         <a class="btn" th:href="@{/quotes/new(tenantId=${tenantId})}">
-                            <span class="btn-icon">＋</span>
+                            <i class="bi bi-plus-lg"></i>
                             <span>Nuovo preventivo</span>
                         </a>
                     </div>
@@ -88,9 +89,18 @@
                         </td>
                         <td class="text-right" th:text="${quote.formattedTotalAmount}">1.342,00 €</td>
                         <td class="link-actions">
-                            <a th:href="@{/quotes/{id}(id=${quote.id}, tenantId=${tenantId})}">Dettaglio</a>
-                            <a th:href="@{/quotes/{id}/preview(id=${quote.id}, tenantId=${tenantId})}">Preview</a>
-                            <a th:href="@{/api/quotes/{id}/pdf(id=${quote.id}, tenantId=${tenantId})}">PDF</a>
+                            <a th:href="@{/quotes/{id}(id=${quote.id}, tenantId=${tenantId})}">
+                                <i class="bi bi-file-earmark-text"></i>
+                                <span>Dettaglio</span>
+                            </a>
+                            <a th:href="@{/quotes/{id}/preview(id=${quote.id}, tenantId=${tenantId})}">
+                                <i class="bi bi-eye"></i>
+                                <span>Preview</span>
+                            </a>
+                            <a th:href="@{/api/quotes/{id}/pdf(id=${quote.id}, tenantId=${tenantId})}">
+                                <i class="bi bi-file-earmark-pdf"></i>
+                                <span>PDF</span>
+                            </a>
                         </td>
                     </tr>
                     </tbody>
