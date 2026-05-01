@@ -21,6 +21,16 @@ public class QuoteDetailView {
 
     private List<QuoteDetailLineView> lines;
 
+    private boolean locked;
+
+    public boolean isLocked() {
+        return locked;
+    }
+
+    public void setLocked(boolean locked) {
+        this.locked = locked;
+    }
+    
     public Long getId() {
         return id;
     }

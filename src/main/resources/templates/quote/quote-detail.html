@@ -42,8 +42,16 @@
                             <i class="bi bi-file-earmark-pdf"></i>
                             <span>PDF</span>
                         </a>
+                        <a class="btn"
+                           th:if="${!quote.locked}"
+                           th:href="@{/quotes/{id}/edit(id=${quote.id}, tenantId=${tenantId})}">
+                            <i class="bi bi-pencil"></i>
+                            <span>Modifica</span>
+                        </a>
 
-                        <form th:action="@{/quotes/{id}/convert(id=${quote.id})}" method="post">
+                        <form th:if="${!quote.locked}"
+                              th:action="@{/quotes/{id}/convert(id=${quote.id})}"
+                              method="post">
                             <input type="hidden" name="tenantId" th:value="${tenantId}"/>
                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                             <button type="submit" class="btn">
@@ -53,7 +61,6 @@
                         </form>
                     </div>
                 </div>
-
                 <div class="info-grid">
                     <div class="info-box">
                         <div class="label">Cliente</div>

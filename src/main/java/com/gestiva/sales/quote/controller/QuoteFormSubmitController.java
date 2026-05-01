@@ -1,0 +1,146 @@
+package com.gestiva.sales.quote.controller;
+
+import com.gestiva.security.usercontext.TenantContext;
+import com.gestiva.sales.quote.web.QuoteForm;
+import com.gestiva.sales.quote.web.QuoteManageWebService;
+import jakarta.validation.Valid;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+@Controller
+@RequestMapping("/quotes")
+public class QuoteFormSubmitController {
+
+    private final QuoteManageWebService quoteManageWebService;
+    private final TenantContext tenantContext;
+
+    public QuoteFormSubmitController(QuoteManageWebService quoteManageWebService,
+                                     TenantContext tenantContext) {
+        this.quoteManageWebService = quoteManageWebService;
+        this.tenantContext = tenantContext;
+    }
+
+    @PostMapping(params = "addLine")
+    public String addLine(@ModelAttribute("quoteForm") QuoteForm quoteForm,
+                          @RequestParam(required = false) Long tenantId,
+                          @RequestParam(required = false) Long quoteId,
+                          @RequestParam(required = false) String formMode,
+                          Model model) {
+        Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
+
+        quoteManageWebService.addLine(quoteForm);
+
+        model.addAttribute("tenantId", resolvedTenantId);
+        model.addAttribute("quoteId", quoteId);
+        model.addAttribute("formMode", formMode == null ? "create" : formMode);
+        model.addAttribute("activeMenu", "quotes");
+
+        return "quote/quote-form";
+    }
+
+    @PostMapping(params = "removeLine")
+    public String removeLine(@ModelAttribute("quoteForm") QuoteForm quoteForm,
+                             @RequestParam int removeLine,
+                             @RequestParam(required = false) Long tenantId,
+                             @RequestParam(required = false) Long quoteId,
+                             @RequestParam(required = false) String formMode,
+                             Model model) {
+        Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
+
+        quoteManageWebService.removeLine(quoteForm, removeLine);
+
+        model.addAttribute("tenantId", resolvedTenantId);
+        model.addAttribute("quoteId", quoteId);
+        model.addAttribute("formMode", formMode == null ? "create" : formMode);
+        model.addAttribute("activeMenu", "quotes");
+
+        return "quote/quote-form";
+    }
+
+    @PostMapping
+    public String create(@Valid @ModelAttribute("quoteForm") QuoteForm quoteForm,
+                         BindingResult bindingResult,
+                         @RequestParam(required = false) Long tenantId,
+                         Model model,
+                         RedirectAttributes redirectAttributes) {
+
+        Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
+
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("formMode", "create");
+            model.addAttribute("tenantId", resolvedTenantId);
+            model.addAttribute("activeMenu", "quotes");
+            return "quote/quote-form";
+        }
+
+        Long quoteId = quoteManageWebService.create(resolvedTenantId, quoteForm);
+        redirectAttributes.addFlashAttribute("successMessage", "Preventivo creato con successo.");
+
+        return "redirect:/quotes/" + quoteId + "?tenantId=" + resolvedTenantId;
+    }
+
+    @PostMapping("/{id}")
+    public String update(@PathVariable Long id,
+                         @Valid @ModelAttribute("quoteForm") QuoteForm quoteForm,
+                         BindingResult bindingResult,
+                         @RequestParam(required = false) Long tenantId,
+                         Model model,
+                         RedirectAttributes redirectAttributes) {
+
+        Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
+
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("formMode", "edit");
+            model.addAttribute("quoteId", id);
+            model.addAttribute("tenantId", resolvedTenantId);
+            model.addAttribute("activeMenu", "quotes");
+            return "quote/quote-form";
+        }
+
+        Long quoteId = quoteManageWebService.update(resolvedTenantId, id, quoteForm);
+        redirectAttributes.addFlashAttribute("successMessage", "Preventivo aggiornato con successo.");
+
+        return "redirect:/quotes/" + quoteId + "?tenantId=" + resolvedTenantId;
+    }
+
+    @PostMapping(value = "/{id}", params = "addLine")
+    public String addLineEdit(@PathVariable Long id,
+                              @ModelAttribute("quoteForm") QuoteForm quoteForm,
+                              @RequestParam(required = false) Long tenantId,
+                              @RequestParam(required = false) String formMode,
+                              Model model) {
+        Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
+
+        quoteManageWebService.addLine(quoteForm);
+
+        model.addAttribute("tenantId", resolvedTenantId);
+        model.addAttribute("quoteId", id);
+        model.addAttribute("formMode", formMode == null ? "edit" : formMode);
+        model.addAttribute("activeMenu", "quotes");
+
+        return "quote/quote-form";
+    }
+
+    @PostMapping(value = "/{id}", params = "removeLine")
+    public String removeLineEdit(@PathVariable Long id,
+                                 @ModelAttribute("quoteForm") QuoteForm quoteForm,
+                                 @RequestParam int removeLine,
+                                 @RequestParam(required = false) Long tenantId,
+                                 @RequestParam(required = false) String formMode,
+                                 Model model) {
+        Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
+
+        quoteManageWebService.removeLine(quoteForm, removeLine);
+
+        model.addAttribute("tenantId", resolvedTenantId);
+        model.addAttribute("quoteId", id);
+        model.addAttribute("formMode", formMode == null ? "edit" : formMode);
+        model.addAttribute("activeMenu", "quotes");
+
+        return "quote/quote-form";
+    }
+
+}
