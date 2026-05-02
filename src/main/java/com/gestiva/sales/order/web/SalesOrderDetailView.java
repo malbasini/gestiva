@@ -16,8 +16,45 @@ public class SalesOrderDetailView {
     private String formattedSubtotalAmount;
     private String formattedTaxAmount;
     private String formattedTotalAmount;
-
     private List<SalesOrderDetailLineView> lines;
+
+    private Long deliveryNoteId;
+    private String deliveryNoteNumber;
+
+    public Long getDeliveryNoteId() {
+        return deliveryNoteId;
+    }
+
+    public void setDeliveryNoteId(Long deliveryNoteId) {
+        this.deliveryNoteId = deliveryNoteId;
+    }
+
+    public String getDeliveryNoteNumber() {
+        return deliveryNoteNumber;
+    }
+
+    public void setDeliveryNoteNumber(String deliveryNoteNumber) {
+        this.deliveryNoteNumber = deliveryNoteNumber;
+    }
+    
+    private boolean deliveryNoteCreatable;
+    private boolean deliveryNoteExists;
+
+    public boolean isDeliveryNoteCreatable() {
+        return deliveryNoteCreatable;
+    }
+
+    public void setDeliveryNoteCreatable(boolean deliveryNoteCreatable) {
+        this.deliveryNoteCreatable = deliveryNoteCreatable;
+    }
+
+    public boolean isDeliveryNoteExists() {
+        return deliveryNoteExists;
+    }
+
+    public void setDeliveryNoteExists(boolean deliveryNoteExists) {
+        this.deliveryNoteExists = deliveryNoteExists;
+    }
 
     private boolean actionable;
 

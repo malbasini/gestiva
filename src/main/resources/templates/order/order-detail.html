@@ -34,6 +34,26 @@
               <i class="bi bi-arrow-left"></i>
               <span>Torna alla lista</span>
             </a>
+            <form th:if="${order.deliveryNoteCreatable}"
+                  th:action="@{/orders/{id}/delivery-note(id=${order.id})}"
+                  method="post"
+                  style="display:inline-block; margin:0;"
+                  onsubmit="return confirm('Confermi di voler creare il DDT da questo ordine evaso?');">
+              <input type="hidden" name="tenantId" th:value="${tenantId}"/>
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <button type="submit" class="btn">
+                <i class="bi bi-truck"></i>
+                <span>Crea DDT</span>
+              </button>
+            </form>
+
+            <a class="btn"
+               th:if="${order.deliveryNoteExists}"
+               th:href="@{/delivery-notes/{id}(id=${order.deliveryNoteId}, tenantId=${tenantId})}">
+              <i class="bi bi-truck"></i>
+              <span th:text="${order.deliveryNoteNumber != null ? 'Apri ' + order.deliveryNoteNumber : 'Apri DDT'}">Apri DDT</span>
+            </a>
+
 
             <a class="btn" th:href="@{/orders/{id}/preview(id=${order.id}, tenantId=${tenantId})}" target="_blank">
               <i class="bi bi-eye"></i>
@@ -94,15 +114,23 @@
                             </span>
             </div>
           </div>
-          <div class="info-box">
-              <div class="label">Note</div>
-              <div class="muted" th:if="${order.status == 'FULFILLED'}">
-                <b>Ordine evaso. Non sono consentite ulteriori modifiche operative.</b>
-              </div>
-              <div class="muted" th:if="${order.status == 'CANCELLED'}">
-                <b>Ordine annullato. Documento mantenuto a storico.</b>
-              </div>
+          <div class="info-box" th:if="${(order.status == 'FULFILLED' and !order.deliveryNoteExists) or order.status == 'CANCELLED' or order.deliveryNoteExists}">
+            <div class="label">Note</div>
+            <div class="value" th:if="${order.status == 'FULFILLED' and !order.deliveryNoteExists}">
+              Ordine evaso. È possibile generare il DDT.
+            </div>
+            <div class="value" th:if="${order.status == 'CANCELLED'}">
+              Ordine annullato. Documento mantenuto a storico.
+            </div>
+            <div class="muted" th:if="${order.deliveryNoteExists}">
+              DDT associato:
+              <a th:href="@{/delivery-notes/{id}(id=${order.deliveryNoteId}, tenantId=${tenantId})}"
+                 th:text="${order.deliveryNoteNumber}">
+                DDT-2026-00001
+              </a>
+            </div>
           </div>
+
           <div class="info-box">
             <div class="label">Preventivo origine</div>
             <div class="value" th:text="${order.quoteId}">74</div>

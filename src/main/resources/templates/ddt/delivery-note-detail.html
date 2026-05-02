@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title th:text="'DDT ' + ${deliveryNote.ddtNumber}">Dettaglio DDT</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+  <main class="app-main">
+    <div class="page">
+      <div class="card">
+
+        <div th:replace="~{fragments/layout :: flashMessages}"></div>
+
+        <div class="breadcrumb">
+          <a th:href="@{/dashboard(tenantId=${tenantId})}">Dashboard</a> /
+          <a th:href="@{/orders(tenantId=${tenantId})}">Ordini</a> /
+          <span th:text="${deliveryNote.ddtNumber}">DDT-2026-00001</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title">Documento di trasporto</h1>
+            <div class="muted" th:text="${deliveryNote.ddtNumber}">DDT-2026-00001</div>
+          </div>
+
+          <div class="page-header-right">
+            <a class="btn btn-secondary" th:href="@{/orders/{id}(id=${deliveryNote.salesOrderId}, tenantId=${tenantId})}">
+              <i class="bi bi-arrow-left"></i>
+              <span>Torna all'ordine</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-box">
+            <div class="label">Cliente</div>
+            <div class="value" th:text="${deliveryNote.customerName}">Bianchi Srl</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Data DDT</div>
+            <div class="value" th:text="${deliveryNote.formattedDdtDate}">02/05/2026</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Stato</div>
+            <div class="value">
+                            <span class="badge"
+                                  th:classappend="${deliveryNote.status == 'ISSUED'} ? ' badge-confirmed' : ' badge-cancelled'"
+                                  th:text="${deliveryNote.status}">
+                                ISSUED
+                            </span>
+            </div>
+          </div>
+          <div class="info-box">
+            <div class="label">Ordine origine</div>
+            <div class="value" th:text="${deliveryNote.salesOrderId}">10</div>
+          </div>
+        </div>
+
+        <div class="info-grid three-cols">
+          <div class="info-box">
+            <div class="label">Causale trasporto</div>
+            <div class="value" th:text="${deliveryNote.transportReason != null ? deliveryNote.transportReason : '-'}">Vendita</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Porto / resa</div>
+            <div class="value" th:text="${deliveryNote.carriageCondition != null ? deliveryNote.carriageCondition : '-'}">Franco</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Vettore</div>
+            <div class="value" th:text="${deliveryNote.carrierName != null ? deliveryNote.carrierName : '-'}">-</div>
+          </div>
+        </div>
+
+        <table class="table">
+          <thead>
+          <tr>
+            <th>#</th>
+            <th>Descrizione</th>
+            <th class="text-right">Qtà</th>
+            <th>UM</th>
+            <th class="text-right">Prezzo</th>
+            <th class="text-right">Sconto %</th>
+            <th class="text-right">IVA %</th>
+            <th class="text-right">Totale</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="line : ${deliveryNote.lines}">
+            <td th:text="${line.lineNo}">1</td>
+            <td th:text="${line.description}">RIGA 1</td>
+            <td class="text-right" th:text="${line.formattedQuantity}">1,00</td>
+            <td th:text="${line.unitOfMeasure != null ? line.unitOfMeasure : '-'}">pz</td>
+            <td class="text-right" th:text="${line.formattedUnitPrice}">100,00 €</td>
+            <td class="text-right" th:text="${line.formattedDiscountPct + '%'}">10,00%</td>
+            <td class="text-right" th:text="${line.formattedTaxPct + '%'}">22,00%</td>
+            <td class="text-right" th:text="${line.formattedLineTotal}">109,80 €</td>
+          </tr>
+          </tbody>
+        </table>
+
+        <table class="totals">
+          <tr>
+            <td>Imponibile</td>
+            <td class="text-right" th:text="${deliveryNote.formattedSubtotalAmount}">140,00 €</td>
+          </tr>
+          <tr>
+            <td>IVA</td>
+            <td class="text-right" th:text="${deliveryNote.formattedTaxAmount}">30,80 €</td>
+          </tr>
+          <tr class="grand-total">
+            <td>Totale DDT</td>
+            <td class="text-right" th:text="${deliveryNote.formattedTotalAmount}">170,80 €</td>
+          </tr>
+        </table>
+
+        <div class="notes" th:if="${deliveryNote.notes != null and !#strings.isEmpty(deliveryNote.notes)}">
+          <strong>Note</strong><br/>
+          <span th:text="${deliveryNote.notes}">Note DDT</span>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
+
+</div>
+</body>
+</html>

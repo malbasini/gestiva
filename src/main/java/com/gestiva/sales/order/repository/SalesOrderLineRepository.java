@@ -8,6 +8,6 @@ import java.util.List;
 public interface SalesOrderLineRepository extends JpaRepository<SalesOrderLine, Long> {
 
     List<SalesOrderLine> findByTenantIdAndSalesOrderIdOrderByLineNoAsc(Long tenantId, Long salesOrderId);
-
     void deleteByTenantIdAndSalesOrderId(Long tenantId, Long salesOrderId);
+
 }
