@@ -19,6 +19,16 @@ public class SalesOrderDetailView {
 
     private List<SalesOrderDetailLineView> lines;
 
+    private boolean actionable;
+
+    public boolean isActionable() {
+        return actionable;
+    }
+
+    public void setActionable(boolean actionable) {
+        this.actionable = actionable;
+    }
+    
     public Long getId() {
         return id;
     }

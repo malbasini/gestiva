@@ -58,7 +58,7 @@ public class SalesOrderDetailWebService {
             l.setFormattedLineTotal(PdfFormatUtils.formatMoney(line.getLineTotal()));
             return l;
         }).toList());
-
+        view.setActionable("CONFIRMED".equals(order.getStatus()));
         return view;
     }
 }

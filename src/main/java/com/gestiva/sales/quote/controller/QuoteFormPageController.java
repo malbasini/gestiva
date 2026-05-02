@@ -33,6 +33,13 @@ public class QuoteFormPageController {
         Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
         model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(resolvedTenantId));
         model.addAttribute("quoteForm", quoteManageWebService.buildCreateForm());
+        var form = quoteManageWebService.buildCreateForm();
+        model.addAttribute("quoteForm", form);
+        model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(resolvedTenantId));
+        model.addAttribute("totalsPreview", quoteManageWebService.calculatePreviewTotals(form));
+        model.addAttribute("formMode", "create");
+        model.addAttribute("tenantId", resolvedTenantId);
+        model.addAttribute("activeMenu", "quotes");
         model.addAttribute("formMode", "create");
         model.addAttribute("tenantId", resolvedTenantId);
         model.addAttribute("activeMenu", "quotes");
@@ -41,7 +48,6 @@ public class QuoteFormPageController {
     }
 
     @GetMapping("/{id}/edit")
-
     public String editForm(@PathVariable Long id,
 
                            @RequestParam(required = false) Long tenantId,
@@ -51,6 +57,14 @@ public class QuoteFormPageController {
         Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
         model.addAttribute("quoteForm", quoteManageWebService.buildEditForm(resolvedTenantId, id));
         model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(resolvedTenantId));
+        var form = quoteManageWebService.buildEditForm(resolvedTenantId, id);
+        model.addAttribute("quoteForm", form);
+        model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(resolvedTenantId));
+        model.addAttribute("totalsPreview", quoteManageWebService.calculatePreviewTotals(form));
+        model.addAttribute("quoteId", id);
+        model.addAttribute("formMode", "edit");
+        model.addAttribute("tenantId", resolvedTenantId);
+        model.addAttribute("activeMenu", "quotes");
         model.addAttribute("quoteId", id);
         model.addAttribute("formMode", "edit");
         model.addAttribute("tenantId", resolvedTenantId);

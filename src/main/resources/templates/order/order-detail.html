@@ -34,14 +34,42 @@
               <i class="bi bi-arrow-left"></i>
               <span>Torna alla lista</span>
             </a>
+
             <a class="btn" th:href="@{/orders/{id}/preview(id=${order.id}, tenantId=${tenantId})}" target="_blank">
               <i class="bi bi-eye"></i>
               <span>Preview</span>
             </a>
+
             <a class="btn" th:href="@{/api/orders/{id}/pdf(id=${order.id}, tenantId=${tenantId})}">
               <i class="bi bi-file-earmark-pdf"></i>
               <span>PDF</span>
             </a>
+
+            <form th:if="${order.actionable}"
+                  th:action="@{/orders/{id}/fulfill(id=${order.id})}"
+                  method="post"
+                  style="display:inline-block; margin:0;"
+                  onsubmit="return confirm('Confermi di voler evadere questo ordine?');">
+              <input type="hidden" name="tenantId" th:value="${tenantId}"/>
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <button type="submit" class="btn">
+                <i class="bi bi-check2-circle"></i>
+                <span>Evadi ordine</span>
+              </button>
+            </form>
+
+            <form th:if="${order.actionable}"
+                  th:action="@{/orders/{id}/cancel(id=${order.id})}"
+                  method="post"
+                  style="display:inline-block; margin:0;"
+                  onsubmit="return confirm('Confermi di voler annullare questo ordine? L\'operazione manterrà il documento a storico.');">
+              <input type="hidden" name="tenantId" th:value="${tenantId}"/>
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <button type="submit" class="btn btn-secondary">
+                <i class="bi bi-x-circle"></i>
+                <span>Annulla ordine</span>
+              </button>
+            </form>
           </div>
         </div>
 
@@ -65,6 +93,15 @@
                                 CONFIRMED
                             </span>
             </div>
+          </div>
+          <div class="info-box">
+              <div class="label">Note</div>
+              <div class="muted" th:if="${order.status == 'FULFILLED'}">
+                <b>Ordine evaso. Non sono consentite ulteriori modifiche operative.</b>
+              </div>
+              <div class="muted" th:if="${order.status == 'CANCELLED'}">
+                <b>Ordine annullato. Documento mantenuto a storico.</b>
+              </div>
           </div>
           <div class="info-box">
             <div class="label">Preventivo origine</div>

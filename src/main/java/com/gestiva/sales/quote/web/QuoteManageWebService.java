@@ -2,6 +2,7 @@ package com.gestiva.sales.quote.web;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
+import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.sales.order.repository.SalesOrderRepository;
 import com.gestiva.sales.quote.dto.QuoteCreateRequest;
 import com.gestiva.sales.quote.dto.QuoteLineRequest;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -163,5 +165,45 @@ public class QuoteManageWebService {
         if ("ACCEPTED".equals(quote.getStatus()) && converted) {
             throw new BusinessException("Il preventivo è già stato convertito in ordine e non può più essere modificato.");
         }
+    }
+    public QuoteTotalsPreviewView calculatePreviewTotals(QuoteForm form) {
+        BigDecimal subtotal = BigDecimal.ZERO;
+        BigDecimal tax = BigDecimal.ZERO;
+
+        if (form.getLines() != null) {
+            for (QuoteLineForm line : form.getLines()) {
+                if (line == null) {
+                    continue;
+                }
+
+                BigDecimal quantity = defaultZero(line.getQuantity());
+                BigDecimal unitPrice = defaultZero(line.getUnitPrice());
+                BigDecimal discountPct = defaultZero(line.getDiscountPct());
+                BigDecimal taxPct = defaultZero(line.getTaxPct());
+
+                BigDecimal gross = quantity.multiply(unitPrice);
+
+                BigDecimal discountAmount = gross
+                        .multiply(discountPct)
+                        .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+
+                BigDecimal taxableLine = gross.subtract(discountAmount);
+
+                BigDecimal taxAmount = taxableLine
+                        .multiply(taxPct)
+                        .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+
+                subtotal = subtotal.add(taxableLine);
+                tax = tax.add(taxAmount);
+            }
+        }
+
+        BigDecimal total = subtotal.add(tax);
+
+        QuoteTotalsPreviewView view = new QuoteTotalsPreviewView();
+        view.setFormattedSubtotalAmount(PdfFormatUtils.formatMoney(subtotal));
+        view.setFormattedTaxAmount(PdfFormatUtils.formatMoney(tax));
+        view.setFormattedTotalAmount(PdfFormatUtils.formatMoney(total));
+        return view;
     }
 }
