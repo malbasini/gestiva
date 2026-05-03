@@ -11,43 +11,39 @@
     }
 
     h1 {
-      margin: 0 0 4px 0;
-      font-size: 24px;
+      margin: 0 0 6px 0;
+      font-size: 28px;
+      font-weight: 700;
     }
 
-    .muted {
+    .doc-number {
       color: #666;
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    .meta {
+      width: 100%;
+      border-collapse: collapse;
       margin-bottom: 18px;
     }
 
-    .grid {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 8px;
-      margin-bottom: 16px;
-    }
-
-    .grid td {
+    .meta td {
+      padding: 10px 0;
       vertical-align: top;
-      width: 25%;
+      border-bottom: 1px solid #ddd;
     }
 
-    .box {
-      border: 1px solid #dcdcdc;
-      border-radius: 6px;
-      padding: 10px;
-      min-height: 58px;
+    .meta strong {
+      font-weight: 700;
     }
 
-    .label {
-      font-size: 11px;
-      color: #666;
-      margin-bottom: 4px;
+    .section-line {
+      margin: 14px 0 18px 0;
     }
 
-    .value {
-      font-size: 12px;
-      font-weight: bold;
+    .section-line strong {
+      font-weight: 700;
     }
 
     table.lines {
@@ -65,6 +61,7 @@
 
     table.lines th {
       background: #f5f5f5;
+      font-weight: 700;
     }
 
     .right {
@@ -85,7 +82,7 @@
 
     .grand-total td {
       font-size: 16px;
-      font-weight: bold;
+      font-weight: 700;
       padding-top: 10px;
     }
 
@@ -98,59 +95,45 @@
 <body>
 
 <h1>Documento di trasporto</h1>
-<div class="muted" th:text="${deliveryNote.ddtNumber}">DDT-2026-00001</div>
+<div class="doc-number" th:text="${deliveryNote.ddtNumber}">DDT-2026-00001</div>
 
-<table class="grid">
+<table class="meta">
   <tr>
-    <td>
-      <div class="box">
-        <div class="label">Cliente</div>
-        <div class="value" th:text="${deliveryNote.customerName}">Rossi Srl</div>
-      </div>
+    <td style="width:33%;">
+      <strong>Data DDT:</strong>
+      <span th:text="${deliveryNote.formattedDdtDate}">03/05/2026</span>
     </td>
-    <td>
-      <div class="box">
-        <div class="label">Data DDT</div>
-        <div class="value" th:text="${deliveryNote.formattedDdtDate}">03/05/2026</div>
-      </div>
+    <td style="width:33%;">
+      <strong>Stato:</strong>
+      <span th:text="${deliveryNote.status}">ISSUED</span>
     </td>
-    <td>
-      <div class="box">
-        <div class="label">Stato</div>
-        <div class="value" th:text="${deliveryNote.status}">ISSUED</div>
-      </div>
-    </td>
-    <td>
-      <div class="box">
-        <div class="label">Ordine origine</div>
-        <div class="value" th:text="${deliveryNote.salesOrderId}">9</div>
-      </div>
+    <td style="width:34%;">
+      <strong>Valuta:</strong>
+      <span th:text="${deliveryNote.currencyCode}">EUR</span>
     </td>
   </tr>
 </table>
 
-<table class="grid">
-  <tr>
-    <td>
-      <div class="box">
-        <div class="label">Causale trasporto</div>
-        <div class="value" th:text="${deliveryNote.transportReason != null and !#strings.isEmpty(deliveryNote.transportReason) ? deliveryNote.transportReason : '-'}">Vendita</div>
-      </div>
-    </td>
-    <td>
-      <div class="box">
-        <div class="label">Porto / resa</div>
-        <div class="value" th:text="${deliveryNote.carriageCondition != null and !#strings.isEmpty(deliveryNote.carriageCondition) ? deliveryNote.carriageCondition : '-'}">Franco</div>
-      </div>
-    </td>
-    <td>
-      <div class="box">
-        <div class="label">Vettore</div>
-        <div class="value" th:text="${deliveryNote.carrierName != null and !#strings.isEmpty(deliveryNote.carrierName) ? deliveryNote.carrierName : '-'}">-</div>
-      </div>
-    </td>
-  </tr>
-</table>
+<div class="section-line">
+  <strong>Cliente:</strong>
+  <span th:text="${deliveryNote.customerName}">Rossi Srl</span>
+</div>
+
+<div class="section-line">
+  <strong>Ordine di origine:</strong>
+  <span th:text="${deliveryNote.salesOrderId}">29</span>
+</div>
+
+<div class="section-line">
+  <strong>Causale trasporto:</strong>
+  <span th:text="${deliveryNote.transportReason != null and !#strings.isEmpty(deliveryNote.transportReason) ? deliveryNote.transportReason : '-'}">Vendita</span>
+  <br></br>
+  <strong>Porto / resa:</strong>
+  <span th:text="${deliveryNote.carriageCondition != null and !#strings.isEmpty(deliveryNote.carriageCondition) ? deliveryNote.carriageCondition : '-'}">Franco</span>
+  <br></br>
+  <strong>Vettore:</strong>
+  <span th:text="${deliveryNote.carrierName != null and !#strings.isEmpty(deliveryNote.carrierName) ? deliveryNote.carrierName : '-'}">-</span>
+</div>
 
 <table class="lines">
   <thead>

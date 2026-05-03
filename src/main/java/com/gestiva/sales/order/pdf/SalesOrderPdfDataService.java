@@ -101,7 +101,12 @@ public class SalesOrderPdfDataService {
             l.setFormattedDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct()));
             l.setFormattedTaxPct(PdfFormatUtils.formatDecimal(line.getTaxPct()));
             l.setFormattedTaxAmount(PdfFormatUtils.formatMoney(line.getTaxAmount()));
-            l.setFormattedLineTotal(PdfFormatUtils.formatMoney(line.getLineTotal()));
+            java.math.BigDecimal gross = line.getQuantity().multiply(line.getUnitPrice());
+            java.math.BigDecimal discountAmount = gross
+                    .multiply(line.getDiscountPct())
+                    .divide(new java.math.BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
+            java.math.BigDecimal taxable = gross.subtract(discountAmount);
+            l.setFormattedLineTotal(PdfFormatUtils.formatMoney(taxable));
             return l;
 
         }).toList());
