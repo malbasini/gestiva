@@ -23,6 +23,44 @@ public class DeliveryNoteDetailView {
     private String carrierName;
     private String notes;
 
+
+    private boolean invoiceCreatable;
+    private boolean invoiceExists;
+    private Long invoiceId;
+    private String invoiceNumber;
+
+    public boolean isInvoiceCreatable() {
+        return invoiceCreatable;
+    }
+
+    public void setInvoiceCreatable(boolean invoiceCreatable) {
+        this.invoiceCreatable = invoiceCreatable;
+    }
+
+    public boolean isInvoiceExists() {
+        return invoiceExists;
+    }
+
+    public void setInvoiceExists(boolean invoiceExists) {
+        this.invoiceExists = invoiceExists;
+    }
+
+    public Long getInvoiceId() {
+        return invoiceId;
+    }
+
+    public void setInvoiceId(Long invoiceId) {
+        this.invoiceId = invoiceId;
+    }
+
+    public String getInvoiceNumber() {
+        return invoiceNumber;
+    }
+
+    public void setInvoiceNumber(String invoiceNumber) {
+        this.invoiceNumber = invoiceNumber;
+    }
+
     private List<DeliveryNoteDetailLineView> lines;
 
     public Long getId() {

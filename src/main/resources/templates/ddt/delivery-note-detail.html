@@ -34,6 +34,24 @@
               <i class="bi bi-arrow-left"></i>
               <span>Torna all'ordine</span>
             </a>
+            <form th:if="${deliveryNote.invoiceCreatable}"
+                  th:action="@{/delivery-notes/{id}/invoice(id=${deliveryNote.id})}"
+                  method="post"
+                  style="display:inline-block; margin:0;"
+                  onsubmit="return confirm('Confermi di voler creare la fattura da questo DDT?');">
+              <input type="hidden" name="tenantId" th:value="${tenantId}"/>
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <button type="submit" class="btn">
+                <i class="bi bi-receipt"></i>
+                <span>Crea fattura</span>
+              </button>
+            </form>
+            <a class="btn"
+               th:if="${deliveryNote.invoiceExists}"
+               th:href="@{/invoices/{id}(id=${deliveryNote.invoiceId}, tenantId=${tenantId})}">
+              <i class="bi bi-receipt"></i>
+              <span th:text="${deliveryNote.invoiceNumber != null ? 'Apri ' + deliveryNote.invoiceNumber : 'Apri fattura'}">Apri fattura</span>
+            </a>
             <a class="btn"
                th:href="@{/delivery-notes/{id}/preview(id=${deliveryNote.id}, tenantId=${tenantId})}">
               <i class="bi bi-eye"></i>
@@ -84,6 +102,20 @@
           <div class="info-box">
             <div class="label">Vettore</div>
             <div class="value" th:text="${deliveryNote.carrierName != null ? deliveryNote.carrierName : '-'}">-</div>
+          </div>
+          <div class="info-box">
+              <div class="label">Note</div>
+              <div class="muted" th:if="${deliveryNote.invoiceExists}">
+                Fattura associata:
+                <a th:href="@{/invoices/{id}(id=${deliveryNote.invoiceId}, tenantId=${tenantId})}"
+                   th:text="${deliveryNote.invoiceNumber}">
+                  INV-2026-00001
+                </a>
+              </div>
+
+              <div class="muted" th:if="${deliveryNote.invoiceCreatable}">
+                DDT emesso: è possibile generare la fattura.
+              </div>
           </div>
         </div>
 

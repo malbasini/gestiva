@@ -1,5 +1,6 @@
 package com.gestiva.logistics.ddt.web;
 
+import com.gestiva.billing.invoice.repository.InvoiceRepository;
 import com.gestiva.common.exception.NotFoundException;
 import com.gestiva.crm.contact.repository.CustomerRepository;
 import com.gestiva.documents.pdf.PdfFormatUtils;
@@ -15,13 +16,17 @@ public class DeliveryNoteDetailWebService {
     private final DeliveryNoteRepository deliveryNoteRepository;
     private final DeliveryNoteLineRepository deliveryNoteLineRepository;
     private final CustomerRepository customerRepository;
+    private final InvoiceRepository invoiceRepository;
 
     public DeliveryNoteDetailWebService(DeliveryNoteRepository deliveryNoteRepository,
                                         DeliveryNoteLineRepository deliveryNoteLineRepository,
-                                        CustomerRepository customerRepository) {
+                                        CustomerRepository customerRepository,
+                                        InvoiceRepository invoiceRepository) {
+
         this.deliveryNoteRepository = deliveryNoteRepository;
         this.deliveryNoteLineRepository = deliveryNoteLineRepository;
         this.customerRepository = customerRepository;
+        this.invoiceRepository = invoiceRepository;
     }
 
     public DeliveryNoteDetailView getDetail(Long tenantId, Long deliveryNoteId) {
@@ -69,6 +74,19 @@ public class DeliveryNoteDetailWebService {
             l.setFormattedLineTotal(PdfFormatUtils.formatMoney(taxable));
             return l;
         }).toList());
+        var invoiceOpt = invoiceRepository.findByTenantIdAndDeliveryNoteId(tenantId, deliveryNoteId);
+
+        view.setInvoiceExists(invoiceOpt.isPresent());
+        view.setInvoiceCreatable("ISSUED".equals(note.getStatus()) && invoiceOpt.isEmpty());
+
+        invoiceOpt.ifPresent(invoice -> {
+            view.setInvoiceId(invoice.getId());
+            view.setInvoiceNumber(invoice.getInvoiceNumber());
+        });
+
+
+
+
 
         return view;
     }
