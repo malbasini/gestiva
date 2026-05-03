@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title th:text="'Preview DDT ' + ${deliveryNote.ddtNumber}">Preview DDT</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+  <main class="app-main">
+    <div class="page">
+      <div class="card">
+
+        <div class="alert" style="background:#f3e7b3; color:#7a5a00; border:1px solid #e2cb6c; font-weight:700;">
+          Anteprima HTML del DDT
+        </div>
+
+        <div class="actions">
+          <a class="btn btn-secondary"
+             th:href="@{/api/delivery-notes/{id}/pdf(id=${deliveryNote.id}, tenantId=${tenantId})}"
+             target="_blank">
+            <i class="bi bi-eye"></i>
+            <span>Apri PDF</span>
+          </a>
+
+          <a class="btn"
+             th:href="@{/api/delivery-notes/{id}/pdf(id=${deliveryNote.id}, tenantId=${tenantId})}">
+            <i class="bi bi-file-earmark-pdf"></i>
+            <span>Scarica PDF</span>
+          </a>
+        </div>
+
+        <h1 class="page-title">Documento di trasporto</h1>
+        <div class="muted" th:text="${deliveryNote.ddtNumber}">DDT-2026-00001</div>
+
+        <div style="margin-top:28px; padding-bottom:12px; border-bottom:1px solid var(--border);">
+          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px;">
+            <div>
+              <strong>Data DDT:</strong>
+              <span th:text="${deliveryNote.formattedDdtDate}">03/05/2026</span>
+            </div>
+            <div>
+              <strong>Stato:</strong>
+              <span th:text="${deliveryNote.status}">ISSUED</span>
+            </div>
+            <div>
+              <strong>Valuta:</strong>
+              <span th:text="${deliveryNote.currencyCode}">EUR</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:18px;">
+          <strong>Cliente:</strong>
+          <span th:text="${deliveryNote.customerName}">Rossi Srl</span>
+        </div>
+
+        <div style="margin-top:12px;">
+          <strong>Ordine di origine:</strong>
+          <span th:text="${deliveryNote.salesOrderId}">29</span>
+        </div>
+
+        <div style="margin-top:12px;">
+          <strong>Causale trasporto:</strong>
+          <span th:text="${deliveryNote.transportReason != null and !#strings.isEmpty(deliveryNote.transportReason) ? deliveryNote.transportReason : '-'}">Vendita</span>
+          &nbsp;&nbsp;&nbsp;
+          <strong>Porto / resa:</strong>
+          <span th:text="${deliveryNote.carriageCondition != null and !#strings.isEmpty(deliveryNote.carriageCondition) ? deliveryNote.carriageCondition : '-'}">Franco</span>
+          &nbsp;&nbsp;&nbsp;
+          <strong>Vettore:</strong>
+          <span th:text="${deliveryNote.carrierName != null and !#strings.isEmpty(deliveryNote.carrierName) ? deliveryNote.carrierName : '-'}">-</span>
+        </div>
+
+        <table class="table" style="margin-top:24px;">
+          <thead>
+          <tr>
+            <th>#</th>
+            <th>Descrizione</th>
+            <th class="text-right">Qtà</th>
+            <th>UM</th>
+            <th class="text-right">Prezzo</th>
+            <th class="text-right">Sconto %</th>
+            <th class="text-right">IVA %</th>
+            <th class="text-right">Totale</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="line : ${deliveryNote.lines}">
+            <td th:text="${line.lineNo}">1</td>
+            <td th:text="${line.description}">Modulo CRM</td>
+            <td class="text-right" th:text="${line.formattedQuantity}">1,00</td>
+            <td th:text="${line.unitOfMeasure != null and !#strings.isEmpty(line.unitOfMeasure) ? line.unitOfMeasure : '-'}">pz</td>
+            <td class="text-right" th:text="${line.formattedUnitPrice}">1.000,00 €</td>
+            <td class="text-right" th:text="${line.formattedDiscountPct + '%'}">0,00%</td>
+            <td class="text-right" th:text="${line.formattedTaxPct + '%'}">22,00%</td>
+            <td class="text-right" th:text="${line.formattedLineTotal}">1.220,00 €</td>
+          </tr>
+          </tbody>
+        </table>
+
+        <table class="totals">
+          <tr>
+            <td>Imponibile</td>
+            <td class="text-right" th:text="${deliveryNote.formattedSubtotalAmount}">1.000,00 €</td>
+          </tr>
+          <tr>
+            <td>IVA</td>
+            <td class="text-right" th:text="${deliveryNote.formattedTaxAmount}">220,00 €</td>
+          </tr>
+          <tr class="grand-total">
+            <td>Totale DDT</td>
+            <td class="text-right" th:text="${deliveryNote.formattedTotalAmount}">1.220,00 €</td>
+          </tr>
+        </table>
+
+        <div class="notes" th:if="${deliveryNote.notes != null and !#strings.isEmpty(deliveryNote.notes)}">
+          <strong>Note</strong><br/>
+          <span th:text="${deliveryNote.notes}">Note DDT</span>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
+
+</div>
+</body>
+</html>

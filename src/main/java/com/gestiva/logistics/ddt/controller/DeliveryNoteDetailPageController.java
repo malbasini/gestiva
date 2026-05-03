@@ -30,7 +30,7 @@ public class DeliveryNoteDetailPageController {
 
         model.addAttribute("deliveryNote", deliveryNote);
         model.addAttribute("tenantId", resolvedTenantId);
-        model.addAttribute("activeMenu", "orders");
+        model.addAttribute("activeMenu", "ddt");
 
         return "ddt/delivery-note-detail";
     }

@@ -34,6 +34,16 @@
               <i class="bi bi-arrow-left"></i>
               <span>Torna all'ordine</span>
             </a>
+            <a class="btn"
+               th:href="@{/delivery-notes/{id}/preview(id=${deliveryNote.id}, tenantId=${tenantId})}">
+              <i class="bi bi-eye"></i>
+              <span>Preview</span>
+            </a>
+            <a class="btn"
+               th:href="@{/api/delivery-notes/{id}/pdf(id=${deliveryNote.id}, tenantId=${tenantId})}">
+              <i class="bi bi-file-earmark-pdf"></i>
+              <span>PDF</span>
+            </a>
           </div>
         </div>
 

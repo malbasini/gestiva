@@ -38,6 +38,12 @@
                 <i class="bi bi-box-seam"></i>
                 <span>Ordini</span>
             </a>
+
+            <a th:href="@{/delivery-notes(tenantId=${tenantId})}"
+               th:classappend="${activeMenu == 'ddt'} ? ' active' : ''">
+                <i class="bi bi-truck"></i>
+                <span>DDT</span>
+            </a>
         </nav>
     </div>
 </header>

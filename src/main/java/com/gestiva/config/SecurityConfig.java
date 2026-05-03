@@ -22,7 +22,12 @@ public class SecurityConfig {
                         .requestMatchers("/orders/**").permitAll()
                         .requestMatchers("/customers/**").permitAll()
                         .requestMatchers("/delivery-notes/**").permitAll()
+                        .requestMatchers("/api/delivery-notes/**").permitAll()
                         .requestMatchers("/", "/dashboard").permitAll()
+
+
+
+
 
                         .anyRequest().authenticated()
                 )
