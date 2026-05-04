@@ -40,11 +40,9 @@ public class InvoicePdfController {
     }
 
     @GetMapping("/{id}/preview")
-    public ResponseEntity<byte[]> preview(@PathVariable Long id,
-                                              @RequestParam(required = false) Long tenantId) {
-
+    public ResponseEntity<byte[]> previewPdf(@PathVariable Long id,
+                                             @RequestParam(required = false) Long tenantId) {
         Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
-
         byte[] pdf = invoicePdfService.generatePdf(resolvedTenantId, id);
 
         HttpHeaders headers = new HttpHeaders();

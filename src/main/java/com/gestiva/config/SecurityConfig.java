@@ -25,6 +25,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/delivery-notes/**").permitAll()
                         .requestMatchers("/", "/dashboard").permitAll()
                         .requestMatchers("/invoices/**").permitAll()
+                        .requestMatchers("/api/invoices/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(Customizer.withDefaults())

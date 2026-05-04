@@ -20,7 +20,7 @@
 
         <div class="actions">
           <a class="btn btn-secondary"
-             th:href="@{/api/invoices/{id}/pdf(id=${invoice.id}, tenantId=${tenantId})}"
+             th:href="@{/api/invoices/{id}/preview(id=${invoice.id}, tenantId=${tenantId})}"
              target="_blank">
             <i class="bi bi-eye"></i>
             <span>Apri PDF</span>

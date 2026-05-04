@@ -28,28 +28,20 @@
             <h1 class="page-title">Fattura</h1>
             <div class="muted" th:text="${invoice.invoiceNumber}">INV-2026-00001</div>
           </div>
-
-          <a class="btn"
-             th:href="@{/invoices/{id}/preview(id=${invoice.id}, tenantId=${tenantId})}">
-            <i class="bi bi-eye"></i>
-            <span>Preview</span>
-          </a>
-
-          <a class="btn"
-             th:href="@{/api/invoices/{id}/pdf(id=${invoice.id}, tenantId=${tenantId})}">
-            <i class="bi bi-file-earmark-pdf"></i>
-            <span>PDF</span>
-          </a>
-
-
-
-
-
-
           <div class="page-header-right">
             <a class="btn btn-secondary" th:href="@{/delivery-notes/{id}(id=${invoice.deliveryNoteId}, tenantId=${tenantId})}">
               <i class="bi bi-arrow-left"></i>
               <span>Torna al DDT</span>
+            </a>
+            <a class="btn"
+               th:href="@{/api/invoices/{id}/preview(id=${invoice.id}, tenantId=${tenantId})}">
+              <i class="bi bi-eye"></i>
+              <span>Preview</span>
+            </a>
+            <a class="btn"
+               th:href="@{/api/invoices/{id}/pdf(id=${invoice.id}, tenantId=${tenantId})}">
+              <i class="bi bi-file-earmark-pdf"></i>
+              <span>PDF</span>
             </a>
           </div>
         </div>
