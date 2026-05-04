@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Fatture</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+  <main class="app-main">
+    <div class="page">
+      <div class="card">
+        <div class="breadcrumb">
+          <a th:href="@{/dashboard(tenantId=${tenantId})}">Dashboard</a> /
+          <span>Fatture</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title">Fatture</h1>
+            <div class="muted">Elenco fatture generate dai DDT</div>
+          </div>
+        </div>
+
+        <form method="get" th:action="@{/invoices}" class="filters">
+          <input type="hidden" name="tenantId" th:value="${tenantId}"/>
+
+          <input type="text" name="search" placeholder="Cerca numero fattura" th:value="${search}"/>
+
+          <select name="status">
+            <option value="">Tutti gli stati</option>
+            <option value="ISSUED" th:selected="${status == 'ISSUED'}">ISSUED</option>
+            <option value="CANCELLED" th:selected="${status == 'CANCELLED'}">CANCELLED</option>
+          </select>
+
+          <input type="number" name="customerId" placeholder="Customer ID" th:value="${customerId}"/>
+          <input type="number" name="deliveryNoteId" placeholder="DDT ID" th:value="${deliveryNoteId}"/>
+
+          <button type="submit" class="btn">Filtra</button>
+
+          <a class="btn btn-secondary" th:href="@{/invoices(tenantId=${tenantId})}">
+            Reset
+          </a>
+        </form>
+
+        <table class="table">
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Numero</th>
+            <th>Data</th>
+            <th>Cliente</th>
+            <th>Stato</th>
+            <th>DDT</th>
+            <th class="text-right">Totale</th>
+            <th>Azioni</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:if="${#lists.isEmpty(invoicesPage.content)}">
+            <td colspan="8" class="muted">Nessuna fattura trovata.</td>
+          </tr>
+          <tr th:each="invoice : ${invoicesPage.content}">
+            <td th:text="${invoice.id}">1</td>
+            <td th:text="${invoice.invoiceNumber}">INV-2026-00001</td>
+            <td th:text="${invoice.formattedInvoiceDate}">03/05/2026</td>
+            <td th:text="${invoice.customerName}">Rossi Srl</td>
+            <td>
+                            <span class="badge"
+                                  th:classappend="${invoice.status == 'ISSUED'} ? ' badge-confirmed' : ' badge-cancelled'"
+                                  th:text="${invoice.status}">
+                                ISSUED
+                            </span>
+            </td>
+            <td th:text="${invoice.deliveryNoteId}">1</td>
+            <td class="text-right" th:text="${invoice.formattedTotalAmount}">170,80 €</td>
+            <td class="link-actions">
+              <a th:href="@{/invoices/{id}(id=${invoice.id}, tenantId=${tenantId})}">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>Dettaglio</span>
+              </a>
+              <a th:href="@{/delivery-notes/{id}(id=${invoice.deliveryNoteId}, tenantId=${tenantId})}">
+                <i class="bi bi-truck"></i>
+                <span>DDT</span>
+              </a>
+              <a th:href="@{/invoices/{id}/preview(id=${invoice.id}, tenantId=${tenantId})}">
+                <i class="bi bi-eye"></i>
+                <span>Preview</span>
+              </a>
+              <a th:href="@{/api/invoices/{id}/pdf(id=${invoice.id}, tenantId=${tenantId})}">
+                <i class="bi bi-file-earmark-pdf"></i>
+                <span>PDF</span>
+              </a>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+
+        <div class="pagination">
+          <a th:if="${!invoicesPage.first}"
+             th:href="@{/invoices(page=${invoicesPage.page - 1}, size=${invoicesPage.size}, search=${search}, status=${status}, customerId=${customerId}, deliveryNoteId=${deliveryNoteId}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
+            ← Precedente
+          </a>
+
+          <span>
+                        Pagina <strong th:text="${invoicesPage.page + 1}">1</strong>
+                        di <strong th:text="${invoicesPage.totalPages}">1</strong>
+                        — Totale elementi: <strong th:text="${invoicesPage.totalElements}">0</strong>
+                    </span>
+
+          <a th:if="${!invoicesPage.last}"
+             th:href="@{/invoices(page=${invoicesPage.page + 1}, size=${invoicesPage.size}, search=${search}, status=${status}, customerId=${customerId}, deliveryNoteId=${deliveryNoteId}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
+            Successiva →
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
+</div>
+</body>
+</html>

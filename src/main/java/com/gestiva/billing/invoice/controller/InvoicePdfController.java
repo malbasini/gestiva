@@ -1,20 +1,20 @@
-package com.gestiva.logistics.ddt.controller;
+package com.gestiva.billing.invoice.controller;
 
-import com.gestiva.logistics.ddt.service.DeliveryNotePdfService;
+import com.gestiva.billing.invoice.service.InvoicePdfService;
 import com.gestiva.security.usercontext.TenantContext;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/delivery-notes")
-public class DeliveryNotePdfController {
+@RequestMapping("/api/invoices")
+public class InvoicePdfController {
 
-    private final DeliveryNotePdfService deliveryNotePdfService;
+    private final InvoicePdfService invoicePdfService;
     private final TenantContext tenantContext;
 
-    public DeliveryNotePdfController(DeliveryNotePdfService deliveryNotePdfService,
-                                     TenantContext tenantContext) {
-        this.deliveryNotePdfService = deliveryNotePdfService;
+    public InvoicePdfController(InvoicePdfService invoicePdfService,
+                                TenantContext tenantContext) {
+        this.invoicePdfService = invoicePdfService;
         this.tenantContext = tenantContext;
     }
 
@@ -24,13 +24,13 @@ public class DeliveryNotePdfController {
 
         Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
 
-        byte[] pdf = deliveryNotePdfService.generatePdf(resolvedTenantId, id);
+        byte[] pdf = invoicePdfService.generatePdf(resolvedTenantId, id);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDisposition(
                 ContentDisposition.attachment()
-                        .filename("ddt-" + id + ".pdf")
+                        .filename("invoice-" + id + ".pdf")
                         .build()
         );
 
@@ -39,17 +39,19 @@ public class DeliveryNotePdfController {
                 .body(pdf);
     }
 
-    @GetMapping("/{id}/pdf/preview")
-    public ResponseEntity<byte[]> previewPdf(@PathVariable Long id,
-                                             @RequestParam(required = false) Long tenantId) {
+    @GetMapping("/{id}/preview")
+    public ResponseEntity<byte[]> preview(@PathVariable Long id,
+                                              @RequestParam(required = false) Long tenantId) {
+
         Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
-        byte[] pdf = deliveryNotePdfService.generatePdf(resolvedTenantId, id);
+
+        byte[] pdf = invoicePdfService.generatePdf(resolvedTenantId, id);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDisposition(
                 ContentDisposition.inline()
-                        .filename("ddt-" + id + ".pdf")
+                        .filename("invoice-" + id + ".pdf")
                         .build()
         );
 

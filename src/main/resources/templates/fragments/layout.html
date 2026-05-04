@@ -44,6 +44,12 @@
                 <i class="bi bi-truck"></i>
                 <span>DDT</span>
             </a>
+
+            <a th:href="@{/invoices(tenantId=${tenantId})}"
+               th:classappend="${activeMenu == 'invoices'} ? ' active' : ''">
+                <i class="bi bi-receipt-cutoff"></i>
+                <span>Fatture</span>
+            </a>
         </nav>
     </div>
 </header>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #222;
+            margin: 24px;
+        }
+
+        h1 {
+            margin: 0 0 6px 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .doc-number {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .meta {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 18px;
+        }
+
+        .meta td {
+            padding: 10px 0;
+            vertical-align: top;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .section-line {
+            margin: 14px 0 18px 0;
+        }
+
+        table.lines {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        table.lines th,
+        table.lines td {
+            border-bottom: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        table.lines th {
+            background: #f5f5f5;
+            font-weight: 700;
+        }
+
+        .right {
+            text-align: right !important;
+        }
+
+        table.totals {
+            width: 320px;
+            margin-left: auto;
+            margin-top: 18px;
+            border-collapse: collapse;
+        }
+
+        table.totals td {
+            border: none;
+            padding: 6px 0;
+        }
+
+        .grand-total td {
+            font-size: 16px;
+            font-weight: 700;
+            padding-top: 10px;
+        }
+
+        .notes {
+            margin-top: 20px;
+            padding-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Fattura</h1>
+<div class="doc-number" th:text="${invoice.invoiceNumber}">INV-2026-00001</div>
+
+<table class="meta">
+    <tr>
+        <td style="width:33%;">
+            <strong>Data fattura:</strong>
+            <span th:text="${invoice.formattedInvoiceDate}">03/05/2026</span>
+        </td>
+        <td style="width:33%;">
+            <strong>Stato:</strong>
+            <span th:text="${invoice.status}">ISSUED</span>
+        </td>
+        <td style="width:34%;">
+            <strong>Valuta:</strong>
+            <span th:text="${invoice.currencyCode}">EUR</span>
+        </td>
+    </tr>
+</table>
+
+<div class="section-line">
+    <strong>Cliente:</strong>
+    <span th:text="${invoice.customerName}">Rossi Srl</span>
+</div>
+
+<div class="section-line">
+    <strong>DDT di origine:</strong>
+    <span th:text="${invoice.deliveryNoteId}">1</span>
+    &nbsp;&nbsp;&nbsp;
+    <strong>Ordine di origine:</strong>
+    <span th:text="${invoice.salesOrderId}">29</span>
+</div>
+
+<table class="lines">
+    <thead>
+    <tr>
+        <th>#</th>
+        <th>Descrizione</th>
+        <th class="right">Qtà</th>
+        <th>UM</th>
+        <th class="right">Prezzo</th>
+        <th class="right">Sconto %</th>
+        <th class="right">IVA %</th>
+        <th class="right">Totale</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="line : ${invoice.lines}">
+        <td th:text="${line.lineNo}">1</td>
+        <td th:text="${line.description}">RIGA 1</td>
+        <td class="right" th:text="${line.formattedQuantity}">1,00</td>
+        <td th:text="${line.unitOfMeasure != null and !#strings.isEmpty(line.unitOfMeasure) ? line.unitOfMeasure : '-'}">pz</td>
+        <td class="right" th:text="${line.formattedUnitPrice}">100,00 €</td>
+        <td class="right" th:text="${line.formattedDiscountPct + '%'}">10,00%</td>
+        <td class="right" th:text="${line.formattedTaxPct + '%'}">22,00%</td>
+        <td class="right" th:text="${line.formattedLineTotal}">90,00 €</td>
+    </tr>
+    </tbody>
+</table>
+
+<table class="totals">
+    <tr>
+        <td>Imponibile</td>
+        <td class="right" th:text="${invoice.formattedSubtotalAmount}">140,00 €</td>
+    </tr>
+    <tr>
+        <td>IVA</td>
+        <td class="right" th:text="${invoice.formattedTaxAmount}">30,80 €</td>
+    </tr>
+    <tr class="grand-total">
+        <td>Totale fattura</td>
+        <td class="right" th:text="${invoice.formattedTotalAmount}">170,80 €</td>
+    </tr>
+</table>
+
+<div class="notes" th:if="${invoice.notes != null and !#strings.isEmpty(invoice.notes)}">
+    <strong>Note</strong><br/>
+    <span th:text="${invoice.notes}">Note fattura</span>
+</div>
+
+</body>
+</html>
