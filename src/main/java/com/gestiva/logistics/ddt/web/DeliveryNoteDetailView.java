@@ -22,13 +22,21 @@ public class DeliveryNoteDetailView {
     private String carriageCondition;
     private String carrierName;
     private String notes;
-
-
     private boolean invoiceCreatable;
     private boolean invoiceExists;
     private Long invoiceId;
     private String invoiceNumber;
 
+    private boolean cancelable;
+
+    public boolean isCancelable() {
+        return cancelable;
+    }
+
+    public void setCancelable(boolean cancelable) {
+        this.cancelable = cancelable;
+    }
+    
     public boolean isInvoiceCreatable() {
         return invoiceCreatable;
     }

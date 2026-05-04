@@ -78,16 +78,13 @@ public class DeliveryNoteDetailWebService {
 
         view.setInvoiceExists(invoiceOpt.isPresent());
         view.setInvoiceCreatable("ISSUED".equals(note.getStatus()) && invoiceOpt.isEmpty());
-
+        view.setInvoiceExists(invoiceOpt.isPresent());
+        view.setInvoiceCreatable("ISSUED".equals(note.getStatus()) && invoiceOpt.isEmpty());
+        view.setCancelable("ISSUED".equals(note.getStatus()) && invoiceOpt.isEmpty());
         invoiceOpt.ifPresent(invoice -> {
             view.setInvoiceId(invoice.getId());
             view.setInvoiceNumber(invoice.getInvoiceNumber());
         });
-
-
-
-
-
         return view;
     }
 }
