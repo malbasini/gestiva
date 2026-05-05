@@ -15,7 +15,4 @@ public class TenantUsernamePasswordAuthenticationFilter extends UsernamePassword
 
         return safeTenant + "|" + safeEmail;
     }
-
-    public void setAuthenticationFailureUrl(String s) {
-    }
 }
