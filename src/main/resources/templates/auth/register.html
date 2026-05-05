@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Registrazione</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body>
+<div class="app-shell">
+    <main class="app-main">
+        <div class="page" style="max-width: 760px;">
+            <div class="card">
+
+                <h1 class="page-title">Crea il tuo tenant</h1>
+                <div class="muted">Registrazione iniziale del tenant e dell'utente amministratore</div>
+
+                <div th:if="${errorMessage}" class="alert alert-error" style="margin-top:16px;">
+                    <span th:text="${errorMessage}">Errore</span>
+                </div>
+
+                <form th:action="@{/register}" th:object="${registrationForm}" method="post" style="margin-top:24px;">
+                    <div class="form-grid">
+                        <div class="form-field full">
+                            <label for="tenantName">Nome tenant / ragione sociale</label>
+                            <input id="tenantName" type="text" th:field="*{tenantName}" placeholder="Rossi Srl"/>
+                            <div class="field-error" th:if="${#fields.hasErrors('tenantName')}" th:errors="*{tenantName}">Errore</div>
+                        </div>
+
+                        <div class="form-field full">
+                            <label for="tenantEmail">Email tenant</label>
+                            <input id="tenantEmail" type="email" th:field="*{tenantEmail}" placeholder="info@rossi.it"/>
+                            <div class="field-error" th:if="${#fields.hasErrors('tenantEmail')}" th:errors="*{tenantEmail}">Errore</div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="firstName">Nome admin</label>
+                            <input id="firstName" type="text" th:field="*{firstName}" placeholder="Mario"/>
+                            <div class="field-error" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}">Errore</div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="lastName">Cognome admin</label>
+                            <input id="lastName" type="text" th:field="*{lastName}" placeholder="Rossi"/>
+                            <div class="field-error" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}">Errore</div>
+                        </div>
+
+                        <div class="form-field full">
+                            <label for="userEmail">Email utente admin</label>
+                            <input id="userEmail" type="email" th:field="*{userEmail}" placeholder="admin@rossi.it"/>
+                            <div class="field-error" th:if="${#fields.hasErrors('userEmail')}" th:errors="*{userEmail}">Errore</div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="password">Password</label>
+                            <input id="password" type="password" th:field="*{password}"/>
+                            <div class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Errore</div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="confirmPassword">Conferma password</label>
+                            <input id="confirmPassword" type="password" th:field="*{confirmPassword}"/>
+                            <div class="field-error" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}">Errore</div>
+                        </div>
+                    </div>
+
+                    <div class="actions" style="margin-top:24px;">
+                        <button type="submit" class="btn">Registrati</button>
+                    </div>
+                </form>
+
+                <div style="margin-top:18px;">
+                    <a th:href="@{/login}">Hai già un account? Vai al login</a>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

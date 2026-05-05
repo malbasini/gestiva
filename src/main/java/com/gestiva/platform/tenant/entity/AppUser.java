@@ -1,4 +1,4 @@
-package com.gestiva.platform.user.entity;
+package com.gestiva.platform.tenant.entity;
 
 import com.gestiva.common.model.TenantAwareEntity;
 import jakarta.persistence.Column;

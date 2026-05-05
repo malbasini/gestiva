@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Login</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body>
+<div class="app-shell">
+  <main class="app-main">
+    <div class="page" style="max-width: 640px;">
+      <div class="card">
+
+        <h1 class="page-title">Accedi a Gestiva</h1>
+        <div class="muted">Inserisci tenant, email e password</div>
+
+        <div th:if="${param.error}" class="alert alert-error" style="margin-top:16px;">
+          Credenziali non valide.
+        </div>
+
+        <div th:if="${param.logout}" class="alert alert-success" style="margin-top:16px;">
+          Logout eseguito correttamente.
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success" style="margin-top:16px;">
+          <span th:text="${successMessage}">Operazione completata.</span>
+        </div>
+
+        <form th:action="@{/login}" method="post" style="margin-top:24px;">
+          <div class="form-grid">
+            <div class="form-field full">
+              <label for="tenantSlug">Tenant</label>
+              <input id="tenantSlug" type="text" name="tenantSlug" placeholder="rossi-srl"/>
+            </div>
+
+            <div class="form-field full">
+              <label for="email">Email</label>
+              <input id="email" type="email" name="email" placeholder="admin@rossi.it"/>
+            </div>
+
+            <div class="form-field full">
+              <label for="password">Password</label>
+              <input id="password" type="password" name="password"/>
+            </div>
+          </div>
+
+          <div class="actions" style="margin-top:24px;">
+            <button type="submit" class="btn">Accedi</button>
+          </div>
+        </form>
+
+        <div style="margin-top:18px;">
+          <a th:href="@{/register}">Non hai ancora un tenant? Registrati</a>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
