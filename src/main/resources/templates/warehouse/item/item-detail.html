@@ -77,6 +77,54 @@
           </div>
         </div>
 
+        <div class="info-grid">
+          <div class="info-box">
+            <div class="label">Giacenza attuale</div>
+            <div class="value" th:text="${item.formattedStockBalance + ' ' + item.unitOfMeasure}">0,000 pz</div>
+          </div>
+        </div>
+
+        <div class="page-header" style="margin-top: 28px;" th:if="${item.stockManaged}">
+          <div class="page-header-left">
+            <h2 class="section-title" style="margin:0;">Ultimi movimenti</h2>
+          </div>
+          <div class="page-header-right">
+            <a class="btn" th:href="@{/items/{id}/stock-movements/new(id=${item.id})}">
+              <i class="bi bi-plus-lg"></i>
+              <span>Nuovo movimento</span>
+            </a>
+          </div>
+        </div>
+
+        <table class="table" th:if="${item.stockManaged}">
+          <thead>
+          <tr>
+            <th>Data</th>
+            <th>Direzione</th>
+            <th>Causale</th>
+            <th>Quantità</th>
+            <th>Riferimento</th>
+            <th>Note</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:if="${#lists.isEmpty(recentMovements)}">
+            <td colspan="6" class="muted">Nessun movimento registrato.</td>
+          </tr>
+          <tr th:each="movement : ${recentMovements}">
+            <td th:text="${movement.formattedMovementDate}">06/05/2026</td>
+            <td>
+            <span class="badge" th:classappend="${movement.direction == 'IN'} ? ' badge-active' : ' badge-cancelled'"
+                  th:text="${movement.direction}">IN</span>
+            </td>
+            <td th:text="${movement.reasonCode}">MANUAL_LOAD</td>
+            <td th:text="${movement.formattedQuantity + ' ' + item.unitOfMeasure}">10,000 pz</td>
+            <td th:text="${movement.referenceType != null ? movement.referenceType : '-'}">MANUAL</td>
+            <td th:text="${movement.notes != null and !#strings.isEmpty(movement.notes) ? movement.notes : '-'}">-</td>
+          </tr>
+          </tbody>
+        </table>
+
         <div class="notes" th:if="${item.description != null and !#strings.isEmpty(item.description)}">
           <strong>Descrizione</strong><br/>
           <span th:text="${item.description}">Descrizione articolo</span>

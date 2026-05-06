@@ -11,6 +11,7 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
 
     List<StockMovement> findByTenantIdAndItemIdOrderByMovementDateDescIdDesc(Long tenantId, Long itemId);
     List<StockMovement> findByTenantIdAndReferenceTypeAndReferenceId(Long tenantId, String referenceType, Long referenceId);
+    List<StockMovement> findTop20ByTenantIdAndItemIdOrderByMovementDateDescIdDesc(Long tenantId, Long itemId);
 
     @Query("""
         select coalesce(sum(

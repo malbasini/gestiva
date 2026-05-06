@@ -3,6 +3,7 @@ package com.gestiva.warehouse.item.controller;
 import com.gestiva.security.usercontext.TenantContext;
 import com.gestiva.warehouse.item.web.ItemForm;
 import com.gestiva.warehouse.item.web.ItemWebService;
+import com.gestiva.warehouse.stock.web.StockMovementWebService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,11 +17,15 @@ public class ItemPageController {
 
     private final ItemWebService itemWebService;
     private final TenantContext tenantContext;
+    private final StockMovementWebService stockMovementWebService;
 
     public ItemPageController(ItemWebService itemWebService,
-                              TenantContext tenantContext) {
+                              TenantContext tenantContext,
+                              StockMovementWebService stockMovementWebService) {
+
         this.itemWebService = itemWebService;
         this.tenantContext = tenantContext;
+        this.stockMovementWebService = stockMovementWebService;
     }
 
     @GetMapping
@@ -34,6 +39,8 @@ public class ItemPageController {
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         Long tenantId = tenantContext.getCurrentTenantId();
+        model.addAttribute("item", itemWebService.getDetail(tenantId, id));
+        model.addAttribute("recentMovements", stockMovementWebService.getRecentMovements(tenantId, id));
         model.addAttribute("item", itemWebService.getDetail(tenantId, id));
         model.addAttribute("activeMenu", "items");
         return "warehouse/item/item-detail";

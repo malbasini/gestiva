@@ -5,6 +5,7 @@ import com.gestiva.common.exception.NotFoundException;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.warehouse.item.entity.Item;
 import com.gestiva.warehouse.item.repository.ItemRepository;
+import com.gestiva.warehouse.stock.repository.StockMovementRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,9 +18,15 @@ import java.util.Locale;
 public class ItemWebService {
 
     private final ItemRepository itemRepository;
+    private final StockMovementRepository stockMovementRepository;
 
-    public ItemWebService(ItemRepository itemRepository) {
+
+
+
+    public ItemWebService(ItemRepository itemRepository,
+                          StockMovementRepository stockMovementRepository) {
         this.itemRepository = itemRepository;
+        this.stockMovementRepository = stockMovementRepository;
     }
 
     @Transactional(readOnly = true)
@@ -139,8 +146,15 @@ public class ItemWebService {
         v.setUnitOfMeasure(item.getUnitOfMeasure());
         v.setActive(item.isActive());
         v.setTrackStock(item.isTrackStock());
+        v.setStockManaged(item.isTrackStock());
         v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatMoney(item.getBasePrice()) : "-");
         v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimal(item.getDefaultTaxPct()) + "%" : "-");
+        if (item.isTrackStock()) {
+            var balance = stockMovementRepository.calculateStockBalance(item.getTenantId(), item.getId());
+            v.setFormattedStockBalance(PdfFormatUtils.formatDecimal(balance));
+        } else {
+            v.setFormattedStockBalance("-");
+        }
         return v;
     }
 }

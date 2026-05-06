@@ -12,6 +12,24 @@ public class ItemDetailView {
     private boolean trackStock;
     private String formattedBasePrice;
     private String formattedDefaultTaxPct;
+    private String formattedStockBalance;
+    private boolean stockManaged;
+
+    public String getFormattedStockBalance() {
+        return formattedStockBalance;
+    }
+
+    public void setFormattedStockBalance(String formattedStockBalance) {
+        this.formattedStockBalance = formattedStockBalance;
+    }
+
+    public boolean isStockManaged() {
+        return stockManaged;
+    }
+
+    public void setStockManaged(boolean stockManaged) {
+        this.stockManaged = stockManaged;
+    }
 
     public Long getId() {
         return id;
