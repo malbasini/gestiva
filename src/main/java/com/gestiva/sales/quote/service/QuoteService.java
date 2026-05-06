@@ -240,7 +240,7 @@ public class QuoteService {
             line.setDiscountPct(discountPct);
             line.setTaxPct(taxPct);
             line.setLineTotal(netLine);
-            line.setItemId(line.getItemId());
+            line.setItemId(request.getItemId());
             entities.add(line);
         }
 

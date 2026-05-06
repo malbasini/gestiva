@@ -39,9 +39,13 @@ public class ItemPageController {
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         Long tenantId = tenantContext.getCurrentTenantId();
-        model.addAttribute("item", itemWebService.getDetail(tenantId, id));
-        model.addAttribute("recentMovements", stockMovementWebService.getRecentMovements(tenantId, id));
-        model.addAttribute("item", itemWebService.getDetail(tenantId, id));
+        var item = itemWebService.getDetail(tenantId, id);
+        model.addAttribute("item", item);
+        if (item.isStockManaged()) {
+            model.addAttribute("recentMovements", stockMovementWebService.getRecentMovements(tenantId, id));
+        } else {
+            model.addAttribute("recentMovements", java.util.Collections.emptyList());
+        }
         model.addAttribute("activeMenu", "items");
         return "warehouse/item/item-detail";
     }

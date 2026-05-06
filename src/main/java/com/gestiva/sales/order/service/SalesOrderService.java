@@ -78,7 +78,6 @@ public class SalesOrderService {
         order.setSubtotalAmount(quote.getSubtotalAmount());
         order.setTaxAmount(quote.getTaxAmount());
         order.setTotalAmount(quote.getTotalAmount());
-
         SalesOrder savedOrder = salesOrderRepository.save(order);
 
         List<SalesOrderLine> savedLines = copyQuoteLinesToOrder(tenantId, savedOrder.getId(), quoteLines);
@@ -153,7 +152,7 @@ public class SalesOrderService {
                     .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
 
             orderLine.setTaxAmount(taxAmount);
-
+            orderLine.setItemId(quoteLine.getItemId());
             orderLines.add(orderLine);
         }
 

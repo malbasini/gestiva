@@ -4,6 +4,7 @@ import com.gestiva.crm.contact.web.CustomerLookupWebService;
 import com.gestiva.security.usercontext.TenantContext;
 import com.gestiva.sales.quote.web.QuoteForm;
 import com.gestiva.sales.quote.web.QuoteManageWebService;
+import com.gestiva.warehouse.item.web.ItemWebService;
 import jakarta.validation.Valid;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Controller;
@@ -19,13 +20,17 @@ public class QuoteFormSubmitController {
     private final QuoteManageWebService quoteManageWebService;
     private final CustomerLookupWebService customerLookupWebService;
     private final TenantContext tenantContext;
+    private final ItemWebService itemWebService;
 
     public QuoteFormSubmitController(QuoteManageWebService quoteManageWebService,
                                      CustomerLookupWebService customerLookupWebService,
-                                     TenantContext tenantContext) {
+                                     TenantContext tenantContext,
+                                     ItemWebService itemWebService
+                                     ) {
         this.quoteManageWebService = quoteManageWebService;
         this.customerLookupWebService = customerLookupWebService;
         this.tenantContext = tenantContext;
+        this.itemWebService = itemWebService;
     }
 
     @PostMapping(params = "addLine")
@@ -42,6 +47,7 @@ public class QuoteFormSubmitController {
     @NonNull
     private String getString(@ModelAttribute("quoteForm") QuoteForm quoteForm, @RequestParam(required = false) Long quoteId, @RequestParam(required = false) String formMode, Model model, Long resolvedTenantId) {
         model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(resolvedTenantId));
+        model.addAttribute("itemOptions", itemWebService.findOptions(resolvedTenantId));
         model.addAttribute("tenantId", resolvedTenantId);
         model.addAttribute("quoteId", quoteId);
         model.addAttribute("formMode", formMode == null ? "create" : formMode);
@@ -91,6 +97,7 @@ public class QuoteFormSubmitController {
     @NonNull
     private String getString(@PathVariable Long id, @RequestParam(required = false) String formMode, Model model, Long resolvedTenantId) {
         model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(resolvedTenantId));
+        model.addAttribute("itemOptions", itemWebService.findOptions(resolvedTenantId));
         model.addAttribute("tenantId", resolvedTenantId);
         model.addAttribute("quoteId", id);
         model.addAttribute("formMode", formMode == null ? "edit" : formMode);
@@ -110,6 +117,7 @@ public class QuoteFormSubmitController {
         if (bindingResult.hasErrors()) {
             model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(resolvedTenantId));
             model.addAttribute("totalsPreview", quoteManageWebService.calculatePreviewTotals(quoteForm));
+            model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
             model.addAttribute("formMode", "create");
             model.addAttribute("tenantId", resolvedTenantId);
             model.addAttribute("activeMenu", "quotes");
@@ -136,6 +144,7 @@ public class QuoteFormSubmitController {
         if (bindingResult.hasErrors()) {
             model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(resolvedTenantId));
             model.addAttribute("totalsPreview", quoteManageWebService.calculatePreviewTotals(quoteForm));
+            model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
             model.addAttribute("formMode", "edit");
             model.addAttribute("quoteId", id);
             model.addAttribute("tenantId", resolvedTenantId);
@@ -158,7 +167,7 @@ public class QuoteFormSubmitController {
         getTenantId(quoteId, quoteForm, tenantId, model);
         model.addAttribute("formMode", formMode == null ? "create" : formMode);
         model.addAttribute("activeMenu", "quotes");
-
+        model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
         return "quote/quote-form";
     }
     @PostMapping(value = "/{id}", params = "recalculate")
@@ -170,7 +179,7 @@ public class QuoteFormSubmitController {
         getTenantId(id, quoteForm, tenantId, model);
         model.addAttribute("formMode", formMode == null ? "edit" : formMode);
         model.addAttribute("activeMenu", "quotes");
-
+        model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
         return "quote/quote-form";
     }
 

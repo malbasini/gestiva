@@ -160,15 +160,19 @@
                 </div>
               </td>
               <td>
-                <select th:name="|lines[${iter.index}].itemId|">
+                <select th:field="*{lines[__${stat.index}__].itemId}">
                   <option value="">-- articolo --</option>
                   <option th:each="opt : ${itemOptions}"
                           th:value="${opt.id}"
-                          th:selected="${line.itemId != null and line.itemId == opt.id}"
                           th:text="${opt.label}">
                     ART-001 - Modulo CRM
                   </option>
                 </select>
+                <div class="field-error"
+                     th:if="${#fields.hasErrors('lines[' + stat.index + '].itemId')}"
+                     th:errors="*{lines[__${stat.index}__].itemId}">
+                  Errore articolo
+                </div>
               </td>
               <td class="text-right">
                 <input type="number" step="0.01" th:field="*{lines[__${stat.index}__].taxPct}"/>

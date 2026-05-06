@@ -41,7 +41,6 @@ public class SalesOrderWebService {
             item.setStatus(order.getStatus());
             item.setCurrencyCode(order.getCurrencyCode());
             item.setTotalAmount(order.getTotalAmount());
-
             item.setFormattedOrderDate(PdfFormatUtils.formatDate(order.getOrderDate()));
             item.setFormattedTotalAmount(PdfFormatUtils.formatMoney(order.getTotalAmount()));
             return item;

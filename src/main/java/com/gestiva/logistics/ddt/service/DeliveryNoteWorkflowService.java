@@ -44,7 +44,7 @@ public class DeliveryNoteWorkflowService {
         }
 
         deliveryNote.setStatus("CANCELLED");
-        stockMovementIntegrationService.createInboundReversalFromCancelledDeliveryNote(tenantId, deliveryNoteId);
         deliveryNoteRepository.save(deliveryNote);
+        stockMovementIntegrationService.createInboundReversalFromCancelledDeliveryNote(tenantId, deliveryNoteId);
     }
 }

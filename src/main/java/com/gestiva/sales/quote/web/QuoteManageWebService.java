@@ -62,7 +62,6 @@ public class QuoteManageWebService {
         form.setStatus(quote.getStatus());
         form.setCurrencyCode(quote.getCurrencyCode());
         form.setNotes(quote.getNotes());
-
         form.setLines(lines.stream().map(line -> {
             QuoteLineForm lf = new QuoteLineForm();
             lf.setDescription(line.getDescription());
@@ -140,6 +139,7 @@ public class QuoteManageWebService {
             req.setUnitPrice(line.getUnitPrice());
             req.setDiscountPct(defaultZero(line.getDiscountPct()));
             req.setTaxPct(defaultZero(line.getTaxPct()));
+            req.setItemId(line.getItemId());
             return req;
         }).toList();
     }
