@@ -47,6 +47,10 @@
                 <i class="bi bi-receipt-cutoff"></i>
                 <span>Fatture</span>
             </a>
+            <a th:href="@{/items}" th:classappend="${activeMenu == 'items'} ? ' active' : ''">
+                <i class="bi bi-box2"></i>
+                <span>Articoli</span>
+            </a>
         </nav>
 
         <nav class="top-nav">

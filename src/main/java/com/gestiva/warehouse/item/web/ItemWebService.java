@@ -1,0 +1,146 @@
+package com.gestiva.warehouse.item.web;
+
+import com.gestiva.common.exception.BusinessException;
+import com.gestiva.common.exception.NotFoundException;
+import com.gestiva.documents.pdf.PdfFormatUtils;
+import com.gestiva.warehouse.item.entity.Item;
+import com.gestiva.warehouse.item.repository.ItemRepository;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Locale;
+
+@Service
+@Transactional
+public class ItemWebService {
+
+    private final ItemRepository itemRepository;
+
+    public ItemWebService(ItemRepository itemRepository) {
+        this.itemRepository = itemRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ItemListItemView> findAll(Long tenantId) {
+        return itemRepository.findAll(
+                org.springframework.data.jpa.domain.Specification
+                        .where((root, query, cb) -> cb.equal(root.get("tenantId"), tenantId)),
+                Sort.by(Sort.Direction.ASC, "name")
+        ).stream().map(this::toListItemView).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ItemDetailView getDetail(Long tenantId, Long id) {
+        Item item = itemRepository.findByTenantIdAndId(tenantId, id)
+                .orElseThrow(() -> new NotFoundException("Articolo non trovato"));
+        return toDetailView(item);
+    }
+
+    @Transactional(readOnly = true)
+    public ItemForm getForm(Long tenantId, Long id) {
+        Item item = itemRepository.findByTenantIdAndId(tenantId, id)
+                .orElseThrow(() -> new NotFoundException("Articolo non trovato"));
+
+        ItemForm form = new ItemForm();
+        form.setCode(item.getCode());
+        form.setName(item.getName());
+        form.setDescription(item.getDescription());
+        form.setItemType(item.getItemType());
+        form.setUnitOfMeasure(item.getUnitOfMeasure());
+        form.setActive(item.isActive());
+        form.setTrackStock(item.isTrackStock());
+        form.setBasePrice(item.getBasePrice());
+        form.setDefaultTaxPct(item.getDefaultTaxPct());
+        return form;
+    }
+
+    public Long create(Long tenantId, ItemForm form) {
+        String code = normalizeCode(form.getCode());
+
+        if (itemRepository.existsByTenantIdAndCode(tenantId, code)) {
+            throw new BusinessException("Esiste già un articolo con questo codice.");
+        }
+
+        Item item = new Item();
+        item.setTenantId(tenantId);
+        applyForm(item, form);
+        item.setCode(code);
+
+        return itemRepository.save(item).getId();
+    }
+
+    public void update(Long tenantId, Long id, ItemForm form) {
+        Item item = itemRepository.findByTenantIdAndId(tenantId, id)
+                .orElseThrow(() -> new NotFoundException("Articolo non trovato"));
+
+        String code = normalizeCode(form.getCode());
+        itemRepository.findByTenantIdAndCode(tenantId, code)
+                .filter(other -> !other.getId().equals(id))
+                .ifPresent(other -> {
+                    throw new BusinessException("Esiste già un articolo con questo codice.");
+                });
+
+        applyForm(item, form);
+        item.setCode(code);
+
+        itemRepository.save(item);
+    }
+
+    private void applyForm(Item item, ItemForm form) {
+        String itemType = form.getItemType() == null ? "" : form.getItemType().trim().toUpperCase(Locale.ROOT);
+
+        if (!"PRODUCT".equals(itemType) && !"SERVICE".equals(itemType)) {
+            throw new BusinessException("Tipo articolo non valido.");
+        }
+
+        item.setName(form.getName().trim());
+        item.setDescription(form.getDescription());
+        item.setItemType(itemType);
+        item.setUnitOfMeasure(form.getUnitOfMeasure().trim());
+        item.setActive(form.isActive());
+
+        if ("SERVICE".equals(itemType)) {
+            item.setTrackStock(false);
+        } else {
+            item.setTrackStock(form.isTrackStock());
+        }
+
+        item.setBasePrice(form.getBasePrice());
+        item.setDefaultTaxPct(form.getDefaultTaxPct());
+    }
+
+    private String normalizeCode(String code) {
+        return code == null ? "" : code.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private ItemListItemView toListItemView(Item item) {
+        ItemListItemView v = new ItemListItemView();
+        v.setId(item.getId());
+        v.setCode(item.getCode());
+        v.setName(item.getName());
+        v.setItemType(item.getItemType());
+        v.setUnitOfMeasure(item.getUnitOfMeasure());
+        v.setActive(item.isActive());
+        v.setTrackStock(item.isTrackStock());
+        v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatMoney(item.getBasePrice()) : "-");
+        v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimal(item.getDefaultTaxPct()) + "%" : "-");
+        return v;
+    }
+
+    private ItemDetailView toDetailView(Item item) {
+        ItemDetailView v = new ItemDetailView();
+        v.setId(item.getId());
+        v.setCode(item.getCode());
+        v.setName(item.getName());
+        v.setDescription(item.getDescription());
+        v.setItemType(item.getItemType());
+        v.setUnitOfMeasure(item.getUnitOfMeasure());
+        v.setActive(item.isActive());
+        v.setTrackStock(item.isTrackStock());
+        v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatMoney(item.getBasePrice()) : "-");
+        v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimal(item.getDefaultTaxPct()) + "%" : "-");
+        return v;
+    }
+}
