@@ -157,4 +157,20 @@ public class ItemWebService {
         }
         return v;
     }
+
+    @Transactional(readOnly = true)
+    public java.util.List<ItemOptionView> findOptions(Long tenantId) {
+        return itemRepository.findByTenantIdAndActiveTrueOrderByNameAsc(tenantId)
+                .stream()
+                .map(item -> {
+                    ItemOptionView v = new ItemOptionView();
+                    v.setId(item.getId());
+                    v.setCode(item.getCode());
+                    v.setName(item.getName());
+                    v.setItemType(item.getItemType());
+                    v.setUnitOfMeasure(item.getUnitOfMeasure());
+                    return v;
+                })
+                .toList();
+    }
 }

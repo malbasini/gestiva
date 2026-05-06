@@ -37,7 +37,18 @@ public class SalesOrderLine extends TenantAwareEntity {
 
     @Column(name = "tax_amount", precision = 15, scale = 2)
     private BigDecimal taxAmount;
-    
+
+    @Column(name = "item_id")
+    private Long itemId;
+
+    public Long getItemId() {
+        return itemId;
+    }
+
+    public void setItemId(Long itemId) {
+        this.itemId = itemId;
+    }
+
     public Long getSalesOrderId() {
         return salesOrderId;
     }

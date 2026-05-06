@@ -35,6 +35,17 @@ public class QuoteLine extends TenantAwareEntity {
     @Column(name = "line_total", precision = 15, scale = 2, nullable = false)
     private BigDecimal lineTotal;
 
+    @Column(name = "item_id")
+    private Long itemId;
+
+    public Long getItemId() {
+        return itemId;
+    }
+
+    public void setItemId(Long itemId) {
+        this.itemId = itemId;
+    }
+
     public Long getQuoteId() {
         return quoteId;
     }

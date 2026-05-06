@@ -143,7 +143,7 @@ public class SalesOrderService {
             orderLine.setDiscountPct(quoteLine.getDiscountPct());
             orderLine.setTaxPct(quoteLine.getTaxPct());
             orderLine.setLineTotal(quoteLine.getLineTotal());
-
+            orderLine.setItemId(quoteLine.getItemId());
             BigDecimal taxPct = quoteLine.getTaxPct() == null
                     ? BigDecimal.ZERO
                     : quoteLine.getTaxPct();

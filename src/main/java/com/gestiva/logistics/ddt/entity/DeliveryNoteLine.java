@@ -48,6 +48,17 @@ public class DeliveryNoteLine {
     @Column(name = "line_total", nullable = false, precision = 15, scale = 2)
     private BigDecimal lineTotal;
 
+    @Column(name = "item_id")
+    private Long itemId;
+
+    public Long getItemId() {
+        return itemId;
+    }
+
+    public void setItemId(Long itemId) {
+        this.itemId = itemId;
+    }
+
     public Long getId() {
         return id;
     }

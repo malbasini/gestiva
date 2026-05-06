@@ -70,6 +70,7 @@ public class QuoteManageWebService {
             lf.setUnitPrice(line.getUnitPrice());
             lf.setDiscountPct(line.getDiscountPct());
             lf.setTaxPct(line.getTaxPct());
+            lf.setItemId(line.getItemId());
             return lf;
         }).toList());
 
@@ -88,7 +89,6 @@ public class QuoteManageWebService {
         request.setCurrencyCode(form.getCurrencyCode());
         request.setNotes(form.getNotes());
         request.setLines(mapLines(form));
-
         QuoteResponse created = quoteService.create(tenantId, request);
 
         if (form.getStatus() != null && !form.getStatus().equals(created.getStatus())) {
@@ -150,6 +150,7 @@ public class QuoteManageWebService {
         line.setUnitPrice(BigDecimal.ZERO);
         line.setDiscountPct(BigDecimal.ZERO);
         line.setTaxPct(new BigDecimal("22.00"));
+        line.setItemId(null);
         return line;
     }
 

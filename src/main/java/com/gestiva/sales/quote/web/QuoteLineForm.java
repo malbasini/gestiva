@@ -29,6 +29,16 @@ public class QuoteLineForm {
     @DecimalMin(value = "0.00", inclusive = true, message = "L'IVA non può essere negativa")
     private BigDecimal taxPct;
 
+    private Long itemId;
+
+    public Long getItemId() {
+        return itemId;
+    }
+
+    public void setItemId(Long itemId) {
+        this.itemId = itemId;
+    }
+
     public String getDescription() {
         return description;
     }

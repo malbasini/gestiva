@@ -7,6 +7,7 @@ import com.gestiva.sales.order.repository.SalesOrderRepository;
 import com.gestiva.sales.quote.repository.QuoteRepository;
 import com.gestiva.sales.quote.web.QuoteManageWebService;
 import com.gestiva.security.usercontext.TenantContext;
+import com.gestiva.warehouse.item.web.ItemWebService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -18,14 +19,20 @@ public class QuoteFormPageController {
     private final QuoteManageWebService quoteManageWebService;
     private final TenantContext tenantContext;
     private final CustomerLookupWebService customerLookupWebService;
+    private final ItemWebService itemWebService;
+
+
+
 
     public QuoteFormPageController(QuoteManageWebService quoteManageWebService,
                                    TenantContext tenantContext,
-                                   CustomerLookupWebService customerLookupWebService) {
+                                   CustomerLookupWebService customerLookupWebService,
+                                   ItemWebService itemWebService) {
 
         this.quoteManageWebService = quoteManageWebService;
         this.tenantContext = tenantContext;
         this.customerLookupWebService = customerLookupWebService;
+        this.itemWebService = itemWebService;
     }
 
     @GetMapping("/new")
@@ -37,23 +44,20 @@ public class QuoteFormPageController {
         model.addAttribute("quoteForm", form);
         model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(resolvedTenantId));
         model.addAttribute("totalsPreview", quoteManageWebService.calculatePreviewTotals(form));
+        model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
         model.addAttribute("formMode", "create");
         model.addAttribute("tenantId", resolvedTenantId);
         model.addAttribute("activeMenu", "quotes");
         model.addAttribute("formMode", "create");
         model.addAttribute("tenantId", resolvedTenantId);
         model.addAttribute("activeMenu", "quotes");
-
         return "quote/quote-form";
     }
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id,
-
                            @RequestParam(required = false) Long tenantId,
-
                            Model model) {
-
         Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
         model.addAttribute("quoteForm", quoteManageWebService.buildEditForm(resolvedTenantId, id));
         model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(resolvedTenantId));
@@ -61,6 +65,7 @@ public class QuoteFormPageController {
         model.addAttribute("quoteForm", form);
         model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(resolvedTenantId));
         model.addAttribute("totalsPreview", quoteManageWebService.calculatePreviewTotals(form));
+        model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
         model.addAttribute("quoteId", id);
         model.addAttribute("formMode", "edit");
         model.addAttribute("tenantId", resolvedTenantId);

@@ -11,6 +11,7 @@ import com.gestiva.sales.order.entity.SalesOrder;
 import com.gestiva.sales.order.entity.SalesOrderLine;
 import com.gestiva.sales.order.repository.SalesOrderLineRepository;
 import com.gestiva.sales.order.repository.SalesOrderRepository;
+import com.gestiva.warehouse.stock.service.StockMovementIntegrationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -26,15 +27,19 @@ public class DeliveryNoteService {
     private final DeliveryNoteLineRepository deliveryNoteLineRepository;
     private final SalesOrderRepository salesOrderRepository;
     private final SalesOrderLineRepository salesOrderLineRepository;
+    private final StockMovementIntegrationService stockMovementIntegrationService;
 
     public DeliveryNoteService(DeliveryNoteRepository deliveryNoteRepository,
                                DeliveryNoteLineRepository deliveryNoteLineRepository,
                                SalesOrderRepository salesOrderRepository,
-                               SalesOrderLineRepository salesOrderLineRepository) {
+                               SalesOrderLineRepository salesOrderLineRepository,
+                               StockMovementIntegrationService stockMovementIntegrationService) {
+
         this.deliveryNoteRepository = deliveryNoteRepository;
         this.deliveryNoteLineRepository = deliveryNoteLineRepository;
         this.salesOrderRepository = salesOrderRepository;
         this.salesOrderLineRepository = salesOrderLineRepository;
+        this.stockMovementIntegrationService = stockMovementIntegrationService;
     }
 
     public DeliveryNoteResponse createFromSalesOrder(Long tenantId, Long salesOrderId) {
@@ -89,8 +94,9 @@ public class DeliveryNoteService {
             line.setTaxPct(defaultZero(orderLine.getTaxPct()));
             line.setTaxAmount(defaultZero(orderLine.getTaxAmount()));
             line.setLineTotal(defaultZero(orderLine.getLineTotal()));
-
+            line.setItemId(orderLine.getItemId());
             deliveryNoteLineRepository.save(line);
+            stockMovementIntegrationService.createOutboundMovementsFromDeliveryNote(tenantId, savedNote.getId());
         }
 
         return toResponse(savedNote);

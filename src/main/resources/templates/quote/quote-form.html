@@ -119,6 +119,7 @@
               <th class="text-right">Qtà</th>
               <th class="text-right">Prezzo</th>
               <th class="text-right">Sconto %</th>
+              <th class="text-right">Articolo</th>
               <th class="text-right">IVA %</th>
               <th>Azioni</th>
             </tr>
@@ -157,6 +158,17 @@
                      th:errors="*{lines[__${stat.index}__].discountPct}">
                   Errore sconto
                 </div>
+              </td>
+              <td>
+                <select th:name="|lines[${iter.index}].itemId|">
+                  <option value="">-- articolo --</option>
+                  <option th:each="opt : ${itemOptions}"
+                          th:value="${opt.id}"
+                          th:selected="${line.itemId != null and line.itemId == opt.id}"
+                          th:text="${opt.label}">
+                    ART-001 - Modulo CRM
+                  </option>
+                </select>
               </td>
               <td class="text-right">
                 <input type="number" step="0.01" th:field="*{lines[__${stat.index}__].taxPct}"/>

@@ -68,9 +68,7 @@ public class InvoiceService {
         invoice.setNotes(deliveryNote.getNotes());
         invoice.setCreatedAt(now);
         invoice.setUpdatedAt(now);
-
         Invoice savedInvoice = invoiceRepository.save(invoice);
-
         int lineNo = 1;
         for (DeliveryNoteLine deliveryNoteLine : deliveryNoteLines) {
             InvoiceLine line = new InvoiceLine();
@@ -86,7 +84,7 @@ public class InvoiceService {
             line.setTaxPct(defaultZero(deliveryNoteLine.getTaxPct()));
             line.setTaxAmount(defaultZero(deliveryNoteLine.getTaxAmount()));
             line.setLineTotal(defaultZero(deliveryNoteLine.getLineTotal()));
-
+            line.setItemId(deliveryNoteLine.getItemId());
             invoiceLineRepository.save(line);
         }
 

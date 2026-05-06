@@ -93,7 +93,6 @@ public class QuoteService {
         quote.setTaxAmount(totals.tax());
         quote.setTotalAmount(totals.total());
         quote.setNotes(request.getNotes());
-
         Quote savedQuote = quoteRepository.save(quote);
         List<QuoteLine> savedLines = saveQuoteLines(tenantId, savedQuote.getId(), request.getLines());
 
@@ -241,7 +240,7 @@ public class QuoteService {
             line.setDiscountPct(discountPct);
             line.setTaxPct(taxPct);
             line.setLineTotal(netLine);
-
+            line.setItemId(line.getItemId());
             entities.add(line);
         }
 
