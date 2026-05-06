@@ -53,8 +53,11 @@ public class SecurityConfig {
     // 🔑 Config della security
     @Bean
 
-    SecurityFilterChain securityFilterChain(HttpSecurity http, TenantUsernamePasswordAuthenticationFilter tenantUsernamePasswordAuthenticationFilter,
-                                            AuthenticationProvider authenticationProvider
+    SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                            TenantUsernamePasswordAuthenticationFilter tenantUsernamePasswordAuthenticationFilter,
+                                            AuthenticationProvider authenticationProvider,
+                                            org.springframework.security.web.authentication.rememberme.PersistentTokenRepository persistentTokenRepository,
+                                            com.gestiva.security.auth.CustomUserDetailsService customUserDetailsService
     ) throws Exception {
         http
 
@@ -71,6 +74,12 @@ public class SecurityConfig {
                 .formLogin(form -> form
                         .loginPage("/login")
                         .permitAll()
+                )
+                .rememberMe(remember -> remember
+                        .rememberMeParameter("rememberMe")
+                        .tokenRepository(persistentTokenRepository)
+                        .tokenValiditySeconds(3 * 24 * 60 * 60)
+                        .userDetailsService(customUserDetailsService)
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
@@ -91,6 +100,14 @@ public class SecurityConfig {
         provider.setUserDetailsService(customUserDetailsService);
         provider.setPasswordEncoder(passwordEncoder);
         return provider;
+    }
+    @Bean
+    public org.springframework.security.web.authentication.rememberme.PersistentTokenRepository persistentTokenRepository(
+            javax.sql.DataSource dataSource
+    ) {
+        var repository = new org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl();
+        repository.setDataSource(dataSource);
+        return repository;
     }
 }
 

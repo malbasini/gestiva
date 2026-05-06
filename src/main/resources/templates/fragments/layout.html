@@ -11,7 +11,10 @@
 <header th:fragment="appHeader" class="app-header">
     <div class="app-header-inner">
         <div class="app-brand">
-            <a th:href="@{/dashboard}" class="brand-link">Gestiva</a>
+            <a th:href="@{/dashboard}" class="brand-link">
+                <span class="brand-mark">▣</span>
+                <span class="brand-text">Gestiva</span>
+            </a>
         </div>
 
         <nav class="top-nav">
@@ -50,7 +53,7 @@
             <div class="header-user-area" th:if="${currentUser != null}">
                    <form th:action="@{/logout}" method="post" class="account-logout-form">
                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                       <span th:text="${currentUser.tenantName}"></span>
+                       <span th:text="${currentUser.tenantName}"></span>&nbsp;&nbsp;
                        <button type="submit" class="btn btn-secondary btn-sm">
                                 <i class="bi bi-box-arrow-right"></i>
                            <span>Logout</span>
@@ -62,8 +65,9 @@
 </header>
 
 <footer th:fragment="appFooter" class="app-footer">
-    <div class="app-footer-inner">
-        Gestiva — gestionale modulare in sviluppo
+    <div class="app-footer-inner" style="text-align: center">
+        <span>⬢ Gestiva</span>
+        <span>— gestionale modulare in sviluppo</span>
     </div>
 </footer>
 
