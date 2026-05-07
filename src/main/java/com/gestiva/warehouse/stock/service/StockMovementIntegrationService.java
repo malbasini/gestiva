@@ -98,7 +98,7 @@ public class StockMovementIntegrationService {
             movement.setDirection("IN");
             movement.setReasonCode("DDT_CANCEL");
             movement.setQuantity(line.getQuantity());
-            movement.setNotes("Ripristino automatico da annullamento DDT " + deliveryNote.getNotes());
+            movement.setNotes("Ripristino automatico da annullamento DDT " + deliveryNote.getDdtNumber());
             movement.setReferenceType("DDT_CANCEL");
             movement.setReferenceId(deliveryNoteId);
 
