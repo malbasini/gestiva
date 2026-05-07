@@ -51,13 +51,17 @@
                 <i class="bi bi-box2"></i>
                 <span>Articoli</span>
             </a>
+            <a th:href="@{/suppliers}" th:classappend="${activeMenu == 'suppliers'} ? ' active' : ''">
+                <i class="bi bi-truck"></i>
+                <span>Fornitori</span>
+            </a>
         </nav>
 
         <nav class="top-nav">
             <div class="header-user-area" th:if="${currentUser != null}">
                    <form th:action="@{/logout}" method="post" class="account-logout-form">
                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                       <span th:text="${currentUser.tenantName}"></span>&nbsp;&nbsp;
+                       <span th:text="${currentUser.tenantName}"></span>
                        <button type="submit" class="btn btn-secondary btn-sm">
                                 <i class="bi bi-box-arrow-right"></i>
                            <span>Logout</span>

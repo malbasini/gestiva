@@ -1,9 +1,12 @@
 package com.gestiva.common.model;
 
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 
 @MappedSuperclass
+@Access(AccessType.FIELD)
 public abstract class TenantAwareEntity extends BaseEntity {
 
     @Column(name = "tenant_id", nullable = false)

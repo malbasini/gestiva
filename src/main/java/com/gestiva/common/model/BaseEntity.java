@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @MappedSuperclass
+@Access(AccessType.FIELD)
 public abstract class BaseEntity {
 
     @Id
