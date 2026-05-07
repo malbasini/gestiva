@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title th:text="'Ordine fornitore ' + ${purchaseOrder.orderNumber}">Dettaglio ordine fornitore</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+  <main class="app-main">
+    <div class="page">
+      <div class="card">
+        <div th:replace="~{fragments/layout :: flashMessages}"></div>
+
+        <div class="breadcrumb">
+          <a th:href="@{/dashboard}">Dashboard</a> /
+          <a th:href="@{/purchase-orders}">Ordini fornitore</a> /
+          <span th:text="${purchaseOrder.orderNumber}">PO-00001</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title" th:text="${purchaseOrder.orderNumber}">PO-00001</h1>
+            <div class="muted" th:text="${purchaseOrder.supplierName}">Fornitore Demo</div>
+          </div>
+          <div class="page-header-right">
+            <a class="btn btn-secondary" th:href="@{/purchase-orders}">
+              <i class="bi bi-arrow-left"></i>
+              <span>Torna alla lista</span>
+            </a>
+            <a class="btn" th:href="@{/purchase-orders/{id}/edit(id=${purchaseOrder.id})}">
+              <i class="bi bi-pencil-square"></i>
+              <span>Modifica</span>
+            </a>
+            <a class="btn"
+               th:if="${purchaseOrder.status == 'CONFIRMED'}"
+               th:href="@{/purchase-orders/{id}/receive(id=${purchaseOrder.id})}">
+              <i class="bi bi-box-arrow-in-down"></i>
+              <span>Ricevi merce</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-box">
+            <div class="label">Numero ordine</div>
+            <div class="value" th:text="${purchaseOrder.orderNumber}">PO-00001</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Data ordine</div>
+            <div class="value" th:text="${purchaseOrder.formattedOrderDate}">07/05/2026</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Consegna prevista</div>
+            <div class="value" th:text="${purchaseOrder.formattedExpectedDeliveryDate}">14/05/2026</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Stato</div>
+            <div class="value" th:text="${purchaseOrder.status}">DRAFT</div>
+          </div>
+        </div>
+
+        <table class="table">
+          <thead>
+          <tr>
+            <th>#</th>
+            <th>Descrizione</th>
+            <th class="text-right">Quantità</th>
+            <th class="text-right">Prezzo</th>
+            <th class="text-right">Sconto</th>
+            <th class="text-right">IVA</th>
+            <th class="text-right">Totale</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="line : ${purchaseOrder.lines}">
+            <td th:text="${line.lineNo}">1</td>
+            <td th:text="${line.description}">Articolo</td>
+            <td class="text-right" th:text="${line.formattedQuantity}">1,000</td>
+            <td class="text-right" th:text="${line.formattedUnitPrice}">10,00 €</td>
+            <td class="text-right" th:text="${line.formattedDiscountPct}">0,00%</td>
+            <td class="text-right" th:text="${line.formattedTaxPct}">22,00%</td>
+            <td class="text-right" th:text="${line.formattedLineTotal}">12,20 €</td>
+          </tr>
+          </tbody>
+        </table>
+
+        <table class="totals">
+          <tr>
+            <td>Imponibile</td>
+            <td class="text-right" th:text="${purchaseOrder.formattedSubtotalAmount}">100,00 €</td>
+          </tr>
+          <tr>
+            <td>IVA</td>
+            <td class="text-right" th:text="${purchaseOrder.formattedTaxAmount}">22,00 €</td>
+          </tr>
+          <tr class="grand-total">
+            <td>Totale</td>
+            <td class="text-right" th:text="${purchaseOrder.formattedTotalAmount}">122,00 €</td>
+          </tr>
+        </table>
+
+        <div class="notes" th:if="${purchaseOrder.notes != null and !#strings.isEmpty(purchaseOrder.notes)}">
+          <strong>Note</strong><br/>
+          <span th:text="${purchaseOrder.notes}">Note ordine</span>
+        </div>
+      </div>
+    </div>
+  </main>
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
+</div>
+</body>
+</html>

@@ -49,25 +49,32 @@
             </a>
             <a th:href="@{/items}" th:classappend="${activeMenu == 'items'} ? ' active' : ''">
                 <i class="bi bi-box2"></i>
-                <span>Articoli</span>
+                <span>Articoli</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
             </a>
+            </a>
+            <div class="header-user-area" th:if="${currentUser != null}">
+                <form th:action="@{/logout}" method="post" class="account-logout-form">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <span th:text="${currentUser.tenantName}"></span>&nbsp;
+                    <button type="submit" class="btn btn-secondary btn-sm">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Logout</span>
+                    </button>
+                </form>
+            </div>
+            <br>
             <a th:href="@{/suppliers}" th:classappend="${activeMenu == 'suppliers'} ? ' active' : ''">
                 <i class="bi bi-truck"></i>
                 <span>Fornitori</span>
             </a>
-        </nav>
-
-        <nav class="top-nav">
-            <div class="header-user-area" th:if="${currentUser != null}">
-                   <form th:action="@{/logout}" method="post" class="account-logout-form">
-                       <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                       <span th:text="${currentUser.tenantName}"></span>
-                       <button type="submit" class="btn btn-secondary btn-sm">
-                                <i class="bi bi-box-arrow-right"></i>
-                           <span>Logout</span>
-                       </button>
-                   </form>
-            </div>
+            <a th:href="@{/purchase-orders}" th:classappend="${activeMenu == 'purchaseOrders'} ? ' active' : ''">
+                <i class="bi bi-cart"></i>
+                <span>Ordini acquisto</span>
+            </a>
+            <a th:href="@{/goods-receipts}" th:classappend="${activeMenu == 'goodsReceipts'} ? ' active' : ''">
+                <i class="bi bi-box-arrow-in-down"></i>
+                <span>Ricezioni merci</span>
+            </a>
         </nav>
     </div>
 </header>

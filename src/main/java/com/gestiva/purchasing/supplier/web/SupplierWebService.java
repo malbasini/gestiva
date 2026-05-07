@@ -144,4 +144,18 @@ public class SupplierWebService {
         v.setActive(supplier.isActive());
         return v;
     }
+
+    @Transactional(readOnly = true)
+    public java.util.List<SupplierOptionView> findOptions(Long tenantId) {
+        return supplierRepository.findByTenantIdAndActiveTrueOrderByNameAsc(tenantId)
+                .stream()
+                .map(s -> {
+                    SupplierOptionView v = new SupplierOptionView();
+                    v.setId(s.getId());
+                    v.setCode(s.getCode());
+                    v.setName(s.getName());
+                    return v;
+                })
+                .toList();
+    }
 }

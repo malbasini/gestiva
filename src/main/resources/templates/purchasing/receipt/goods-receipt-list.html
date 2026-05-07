@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Ricezioni merci</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+  <main class="app-main">
+    <div class="page">
+      <div class="card">
+        <div th:replace="~{fragments/layout :: flashMessages}"></div>
+
+        <div class="breadcrumb">
+          <a th:href="@{/dashboard}">Dashboard</a> /
+          <span>Ricezioni merci</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title">Ricezioni merci</h1>
+            <div class="muted">Carichi di magazzino dal ciclo passivo</div>
+          </div>
+        </div>
+
+        <table class="table">
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Numero</th>
+            <th>Data</th>
+            <th>Fornitore</th>
+            <th>Ordine fornitore</th>
+            <th>Azioni</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:if="${#lists.isEmpty(goodsReceipts)}">
+            <td colspan="6" class="muted">Nessuna ricezione merci trovata.</td>
+          </tr>
+          <tr th:each="receipt : ${goodsReceipts}">
+            <td th:text="${receipt.id}">1</td>
+            <td th:text="${receipt.receiptNumber}">GR-00001</td>
+            <td th:text="${receipt.formattedReceiptDate}">07/05/2026</td>
+            <td th:text="${receipt.supplierName}">Fornitore Demo</td>
+            <td th:text="${receipt.purchaseOrderNumber}">PO-00001</td>
+            <td class="link-actions">
+              <a th:href="@{/goods-receipts/{id}(id=${receipt.id})}">
+                <i class="bi bi-eye"></i>
+                <span>Dettaglio</span>
+              </a>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
+</div>
+</body>
+</html>
