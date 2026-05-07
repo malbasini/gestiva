@@ -173,4 +173,21 @@ public class ItemWebService {
                 })
                 .toList();
     }
+
+    @Transactional(readOnly = true)
+    public ItemAutocompleteView getAutocompleteData(Long tenantId, Long itemId) {
+        var item = itemRepository.findByTenantIdAndId(tenantId, itemId)
+                .orElseThrow(() -> new com.gestiva.common.exception.NotFoundException("Articolo non trovato"));
+
+        ItemAutocompleteView view = new ItemAutocompleteView();
+        view.setId(item.getId());
+        view.setCode(item.getCode());
+        view.setName(item.getName());
+        view.setDescription(item.getDescription());
+        view.setUnitOfMeasure(item.getUnitOfMeasure());
+        view.setItemType(item.getItemType());
+        view.setBasePrice(item.getBasePrice());
+        view.setDefaultTaxPct(item.getDefaultTaxPct());
+        return view;
+    }
 }
