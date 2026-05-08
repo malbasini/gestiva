@@ -1,5 +1,6 @@
 package com.gestiva.purchasing.order.controller;
 
+import com.gestiva.common.exception.BusinessException;
 import com.gestiva.purchasing.order.web.PurchaseOrderForm;
 import com.gestiva.purchasing.order.web.PurchaseOrderWebService;
 import com.gestiva.purchasing.supplier.web.SupplierWebService;
@@ -107,8 +108,15 @@ public class PurchaseOrderPageController {
             return "purchasing/order/purchase-order-form";
         }
 
-        purchaseOrderWebService.update(tenantId, id, form);
-        redirectAttributes.addFlashAttribute("successMessage", "Ordine fornitore aggiornato con successo.");
+        try {
+            purchaseOrderWebService.update(tenantId, id, form);
+            redirectAttributes.addFlashAttribute("successMessage", "Ordine fornitore aggiornato con successo.");
+        }
+        catch(BusinessException ex)
+        {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            return "redirect:/purchase-orders/" + id;
+        }
         return "redirect:/purchase-orders/" + id;
     }
     @PostMapping(params = "addLine")
