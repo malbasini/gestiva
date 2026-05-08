@@ -1,5 +1,6 @@
 package com.gestiva.purchasing.invoice.service;
 
+import com.gestiva.accounting.due.service.PaymentDueService;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.purchasing.invoice.entity.SupplierInvoice;
 import com.gestiva.purchasing.invoice.entity.SupplierInvoiceLine;
@@ -24,19 +25,27 @@ public class SupplierInvoiceService {
     private final GoodsReceiptLineRepository goodsReceiptLineRepository;
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final PurchaseOrderLineRepository purchaseOrderLineRepository;
+    private final PaymentDueService paymentDueService;
+
+
+
 
     public SupplierInvoiceService(SupplierInvoiceRepository supplierInvoiceRepository,
                                   SupplierInvoiceLineRepository supplierInvoiceLineRepository,
                                   GoodsReceiptRepository goodsReceiptRepository,
                                   GoodsReceiptLineRepository goodsReceiptLineRepository,
                                   PurchaseOrderRepository purchaseOrderRepository,
-                                  PurchaseOrderLineRepository purchaseOrderLineRepository) {
+                                  PurchaseOrderLineRepository purchaseOrderLineRepository,
+                                  PaymentDueService paymentDueService) {
+
+
         this.supplierInvoiceRepository = supplierInvoiceRepository;
         this.supplierInvoiceLineRepository = supplierInvoiceLineRepository;
         this.goodsReceiptRepository = goodsReceiptRepository;
         this.goodsReceiptLineRepository = goodsReceiptLineRepository;
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.purchaseOrderLineRepository = purchaseOrderLineRepository;
+        this.paymentDueService = paymentDueService;
     }
 
     public Long createFromGoodsReceipt(Long tenantId, Long goodsReceiptId) {
@@ -113,8 +122,19 @@ public class SupplierInvoiceService {
         saved.setSubtotalAmount(subtotal.setScale(2, java.math.RoundingMode.HALF_UP));
         saved.setTaxAmount(tax.setScale(2, java.math.RoundingMode.HALF_UP));
         saved.setTotalAmount(total.setScale(2, java.math.RoundingMode.HALF_UP));
-
         supplierInvoiceRepository.save(saved);
+        paymentDueService.createPayableFromSupplierInvoice(
+                tenantId,
+                saved.getSupplierId(),
+                saved.getInvoiceNumber(),
+                saved.getInvoiceDate(),
+                saved.getCurrencyCode(),
+                saved.getTotalAmount(),
+                saved.getId()
+        );
+
+
+
 
         return saved.getId();
     }

@@ -1,5 +1,6 @@
 package com.gestiva.billing.invoice.service;
 
+import com.gestiva.accounting.due.service.PaymentDueService;
 import com.gestiva.billing.invoice.dto.InvoiceResponse;
 import com.gestiva.billing.invoice.entity.Invoice;
 import com.gestiva.billing.invoice.entity.InvoiceLine;
@@ -27,15 +28,24 @@ public class InvoiceService {
     private final InvoiceLineRepository invoiceLineRepository;
     private final DeliveryNoteRepository deliveryNoteRepository;
     private final DeliveryNoteLineRepository deliveryNoteLineRepository;
+    private final PaymentDueService paymentDueService;
+
+
+
+
+
 
     public InvoiceService(InvoiceRepository invoiceRepository,
                           InvoiceLineRepository invoiceLineRepository,
                           DeliveryNoteRepository deliveryNoteRepository,
-                          DeliveryNoteLineRepository deliveryNoteLineRepository) {
+                          DeliveryNoteLineRepository deliveryNoteLineRepository,
+                          PaymentDueService paymentDueService) {
+
         this.invoiceRepository = invoiceRepository;
         this.invoiceLineRepository = invoiceLineRepository;
         this.deliveryNoteRepository = deliveryNoteRepository;
         this.deliveryNoteLineRepository = deliveryNoteLineRepository;
+        this.paymentDueService = paymentDueService;
     }
 
     public InvoiceResponse createFromDeliveryNote(Long tenantId, Long deliveryNoteId) {
@@ -87,6 +97,24 @@ public class InvoiceService {
             line.setItemId(deliveryNoteLine.getItemId());
             invoiceLineRepository.save(line);
         }
+        paymentDueService.createReceivableFromCustomerInvoice(
+                tenantId,
+                invoice.getCustomerId(),
+                invoice.getInvoiceNumber(),
+                invoice.getInvoiceDate(),
+                invoice.getCurrencyCode(),
+                invoice.getTotalAmount(),
+                invoice.getId()
+        );
+
+
+
+
+
+
+
+
+
 
         return toResponse(savedInvoice);
     }
