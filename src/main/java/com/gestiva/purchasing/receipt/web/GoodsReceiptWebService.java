@@ -2,6 +2,7 @@ package com.gestiva.purchasing.receipt.web;
 
 import com.gestiva.common.exception.NotFoundException;
 import com.gestiva.documents.pdf.PdfFormatUtils;
+import com.gestiva.purchasing.invoice.repository.SupplierInvoiceRepository;
 import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptLineRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
@@ -20,15 +21,20 @@ public class GoodsReceiptWebService {
     private final GoodsReceiptLineRepository goodsReceiptLineRepository;
     private final SupplierRepository supplierRepository;
     private final PurchaseOrderRepository purchaseOrderRepository;
+    private final SupplierInvoiceRepository supplierInvoiceRepository;
+
+
 
     public GoodsReceiptWebService(GoodsReceiptRepository goodsReceiptRepository,
                                   GoodsReceiptLineRepository goodsReceiptLineRepository,
                                   SupplierRepository supplierRepository,
-                                  PurchaseOrderRepository purchaseOrderRepository) {
+                                  PurchaseOrderRepository purchaseOrderRepository,
+                                  SupplierInvoiceRepository supplierInvoiceRepository) {
         this.goodsReceiptRepository = goodsReceiptRepository;
         this.goodsReceiptLineRepository = goodsReceiptLineRepository;
         this.supplierRepository = supplierRepository;
         this.purchaseOrderRepository = purchaseOrderRepository;
+        this.supplierInvoiceRepository = supplierInvoiceRepository;
     }
 
     public List<GoodsReceiptListItemView> findAll(Long tenantId) {
@@ -81,6 +87,15 @@ public class GoodsReceiptWebService {
         );
         v.setNotes(receipt.getNotes());
         v.setPurchaseOrderId(receipt.getPurchaseOrderId());
+
+        var invoiceOpt = supplierInvoiceRepository.findFirstByTenantIdAndGoodsReceiptId(tenantId, receipt.getId());
+        v.setHasSupplierInvoice(invoiceOpt.isPresent());
+        v.setCanCreateSupplierInvoice(invoiceOpt.isEmpty());
+        invoiceOpt.ifPresent(invoice -> {
+            v.setSupplierInvoiceId(invoice.getId());
+            v.setSupplierInvoiceNumber(invoice.getInvoiceNumber());
+        });
+
         for (var line : lines) {
             GoodsReceiptDetailLineView lv = new GoodsReceiptDetailLineView();
             lv.setLineNo(line.getLineNo());

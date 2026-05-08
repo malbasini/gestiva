@@ -12,4 +12,6 @@ public interface SupplierInvoiceRepository extends JpaRepository<SupplierInvoice
     boolean existsByTenantIdAndInvoiceNumber(Long tenantId, String invoiceNumber);
 
     boolean existsByTenantIdAndGoodsReceiptId(Long tenantId, Long goodsReceiptId);
+
+    java.util.Optional<com.gestiva.purchasing.invoice.entity.SupplierInvoice> findFirstByTenantIdAndGoodsReceiptId(Long tenantId, Long goodsReceiptId);
 }

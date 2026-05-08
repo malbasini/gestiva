@@ -17,6 +17,13 @@ public class PurchaseOrderDetailView {
     private String formattedTaxAmount;
     private String formattedTotalAmount;
     private List<PurchaseOrderDetailLineView> lines = new ArrayList<>();
+    private boolean canReceiveGoods;
+    private boolean hasGoodsReceipt;
+    private Long goodsReceiptId;
+    private String goodsReceiptNumber;
+    private boolean canEdit;
+
+
 
     public Long getId() {
         return id;
@@ -90,5 +97,45 @@ public class PurchaseOrderDetailView {
 
     public void setLines(List<PurchaseOrderDetailLineView> lines) {
         this.lines = lines;
+    }
+
+    public boolean isCanReceiveGoods() {
+        return canReceiveGoods;
+    }
+
+    public void setCanReceiveGoods(boolean canReceiveGoods) {
+        this.canReceiveGoods = canReceiveGoods;
+    }
+
+    public boolean isHasGoodsReceipt() {
+        return hasGoodsReceipt;
+    }
+
+    public void setHasGoodsReceipt(boolean hasGoodsReceipt) {
+        this.hasGoodsReceipt = hasGoodsReceipt;
+    }
+
+    public Long getGoodsReceiptId() {
+        return goodsReceiptId;
+    }
+
+    public void setGoodsReceiptId(Long goodsReceiptId) {
+        this.goodsReceiptId = goodsReceiptId;
+    }
+
+    public String getGoodsReceiptNumber() {
+        return goodsReceiptNumber;
+    }
+
+    public void setGoodsReceiptNumber(String goodsReceiptNumber) {
+        this.goodsReceiptNumber = goodsReceiptNumber;
+    }
+
+    public boolean isCanEdit() {
+        return canEdit;
+    }
+
+    public void setCanEdit(boolean canEdit) {
+        this.canEdit = canEdit;
     }
 }

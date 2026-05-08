@@ -35,9 +35,17 @@
               <i class="bi bi-box"></i>
               <span>Ordine</span>
             </a>
-            <a class="btn" th:href="@{/goods-receipts/{id}/invoice(id=${goodsReceipt.id})}">
+            <a class="btn"
+               th:if="${goodsReceipt.canCreateSupplierInvoice}"
+               th:href="@{/goods-receipts/{id}/invoice(id=${goodsReceipt.id})}">
               <i class="bi bi-receipt"></i>
               <span>Genera fattura fornitore</span>
+            </a>
+            <a class="btn btn-secondary"
+               th:if="${goodsReceipt.hasSupplierInvoice}"
+               th:href="@{/supplier-invoices/{id}(id=${goodsReceipt.supplierInvoiceId})}">
+              <i class="bi bi-receipt"></i>
+              <span th:text="'Fattura ' + ${goodsReceipt.supplierInvoiceNumber}">Fattura</span>
             </a>
           </div>
         </div>

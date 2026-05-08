@@ -13,8 +13,12 @@ public class GoodsReceiptDetailView {
     private String notes;
     private List<GoodsReceiptDetailLineView> lines = new ArrayList<>();
 
+    private boolean canCreateSupplierInvoice;
+    private boolean hasSupplierInvoice;
+    private Long supplierInvoiceId;
+    private String supplierInvoiceNumber;
     private Long purchaseOrderId;
-
+    
     public Long getPurchaseOrderId() {
         return purchaseOrderId;
     }
@@ -65,5 +69,37 @@ public class GoodsReceiptDetailView {
 
     public void setLines(List<GoodsReceiptDetailLineView> lines) {
         this.lines = lines;
+    }
+
+    public boolean isCanCreateSupplierInvoice() {
+        return canCreateSupplierInvoice;
+    }
+
+    public void setCanCreateSupplierInvoice(boolean canCreateSupplierInvoice) {
+        this.canCreateSupplierInvoice = canCreateSupplierInvoice;
+    }
+
+    public boolean isHasSupplierInvoice() {
+        return hasSupplierInvoice;
+    }
+
+    public void setHasSupplierInvoice(boolean hasSupplierInvoice) {
+        this.hasSupplierInvoice = hasSupplierInvoice;
+    }
+
+    public Long getSupplierInvoiceId() {
+        return supplierInvoiceId;
+    }
+
+    public void setSupplierInvoiceId(Long supplierInvoiceId) {
+        this.supplierInvoiceId = supplierInvoiceId;
+    }
+
+    public String getSupplierInvoiceNumber() {
+        return supplierInvoiceNumber;
+    }
+
+    public void setSupplierInvoiceNumber(String supplierInvoiceNumber) {
+        this.supplierInvoiceNumber = supplierInvoiceNumber;
     }
 }

@@ -13,4 +13,10 @@ public interface GoodsReceiptRepository extends JpaRepository<GoodsReceipt, Long
     boolean existsByTenantIdAndReceiptNumber(Long tenantId, String receiptNumber);
 
     boolean existsByTenantIdAndPurchaseOrderId(Long tenantId, Long purchaseOrderId);
+
+    java.util.Optional<com.gestiva.purchasing.receipt.entity.GoodsReceipt> findFirstByTenantIdAndPurchaseOrderId(Long tenantId, Long purchaseOrderId);
+
+
+
+
 }

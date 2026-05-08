@@ -7,6 +7,7 @@ import com.gestiva.purchasing.order.entity.PurchaseOrder;
 import com.gestiva.purchasing.order.entity.PurchaseOrderLine;
 import com.gestiva.purchasing.order.repository.PurchaseOrderLineRepository;
 import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
+import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
 import com.gestiva.purchasing.supplier.repository.SupplierRepository;
 import com.gestiva.warehouse.item.repository.ItemRepository;
 import org.springframework.data.domain.Sort;
@@ -26,15 +27,18 @@ public class PurchaseOrderWebService {
     private final PurchaseOrderLineRepository purchaseOrderLineRepository;
     private final SupplierRepository supplierRepository;
     private final ItemRepository itemRepository;
+    private final GoodsReceiptRepository goodsReceiptRepository;
 
     public PurchaseOrderWebService(PurchaseOrderRepository purchaseOrderRepository,
                                    PurchaseOrderLineRepository purchaseOrderLineRepository,
                                    SupplierRepository supplierRepository,
-                                   ItemRepository itemRepository) {
+                                   ItemRepository itemRepository,
+                                   GoodsReceiptRepository goodsReceiptRepository) {
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.purchaseOrderLineRepository = purchaseOrderLineRepository;
         this.supplierRepository = supplierRepository;
         this.itemRepository = itemRepository;
+        this.goodsReceiptRepository = goodsReceiptRepository;
     }
 
     @Transactional(readOnly = true)
@@ -97,7 +101,14 @@ public class PurchaseOrderWebService {
         v.setFormattedSubtotalAmount(PdfFormatUtils.formatMoney(po.getSubtotalAmount()));
         v.setFormattedTaxAmount(PdfFormatUtils.formatMoney(po.getTaxAmount()));
         v.setFormattedTotalAmount(PdfFormatUtils.formatMoney(po.getTotalAmount()));
-
+        var receiptOpt = goodsReceiptRepository.findFirstByTenantIdAndPurchaseOrderId(tenantId, po.getId());
+        v.setHasGoodsReceipt(receiptOpt.isPresent());
+        v.setCanReceiveGoods("CONFIRMED".equalsIgnoreCase(po.getStatus()) && receiptOpt.isEmpty());
+        v.setCanEdit(!"CONFIRMED".equalsIgnoreCase(po.getStatus()) && !"CANCELLED".equalsIgnoreCase(po.getStatus()));
+        receiptOpt.ifPresent(receipt -> {
+            v.setGoodsReceiptId(receipt.getId());
+            v.setGoodsReceiptNumber(receipt.getReceiptNumber());
+        });
         for (var line : lines) {
             PurchaseOrderDetailLineView lv = new PurchaseOrderDetailLineView();
             lv.setLineNo(line.getLineNo());

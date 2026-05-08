@@ -31,15 +31,23 @@
               <i class="bi bi-arrow-left"></i>
               <span>Torna alla lista</span>
             </a>
-            <a class="btn" th:href="@{/purchase-orders/{id}/edit(id=${purchaseOrder.id})}">
+            <a class="btn"
+               th:if="${purchaseOrder.canEdit}"
+               th:href="@{/purchase-orders/{id}/edit(id=${purchaseOrder.id})}">
               <i class="bi bi-pencil-square"></i>
               <span>Modifica</span>
             </a>
             <a class="btn"
-               th:if="${purchaseOrder.status == 'CONFIRMED'}"
+               th:if="${purchaseOrder.canReceiveGoods}"
                th:href="@{/purchase-orders/{id}/receive(id=${purchaseOrder.id})}">
               <i class="bi bi-box-arrow-in-down"></i>
               <span>Ricevi merce</span>
+            </a>
+            <a class="btn btn-secondary"
+               th:if="${purchaseOrder.hasGoodsReceipt}"
+               th:href="@{/goods-receipts/{id}(id=${purchaseOrder.goodsReceiptId})}">
+              <i class="bi bi-box-arrow-in-down"></i>
+              <span th:text="'Ricezione ' + ${purchaseOrder.goodsReceiptNumber}">Ricezione</span>
             </a>
           </div>
         </div>

@@ -31,11 +31,16 @@
                             <i class="bi bi-arrow-left"></i>
                             <span>Torna alla lista</span>
                         </a>
-                        <a class="btn btn-secondary" th:href="@{/goods-receipts/{id}(id=${supplierInvoice.goodsReceiptId})}">
+                        <a class="btn btn-secondary"
+                           th:if="${supplierInvoice.goodsReceiptId != null}"
+                           th:href="@{/goods-receipts/{id}(id=${supplierInvoice.goodsReceiptId})}">
                             <i class="bi bi-box-arrow-in-down"></i>
                             <span>Ricezione</span>
                         </a>
-                        <a class="btn btn-secondary" th:href="@{/purchase-orders/{id}(id=${supplierInvoice.purchaseOrderId})}">
+
+                        <a class="btn btn-secondary"
+                           th:if="${supplierInvoice.purchaseOrderId != null}"
+                           th:href="@{/purchase-orders/{id}(id=${supplierInvoice.purchaseOrderId})}">
                             <i class="bi bi-box"></i>
                             <span>Ordine</span>
                         </a>

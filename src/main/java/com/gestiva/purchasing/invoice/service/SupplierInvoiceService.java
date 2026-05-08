@@ -71,6 +71,10 @@ public class SupplierInvoiceService {
         BigDecimal tax = BigDecimal.ZERO;
         BigDecimal total = BigDecimal.ZERO;
 
+        invoice.setSubtotalAmount(subtotal);
+        invoice.setTaxAmount(tax);
+        invoice.setTotalAmount(total);
+
         SupplierInvoice saved = supplierInvoiceRepository.save(invoice);
 
         int lineNo = 1;

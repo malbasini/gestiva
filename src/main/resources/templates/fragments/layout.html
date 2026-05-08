@@ -67,13 +67,18 @@
                 <i class="bi bi-truck"></i>
                 <span>Fornitori</span>
             </a>
-            <a th:href="@{/purchase-orders}" th:classappend="${activeMenu == 'purchaseOrders'} ? ' active' : ''">
-                <i class="bi bi-cart"></i>
-                <span>Ordini acquisto</span>
-            </a>
-            <a th:href="@{/goods-receipts}" th:classappend="${activeMenu == 'goodsReceipts'} ? ' active' : ''">
+            <a class="btn btn-secondary"
+               th:if="${supplierInvoice.goodsReceiptId != null}"
+               th:href="@{/goods-receipts/{id}(id=${supplierInvoice.goodsReceiptId})}">
                 <i class="bi bi-box-arrow-in-down"></i>
-                <span>Ricezioni merci</span>
+                <span>Ricezione</span>
+            </a>
+
+            <a class="btn btn-secondary"
+               th:if="${supplierInvoice.purchaseOrderId != null}"
+               th:href="@{/purchase-orders/{id}(id=${supplierInvoice.purchaseOrderId})}">
+                <i class="bi bi-box"></i>
+                <span>Ordine</span>
             </a>
             <a th:href="@{/supplier-invoices}" th:classappend="${activeMenu == 'supplierInvoices'} ? ' active' : ''">
                 <i class="bi bi-receipt"></i>
