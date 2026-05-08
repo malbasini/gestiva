@@ -111,4 +111,76 @@ public class PurchaseOrderPageController {
         redirectAttributes.addFlashAttribute("successMessage", "Ordine fornitore aggiornato con successo.");
         return "redirect:/purchase-orders/" + id;
     }
+    @PostMapping(params = "addLine")
+    public String addLineCreate(@ModelAttribute("purchaseOrderForm") PurchaseOrderForm form,
+                                Model model) {
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        form.getLines().add(purchaseOrderWebService.buildDefaultLine());
+
+        model.addAttribute("supplierOptions", supplierWebService.findOptions(tenantId));
+        model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
+        model.addAttribute("formMode", "create");
+        model.addAttribute("activeMenu", "purchaseOrders");
+        return "purchasing/order/purchase-order-form";
+    }
+    @PostMapping(params = "removeLine")
+    public String removeLineCreate(@ModelAttribute("purchaseOrderForm") PurchaseOrderForm form,
+                                   @RequestParam("removeLine") int index,
+                                   Model model) {
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        if (form.getLines() != null && index >= 0 && index < form.getLines().size()) {
+            form.getLines().remove(index);
+        }
+
+        if (form.getLines() == null || form.getLines().isEmpty()) {
+            form.getLines().add(purchaseOrderWebService.buildDefaultLine());
+        }
+
+        model.addAttribute("supplierOptions", supplierWebService.findOptions(tenantId));
+        model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
+        model.addAttribute("formMode", "create");
+        model.addAttribute("activeMenu", "purchaseOrders");
+        return "purchasing/order/purchase-order-form";
+    }
+
+    @PostMapping(value = "/{id}", params = "addLine")
+    public String addLineEdit(@PathVariable Long id,
+                              @ModelAttribute("purchaseOrderForm") PurchaseOrderForm form,
+                              Model model) {
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        form.getLines().add(purchaseOrderWebService.buildDefaultLine());
+
+        model.addAttribute("supplierOptions", supplierWebService.findOptions(tenantId));
+        model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
+        model.addAttribute("purchaseOrderId", id);
+        model.addAttribute("formMode", "edit");
+        model.addAttribute("activeMenu", "purchaseOrders");
+        return "purchasing/order/purchase-order-form";
+    }
+
+    @PostMapping(value = "/{id}", params = "removeLine")
+    public String removeLineEdit(@PathVariable Long id,
+                                 @ModelAttribute("purchaseOrderForm") PurchaseOrderForm form,
+                                 @RequestParam("removeLine") int index,
+                                 Model model) {
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        if (form.getLines() != null && index >= 0 && index < form.getLines().size()) {
+            form.getLines().remove(index);
+        }
+
+        if (form.getLines() == null || form.getLines().isEmpty()) {
+            form.getLines().add(purchaseOrderWebService.buildDefaultLine());
+        }
+
+        model.addAttribute("supplierOptions", supplierWebService.findOptions(tenantId));
+        model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
+        model.addAttribute("purchaseOrderId", id);
+        model.addAttribute("formMode", "edit");
+        model.addAttribute("activeMenu", "purchaseOrders");
+        return "purchasing/order/purchase-order-form";
+    }
 }

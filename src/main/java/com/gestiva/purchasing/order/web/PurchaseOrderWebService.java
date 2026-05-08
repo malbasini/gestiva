@@ -291,6 +291,18 @@ public class PurchaseOrderWebService {
         return number;
     }
 
+    @Transactional(readOnly = true)
+    public PurchaseOrderLineForm buildDefaultLine() {
+        PurchaseOrderLineForm line = new PurchaseOrderLineForm();
+        line.setItemId(null);
+        line.setDescription("");
+        line.setQuantity(java.math.BigDecimal.ONE);
+        line.setUnitPrice(java.math.BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP));
+        line.setDiscountPct(java.math.BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP));
+        line.setTaxPct(new java.math.BigDecimal("22.00"));
+        return line;
+    }
+
     private record LineTotals(BigDecimal subtotal, BigDecimal tax, BigDecimal total) {}
     private record Totals(BigDecimal subtotal, BigDecimal tax, BigDecimal total) {}
 }

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Ordini fornitore</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+    <main class="app-main">
+        <div class="page">
+            <div class="card">
+                <div th:replace="~{fragments/layout :: flashMessages}"></div>
+
+                <div class="breadcrumb">
+                    <a th:href="@{/dashboard}">Dashboard</a> /
+                    <span>Ordini fornitore</span>
+                </div>
+
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1 class="page-title">Ordini fornitore</h1>
+                        <div class="muted">Gestione ordini del ciclo passivo</div>
+                    </div>
+                    <div class="page-header-right">
+                        <a class="btn" th:href="@{/purchase-orders/new}">
+                            <i class="bi bi-plus-lg"></i>
+                            <span>Nuovo ordine</span>
+                        </a>
+                    </div>
+                </div>
+
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Numero</th>
+                        <th>Data</th>
+                        <th>Fornitore</th>
+                        <th>Stato</th>
+                        <th>Totale</th>
+                        <th>Azioni</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(purchaseOrders)}">
+                        <td colspan="7" class="muted">Nessun ordine fornitore trovato.</td>
+                    </tr>
+                    <tr th:each="po : ${purchaseOrders}">
+                        <td th:text="${po.id}">1</td>
+                        <td th:text="${po.orderNumber}">PO-00001</td>
+                        <td th:text="${po.formattedOrderDate}">07/05/2026</td>
+                        <td th:text="${po.supplierName}">Fornitore Demo</td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${po.status == 'DRAFT'} ? ' badge-draft' :
+                                                  (${po.status == 'SENT'} ? ' badge-sent' :
+                                                  (${po.status == 'CONFIRMED'} ? ' badge-confirmed' : ' badge-cancelled'))"
+                                  th:text="${po.status}">DRAFT</span>
+                        </td>
+                        <td th:text="${po.formattedTotalAmount}">100,00 €</td>
+                        <td class="link-actions">
+                            <a th:href="@{/purchase-orders/{id}(id=${po.id})}">
+                                <i class="bi bi-eye"></i>
+                                <span>Dettaglio</span>
+                            </a>
+                            <a th:href="@{/purchase-orders/{id}/edit(id=${po.id})}">
+                                <i class="bi bi-pencil-square"></i>
+                                <span>Modifica</span>
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </main>
+    <div th:replace="~{fragments/layout :: appFooter}"></div>
+</div>
+</body>
+</html>

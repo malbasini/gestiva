@@ -75,6 +75,10 @@
                 <i class="bi bi-box-arrow-in-down"></i>
                 <span>Ricezioni merci</span>
             </a>
+            <a th:href="@{/supplier-invoices}" th:classappend="${activeMenu == 'supplierInvoices'} ? ' active' : ''">
+                <i class="bi bi-receipt"></i>
+                <span>Fatture fornitore</span>
+            </a>
         </nav>
     </div>
 </header>

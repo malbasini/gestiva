@@ -89,6 +89,13 @@
             </div>
           </div>
 
+          <div class="actions" style="margin-top:16px;">
+            <button type="submit" name="addLine" value="true" class="btn btn-secondary">
+              <i class="bi bi-plus-lg"></i>
+              <span>Aggiungi riga</span>
+            </button>
+          </div>
+
           <table class="table">
             <thead>
             <tr>
@@ -142,6 +149,15 @@
                        th:field="*{lines[__${stat.index}__].taxPct}"
                        class="js-line-tax-pct"
                        th:attr="data-row-index=${stat.index}"/>
+              </td>
+              <td>
+                <button type="submit"
+                        name="removeLine"
+                        th:value="${stat.index}"
+                        class="btn btn-secondary">
+                  <i class="bi bi-trash"></i>
+                  <span>Rimuovi</span>
+                </button>
               </td>
             </tr>
             </tbody>
