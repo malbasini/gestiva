@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Nuova scrittura contabile V2</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+  <main class="app-main">
+    <div class="page">
+      <div class="card">
+
+        <div class="breadcrumb">
+          <a th:href="@{/dashboard}">Dashboard</a> /
+          <a th:href="@{/v2/accounts}">Contabilità V2</a> /
+          <span>Nuova scrittura</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title">Nuova scrittura contabile V2</h1>
+            <div class="muted">Inserimento manuale in partita doppia</div>
+          </div>
+        </div>
+
+        <form method="post" th:action="@{/v2/journal-entries}" th:object="${journalEntryForm}">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="entryDate">Data scrittura</label>
+              <input id="entryDate"
+                     type="date"
+                     name="entryDate"
+                     th:value="${journalEntryForm.entryDate != null ? #temporals.format(journalEntryForm.entryDate, 'yyyy-MM-dd') : ''}"/>
+              <div class="field-error" th:if="${#fields.hasErrors('entryDate')}" th:errors="*{entryDate}">Errore</div>
+            </div>
+
+            <div class="form-field">
+              <label for="causalCode">Causale</label>
+              <select id="causalCode" th:field="*{causalCode}">
+                <option value="MANUAL_JOURNAL">Scrittura manuale</option>
+              </select>
+              <div class="field-error" th:if="${#fields.hasErrors('causalCode')}" th:errors="*{causalCode}">Errore</div>
+            </div>
+
+            <div class="form-field full">
+              <label for="description">Descrizione</label>
+              <input id="description" type="text" th:field="*{description}" placeholder="Descrizione scrittura"/>
+              <div class="field-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}">Errore</div>
+            </div>
+
+            <div class="form-field">
+              <label for="currencyCode">Valuta</label>
+              <input id="currencyCode" type="text" th:field="*{currencyCode}" placeholder="EUR"/>
+              <div class="field-error" th:if="${#fields.hasErrors('currencyCode')}" th:errors="*{currencyCode}">Errore</div>
+            </div>
+
+            <div class="form-field full">
+              <label for="notes">Note</label>
+              <textarea id="notes" th:field="*{notes}" rows="3" placeholder="Note aggiuntive"></textarea>
+            </div>
+          </div>
+
+          <table class="table" style="margin-top:24px;">
+            <thead>
+            <tr>
+              <th>#</th>
+              <th>Conto</th>
+              <th>Descrizione riga</th>
+              <th class="text-right">Dare</th>
+              <th class="text-right">Avere</th>
+              <th>Azioni</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="line, stat : *{lines}">
+              <td th:text="${stat.index + 1}">1</td>
+              <td>
+                <select th:field="*{lines[__${stat.index}__].accountId}">
+                  <option value="">-- conto --</option>
+                  <option th:each="opt : ${accountOptions}"
+                          th:value="${opt.id}"
+                          th:text="${opt.label}">
+                    1110 - Cassa
+                  </option>
+                </select>
+              </td>
+              <td>
+                <input type="text" th:field="*{lines[__${stat.index}__].description}" placeholder="Descrizione riga"/>
+              </td>
+              <td class="text-right">
+                <input type="number" step="0.01" th:field="*{lines[__${stat.index}__].debitAmount}"/>
+              </td>
+              <td class="text-right">
+                <input type="number" step="0.01" th:field="*{lines[__${stat.index}__].creditAmount}"/>
+              </td>
+              <td>
+                <button type="submit"
+                        name="removeLine"
+                        th:value="${stat.index}"
+                        class="btn btn-secondary">
+                  <i class="bi bi-trash"></i>
+                  <span>Rimuovi</span>
+                </button>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+
+          <div class="actions">
+            <button type="submit" name="addLine" value="true" class="btn btn-secondary">
+              <i class="bi bi-plus-lg"></i>
+              <span>Aggiungi riga</span>
+            </button>
+
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-floppy"></i>
+              <span>Salva scrittura</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
+</div>
+</body>
+</html>
