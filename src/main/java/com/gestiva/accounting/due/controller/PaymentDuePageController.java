@@ -3,6 +3,7 @@ package com.gestiva.accounting.due.controller;
 import com.gestiva.accounting.due.service.PaymentDueRegistrationService;
 import com.gestiva.accounting.due.web.PaymentDueRegistrationForm;
 import com.gestiva.accounting.due.web.PaymentDueWebService;
+import com.gestiva.common.exception.BusinessException;
 import com.gestiva.security.usercontext.TenantContext;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
@@ -67,8 +68,13 @@ public class PaymentDuePageController {
             model.addAttribute("activeMenu", "paymentDues");
             return "accounting/due/payment-due-detail";
         }
-        paymentDueRegistrationService.registerMovement(tenantId, id, form);
-        redirectAttributes.addFlashAttribute("successMessage", "Registrazione eseguita con successo.");
+        try {
+            paymentDueRegistrationService.registerMovement(tenantId, id, form);
+            redirectAttributes.addFlashAttribute("successMessage", "Registrazione eseguita con successo.");
+        }
+        catch (BusinessException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
         return "redirect:/payment-dues/" + id;
 
     }

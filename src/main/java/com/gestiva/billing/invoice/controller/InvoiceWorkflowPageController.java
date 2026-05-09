@@ -32,6 +32,7 @@ public class InvoiceWorkflowPageController {
             redirectAttributes.addFlashAttribute("successMessage", "Fattura annullata con successo.");
         } catch (BusinessException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            return "redirect:/invoices/" + id + "?tenantId=" + resolvedTenantId;
         }
 
         return "redirect:/invoices/" + id + "?tenantId=" + resolvedTenantId;

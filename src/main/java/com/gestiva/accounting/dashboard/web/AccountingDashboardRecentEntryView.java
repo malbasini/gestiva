@@ -1,0 +1,59 @@
+package com.gestiva.accounting.dashboard.web;
+
+public class AccountingDashboardRecentEntryView {
+
+    private Long id;
+    private String entryNumber;
+    private String formattedEntryDate;
+    private String causalCode;
+    private String description;
+    private String formattedTotalAmount;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getEntryNumber() {
+        return entryNumber;
+    }
+
+    public void setEntryNumber(String entryNumber) {
+        this.entryNumber = entryNumber;
+    }
+
+    public String getFormattedEntryDate() {
+        return formattedEntryDate;
+    }
+
+    public void setFormattedEntryDate(String formattedEntryDate) {
+        this.formattedEntryDate = formattedEntryDate;
+    }
+
+    public String getCausalCode() {
+        return causalCode;
+    }
+
+    public void setCausalCode(String causalCode) {
+        this.causalCode = causalCode;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getFormattedTotalAmount() {
+        return formattedTotalAmount;
+    }
+
+    public void setFormattedTotalAmount(String formattedTotalAmount) {
+        this.formattedTotalAmount = formattedTotalAmount;
+    }
+}

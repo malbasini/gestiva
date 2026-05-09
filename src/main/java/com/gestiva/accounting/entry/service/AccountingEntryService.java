@@ -164,4 +164,30 @@ public class AccountingEntryService {
                 ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
                 : value.setScale(2, RoundingMode.HALF_UP);
     }
+    public Long registerManualEntry(Long tenantId,
+                                    com.gestiva.accounting.entry.web.AccountingEntryManualForm form) {
+        if ("MANUAL_INCOME".equalsIgnoreCase(form.getMovementType())) {
+            return registerManualIncome(
+                    tenantId,
+                    form.getEntryDate(),
+                    form.getDescription(),
+                    form.getCurrencyCode(),
+                    form.getAmount(),
+                    form.getNotes()
+            );
+        }
+
+        if ("MANUAL_EXPENSE".equalsIgnoreCase(form.getMovementType())) {
+            return registerManualExpense(
+                    tenantId,
+                    form.getEntryDate(),
+                    form.getDescription(),
+                    form.getCurrencyCode(),
+                    form.getAmount(),
+                    form.getNotes()
+            );
+        }
+
+        throw new com.gestiva.common.exception.BusinessException("Tipo movimento non valido.");
+    }
 }

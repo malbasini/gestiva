@@ -1,5 +1,6 @@
 package com.gestiva.purchasing.supplier.controller;
 
+import com.gestiva.common.exception.BusinessException;
 import com.gestiva.purchasing.supplier.web.SupplierForm;
 import com.gestiva.purchasing.supplier.web.SupplierWebService;
 import com.gestiva.security.usercontext.TenantContext;
@@ -57,11 +58,15 @@ public class SupplierPageController {
             model.addAttribute("activeMenu", "suppliers");
             return "purchasing/supplier/supplier-form";
         }
-
-        Long tenantId = tenantContext.getCurrentTenantId();
-        Long id = supplierWebService.create(tenantId, form);
-
-        redirectAttributes.addFlashAttribute("successMessage", "Fornitore creato con successo.");
+        Long id = null;
+        try {
+            Long tenantId = tenantContext.getCurrentTenantId();
+            id = supplierWebService.create(tenantId, form);
+            redirectAttributes.addFlashAttribute("successMessage", "Fornitore creato con successo.");
+        }
+        catch(BusinessException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
         return "redirect:/suppliers/" + id;
     }
 
