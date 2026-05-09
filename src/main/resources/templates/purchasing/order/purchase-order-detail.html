@@ -31,13 +31,13 @@
               <i class="bi bi-arrow-left"></i>
               <span>Torna alla lista</span>
             </a>
-            <a class="btn"
+            <a class="btn btn-primary"
                th:if="${purchaseOrder.canEdit}"
                th:href="@{/purchase-orders/{id}/edit(id=${purchaseOrder.id})}">
               <i class="bi bi-pencil-square"></i>
               <span>Modifica</span>
             </a>
-            <a class="btn"
+            <a class="btn btn-primary"
                th:if="${purchaseOrder.canReceiveGoods}"
                th:href="@{/purchase-orders/{id}/receive(id=${purchaseOrder.id})}">
               <i class="bi bi-box-arrow-in-down"></i>

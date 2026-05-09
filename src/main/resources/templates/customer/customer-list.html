@@ -27,7 +27,7 @@
           </div>
 
           <div class="page-header-right">
-            <a class="btn" th:href="@{/customers/new(tenantId=${tenantId})}">
+            <a class="btn btn-primary" th:href="@{/customers/new(tenantId=${tenantId})}">
               <i class="bi bi-plus-lg"></i>
               <span>Nuovo cliente</span>
             </a>
@@ -51,7 +51,7 @@
             <option value="PERSON" th:selected="${type == 'PERSON'}">PERSON</option>
           </select>
 
-          <button type="submit" class="btn">Filtra</button>
+          <button type="submit" class="btn btn-primary">Filtra</button>
 
           <a class="btn btn-secondary"
              th:href="@{/customers(tenantId=${tenantId})}">

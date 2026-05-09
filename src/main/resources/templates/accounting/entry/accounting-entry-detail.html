@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title th:text="'Prima nota ' + ${entry.entryNumber}">Dettaglio prima nota</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+  <main class="app-main">
+    <div class="page">
+      <div class="card">
+        <div th:replace="~{fragments/layout :: flashMessages}"></div>
+
+        <div class="breadcrumb">
+          <a th:href="@{/dashboard}">Dashboard</a> /
+          <a th:href="@{/accounting-entries}">Prima nota</a> /
+          <span th:text="${entry.entryNumber}">PN-00001</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title" th:text="${entry.entryNumber}">PN-00001</h1>
+            <div class="muted" th:text="${entry.description}">Descrizione movimento</div>
+          </div>
+          <div class="page-header-right">
+            <a class="btn btn-secondary" th:href="@{/accounting-entries}">
+              <i class="bi bi-arrow-left"></i>
+              <span>Torna alla lista</span>
+            </a>
+
+            <a class="btn btn-secondary"
+               th:if="${entry.referenceType == 'PAYMENT_DUE' and entry.referenceId != null}"
+               th:href="@{/payment-dues/{id}(id=${entry.referenceId})}">
+              <i class="bi bi-calendar-check"></i>
+              <span>Scadenza</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-box">
+            <div class="label">Numero movimento</div>
+            <div class="value" th:text="${entry.entryNumber}">PN-00001</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Data</div>
+            <div class="value" th:text="${entry.formattedEntryDate}">09/05/2026</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Causale</div>
+            <div class="value" th:text="${entry.causalCode}">CUSTOMER_RECEIPT</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Totale</div>
+            <div class="value" th:text="${entry.formattedTotalAmount}">100,00 €</div>
+          </div>
+        </div>
+
+        <div class="info-grid three-cols">
+          <div class="info-box">
+            <div class="label">Valuta</div>
+            <div class="value" th:text="${entry.currencyCode}">EUR</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Riferimento</div>
+            <div class="value" th:text="${entry.referenceType != null ? entry.referenceType : '-'}">PAYMENT_DUE</div>
+          </div>
+          <div class="info-box">
+            <div class="label">ID riferimento</div>
+            <div class="value" th:text="${entry.referenceId != null ? entry.referenceId : '-'}">1</div>
+          </div>
+        </div>
+
+        <table class="table">
+          <thead>
+          <tr>
+            <th>#</th>
+            <th>Tipo riga</th>
+            <th>Descrizione</th>
+            <th class="text-right">Importo</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:if="${#lists.isEmpty(entry.lines)}">
+            <td colspan="4" class="muted">Nessuna riga trovata.</td>
+          </tr>
+          <tr th:each="line : ${entry.lines}">
+            <td th:text="${line.lineNo}">1</td>
+            <td th:text="${line.lineType}">INCOME</td>
+            <td th:text="${line.description}">Incasso su scadenza INV-001</td>
+            <td class="text-right" th:text="${line.formattedAmount}">100,00 €</td>
+          </tr>
+          </tbody>
+        </table>
+
+        <div class="notes" th:if="${entry.notes != null and !#strings.isEmpty(entry.notes)}">
+          <strong>Note</strong><br/>
+          <span th:text="${entry.notes}">Note movimento</span>
+        </div>
+      </div>
+    </div>
+  </main>
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
+</div>
+</body>
+</html>

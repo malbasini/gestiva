@@ -34,15 +34,15 @@
               <i class="bi bi-arrow-left"></i>
               <span>Torna alla lista</span>
             </a>
-            <a class="btn" th:href="@{/customers/{id}/edit(id=${customer.id}, tenantId=${tenantId})}">
+            <a class="btn btn-primary" th:href="@{/customers/{id}/edit(id=${customer.id}, tenantId=${tenantId})}">
               <i class="bi bi-pencil"></i>
               <span>Modifica</span>
             </a>
-            <a class="btn" th:href="@{/quotes(customerId=${customer.id}, tenantId=${tenantId})}">
+            <a class="btn btn-primary" th:href="@{/quotes(customerId=${customer.id}, tenantId=${tenantId})}">
               <i class="bi bi-receipt"></i>
               <span>Preventivi</span>
             </a>
-            <a class="btn" th:href="@{/orders(customerId=${customer.id}, tenantId=${tenantId})}">
+            <a class="btn btn-primary" th:href="@{/orders(customerId=${customer.id}, tenantId=${tenantId})}">
               <i class="bi bi-box-seam"></i>
               <span>Ordini</span>
             </a>

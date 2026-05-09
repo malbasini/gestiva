@@ -34,46 +34,52 @@
               <i class="bi bi-arrow-left"></i>
               <span>Torna all'ordine</span>
             </a>
-            <form th:if="${deliveryNote.invoiceCreatable}"
-                  th:action="@{/delivery-notes/{id}/invoice(id=${deliveryNote.id})}"
-                  method="post"
-                  style="display:inline-block; margin:0;"
-                  onsubmit="return confirm('Confermi di voler creare la fattura da questo DDT?');">
-              <input type="hidden" name="tenantId" th:value="${tenantId}"/>
-              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-              <button type="submit" class="btn">
-                <i class="bi bi-receipt"></i>
-                <span>Crea fattura</span>
-              </button>
-            </form>
-            <a class="btn"
+            <th:block th:if="${deliveryNote.invoiceCreatable}">
+                <button type="button"
+                        class="btn btn-secondary"
+                        onclick="openConfirmModal(this)"
+                        data-confirm-textContent="Sei sicuro di voler creare la fattura?"
+                        data-confirm-title="Crea fattura"
+                        data-confirm-message="Confermi di voler creare la fattura da questo DDT?"
+                        data-confirm-submit="Conferma creazione fattura"
+                        data-confirm-submit-class="btn btn-primary"
+                        th:attr="data-confirm-action=@{/delivery-notes/{id}/invoice(id=${deliveryNote.id})}">
+                  <i class="bi bi-x-circle"></i>
+                  <span>Crea fattura</span>
+                </button>
+            </th:block>
+            <a class="btn btn-primary"
                th:if="${deliveryNote.invoiceExists}"
                th:href="@{/invoices/{id}(id=${deliveryNote.invoiceId}, tenantId=${tenantId})}">
               <i class="bi bi-receipt"></i>
               <span th:text="${deliveryNote.invoiceNumber != null ? 'Apri ' + deliveryNote.invoiceNumber : 'Apri fattura'}">Apri fattura</span>
             </a>
-            <a class="btn"
+            <a class="btn btn-primary"
                th:href="@{/delivery-notes/{id}/preview(id=${deliveryNote.id}, tenantId=${tenantId})}">
               <i class="bi bi-eye"></i>
               <span>Preview</span>
             </a>
-            <a class="btn"
+            <a class="btn btn-primary"
                th:href="@{/api/delivery-notes/{id}/pdf(id=${deliveryNote.id}, tenantId=${tenantId})}">
               <i class="bi bi-file-earmark-pdf"></i>
               <span>PDF</span>
             </a>
-            <form th:if="${deliveryNote.cancelable}"
-                  th:action="@{/delivery-notes/{id}/cancel(id=${deliveryNote.id})}"
-                  method="post"
-                  style="display:inline-block; margin:0;"
-                  onsubmit="return confirm('Confermi di voler annullare questo DDT?');">
-              <input type="hidden" name="tenantId" th:value="${tenantId}"/>
-              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-              <button type="submit" class="btn btn-secondary">
+            <input type="hidden" name="tenantId" th:value="${tenantId}"/>
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <th:block th:if="${deliveryNote.cancelable}">
+              <button type="button"
+                      class="btn btn-danger"
+                      onclick="openConfirmModal(this)"
+                      data-confirm-title="Annulla DDT"
+                      data-confirm-textContent="Sei sicuro di voler annullare questo DDT?"
+                      data-confirm-message="Confermi l'annullamento del DDT? La giacenza verrà ripristinata automaticamente."
+                      data-confirm-submit="Conferma annullamento"
+                      data-confirm-submit-class="btn-danger"
+                      th:attr="data-confirm-action=@{/delivery-notes/{id}/cancel(id=${deliveryNote.id})}">
                 <i class="bi bi-x-circle"></i>
                 <span>Annulla DDT</span>
               </button>
-            </form>
+            </th:block>
           </div>
         </div>
 
@@ -183,9 +189,8 @@
       </div>
     </div>
   </main>
-
   <div th:replace="~{fragments/layout :: appFooter}"></div>
-
 </div>
+<div th:replace="~{fragments/layout :: modalFragment}"></div>
 </body>
 </html>

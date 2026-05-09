@@ -4,6 +4,7 @@ import com.gestiva.accounting.due.entity.PaymentDueTransaction;
 import com.gestiva.accounting.due.repository.PaymentDueRepository;
 import com.gestiva.accounting.due.repository.PaymentDueTransactionRepository;
 import com.gestiva.accounting.due.web.PaymentDueRegistrationForm;
+import com.gestiva.accounting.entry.service.AccountingEntryService;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
 import org.springframework.stereotype.Service;
@@ -18,11 +19,15 @@ public class PaymentDueRegistrationService {
 
     private final PaymentDueRepository paymentDueRepository;
     private final PaymentDueTransactionRepository paymentDueTransactionRepository;
+    private final AccountingEntryService accountingEntryService;
 
     public PaymentDueRegistrationService(PaymentDueRepository paymentDueRepository,
-                                         PaymentDueTransactionRepository paymentDueTransactionRepository) {
+                                         PaymentDueTransactionRepository paymentDueTransactionRepository,
+                                         AccountingEntryService accountingEntryService) {
+
         this.paymentDueRepository = paymentDueRepository;
         this.paymentDueTransactionRepository = paymentDueTransactionRepository;
+        this.accountingEntryService = accountingEntryService;
     }
 
     public void registerMovement(Long tenantId, Long paymentDueId, PaymentDueRegistrationForm form) {
@@ -66,8 +71,41 @@ public class PaymentDueRegistrationService {
         } else {
             due.setStatus("OPEN");
         }
-
         paymentDueRepository.save(due);
+        if ("RECEIVABLE".equalsIgnoreCase(due.getDirection())) {
+            accountingEntryService.registerCustomerReceipt(
+                    tenantId,
+                    form.getTransactionDate(),
+                    "Incasso su scadenza " + due.getDocumentNumber(),
+                    due.getCurrencyCode(),
+                    amount,
+                    "PAYMENT_DUE",
+                    due.getId(),
+                    form.getNotes()
+            );
+        } else {
+            accountingEntryService.registerSupplierPayment(
+                    tenantId,
+                    form.getTransactionDate(),
+                    "Pagamento su scadenza " + due.getDocumentNumber(),
+                    due.getCurrencyCode(),
+                    amount,
+                    "PAYMENT_DUE",
+                    due.getId(),
+                    form.getNotes()
+            );
+        }
+
+
+
+
+
+
+
+
+
+
+
     }
 
     private BigDecimal scale(BigDecimal value) {

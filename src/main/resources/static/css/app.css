@@ -350,37 +350,37 @@ a:hover {
 }
 
 .badge {
-    display: inline-block;
-    padding: 6px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 1;
+    display: inline-block !important;
+    padding: 6px 10px !important;
+    border-radius: 999px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
 }
 
 .badge-draft {
-    background: #e5e7eb;
-    color: #374151;
+    background: #e5e7eb !important;
+    color: #374151 !important;
 }
 
 .badge-sent,
 .badge-confirmed {
-    background: #dbeafe;
-    color: #1d4ed8;
+    background: #dbeafe !important;
+    color: #1d4ed8 !important;
 }
-
 .badge-accepted,
-.badge-fulfilled,
-.badge-active {
-    background: #dcfce7;
-    color: #166534;
+.badge-active,
+.badge-paid,
+.badge-fulfilled {
+    background: #dcfce7 !important;
+    color: #166534 !important;
 }
 
-.badge-rejected,
 .badge-cancelled,
-.badge-inactive {
-    background: #fee2e2;
-    color: #991b1b;
+.badge-rejected,
+.badge-overdue {
+    background: #fee2e2 !important;
+    color: #991b1b !important;
 }
 
 .kpi-grid {
@@ -661,16 +661,16 @@ a:hover {
     border-bottom: 1px solid rgba(255,255,255,0.08) !important;
 }
 
-.app-header .brand,
-.app-header .brand-link,
-.app-header .brand-text,
-.app-header a,
-.app-header .top-nav a,
+.app-header .navbar-brand,
+.app-header .navbar-brand span,
+.app-header .navbar-nav > .nav-item > .nav-link,
 .app-header .tenant-chip,
-.app-header .account-trigger,
-.app-header .account-trigger span,
-.app-header .account-trigger i {
-    color: var(--header-text) !important;
+.app-header .btn-outline-light,
+.app-header .btn-outline-light i,
+.app-header .text-white,
+.app-header .text-white span,
+.app-header .text-white i {
+    color: #f9fafb !important;
 }
 
 .app-header .top-nav a {
@@ -751,5 +751,16 @@ a:hover {
 
     .header-user-area {
         justify-self:right;
+    }
+    .app-header .navbar-brand,
+    .app-header .navbar-brand span,
+    .app-header .navbar-nav > .nav-item > .nav-link,
+    .app-header .tenant-chip,
+    .app-header .btn-outline-light,
+    .app-header .btn-outline-light i,
+    .app-header .text-white,
+    .app-header .text-white span,
+    .app-header .text-white i {
+        color: #f9fafb !important;
     }
 }

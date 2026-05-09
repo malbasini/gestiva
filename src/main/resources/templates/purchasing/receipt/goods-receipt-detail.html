@@ -35,7 +35,7 @@
               <i class="bi bi-box"></i>
               <span>Ordine</span>
             </a>
-            <a class="btn"
+            <a class="btn btn-primary"
                th:if="${goodsReceipt.canCreateSupplierInvoice}"
                th:href="@{/goods-receipts/{id}/invoice(id=${goodsReceipt.id})}">
               <i class="bi bi-receipt"></i>
