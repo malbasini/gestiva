@@ -2,6 +2,8 @@ package com.gestiva.accounting.v2.account.web;
 
 import com.gestiva.accounting.v2.account.entity.Account;
 import com.gestiva.accounting.v2.account.repository.AccountRepository;
+import com.gestiva.accounting.v2.journal.repository.JournalEntryLineRepository;
+import com.gestiva.accounting.v2.journal.repository.JournalEntryRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
@@ -13,9 +15,16 @@ import java.util.Map;
 public class AccountWebService {
 
     private final AccountRepository accountRepository;
+    private final JournalEntryRepository journalEntryRepository;
+    private final JournalEntryLineRepository journalEntryLineRepository;
 
-    public AccountWebService(AccountRepository accountRepository) {
+    public AccountWebService(AccountRepository accountRepository,
+                             JournalEntryRepository journalEntryRepository,
+                             JournalEntryLineRepository journalEntryLineRepository) {
+
         this.accountRepository = accountRepository;
+        this.journalEntryRepository = journalEntryRepository;
+        this.journalEntryLineRepository = journalEntryLineRepository;
     }
 
     public List<AccountListItemView> findAll(Long tenantId) {
@@ -71,5 +80,65 @@ public class AccountWebService {
                     return v;
                 })
                 .toList();
+    }
+    public AccountLedgerView getLedger(Long tenantId, Long accountId) {
+        var account = accountRepository.findByTenantIdAndId(tenantId, accountId)
+                .orElseThrow(() -> new com.gestiva.common.exception.NotFoundException("Conto non trovato"));
+
+        var lines = journalEntryLineRepository.findByTenantIdAndAccountIdOrderByJournalEntryIdAscLineNoAsc(tenantId, accountId);
+
+        java.util.Map<Long, com.gestiva.accounting.v2.journal.entity.JournalEntry> entriesById = new java.util.HashMap<>();
+        for (var line : lines) {
+            journalEntryRepository.findByTenantIdAndId(tenantId, line.getJournalEntryId())
+                    .ifPresent(entry -> entriesById.put(entry.getId(), entry));
+        }
+
+        java.math.BigDecimal totalDebit = java.math.BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP);
+        java.math.BigDecimal totalCredit = java.math.BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP);
+
+        AccountLedgerView v = new AccountLedgerView();
+        v.setAccountId(account.getId());
+        v.setCode(account.getCode());
+        v.setName(account.getName());
+        v.setAccountType(account.getAccountType());
+        v.setNature(account.getNature());
+        v.setActive(account.isActive());
+        v.setSystemAccount(account.isSystemAccount());
+
+        for (var line : lines) {
+            var entry = entriesById.get(line.getJournalEntryId());
+
+            totalDebit = totalDebit.add(zero(line.getDebitAmount()));
+            totalCredit = totalCredit.add(zero(line.getCreditAmount()));
+
+            AccountLedgerLineView lv = new AccountLedgerLineView();
+            lv.setJournalEntryId(line.getJournalEntryId());
+            lv.setJournalEntryNumber(entry != null ? entry.getEntryNumber() : "-");
+            lv.setFormattedEntryDate(entry != null ? com.gestiva.documents.pdf.PdfFormatUtils.formatDate(entry.getEntryDate()) : "-");
+            lv.setCausalCode(entry != null ? entry.getCausalCode() : "-");
+            lv.setDescription(line.getDescription());
+            lv.setFormattedDebitAmount(com.gestiva.documents.pdf.PdfFormatUtils.formatMoney(line.getDebitAmount()));
+            lv.setFormattedCreditAmount(com.gestiva.documents.pdf.PdfFormatUtils.formatMoney(line.getCreditAmount()));
+            v.getLines().add(lv);
+        }
+
+        java.math.BigDecimal balance;
+        if ("DEBIT".equalsIgnoreCase(account.getNature())) {
+            balance = totalDebit.subtract(totalCredit);
+        } else {
+            balance = totalCredit.subtract(totalDebit);
+        }
+
+        v.setFormattedTotalDebit(com.gestiva.documents.pdf.PdfFormatUtils.formatMoney(totalDebit));
+        v.setFormattedTotalCredit(com.gestiva.documents.pdf.PdfFormatUtils.formatMoney(totalCredit));
+        v.setFormattedBalance(com.gestiva.documents.pdf.PdfFormatUtils.formatMoney(balance));
+
+        return v;
+    }
+
+    private java.math.BigDecimal zero(java.math.BigDecimal value) {
+        return value == null
+                ? java.math.BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP)
+                : value.setScale(2, java.math.RoundingMode.HALF_UP);
     }
 }

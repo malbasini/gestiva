@@ -32,7 +32,7 @@ public class DashboardPageController {
             model.addAttribute("activeMenu", "dashboard");
             return "dashboard/dashboard";
         }
-        catch (BusinessException ex) {
+        catch (Exception ex) {
             redirectAttributes.addFlashAttribute("errorMessage", "Errore durante il caricamento del dashboard.");
             return "redirect:/login";
         }

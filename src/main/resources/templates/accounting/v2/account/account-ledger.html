@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="'Mastrino ' + ${ledger.code}">Scheda conto</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+    <main class="app-main">
+        <div class="page">
+            <div class="card">
+                <div class="breadcrumb">
+                    <a th:href="@{/dashboard}">Dashboard</a> /
+                    <a th:href="@{/v2/accounts}">Piano dei conti</a> /
+                    <span th:text="${ledger.code}">1110</span>
+                </div>
+
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1 class="page-title" th:text="${ledger.code + ' - ' + ledger.name}">1110 - Cassa</h1>
+                        <div class="muted">Scheda conto / mastrino</div>
+                    </div>
+                    <div class="page-header-right">
+                        <a class="btn btn-secondary" th:href="@{/v2/accounts}">
+                            <i class="bi bi-arrow-left"></i>
+                            <span>Torna al piano dei conti</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-box">
+                        <div class="label">Tipo</div>
+                        <div class="value" th:text="${ledger.accountType}">ASSET</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">Natura</div>
+                        <div class="value" th:text="${ledger.nature}">DEBIT</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">Attivo</div>
+                        <div class="value" th:text="${ledger.active} ? 'Sì' : 'No'">Sì</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">Conto di sistema</div>
+                        <div class="value" th:text="${ledger.systemAccount} ? 'Sì' : 'No'">Sì</div>
+                    </div>
+                </div>
+
+                <div class="info-grid three-cols">
+                    <div class="info-box">
+                        <div class="label">Totale Dare</div>
+                        <div class="value" th:text="${ledger.formattedTotalDebit}">0,00 €</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">Totale Avere</div>
+                        <div class="value" th:text="${ledger.formattedTotalCredit}">0,00 €</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">Saldo</div>
+                        <div class="value" th:text="${ledger.formattedBalance}">0,00 €</div>
+                    </div>
+                </div>
+
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Numero scrittura</th>
+                        <th>Causale</th>
+                        <th>Descrizione</th>
+                        <th class="text-right">Dare</th>
+                        <th class="text-right">Avere</th>
+                        <th>Azioni</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(ledger.lines)}">
+                        <td colspan="7" class="muted">Nessun movimento trovato per questo conto.</td>
+                    </tr>
+                    <tr th:each="line : ${ledger.lines}">
+                        <td th:text="${line.formattedEntryDate}">10/05/2026</td>
+                        <td th:text="${line.journalEntryNumber}">JE-00001</td>
+                        <td th:text="${line.causalCode}">MANUAL_JOURNAL</td>
+                        <td th:text="${line.description}">Movimento iniziale</td>
+                        <td class="text-right" th:text="${line.formattedDebitAmount}">100,00 €</td>
+                        <td class="text-right" th:text="${line.formattedCreditAmount}">0,00 €</td>
+                        <td class="link-actions">
+                            <a th:href="@{/v2/journal-entries/{id}(id=${line.journalEntryId})}">
+                                <i class="bi bi-eye"></i>
+                                <span>Scrittura</span>
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    <div th:replace="~{fragments/layout :: appFooter}"></div>
+</div>
+</body>
+</html>

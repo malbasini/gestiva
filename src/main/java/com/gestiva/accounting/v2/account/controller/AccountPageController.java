@@ -5,8 +5,7 @@ import com.gestiva.accounting.v2.account.web.AccountWebService;
 import com.gestiva.security.usercontext.TenantContext;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 @RequestMapping("/v2/accounts")
@@ -33,5 +32,16 @@ public class AccountPageController {
         model.addAttribute("accounts", accountWebService.findAll(tenantId));
         model.addAttribute("activeMenu", "v2Accounts");
         return "accounting/v2/account/account-list";
+    }
+
+    @GetMapping("/{id}")
+    public String ledger(@PathVariable Long id, Model model) {
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        accountChartBootstrapService.initializeDefaultChartOfAccounts(tenantId);
+
+        model.addAttribute("ledger", accountWebService.getLedger(tenantId, id));
+        model.addAttribute("activeMenu", "v2Accounts");
+        return "accounting/v2/account/account-ledger";
     }
 }

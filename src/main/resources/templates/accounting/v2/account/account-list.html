@@ -35,6 +35,7 @@
                         <th>Livello</th>
                         <th>Padre</th>
                         <th>Flags</th>
+                        <th>Azioni</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -60,6 +61,12 @@
                             <span class="g-badge g-badge-cancelled" th:if="${!account.active}">INACTIVE</span>
 
                             <span class="g-badge g-badge-overdue" th:if="${account.systemAccount}">SYSTEM</span>
+                        </td>
+                        <td class="link-actions">
+                            <a th:href="@{/v2/accounts/{id}(id=${account.id})}">
+                                <i class="bi bi-journal-text"></i>
+                                <span>Mastrino</span>
+                            </a>
                         </td>
                     </tr>
                     </tbody>
