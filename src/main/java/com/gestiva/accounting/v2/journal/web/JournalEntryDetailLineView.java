@@ -9,6 +9,16 @@ public class JournalEntryDetailLineView {
     private String formattedDebitAmount;
     private String formattedCreditAmount;
 
+    private Long accountId;
+
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+    
     public Integer getLineNo() {
         return lineNo;
     }

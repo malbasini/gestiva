@@ -16,6 +16,45 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `account`
+--
+
+DROP TABLE IF EXISTS `account`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `account` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `tenant_id` bigint NOT NULL,
+  `code` varchar(30) NOT NULL,
+  `name` varchar(180) NOT NULL,
+  `account_type` varchar(30) NOT NULL,
+  `nature` varchar(10) NOT NULL,
+  `parent_id` bigint DEFAULT NULL,
+  `level_no` int NOT NULL,
+  `leaf_account` bit(1) NOT NULL,
+  `system_account` bit(1) NOT NULL,
+  `active` bit(1) NOT NULL,
+  `description` varchar(500) DEFAULT NULL,
+  `created_at` timestamp NOT NULL,
+  `updated_at` timestamp NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_account_tenant_code` (`tenant_id`,`code`),
+  KEY `idx_account_tenant_type` (`tenant_id`,`account_type`),
+  KEY `idx_account_tenant_active` (`tenant_id`,`active`)
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `account`
+--
+
+LOCK TABLES `account` WRITE;
+/*!40000 ALTER TABLE `account` DISABLE KEYS */;
+INSERT INTO `account` VALUES (1,88,'1000','Attività','ASSET','DEBIT',NULL,1,_binary '\0',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(2,88,'1100','Disponibilità liquide','ASSET','DEBIT',1,2,_binary '\0',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(3,88,'1110','Cassa','ASSET','DEBIT',2,3,_binary '',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(4,88,'1120','Banca','ASSET','DEBIT',2,3,_binary '',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(5,88,'1200','Crediti commerciali','ASSET','DEBIT',1,2,_binary '\0',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(6,88,'1210','Crediti verso clienti','ASSET','DEBIT',5,3,_binary '',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(7,88,'2000','Passività','LIABILITY','CREDIT',NULL,1,_binary '\0',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(8,88,'2100','Debiti commerciali','LIABILITY','CREDIT',7,2,_binary '\0',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(9,88,'2110','Debiti verso fornitori','LIABILITY','CREDIT',8,3,_binary '',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(10,88,'2200','Debiti tributari','LIABILITY','CREDIT',7,2,_binary '\0',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(11,88,'2210','IVA a debito','LIABILITY','CREDIT',10,3,_binary '',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(12,88,'2220','IVA a credito','ASSET','DEBIT',1,2,_binary '',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(13,88,'3000','Patrimonio netto','EQUITY','CREDIT',NULL,1,_binary '',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(14,88,'4000','Ricavi','REVENUE','CREDIT',NULL,1,_binary '\0',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(15,88,'4100','Ricavi da vendite','REVENUE','CREDIT',14,2,_binary '',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(16,88,'5000','Costi','COST','DEBIT',NULL,1,_binary '\0',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(17,88,'5100','Acquisti merci','COST','DEBIT',16,2,_binary '',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(18,88,'5200','Costi per servizi','COST','DEBIT',16,2,_binary '',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20'),(19,88,'5300','Spese bancarie','COST','DEBIT',16,2,_binary '',_binary '',_binary '',NULL,'2026-05-09 21:00:20','2026-05-09 21:00:20');
+/*!40000 ALTER TABLE `account` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `accounting_entry`
 --
 
@@ -41,7 +80,7 @@ CREATE TABLE `accounting_entry` (
   KEY `idx_accounting_entry_tenant_date` (`tenant_id`,`entry_date`),
   KEY `idx_accounting_entry_tenant_causal` (`tenant_id`,`causal_code`),
   KEY `idx_accounting_entry_tenant_ref` (`tenant_id`,`reference_type`,`reference_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -50,7 +89,7 @@ CREATE TABLE `accounting_entry` (
 
 LOCK TABLES `accounting_entry` WRITE;
 /*!40000 ALTER TABLE `accounting_entry` DISABLE KEYS */;
-INSERT INTO `accounting_entry` VALUES (1,87,'PN-00001','2026-05-09','CUSTOMER_RECEIPT','Incasso su scadenza INV-2026-00001','PAYMENT_DUE',1,'EUR',3478.00,'prova prima nota incasso','2026-05-09 05:45:45','2026-05-09 05:45:45'),(2,87,'PN-00002','2026-05-23','CUSTOMER_RECEIPT','Incasso su scadenza INV-2026-00001','PAYMENT_DUE',1,'EUR',60.00,'PROVA PRIMA NOTA INCASSO','2026-05-09 05:46:21','2026-05-09 05:46:21'),(3,87,'PN-00003','2026-05-09','SUPPLIER_PAYMENT','Pagamento su scadenza SI-00004','PAYMENT_DUE',5,'EUR',707.56,'PROVA PRIMA NOTA PAGAMENTO A FORNITORE','2026-05-09 05:47:42','2026-05-09 05:47:42'),(4,87,'PN-00004','2026-05-09','SUPPLIER_PAYMENT','Pagamento su scadenza SI-00004','PAYMENT_DUE',5,'EUR',0.04,'','2026-05-09 05:48:06','2026-05-09 05:48:06');
+INSERT INTO `accounting_entry` VALUES (1,87,'PN-00001','2026-05-09','CUSTOMER_RECEIPT','Incasso su scadenza INV-2026-00001','PAYMENT_DUE',1,'EUR',3478.00,'prova prima nota incasso','2026-05-09 05:45:45','2026-05-09 05:45:45'),(2,87,'PN-00002','2026-05-23','CUSTOMER_RECEIPT','Incasso su scadenza INV-2026-00001','PAYMENT_DUE',1,'EUR',60.00,'PROVA PRIMA NOTA INCASSO','2026-05-09 05:46:21','2026-05-09 05:46:21'),(3,87,'PN-00003','2026-05-09','SUPPLIER_PAYMENT','Pagamento su scadenza SI-00004','PAYMENT_DUE',5,'EUR',707.56,'PROVA PRIMA NOTA PAGAMENTO A FORNITORE','2026-05-09 05:47:42','2026-05-09 05:47:42'),(4,87,'PN-00004','2026-05-09','SUPPLIER_PAYMENT','Pagamento su scadenza SI-00004','PAYMENT_DUE',5,'EUR',0.04,'','2026-05-09 05:48:06','2026-05-09 05:48:06'),(5,88,'PN-00005','2026-05-09','MANUAL_INCOME','Rimborso assicurazione',NULL,NULL,'EUR',149.96,'PROVA ENTRATA MANUALE','2026-05-09 19:07:05','2026-05-09 19:07:05'),(6,88,'PN-00006','2026-05-09','MANUAL_EXPENSE','Spese bancarie',NULL,NULL,'EUR',12.50,'USCITA MANUALE','2026-05-09 19:10:06','2026-05-09 19:10:06'),(7,88,'PN-00007','2026-05-09','CUSTOMER_RECEIPT','Incasso su scadenza INV-2026-00001','PAYMENT_DUE',6,'EUR',700.00,'PROVA DASHBOARD','2026-05-09 19:38:13','2026-05-09 19:38:13'),(8,88,'PN-00008','2026-05-09','CUSTOMER_RECEIPT','Incasso su scadenza INV-2026-00001','PAYMENT_DUE',6,'EUR',7.60,'PROVA DASHBOARD','2026-05-09 19:39:22','2026-05-09 19:39:22'),(9,88,'PN-00009','2026-05-09','SUPPLIER_PAYMENT','Pagamento su scadenza SI-00005','PAYMENT_DUE',8,'EUR',1400.00,'PROVA DASHBOARD','2026-05-09 20:16:15','2026-05-09 20:16:15'),(10,88,'PN-00010','2026-05-09','CUSTOMER_RECEIPT','Incasso su scadenza INV-2026-00002','PAYMENT_DUE',7,'EUR',707.60,'PROVA DASHBOARD','2026-05-09 20:17:16','2026-05-09 20:17:16');
 /*!40000 ALTER TABLE `accounting_entry` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -73,7 +112,7 @@ CREATE TABLE `accounting_entry_line` (
   `updated_at` timestamp NOT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_accounting_entry_line_tenant_entry` (`tenant_id`,`accounting_entry_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -82,7 +121,7 @@ CREATE TABLE `accounting_entry_line` (
 
 LOCK TABLES `accounting_entry_line` WRITE;
 /*!40000 ALTER TABLE `accounting_entry_line` DISABLE KEYS */;
-INSERT INTO `accounting_entry_line` VALUES (1,87,1,1,'INCOME','Incasso su scadenza INV-2026-00001',3478.00,'2026-05-09 05:45:45','2026-05-09 05:45:45'),(2,87,2,1,'INCOME','Incasso su scadenza INV-2026-00001',60.00,'2026-05-09 05:46:21','2026-05-09 05:46:21'),(3,87,3,1,'EXPENSE','Pagamento su scadenza SI-00004',707.56,'2026-05-09 05:47:42','2026-05-09 05:47:42'),(4,87,4,1,'EXPENSE','Pagamento su scadenza SI-00004',0.04,'2026-05-09 05:48:06','2026-05-09 05:48:06');
+INSERT INTO `accounting_entry_line` VALUES (1,87,1,1,'INCOME','Incasso su scadenza INV-2026-00001',3478.00,'2026-05-09 05:45:45','2026-05-09 05:45:45'),(2,87,2,1,'INCOME','Incasso su scadenza INV-2026-00001',60.00,'2026-05-09 05:46:21','2026-05-09 05:46:21'),(3,87,3,1,'EXPENSE','Pagamento su scadenza SI-00004',707.56,'2026-05-09 05:47:42','2026-05-09 05:47:42'),(4,87,4,1,'EXPENSE','Pagamento su scadenza SI-00004',0.04,'2026-05-09 05:48:06','2026-05-09 05:48:06'),(5,88,5,1,'INCOME','Rimborso assicurazione',149.96,'2026-05-09 19:07:05','2026-05-09 19:07:05'),(6,88,6,1,'EXPENSE','Spese bancarie',12.50,'2026-05-09 19:10:06','2026-05-09 19:10:06'),(7,88,7,1,'INCOME','Incasso su scadenza INV-2026-00001',700.00,'2026-05-09 19:38:13','2026-05-09 19:38:13'),(8,88,8,1,'INCOME','Incasso su scadenza INV-2026-00001',7.60,'2026-05-09 19:39:22','2026-05-09 19:39:22'),(9,88,9,1,'EXPENSE','Pagamento su scadenza SI-00005',1400.00,'2026-05-09 20:16:15','2026-05-09 20:16:15'),(10,88,10,1,'INCOME','Incasso su scadenza INV-2026-00002',707.60,'2026-05-09 20:17:16','2026-05-09 20:17:16');
 /*!40000 ALTER TABLE `accounting_entry_line` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -629,7 +668,7 @@ CREATE TABLE `goods_receipt` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_goods_receipt_tenant_number` (`tenant_id`,`receipt_number`),
   KEY `idx_goods_receipt_order` (`tenant_id`,`purchase_order_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -638,7 +677,7 @@ CREATE TABLE `goods_receipt` (
 
 LOCK TABLES `goods_receipt` WRITE;
 /*!40000 ALTER TABLE `goods_receipt` DISABLE KEYS */;
-INSERT INTO `goods_receipt` VALUES (1,85,'GR-00001','2026-05-07',1,1,'Ricezione automatica da ordine fornitore PO-00001','2026-05-07 19:42:02','2026-05-07 19:42:02'),(2,87,'GR-00002','2026-05-08',2,1,'Ricezione automatica da ordine fornitore PO-00002','2026-05-08 01:03:27','2026-05-08 01:03:27'),(3,87,'GR-00003','2026-05-08',3,1,'Ricezione automatica da ordine fornitore PO-00003','2026-05-08 03:06:28','2026-05-08 03:06:28'),(4,87,'GR-00004','2026-05-08',4,1,'Ricezione automatica da ordine fornitore PO-00004','2026-05-08 14:21:15','2026-05-08 14:21:15'),(5,87,'GR-00005','2026-05-09',5,1,'Ricezione automatica da ordine fornitore PO-00005','2026-05-09 05:35:08','2026-05-09 05:35:08');
+INSERT INTO `goods_receipt` VALUES (1,85,'GR-00001','2026-05-07',1,1,'Ricezione automatica da ordine fornitore PO-00001','2026-05-07 19:42:02','2026-05-07 19:42:02'),(2,87,'GR-00002','2026-05-08',2,1,'Ricezione automatica da ordine fornitore PO-00002','2026-05-08 01:03:27','2026-05-08 01:03:27'),(3,87,'GR-00003','2026-05-08',3,1,'Ricezione automatica da ordine fornitore PO-00003','2026-05-08 03:06:28','2026-05-08 03:06:28'),(4,87,'GR-00004','2026-05-08',4,1,'Ricezione automatica da ordine fornitore PO-00004','2026-05-08 14:21:15','2026-05-08 14:21:15'),(5,87,'GR-00005','2026-05-09',5,1,'Ricezione automatica da ordine fornitore PO-00005','2026-05-09 05:35:08','2026-05-09 05:35:08'),(6,88,'GR-00006','2026-05-09',6,1,'Ricezione automatica da ordine fornitore PO-00006','2026-05-09 20:14:52','2026-05-09 20:14:52');
 /*!40000 ALTER TABLE `goods_receipt` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -663,7 +702,7 @@ CREATE TABLE `goods_receipt_line` (
   PRIMARY KEY (`id`),
   KEY `idx_goods_receipt_line_receipt` (`tenant_id`,`goods_receipt_id`),
   KEY `idx_goods_receipt_line_item` (`tenant_id`,`item_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -672,7 +711,7 @@ CREATE TABLE `goods_receipt_line` (
 
 LOCK TABLES `goods_receipt_line` WRITE;
 /*!40000 ALTER TABLE `goods_receipt_line` DISABLE KEYS */;
-INSERT INTO `goods_receipt_line` VALUES (1,85,1,1,2,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',10.000,'2026-05-07 19:42:02','2026-05-07 19:42:02'),(2,87,2,1,4,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',50.000,'2026-05-08 01:03:27','2026-05-08 01:03:27'),(3,87,3,1,6,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',10.000,'2026-05-08 03:06:28','2026-05-08 03:06:28'),(4,87,4,1,8,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',9.998,'2026-05-08 14:21:15','2026-05-08 14:21:15'),(5,87,5,1,9,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',1.000,'2026-05-09 05:35:08','2026-05-09 05:35:08');
+INSERT INTO `goods_receipt_line` VALUES (1,85,1,1,2,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',10.000,'2026-05-07 19:42:02','2026-05-07 19:42:02'),(2,87,2,1,4,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',50.000,'2026-05-08 01:03:27','2026-05-08 01:03:27'),(3,87,3,1,6,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',10.000,'2026-05-08 03:06:28','2026-05-08 03:06:28'),(4,87,4,1,8,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',9.998,'2026-05-08 14:21:15','2026-05-08 14:21:15'),(5,87,5,1,9,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',1.000,'2026-05-09 05:35:08','2026-05-09 05:35:08'),(6,88,6,1,10,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',2.000,'2026-05-09 20:14:52','2026-05-09 20:14:52');
 /*!40000 ALTER TABLE `goods_receipt_line` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -796,6 +835,79 @@ INSERT INTO `item` VALUES (1,88,'ART-001','Modulo CRM','Modulo CRM','SERVICE','p
 UNLOCK TABLES;
 
 --
+-- Table structure for table `journal_entry`
+--
+
+DROP TABLE IF EXISTS `journal_entry`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `journal_entry` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `tenant_id` bigint NOT NULL,
+  `entry_number` varchar(50) NOT NULL,
+  `entry_date` date NOT NULL,
+  `causal_code` varchar(40) NOT NULL,
+  `description` varchar(500) NOT NULL,
+  `reference_type` varchar(40) DEFAULT NULL,
+  `reference_id` bigint DEFAULT NULL,
+  `currency_code` varchar(3) NOT NULL,
+  `total_debit` decimal(15,2) NOT NULL,
+  `total_credit` decimal(15,2) NOT NULL,
+  `posted` bit(1) NOT NULL,
+  `notes` varchar(1000) DEFAULT NULL,
+  `created_at` timestamp NOT NULL,
+  `updated_at` timestamp NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_journal_entry_tenant_number` (`tenant_id`,`entry_number`),
+  KEY `idx_journal_entry_tenant_date` (`tenant_id`,`entry_date`),
+  KEY `idx_journal_entry_tenant_causal` (`tenant_id`,`causal_code`),
+  KEY `idx_journal_entry_tenant_ref` (`tenant_id`,`reference_type`,`reference_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `journal_entry`
+--
+
+LOCK TABLES `journal_entry` WRITE;
+/*!40000 ALTER TABLE `journal_entry` DISABLE KEYS */;
+/*!40000 ALTER TABLE `journal_entry` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `journal_entry_line`
+--
+
+DROP TABLE IF EXISTS `journal_entry_line`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `journal_entry_line` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `tenant_id` bigint NOT NULL,
+  `journal_entry_id` bigint NOT NULL,
+  `line_no` int NOT NULL,
+  `account_id` bigint NOT NULL,
+  `description` varchar(500) NOT NULL,
+  `debit_amount` decimal(15,2) NOT NULL,
+  `credit_amount` decimal(15,2) NOT NULL,
+  `created_at` timestamp NOT NULL,
+  `updated_at` timestamp NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_journal_entry_line_tenant_entry` (`tenant_id`,`journal_entry_id`),
+  KEY `idx_journal_entry_line_tenant_account` (`tenant_id`,`account_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `journal_entry_line`
+--
+
+LOCK TABLES `journal_entry_line` WRITE;
+/*!40000 ALTER TABLE `journal_entry_line` DISABLE KEYS */;
+/*!40000 ALTER TABLE `journal_entry_line` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `opportunity`
 --
 
@@ -858,7 +970,7 @@ CREATE TABLE `payment_due` (
   KEY `idx_payment_due_tenant_due_date` (`tenant_id`,`due_date`),
   KEY `idx_payment_due_tenant_direction_status` (`tenant_id`,`direction`,`status`),
   KEY `idx_payment_due_tenant_ref` (`tenant_id`,`reference_type`,`reference_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -867,7 +979,7 @@ CREATE TABLE `payment_due` (
 
 LOCK TABLES `payment_due` WRITE;
 /*!40000 ALTER TABLE `payment_due` DISABLE KEYS */;
-INSERT INTO `payment_due` VALUES (1,87,'RECEIVABLE','CUSTOMER',75,'INV-2026-00001','2026-05-08','2026-06-07','CUSTOMER_INVOICE',5,'EUR',3538.00,3538.00,0.00,'PAID','Scadenza generata da fattura cliente','2026-05-08 14:18:31','2026-05-09 05:46:21'),(2,87,'PAYABLE','SUPPLIER',1,'SI-00003','2026-05-08','2026-06-07','SUPPLIER_INVOICE',3,'EUR',7074.58,7074.58,0.00,'PAID','Scadenza generata da fattura fornitore','2026-05-08 14:21:23','2026-05-08 17:11:02'),(3,87,'RECEIVABLE','CUSTOMER',76,'INV-2026-00002','2026-05-08','2026-06-07','CUSTOMER_INVOICE',6,'EUR',122.00,122.00,0.00,'PAID','Scadenza generata da fattura cliente','2026-05-08 17:02:21','2026-05-08 17:05:37'),(4,87,'RECEIVABLE','CUSTOMER',76,'INV-2026-00003','2026-05-09','2026-06-08','CUSTOMER_INVOICE',7,'EUR',707.60,0.00,707.60,'OPEN','Scadenza generata da fattura cliente','2026-05-09 05:34:18','2026-05-09 05:34:18'),(5,87,'PAYABLE','SUPPLIER',1,'SI-00004','2026-05-09','2026-06-08','SUPPLIER_INVOICE',4,'EUR',707.60,707.60,0.00,'PAID','Scadenza generata da fattura fornitore','2026-05-09 05:35:11','2026-05-09 05:48:06'),(6,88,'RECEIVABLE','CUSTOMER',75,'INV-2026-00001','2026-05-09','2026-06-08','CUSTOMER_INVOICE',8,'EUR',707.60,0.00,707.60,'OPEN','Scadenza generata da fattura cliente','2026-05-09 11:34:24','2026-05-09 11:34:24'),(7,88,'RECEIVABLE','CUSTOMER',75,'INV-2026-00002','2026-05-09','2026-06-08','CUSTOMER_INVOICE',9,'EUR',707.60,0.00,707.60,'OPEN','Scadenza generata da fattura cliente','2026-05-09 14:02:58','2026-05-09 14:02:58');
+INSERT INTO `payment_due` VALUES (1,87,'RECEIVABLE','CUSTOMER',75,'INV-2026-00001','2026-05-08','2026-06-07','CUSTOMER_INVOICE',5,'EUR',3538.00,3538.00,0.00,'PAID','Scadenza generata da fattura cliente','2026-05-08 14:18:31','2026-05-09 05:46:21'),(2,87,'PAYABLE','SUPPLIER',1,'SI-00003','2026-05-08','2026-06-07','SUPPLIER_INVOICE',3,'EUR',7074.58,7074.58,0.00,'PAID','Scadenza generata da fattura fornitore','2026-05-08 14:21:23','2026-05-08 17:11:02'),(3,87,'RECEIVABLE','CUSTOMER',76,'INV-2026-00002','2026-05-08','2026-06-07','CUSTOMER_INVOICE',6,'EUR',122.00,122.00,0.00,'PAID','Scadenza generata da fattura cliente','2026-05-08 17:02:21','2026-05-08 17:05:37'),(4,87,'RECEIVABLE','CUSTOMER',76,'INV-2026-00003','2026-05-09','2026-06-08','CUSTOMER_INVOICE',7,'EUR',707.60,0.00,707.60,'OPEN','Scadenza generata da fattura cliente','2026-05-09 05:34:18','2026-05-09 05:34:18'),(5,87,'PAYABLE','SUPPLIER',1,'SI-00004','2026-05-09','2026-06-08','SUPPLIER_INVOICE',4,'EUR',707.60,707.60,0.00,'PAID','Scadenza generata da fattura fornitore','2026-05-09 05:35:11','2026-05-09 05:48:06'),(6,88,'RECEIVABLE','CUSTOMER',75,'INV-2026-00001','2026-05-09','2026-06-08','CUSTOMER_INVOICE',8,'EUR',707.60,707.60,0.00,'PAID','Scadenza generata da fattura cliente','2026-05-09 11:34:24','2026-05-09 19:39:22'),(7,88,'RECEIVABLE','CUSTOMER',75,'INV-2026-00002','2026-05-09','2026-06-08','CUSTOMER_INVOICE',9,'EUR',707.60,707.60,0.00,'PAID','Scadenza generata da fattura cliente','2026-05-09 14:02:58','2026-05-09 20:17:16'),(8,88,'PAYABLE','SUPPLIER',1,'SI-00005','2026-05-09','2026-06-08','SUPPLIER_INVOICE',5,'EUR',1415.20,1400.00,15.20,'PARTIALLY_PAID','Scadenza generata da fattura fornitore','2026-05-09 20:15:04','2026-05-09 20:16:15');
 /*!40000 ALTER TABLE `payment_due` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -891,7 +1003,7 @@ CREATE TABLE `payment_due_transaction` (
   PRIMARY KEY (`id`),
   KEY `idx_due_tx_tenant_due` (`tenant_id`,`payment_due_id`),
   KEY `idx_due_tx_tenant_date` (`tenant_id`,`transaction_date`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -900,7 +1012,7 @@ CREATE TABLE `payment_due_transaction` (
 
 LOCK TABLES `payment_due_transaction` WRITE;
 /*!40000 ALTER TABLE `payment_due_transaction` DISABLE KEYS */;
-INSERT INTO `payment_due_transaction` VALUES (1,87,3,'2026-05-08',82.00,'RECEIPT','PROVA INCASSO','2026-05-08 17:04:36','2026-05-08 17:04:36'),(2,87,3,'2026-05-22',40.00,'RECEIPT','PROVA INCASSO','2026-05-08 17:05:37','2026-05-08 17:05:37'),(3,87,2,'2026-05-08',7014.58,'PAYMENT','PROVA PAGAMENTO FATTURA A FORNITOR','2026-05-08 17:10:04','2026-05-08 17:10:04'),(4,87,2,'2026-05-22',60.00,'PAYMENT','PAGAMENTO A FORNITORE','2026-05-08 17:11:02','2026-05-08 17:11:02'),(5,87,1,'2026-05-09',3478.00,'RECEIPT','prova prima nota incasso','2026-05-09 05:45:45','2026-05-09 05:45:45'),(6,87,1,'2026-05-23',60.00,'RECEIPT','PROVA PRIMA NOTA INCASSO','2026-05-09 05:46:21','2026-05-09 05:46:21'),(7,87,5,'2026-05-09',707.56,'PAYMENT','PROVA PRIMA NOTA PAGAMENTO A FORNITORE','2026-05-09 05:47:42','2026-05-09 05:47:42'),(8,87,5,'2026-05-09',0.04,'PAYMENT','','2026-05-09 05:48:06','2026-05-09 05:48:06');
+INSERT INTO `payment_due_transaction` VALUES (1,87,3,'2026-05-08',82.00,'RECEIPT','PROVA INCASSO','2026-05-08 17:04:36','2026-05-08 17:04:36'),(2,87,3,'2026-05-22',40.00,'RECEIPT','PROVA INCASSO','2026-05-08 17:05:37','2026-05-08 17:05:37'),(3,87,2,'2026-05-08',7014.58,'PAYMENT','PROVA PAGAMENTO FATTURA A FORNITOR','2026-05-08 17:10:04','2026-05-08 17:10:04'),(4,87,2,'2026-05-22',60.00,'PAYMENT','PAGAMENTO A FORNITORE','2026-05-08 17:11:02','2026-05-08 17:11:02'),(5,87,1,'2026-05-09',3478.00,'RECEIPT','prova prima nota incasso','2026-05-09 05:45:45','2026-05-09 05:45:45'),(6,87,1,'2026-05-23',60.00,'RECEIPT','PROVA PRIMA NOTA INCASSO','2026-05-09 05:46:21','2026-05-09 05:46:21'),(7,87,5,'2026-05-09',707.56,'PAYMENT','PROVA PRIMA NOTA PAGAMENTO A FORNITORE','2026-05-09 05:47:42','2026-05-09 05:47:42'),(8,87,5,'2026-05-09',0.04,'PAYMENT','','2026-05-09 05:48:06','2026-05-09 05:48:06'),(9,88,6,'2026-05-09',700.00,'RECEIPT','PROVA DASHBOARD','2026-05-09 19:38:13','2026-05-09 19:38:13'),(10,88,6,'2026-05-09',7.60,'RECEIPT','PROVA DASHBOARD','2026-05-09 19:39:22','2026-05-09 19:39:22'),(11,88,8,'2026-05-09',1400.00,'PAYMENT','PROVA DASHBOARD','2026-05-09 20:16:15','2026-05-09 20:16:15'),(12,88,7,'2026-05-09',707.60,'RECEIPT','PROVA DASHBOARD','2026-05-09 20:17:16','2026-05-09 20:17:16');
 /*!40000 ALTER TABLE `payment_due_transaction` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1047,7 +1159,7 @@ CREATE TABLE `purchase_order` (
   UNIQUE KEY `uk_purchase_order_tenant_number` (`tenant_id`,`order_number`),
   KEY `idx_purchase_order_tenant_supplier` (`tenant_id`,`supplier_id`),
   KEY `idx_purchase_order_tenant_status` (`tenant_id`,`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1056,7 +1168,7 @@ CREATE TABLE `purchase_order` (
 
 LOCK TABLES `purchase_order` WRITE;
 /*!40000 ALTER TABLE `purchase_order` DISABLE KEYS */;
-INSERT INTO `purchase_order` VALUES (1,85,'PO-00001','2026-05-07','2026-05-22',1,'CONFIRMED','EUR','ORDINE 10 PEZZI FORNO ELETTRICO',5800.00,1276.00,7076.00,'2026-05-07 16:59:48','2026-05-07 17:05:37'),(2,87,'PO-00002','2026-05-08','2026-05-15',1,'CONFIRMED','EUR','ORDINE A FORNITORE DI 50 FORNI ELETTRICI',23200.00,5104.00,28304.00,'2026-05-08 01:02:46','2026-05-08 01:03:15'),(3,87,'PO-00003','2026-05-08','2026-05-15',1,'CONFIRMED','EUR','PROVA',4640.00,1020.80,5660.80,'2026-05-08 03:05:48','2026-05-08 03:06:22'),(4,87,'PO-00004','2026-05-08','2026-05-15',1,'CONFIRMED','EUR','PROVA ADUE',5798.84,1275.74,7074.58,'2026-05-08 14:20:52','2026-05-08 14:21:10'),(5,87,'PO-00005','2026-05-09','2026-05-16',1,'CONFIRMED','EUR','PROVA PRIMA NOTA FORNITORE',580.00,127.60,707.60,'2026-05-09 05:35:04','2026-05-09 05:35:04');
+INSERT INTO `purchase_order` VALUES (1,85,'PO-00001','2026-05-07','2026-05-22',1,'CONFIRMED','EUR','ORDINE 10 PEZZI FORNO ELETTRICO',5800.00,1276.00,7076.00,'2026-05-07 16:59:48','2026-05-07 17:05:37'),(2,87,'PO-00002','2026-05-08','2026-05-15',1,'CONFIRMED','EUR','ORDINE A FORNITORE DI 50 FORNI ELETTRICI',23200.00,5104.00,28304.00,'2026-05-08 01:02:46','2026-05-08 01:03:15'),(3,87,'PO-00003','2026-05-08','2026-05-15',1,'CONFIRMED','EUR','PROVA',4640.00,1020.80,5660.80,'2026-05-08 03:05:48','2026-05-08 03:06:22'),(4,87,'PO-00004','2026-05-08','2026-05-15',1,'CONFIRMED','EUR','PROVA ADUE',5798.84,1275.74,7074.58,'2026-05-08 14:20:52','2026-05-08 14:21:10'),(5,87,'PO-00005','2026-05-09','2026-05-16',1,'CONFIRMED','EUR','PROVA PRIMA NOTA FORNITORE',580.00,127.60,707.60,'2026-05-09 05:35:04','2026-05-09 05:35:04'),(6,88,'PO-00006','2026-05-09','2026-05-16',1,'CONFIRMED','EUR','PROVA DASHBOARD',1160.00,255.20,1415.20,'2026-05-09 20:14:41','2026-05-09 20:14:41');
 /*!40000 ALTER TABLE `purchase_order` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1086,7 +1198,7 @@ CREATE TABLE `purchase_order_line` (
   PRIMARY KEY (`id`),
   KEY `idx_purchase_order_line_order` (`tenant_id`,`purchase_order_id`),
   KEY `idx_purchase_order_line_item` (`tenant_id`,`item_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1095,7 +1207,7 @@ CREATE TABLE `purchase_order_line` (
 
 LOCK TABLES `purchase_order_line` WRITE;
 /*!40000 ALTER TABLE `purchase_order_line` DISABLE KEYS */;
-INSERT INTO `purchase_order_line` VALUES (2,85,1,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',10.000,580.00,0.00,22.00,5800.00,1276.00,7076.00,'2026-05-07 17:05:37','2026-05-07 17:05:37'),(4,87,2,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',50.000,580.00,20.00,22.00,23200.00,5104.00,28304.00,'2026-05-08 01:03:15','2026-05-08 01:03:15'),(6,87,3,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',10.000,580.00,20.00,22.00,4640.00,1020.80,5660.80,'2026-05-08 03:06:22','2026-05-08 03:06:22'),(8,87,4,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',9.998,580.00,0.00,22.00,5798.84,1275.74,7074.58,'2026-05-08 14:21:10','2026-05-08 14:21:10'),(9,87,5,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',1.000,580.00,0.00,22.00,580.00,127.60,707.60,'2026-05-09 05:35:04','2026-05-09 05:35:04');
+INSERT INTO `purchase_order_line` VALUES (2,85,1,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',10.000,580.00,0.00,22.00,5800.00,1276.00,7076.00,'2026-05-07 17:05:37','2026-05-07 17:05:37'),(4,87,2,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',50.000,580.00,20.00,22.00,23200.00,5104.00,28304.00,'2026-05-08 01:03:15','2026-05-08 01:03:15'),(6,87,3,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',10.000,580.00,20.00,22.00,4640.00,1020.80,5660.80,'2026-05-08 03:06:22','2026-05-08 03:06:22'),(8,87,4,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',9.998,580.00,0.00,22.00,5798.84,1275.74,7074.58,'2026-05-08 14:21:10','2026-05-08 14:21:10'),(9,87,5,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',1.000,580.00,0.00,22.00,580.00,127.60,707.60,'2026-05-09 05:35:04','2026-05-09 05:35:04'),(10,88,6,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',2.000,580.00,0.00,22.00,1160.00,255.20,1415.20,'2026-05-09 20:14:41','2026-05-09 20:14:41');
 /*!40000 ALTER TABLE `purchase_order_line` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1347,7 +1459,7 @@ CREATE TABLE `stock_movement` (
   PRIMARY KEY (`id`),
   KEY `idx_stock_movement_item` (`tenant_id`,`item_id`),
   KEY `idx_stock_movement_reference` (`tenant_id`,`reference_type`,`reference_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1356,7 +1468,7 @@ CREATE TABLE `stock_movement` (
 
 LOCK TABLES `stock_movement` WRITE;
 /*!40000 ALTER TABLE `stock_movement` DISABLE KEYS */;
-INSERT INTO `stock_movement` VALUES (1,85,2,'2026-05-06','IN','MANUAL_LOAD',10.000,'CARICO MANUALE','MANUAL',NULL,'2026-05-06 18:28:01','2026-05-06 18:28:01'),(2,85,2,'2026-05-07','OUT','DDT_ISSUE',1.000,'Scarico automatico da DDT DDT-2026-00002','DDT',5,'2026-05-06 22:25:24','2026-05-06 22:25:24'),(3,85,2,'2026-05-07','IN','DDT_CANCEL',1.000,'Ripristino automatico da annullamento DDT null','DDT_CANCEL',5,'2026-05-06 22:31:31','2026-05-06 22:31:31'),(4,86,2,'2026-05-07','IN','MANUAL_LOAD',20.000,'CARICO MANUALE','MANUAL',NULL,'2026-05-06 23:24:45','2026-05-06 23:24:45'),(5,86,2,'2026-05-07','OUT','DDT_ISSUE',10.000,'Scarico automatico da DDT DDT-2026-00001','DDT',6,'2026-05-06 23:32:42','2026-05-06 23:32:42'),(6,86,2,'2026-05-08','IN','MANUAL_LOAD',10.000,'CARICO','MANUAL',NULL,'2026-05-06 23:48:17','2026-05-06 23:48:17'),(7,85,2,'2026-05-07','IN','PURCHASE_RECEIPT',10.000,'Carico automatico da ricezione merci GR-00001','GOODS_RECEIPT',1,'2026-05-07 19:42:02','2026-05-07 19:42:02'),(8,87,2,'2026-05-08','IN','MANUAL_LOAD',100.000,'CARCI MANUALE DI MAGAZZINO DI 100 PEZZI','MANUAL',NULL,'2026-05-08 00:49:55','2026-05-08 00:49:55'),(9,87,2,'2026-05-08','OUT','DDT_ISSUE',20.000,'Scarico automatico da DDT DDT-2026-00001','DDT',8,'2026-05-08 00:55:41','2026-05-08 00:55:41'),(10,87,2,'2026-05-08','IN','DDT_CANCEL',20.000,'Ripristino automatico da annullamento DDT DDT-2026-00001','DDT_CANCEL',8,'2026-05-08 00:56:24','2026-05-08 00:56:24'),(11,87,2,'2026-05-08','IN','PURCHASE_RECEIPT',50.000,'Carico automatico da ricezione merci GR-00002','GOODS_RECEIPT',2,'2026-05-08 01:03:27','2026-05-08 01:03:27'),(12,87,2,'2026-05-08','IN','PURCHASE_RECEIPT',10.000,'Carico automatico da ricezione merci GR-00003','GOODS_RECEIPT',3,'2026-05-08 03:06:28','2026-05-08 03:06:28'),(13,87,2,'2026-05-08','OUT','DDT_ISSUE',5.000,'Scarico automatico da DDT DDT-2026-00002','DDT',9,'2026-05-08 14:18:24','2026-05-08 14:18:24'),(14,87,2,'2026-05-08','IN','PURCHASE_RECEIPT',9.998,'Carico automatico da ricezione merci GR-00004','GOODS_RECEIPT',4,'2026-05-08 14:21:16','2026-05-08 14:21:16'),(15,87,2,'2026-05-08','OUT','DDT_ISSUE',1.000,'Scarico automatico da DDT DDT-2026-00003','DDT',10,'2026-05-08 17:02:12','2026-05-08 17:02:12'),(16,87,2,'2026-05-09','OUT','DDT_ISSUE',1.000,'Scarico automatico da DDT DDT-2026-00004','DDT',11,'2026-05-09 05:34:14','2026-05-09 05:34:14'),(17,87,2,'2026-05-09','IN','PURCHASE_RECEIPT',1.000,'Carico automatico da ricezione merci GR-00005','GOODS_RECEIPT',5,'2026-05-09 05:35:08','2026-05-09 05:35:08'),(18,87,2,'2026-05-09','OUT','DDT_ISSUE',1.000,'Scarico automatico da DDT DDT-2026-00005','DDT',12,'2026-05-09 10:22:53','2026-05-09 10:22:53'),(19,87,2,'2026-05-09','IN','DDT_CANCEL',1.000,'Ripristino automatico da annullamento DDT DDT-2026-00005','DDT_CANCEL',12,'2026-05-09 11:00:29','2026-05-09 11:00:29'),(20,88,2,'2026-05-09','IN','MANUAL_LOAD',100.000,'','MANUAL',NULL,'2026-05-09 11:33:43','2026-05-09 11:33:43'),(21,88,2,'2026-05-09','OUT','DDT_ISSUE',1.000,'Scarico automatico da DDT DDT-2026-00001','DDT',15,'2026-05-09 11:34:00','2026-05-09 11:34:00'),(22,88,2,'2026-05-09','OUT','DDT_ISSUE',1.000,'Scarico automatico da DDT DDT-2026-00002','DDT',16,'2026-05-09 14:01:05','2026-05-09 14:01:05');
+INSERT INTO `stock_movement` VALUES (1,85,2,'2026-05-06','IN','MANUAL_LOAD',10.000,'CARICO MANUALE','MANUAL',NULL,'2026-05-06 18:28:01','2026-05-06 18:28:01'),(2,85,2,'2026-05-07','OUT','DDT_ISSUE',1.000,'Scarico automatico da DDT DDT-2026-00002','DDT',5,'2026-05-06 22:25:24','2026-05-06 22:25:24'),(3,85,2,'2026-05-07','IN','DDT_CANCEL',1.000,'Ripristino automatico da annullamento DDT null','DDT_CANCEL',5,'2026-05-06 22:31:31','2026-05-06 22:31:31'),(4,86,2,'2026-05-07','IN','MANUAL_LOAD',20.000,'CARICO MANUALE','MANUAL',NULL,'2026-05-06 23:24:45','2026-05-06 23:24:45'),(5,86,2,'2026-05-07','OUT','DDT_ISSUE',10.000,'Scarico automatico da DDT DDT-2026-00001','DDT',6,'2026-05-06 23:32:42','2026-05-06 23:32:42'),(6,86,2,'2026-05-08','IN','MANUAL_LOAD',10.000,'CARICO','MANUAL',NULL,'2026-05-06 23:48:17','2026-05-06 23:48:17'),(7,85,2,'2026-05-07','IN','PURCHASE_RECEIPT',10.000,'Carico automatico da ricezione merci GR-00001','GOODS_RECEIPT',1,'2026-05-07 19:42:02','2026-05-07 19:42:02'),(8,87,2,'2026-05-08','IN','MANUAL_LOAD',100.000,'CARCI MANUALE DI MAGAZZINO DI 100 PEZZI','MANUAL',NULL,'2026-05-08 00:49:55','2026-05-08 00:49:55'),(9,87,2,'2026-05-08','OUT','DDT_ISSUE',20.000,'Scarico automatico da DDT DDT-2026-00001','DDT',8,'2026-05-08 00:55:41','2026-05-08 00:55:41'),(10,87,2,'2026-05-08','IN','DDT_CANCEL',20.000,'Ripristino automatico da annullamento DDT DDT-2026-00001','DDT_CANCEL',8,'2026-05-08 00:56:24','2026-05-08 00:56:24'),(11,87,2,'2026-05-08','IN','PURCHASE_RECEIPT',50.000,'Carico automatico da ricezione merci GR-00002','GOODS_RECEIPT',2,'2026-05-08 01:03:27','2026-05-08 01:03:27'),(12,87,2,'2026-05-08','IN','PURCHASE_RECEIPT',10.000,'Carico automatico da ricezione merci GR-00003','GOODS_RECEIPT',3,'2026-05-08 03:06:28','2026-05-08 03:06:28'),(13,87,2,'2026-05-08','OUT','DDT_ISSUE',5.000,'Scarico automatico da DDT DDT-2026-00002','DDT',9,'2026-05-08 14:18:24','2026-05-08 14:18:24'),(14,87,2,'2026-05-08','IN','PURCHASE_RECEIPT',9.998,'Carico automatico da ricezione merci GR-00004','GOODS_RECEIPT',4,'2026-05-08 14:21:16','2026-05-08 14:21:16'),(15,87,2,'2026-05-08','OUT','DDT_ISSUE',1.000,'Scarico automatico da DDT DDT-2026-00003','DDT',10,'2026-05-08 17:02:12','2026-05-08 17:02:12'),(16,87,2,'2026-05-09','OUT','DDT_ISSUE',1.000,'Scarico automatico da DDT DDT-2026-00004','DDT',11,'2026-05-09 05:34:14','2026-05-09 05:34:14'),(17,87,2,'2026-05-09','IN','PURCHASE_RECEIPT',1.000,'Carico automatico da ricezione merci GR-00005','GOODS_RECEIPT',5,'2026-05-09 05:35:08','2026-05-09 05:35:08'),(18,87,2,'2026-05-09','OUT','DDT_ISSUE',1.000,'Scarico automatico da DDT DDT-2026-00005','DDT',12,'2026-05-09 10:22:53','2026-05-09 10:22:53'),(19,87,2,'2026-05-09','IN','DDT_CANCEL',1.000,'Ripristino automatico da annullamento DDT DDT-2026-00005','DDT_CANCEL',12,'2026-05-09 11:00:29','2026-05-09 11:00:29'),(20,88,2,'2026-05-09','IN','MANUAL_LOAD',100.000,'','MANUAL',NULL,'2026-05-09 11:33:43','2026-05-09 11:33:43'),(21,88,2,'2026-05-09','OUT','DDT_ISSUE',1.000,'Scarico automatico da DDT DDT-2026-00001','DDT',15,'2026-05-09 11:34:00','2026-05-09 11:34:00'),(22,88,2,'2026-05-09','OUT','DDT_ISSUE',1.000,'Scarico automatico da DDT DDT-2026-00002','DDT',16,'2026-05-09 14:01:05','2026-05-09 14:01:05'),(23,88,2,'2026-05-09','IN','PURCHASE_RECEIPT',2.000,'Carico automatico da ricezione merci GR-00006','GOODS_RECEIPT',6,'2026-05-09 20:14:52','2026-05-09 20:14:52');
 /*!40000 ALTER TABLE `stock_movement` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1398,7 +1510,7 @@ CREATE TABLE `supplier` (
 
 LOCK TABLES `supplier` WRITE;
 /*!40000 ALTER TABLE `supplier` DISABLE KEYS */;
-INSERT INTO `supplier` VALUES (1,87,'SUP-001','Fornitore Demo S.R.L','IT0984327898','LBSMRC69A04F457F','fornitore@example.com','+393476681161','VIA GIAN DOMENICO ROMAGNOSI 11','TERNI','05100','TR','IT','PROVA FORNITORE DEMO',1,'2026-05-07 09:57:56','2026-05-08 01:00:29');
+INSERT INTO `supplier` VALUES (1,88,'SUP-001','Fornitore Demo S.R.L','IT0984327898','LBSMRC69A04F457F','fornitore@example.com','+393476681161','VIA GIAN DOMENICO ROMAGNOSI 11','TERNI','05100','TR','IT','PROVA FORNITORE DEMO',1,'2026-05-07 09:57:56','2026-05-08 01:00:29');
 /*!40000 ALTER TABLE `supplier` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1429,7 +1541,7 @@ CREATE TABLE `supplier_invoice` (
   UNIQUE KEY `uk_supplier_invoice_tenant_number` (`tenant_id`,`invoice_number`),
   KEY `idx_supplier_invoice_supplier` (`tenant_id`,`supplier_id`),
   KEY `idx_supplier_invoice_receipt` (`tenant_id`,`goods_receipt_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1438,7 +1550,7 @@ CREATE TABLE `supplier_invoice` (
 
 LOCK TABLES `supplier_invoice` WRITE;
 /*!40000 ALTER TABLE `supplier_invoice` DISABLE KEYS */;
-INSERT INTO `supplier_invoice` VALUES (1,87,'SI-00001','2026-05-08',1,2,2,'DRAFT','EUR','Fattura fornitore generata da ricezione merci GR-00002',23200.00,5104.00,28304.00,'2026-05-08 01:17:28','2026-05-08 01:17:53'),(2,87,'SI-00002','2026-05-08',1,3,3,'DRAFT','EUR','Fattura fornitore generata da ricezione merci GR-00003',4640.00,1020.80,5660.80,'2026-05-08 03:06:42','2026-05-08 03:06:42'),(3,87,'SI-00003','2026-05-08',1,4,4,'DRAFT','EUR','Fattura fornitore generata da ricezione merci GR-00004',5798.84,1275.74,7074.58,'2026-05-08 14:21:23','2026-05-08 14:21:23'),(4,87,'SI-00004','2026-05-09',1,5,5,'DRAFT','EUR','Fattura fornitore generata da ricezione merci GR-00005',580.00,127.60,707.60,'2026-05-09 05:35:11','2026-05-09 05:35:11');
+INSERT INTO `supplier_invoice` VALUES (1,87,'SI-00001','2026-05-08',1,2,2,'DRAFT','EUR','Fattura fornitore generata da ricezione merci GR-00002',23200.00,5104.00,28304.00,'2026-05-08 01:17:28','2026-05-08 01:17:53'),(2,87,'SI-00002','2026-05-08',1,3,3,'DRAFT','EUR','Fattura fornitore generata da ricezione merci GR-00003',4640.00,1020.80,5660.80,'2026-05-08 03:06:42','2026-05-08 03:06:42'),(3,87,'SI-00003','2026-05-08',1,4,4,'DRAFT','EUR','Fattura fornitore generata da ricezione merci GR-00004',5798.84,1275.74,7074.58,'2026-05-08 14:21:23','2026-05-08 14:21:23'),(4,87,'SI-00004','2026-05-09',1,5,5,'DRAFT','EUR','Fattura fornitore generata da ricezione merci GR-00005',580.00,127.60,707.60,'2026-05-09 05:35:11','2026-05-09 05:35:11'),(5,88,'SI-00005','2026-05-09',1,6,6,'DRAFT','EUR','Fattura fornitore generata da ricezione merci GR-00006',1160.00,255.20,1415.20,'2026-05-09 20:15:03','2026-05-09 20:15:04');
 /*!40000 ALTER TABLE `supplier_invoice` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1467,7 +1579,7 @@ CREATE TABLE `supplier_invoice_line` (
   `updated_at` timestamp NOT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_supplier_invoice_line_invoice` (`tenant_id`,`supplier_invoice_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1476,7 +1588,7 @@ CREATE TABLE `supplier_invoice_line` (
 
 LOCK TABLES `supplier_invoice_line` WRITE;
 /*!40000 ALTER TABLE `supplier_invoice_line` DISABLE KEYS */;
-INSERT INTO `supplier_invoice_line` VALUES (1,87,1,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',50.000,580.00,20.00,22.00,23200.00,5104.00,28304.00,'2026-05-08 01:17:39','2026-05-08 01:17:39'),(2,87,2,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',10.000,580.00,20.00,22.00,4640.00,1020.80,5660.80,'2026-05-08 03:06:42','2026-05-08 03:06:42'),(3,87,3,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',9.998,580.00,0.00,22.00,5798.84,1275.74,7074.58,'2026-05-08 14:21:23','2026-05-08 14:21:23'),(4,87,4,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',1.000,580.00,0.00,22.00,580.00,127.60,707.60,'2026-05-09 05:35:11','2026-05-09 05:35:11');
+INSERT INTO `supplier_invoice_line` VALUES (1,87,1,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',50.000,580.00,20.00,22.00,23200.00,5104.00,28304.00,'2026-05-08 01:17:39','2026-05-08 01:17:39'),(2,87,2,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',10.000,580.00,20.00,22.00,4640.00,1020.80,5660.80,'2026-05-08 03:06:42','2026-05-08 03:06:42'),(3,87,3,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',9.998,580.00,0.00,22.00,5798.84,1275.74,7074.58,'2026-05-08 14:21:23','2026-05-08 14:21:23'),(4,87,4,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',1.000,580.00,0.00,22.00,580.00,127.60,707.60,'2026-05-09 05:35:11','2026-05-09 05:35:11'),(5,88,5,1,2,'FORNO ELETTRICO ALIMENTATO A 220V-230V',2.000,580.00,0.00,22.00,1160.00,255.20,1415.20,'2026-05-09 20:15:03','2026-05-09 20:15:03');
 /*!40000 ALTER TABLE `supplier_invoice_line` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1582,4 +1694,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-09 20:18:04
+-- Dump completed on 2026-05-10  1:07:12

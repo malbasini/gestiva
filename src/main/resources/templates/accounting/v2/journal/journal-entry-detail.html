@@ -9,7 +9,9 @@
 <body>
 <div class="app-shell">
   <div th:replace="~{fragments/layout :: appHeader}"></div>
-
+  <br>
+  <div th:replace="~{fragments/layout :: flashMessages}"></div>
+  <br>
   <main class="app-main">
     <div class="page">
       <div class="card">
@@ -18,7 +20,6 @@
           <a th:href="@{/v2/journal-entries}">Scritture contabili V2</a> /
           <span th:text="${entry.entryNumber}">JE-00001</span>
         </div>
-
         <div class="page-header">
           <div class="page-header-left">
             <h1 class="page-title" th:text="${entry.entryNumber}">JE-00001</h1>
@@ -82,7 +83,17 @@
           </tr>
           <tr th:each="line : ${entry.lines}">
             <td th:text="${line.lineNo}">1</td>
-            <td th:text="${line.accountCode + ' - ' + line.accountName}">1110 - Cassa</td>
+            <td>
+                <a th:if="${line.accountId != null}"
+                   th:href="@{/v2/accounts/{id}(id=${line.accountId})}"
+                   th:text="${line.accountCode + ' - ' + line.accountName}">
+                  1110 - Cassa
+                </a>
+                <span th:if="${line.accountId == null}"
+                      th:text="${line.accountCode + ' - ' + line.accountName}">
+                             1110 - Cassa
+                </span>
+            </td>
             <td th:text="${line.description}">Movimento</td>
             <td class="text-right" th:text="${line.formattedDebitAmount}">100,00 €</td>
             <td class="text-right" th:text="${line.formattedCreditAmount}">0,00 €</td>

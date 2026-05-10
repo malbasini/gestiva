@@ -124,9 +124,15 @@ public class JournalEntryPageController {
             return "accounting/v2/journal/journal-entry-form";
         }
 
-        Long id = journalEntryService.createManualEntry(tenantId, form);
-        redirectAttributes.addFlashAttribute("successMessage", "Scrittura contabile V2 salvata con successo.");
-        return "redirect:/v2/journal-entries/" + id;
+        try{
+            Long id = journalEntryService.createManualEntry(tenantId, form);
+            redirectAttributes.addFlashAttribute("successMessage", "Scrittura contabile V2 salvata con successo.");
+            return "redirect:/v2/journal-entries/" + id;
+        }
+        catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            return "accounting/v2/journal/journal-entry-form";
+        }
     }
 
     private JournalEntryLineForm defaultLine() {

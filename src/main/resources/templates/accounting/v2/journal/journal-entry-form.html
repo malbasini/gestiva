@@ -9,17 +9,17 @@
 <body>
 <div class="app-shell">
   <div th:replace="~{fragments/layout :: appHeader}"></div>
-
   <main class="app-main">
     <div class="page">
       <div class="card">
-
         <div class="breadcrumb">
           <a th:href="@{/dashboard}">Dashboard</a> /
           <a th:href="@{/v2/accounts}">Contabilità V2</a> /
           <span>Nuova scrittura</span>
         </div>
-
+        <br>
+        <div th:replace="~{fragments/layout :: flashMessages}"></div>
+        <br>
         <div class="page-header">
           <div class="page-header-left">
             <h1 class="page-title">Nuova scrittura contabile V2</h1>

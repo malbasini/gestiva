@@ -85,6 +85,7 @@ public class JournalEntryWebService {
             lv.setDescription(line.getDescription());
             lv.setFormattedDebitAmount(PdfFormatUtils.formatMoney(line.getDebitAmount()));
             lv.setFormattedCreditAmount(PdfFormatUtils.formatMoney(line.getCreditAmount()));
+            lv.setAccountId(line.getAccountId());
             v.getLines().add(lv);
         }
 
