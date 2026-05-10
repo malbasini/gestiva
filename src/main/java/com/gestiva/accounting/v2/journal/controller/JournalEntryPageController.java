@@ -131,6 +131,7 @@ public class JournalEntryPageController {
         }
         catch (Exception ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            model.addAttribute("errorMessage", ex.getMessage());
             return "accounting/v2/journal/journal-entry-form";
         }
     }

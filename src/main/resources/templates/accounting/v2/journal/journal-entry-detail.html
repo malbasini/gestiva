@@ -9,11 +9,9 @@
 <body>
 <div class="app-shell">
   <div th:replace="~{fragments/layout :: appHeader}"></div>
-  <br>
-  <div th:replace="~{fragments/layout :: flashMessages}"></div>
-  <br>
   <main class="app-main">
     <div class="page">
+      <div th:replace="~{fragments/layout :: flashMessages}"></div>
       <div class="card">
         <div class="breadcrumb">
           <a th:href="@{/dashboard}">Dashboard</a> /

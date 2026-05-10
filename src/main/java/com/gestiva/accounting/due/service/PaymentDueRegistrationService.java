@@ -5,6 +5,7 @@ import com.gestiva.accounting.due.repository.PaymentDueRepository;
 import com.gestiva.accounting.due.repository.PaymentDueTransactionRepository;
 import com.gestiva.accounting.due.web.PaymentDueRegistrationForm;
 import com.gestiva.accounting.entry.service.AccountingEntryService;
+import com.gestiva.accounting.v2.journal.service.JournalAutoPostingService;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
 import org.springframework.stereotype.Service;
@@ -20,14 +21,19 @@ public class PaymentDueRegistrationService {
     private final PaymentDueRepository paymentDueRepository;
     private final PaymentDueTransactionRepository paymentDueTransactionRepository;
     private final AccountingEntryService accountingEntryService;
+    private final JournalAutoPostingService journalAutoPostingService;
+
+
 
     public PaymentDueRegistrationService(PaymentDueRepository paymentDueRepository,
                                          PaymentDueTransactionRepository paymentDueTransactionRepository,
-                                         AccountingEntryService accountingEntryService) {
+                                         AccountingEntryService accountingEntryService,
+                                         JournalAutoPostingService journalAutoPostingService) {
 
         this.paymentDueRepository = paymentDueRepository;
         this.paymentDueTransactionRepository = paymentDueTransactionRepository;
         this.accountingEntryService = accountingEntryService;
+        this.journalAutoPostingService = journalAutoPostingService;
     }
 
     public void registerMovement(Long tenantId, Long paymentDueId, PaymentDueRegistrationForm form) {
@@ -94,6 +100,27 @@ public class PaymentDueRegistrationService {
                     due.getId(),
                     form.getNotes()
             );
+            if ("RECEIVABLE".equalsIgnoreCase(due.getDirection())) {
+                journalAutoPostingService.postCustomerReceipt(
+                        tenantId,
+                        form.getTransactionDate(),
+                        due.getDocumentNumber(),
+                        amount,
+                        due.getCurrencyCode(),
+                        due.getId(),
+                        form.getNotes()
+                );
+            } else {
+                journalAutoPostingService.postSupplierPayment(
+                        tenantId,
+                        form.getTransactionDate(),
+                        due.getDocumentNumber(),
+                        amount,
+                        due.getCurrencyCode(),
+                        due.getId(),
+                        form.getNotes()
+                );
+            }
         }
 
 

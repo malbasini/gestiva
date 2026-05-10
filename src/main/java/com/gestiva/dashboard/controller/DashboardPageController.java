@@ -33,7 +33,7 @@ public class DashboardPageController {
             return "dashboard/dashboard";
         }
         catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Errore durante il caricamento del dashboard.");
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
             return "redirect:/login";
         }
     }
