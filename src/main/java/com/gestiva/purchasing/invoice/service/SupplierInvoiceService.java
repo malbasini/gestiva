@@ -1,6 +1,7 @@
 package com.gestiva.purchasing.invoice.service;
 
 import com.gestiva.accounting.due.service.PaymentDueService;
+import com.gestiva.accounting.v2.journal.service.JournalAutoPostingService;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.purchasing.invoice.entity.SupplierInvoice;
 import com.gestiva.purchasing.invoice.entity.SupplierInvoiceLine;
@@ -26,8 +27,7 @@ public class SupplierInvoiceService {
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final PurchaseOrderLineRepository purchaseOrderLineRepository;
     private final PaymentDueService paymentDueService;
-
-
+    private final JournalAutoPostingService journalAutoPostingService;
 
 
     public SupplierInvoiceService(SupplierInvoiceRepository supplierInvoiceRepository,
@@ -36,7 +36,8 @@ public class SupplierInvoiceService {
                                   GoodsReceiptLineRepository goodsReceiptLineRepository,
                                   PurchaseOrderRepository purchaseOrderRepository,
                                   PurchaseOrderLineRepository purchaseOrderLineRepository,
-                                  PaymentDueService paymentDueService) {
+                                  PaymentDueService paymentDueService,
+                                  JournalAutoPostingService journalAutoPostingService) {
 
 
         this.supplierInvoiceRepository = supplierInvoiceRepository;
@@ -46,6 +47,7 @@ public class SupplierInvoiceService {
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.purchaseOrderLineRepository = purchaseOrderLineRepository;
         this.paymentDueService = paymentDueService;
+        this.journalAutoPostingService = journalAutoPostingService;
     }
 
     public Long createFromGoodsReceipt(Long tenantId, Long goodsReceiptId) {
@@ -132,10 +134,17 @@ public class SupplierInvoiceService {
                 saved.getTotalAmount(),
                 saved.getId()
         );
-
-
-
-
+        journalAutoPostingService.postSupplierInvoice(
+                tenantId,
+                saved.getInvoiceDate(),
+                saved.getInvoiceNumber(),
+                saved.getSubtotalAmount(),
+                saved.getTaxAmount(),
+                saved.getTotalAmount(),
+                saved.getCurrencyCode(),
+                saved.getId(),
+                saved.getNotes()
+        );
         return saved.getId();
     }
 

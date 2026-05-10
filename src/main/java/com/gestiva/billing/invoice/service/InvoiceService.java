@@ -1,6 +1,7 @@
 package com.gestiva.billing.invoice.service;
 
 import com.gestiva.accounting.due.service.PaymentDueService;
+import com.gestiva.accounting.v2.journal.service.JournalAutoPostingService;
 import com.gestiva.billing.invoice.dto.InvoiceResponse;
 import com.gestiva.billing.invoice.entity.Invoice;
 import com.gestiva.billing.invoice.entity.InvoiceLine;
@@ -29,7 +30,7 @@ public class InvoiceService {
     private final DeliveryNoteRepository deliveryNoteRepository;
     private final DeliveryNoteLineRepository deliveryNoteLineRepository;
     private final PaymentDueService paymentDueService;
-
+    private final JournalAutoPostingService journalAutoPostingService;
 
 
 
@@ -39,13 +40,15 @@ public class InvoiceService {
                           InvoiceLineRepository invoiceLineRepository,
                           DeliveryNoteRepository deliveryNoteRepository,
                           DeliveryNoteLineRepository deliveryNoteLineRepository,
-                          PaymentDueService paymentDueService) {
+                          PaymentDueService paymentDueService,
+                          JournalAutoPostingService journalAutoPostingService) {
 
         this.invoiceRepository = invoiceRepository;
         this.invoiceLineRepository = invoiceLineRepository;
         this.deliveryNoteRepository = deliveryNoteRepository;
         this.deliveryNoteLineRepository = deliveryNoteLineRepository;
         this.paymentDueService = paymentDueService;
+        this.journalAutoPostingService = journalAutoPostingService;
     }
 
     public InvoiceResponse createFromDeliveryNote(Long tenantId, Long deliveryNoteId) {
@@ -106,16 +109,17 @@ public class InvoiceService {
                 invoice.getTotalAmount(),
                 invoice.getId()
         );
-
-
-
-
-
-
-
-
-
-
+        journalAutoPostingService.postCustomerInvoice(
+                tenantId,
+                invoice.getInvoiceDate(),
+                invoice.getInvoiceNumber(),
+                invoice.getSubtotalAmount(),
+                invoice.getTaxAmount(),
+                invoice.getTotalAmount(),
+                invoice.getCurrencyCode(),
+                invoice.getId(),
+                invoice.getNotes()
+        );
         return toResponse(savedInvoice);
     }
 

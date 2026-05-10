@@ -89,6 +89,15 @@ public class PaymentDueRegistrationService {
                     due.getId(),
                     form.getNotes()
             );
+            journalAutoPostingService.postCustomerReceipt(
+                    tenantId,
+                    form.getTransactionDate(),
+                    due.getDocumentNumber(),
+                    amount,
+                    due.getCurrencyCode(),
+                    due.getId(),
+                    form.getNotes()
+            );
         } else {
             accountingEntryService.registerSupplierPayment(
                     tenantId,
@@ -100,39 +109,16 @@ public class PaymentDueRegistrationService {
                     due.getId(),
                     form.getNotes()
             );
-            if ("RECEIVABLE".equalsIgnoreCase(due.getDirection())) {
-                journalAutoPostingService.postCustomerReceipt(
-                        tenantId,
-                        form.getTransactionDate(),
-                        due.getDocumentNumber(),
-                        amount,
-                        due.getCurrencyCode(),
-                        due.getId(),
-                        form.getNotes()
-                );
-            } else {
-                journalAutoPostingService.postSupplierPayment(
-                        tenantId,
-                        form.getTransactionDate(),
-                        due.getDocumentNumber(),
-                        amount,
-                        due.getCurrencyCode(),
-                        due.getId(),
-                        form.getNotes()
-                );
-            }
+            journalAutoPostingService.postSupplierPayment(
+                    tenantId,
+                    form.getTransactionDate(),
+                    due.getDocumentNumber(),
+                    amount,
+                    due.getCurrencyCode(),
+                    due.getId(),
+                    form.getNotes()
+            );
         }
-
-
-
-
-
-
-
-
-
-
-
     }
 
     private BigDecimal scale(BigDecimal value) {

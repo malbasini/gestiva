@@ -161,4 +161,151 @@ public class JournalAutoPostingService {
     private BigDecimal zero() {
         return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
     }
+
+    public Long postCustomerInvoice(Long tenantId,
+                                    LocalDate entryDate,
+                                    String documentNumber,
+                                    BigDecimal taxableAmount,
+                                    BigDecimal taxAmount,
+                                    BigDecimal totalAmount,
+                                    String currencyCode,
+                                    Long invoiceId,
+                                    String notes) {
+
+        BigDecimal imponibile = scale(taxableAmount);
+        BigDecimal iva = scale(taxAmount);
+        BigDecimal totale = scale(totalAmount);
+
+        Account customerReceivables = requireAccount(tenantId, "1210");
+        Account salesRevenue = requireAccount(tenantId, "4100");
+        Account vatOutput = requireAccount(tenantId, "2210");
+
+        JournalEntry entry = new JournalEntry();
+        entry.setTenantId(tenantId);
+        entry.setEntryNumber(nextEntryNumber(tenantId));
+        entry.setEntryDate(entryDate);
+        entry.setCausalCode("SALES_INVOICE");
+        entry.setDescription("Fattura cliente " + documentNumber);
+        entry.setReferenceType("CUSTOMER_INVOICE");
+        entry.setReferenceId(invoiceId);
+        entry.setCurrencyCode(currencyCode);
+        entry.setTotalDebit(totale);
+        entry.setTotalCredit(totale);
+        entry.setPosted(true);
+        entry.setNotes(notes);
+
+        JournalEntry saved = journalEntryRepository.save(entry);
+
+        JournalEntryLine line1 = new JournalEntryLine();
+        line1.setTenantId(tenantId);
+        line1.setJournalEntryId(saved.getId());
+        line1.setLineNo(1);
+        line1.setAccountId(customerReceivables.getId());
+        line1.setDescription("Rilevazione credito cliente");
+        line1.setDebitAmount(totale);
+        line1.setCreditAmount(zero());
+
+        JournalEntryLine line2 = new JournalEntryLine();
+        line2.setTenantId(tenantId);
+        line2.setJournalEntryId(saved.getId());
+        line2.setLineNo(2);
+        line2.setAccountId(salesRevenue.getId());
+        line2.setDescription("Ricavi da vendite");
+        line2.setDebitAmount(zero());
+        line2.setCreditAmount(imponibile);
+
+        JournalEntryLine line3 = new JournalEntryLine();
+        line3.setTenantId(tenantId);
+        line3.setJournalEntryId(saved.getId());
+        line3.setLineNo(3);
+        line3.setAccountId(vatOutput.getId());
+        line3.setDescription("IVA a debito");
+        line3.setDebitAmount(zero());
+        line3.setCreditAmount(iva);
+
+        journalEntryLineRepository.save(line1);
+        journalEntryLineRepository.save(line2);
+        journalEntryLineRepository.save(line3);
+
+        return saved.getId();
+    }
+
+    public Long postSupplierInvoice(Long tenantId,
+                                    LocalDate entryDate,
+                                    String documentNumber,
+                                    BigDecimal taxableAmount,
+                                    BigDecimal taxAmount,
+                                    BigDecimal totalAmount,
+                                    String currencyCode,
+                                    Long supplierInvoiceId,
+                                    String notes) {
+
+        BigDecimal imponibile = scale(taxableAmount);
+        BigDecimal iva = scale(taxAmount);
+        BigDecimal totale = scale(totalAmount);
+
+        Account purchaseCosts = requireAccount(tenantId, "5100");
+        Account vatInput = requireAccount(tenantId, "2220");
+        Account supplierPayables = requireAccount(tenantId, "2110");
+
+        JournalEntry entry = new JournalEntry();
+        entry.setTenantId(tenantId);
+        entry.setEntryNumber(nextEntryNumber(tenantId));
+        entry.setEntryDate(entryDate);
+        entry.setCausalCode("PURCHASE_INVOICE");
+        entry.setDescription("Fattura fornitore " + documentNumber);
+        entry.setReferenceType("SUPPLIER_INVOICE");
+        entry.setReferenceId(supplierInvoiceId);
+        entry.setCurrencyCode(currencyCode);
+        entry.setTotalDebit(totale);
+        entry.setTotalCredit(totale);
+        entry.setPosted(true);
+        entry.setNotes(notes);
+
+        JournalEntry saved = journalEntryRepository.save(entry);
+
+        JournalEntryLine line1 = new JournalEntryLine();
+        line1.setTenantId(tenantId);
+        line1.setJournalEntryId(saved.getId());
+        line1.setLineNo(1);
+        line1.setAccountId(purchaseCosts.getId());
+        line1.setDescription("Rilevazione costo acquisto");
+        line1.setDebitAmount(imponibile);
+        line1.setCreditAmount(zero());
+
+        JournalEntryLine line2 = new JournalEntryLine();
+        line2.setTenantId(tenantId);
+        line2.setJournalEntryId(saved.getId());
+        line2.setLineNo(2);
+        line2.setAccountId(vatInput.getId());
+        line2.setDescription("IVA a credito");
+        line2.setDebitAmount(iva);
+        line2.setCreditAmount(zero());
+
+        JournalEntryLine line3 = new JournalEntryLine();
+        line3.setTenantId(tenantId);
+        line3.setJournalEntryId(saved.getId());
+        line3.setLineNo(3);
+        line3.setAccountId(supplierPayables.getId());
+        line3.setDescription("Rilevazione debito fornitore");
+        line3.setDebitAmount(zero());
+        line3.setCreditAmount(totale);
+
+        journalEntryLineRepository.save(line1);
+        journalEntryLineRepository.save(line2);
+        journalEntryLineRepository.save(line3);
+
+        return saved.getId();
+    }
+
+
+
+
+
+
+
+
+
+
+
 }

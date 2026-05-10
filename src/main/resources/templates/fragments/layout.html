@@ -161,6 +161,13 @@
         </div>
     </div>
 </div>
+</body>
+<footer th:fragment="appFooter" class="app-footer">
+    <div class="app-footer-inner" style="text-align: center">
+        <span>⬢ Gestiva</span>
+        <span>— gestionale modulare in sviluppo</span>
+    </div>
+</footer>
 <div th:fragment="flashMessages">
     <div th:if="${successMessage}" class="alert alert-success">
         <span th:text="${successMessage}">Operazione completata con successo.</span>
@@ -169,11 +176,4 @@
         <span th:text="${errorMessage}">Si è verificato un errore.</span>
     </div>
 </div>
-</body>
-<footer th:fragment="appFooter" class="app-footer">
-    <div class="app-footer-inner" style="text-align: center">
-        <span>⬢ Gestiva</span>
-        <span>— gestionale modulare in sviluppo</span>
-    </div>
-</footer>
 </html>
