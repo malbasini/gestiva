@@ -56,8 +56,8 @@
                         Reset
                     </a>
                 </form>
-
-                <table class="table">
+                <div class="table-responsive-wrap">
+                    <table class="table table-form">
                     <thead>
                     <tr>
                         <th>ID</th>
@@ -105,7 +105,7 @@
                     </tr>
                     </tbody>
                 </table>
-
+                </div>
                 <div class="pagination">
                     <a th:if="${!quotesPage.first}"
                        th:href="@{/quotes(page=${quotesPage.page - 1}, size=${quotesPage.size}, search=${search}, status=${status}, customerId=${customerId}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
@@ -123,7 +123,6 @@
                         Successiva →
                     </a>
                 </div>
-
             </div>
         </div>
     </main>

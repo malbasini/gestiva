@@ -97,12 +97,10 @@
               <div class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}">Errore note</div>
             </div>
           </div>
-
           <div class="page-header" style="margin-top: 28px;">
             <div class="page-header-left">
               <h2 class="section-title">Righe preventivo</h2>
             </div>
-
             <div class="page-header-right">
               <button type="submit" name="addLine" value="true" class="btn btn-secondary">
                 <i class="bi bi-plus-lg"></i>
@@ -110,110 +108,86 @@
               </button>
             </div>
           </div>
+          <div class="lines-grid">
+            <div class="line-grid-header">
+              <div>#</div>
+              <div>Descrizione</div>
+              <div>Qtà</div>
+              <div>Prezzo</div>
+              <div>Sconto</div>
+              <div>Articolo</div>
+              <div>IVA %</div>
+              <div>Azioni</div>
+            </div>
 
-          <table class="table">
-            <thead>
-            <tr>
-              <th>#</th>
-              <th>Descrizione</th>
-              <th class="text-right">Qtà</th>
-              <th class="text-right">Prezzo</th>
-              <th class="text-right">Sconto %</th>
-              <th class="text-right">Articolo</th>
-              <th class="text-right">IVA %</th>
-              <th>Azioni</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="line, stat : *{lines}">
-              <td th:text="${stat.index + 1}">1</td>
-              <td>
+            <div class="line-grid-row" th:each="line, stat : *{lines}">
+              <div class="line-col-num" th:text="${stat.index + 1}">1</div>
+
+              <div class="line-col-description">
                 <input type="text"
-                       th:field="*{lines[__${stat.index}__].description}"
-                       th:attr="data-row-index=${stat.index}"
                        class="js-line-description"
+                       th:attr="data-row-index=${stat.index}"
+                       th:field="*{lines[__${stat.index}__].description}"
                        placeholder="Descrizione riga"/>
-                <div class="field-error"
-                     th:if="${#fields.hasErrors('lines[' + stat.index + '].description')}"
-                     th:errors="*{lines[__${stat.index}__].description}">
-                  Errore descrizione
-                </div>
-              </td>
-              <td class="text-right">
-                <input type="number" step="0.001" th:field="*{lines[__${stat.index}__].quantity}"/>
-                <div class="field-error"
-                     th:if="${#fields.hasErrors('lines[' + stat.index + '].quantity')}"
-                     th:errors="*{lines[__${stat.index}__].quantity}">
-                  Errore quantità
-                </div>
-              </td>
-              <td class="text-right">
+              </div>
+
+              <div>
+                <input type="number"
+                       step="0.001"
+                       th:field="*{lines[__${stat.index}__].quantity}"/>
+              </div>
+
+              <div>
                 <input type="number"
                        step="0.01"
-                       th:field="*{lines[__${stat.index}__].unitPrice}"
+                       class="js-line-unit-price"
                        th:attr="data-row-index=${stat.index}"
-                       class="js-line-unit-price"/>
-                <div class="field-error"
-                     th:if="${#fields.hasErrors('lines[' + stat.index + '].unitPrice')}"
-                     th:errors="*{lines[__${stat.index}__].unitPrice}">
-                  Errore prezzo
-                </div>
-              </td>
-              <td class="text-right">
-                <input type="number" step="0.01" th:field="*{lines[__${stat.index}__].discountPct}"/>
-                <div class="field-error"
-                     th:if="${#fields.hasErrors('lines[' + stat.index + '].discountPct')}"
-                     th:errors="*{lines[__${stat.index}__].discountPct}">
-                  Errore sconto
-                </div>
-              </td>
-              <td>
-                <select th:field="*{lines[__${stat.index}__].itemId}"
-                        class="js-item-select"
-                        th:attr="data-row-index=${stat.index}">
+                       th:field="*{lines[__${stat.index}__].unitPrice}"/>
+              </div>
+
+              <div>
+                <input type="number"
+                       step="0.01"
+                       th:field="*{lines[__${stat.index}__].discountPct}"/>
+              </div>
+
+              <div>
+                <select class="js-item-select"
+                        th:attr="data-row-index=${stat.index}"
+                        th:field="*{lines[__${stat.index}__].itemId}">
                   <option value="">-- articolo --</option>
                   <option th:each="opt : ${itemOptions}"
                           th:value="${opt.id}"
                           th:text="${opt.label}">
-                    ART-001 - Modulo CRM
                   </option>
                 </select>
-                <div class="field-error"
-                     th:if="${#fields.hasErrors('lines[' + stat.index + '].itemId')}"
-                     th:errors="*{lines[__${stat.index}__].itemId}">
-                  Errore articolo
-                </div>
-              </td>
-              <td class="text-right">
+              </div>
+
+              <div>
                 <input type="number"
                        step="0.01"
-                       th:field="*{lines[__${stat.index}__].taxPct}"
+                       class="js-line-tax-pct"
                        th:attr="data-row-index=${stat.index}"
-                       class="js-line-tax-pct"/>
-                <div class="field-error"
-                     th:if="${#fields.hasErrors('lines[' + stat.index + '].taxPct')}"
-                     th:errors="*{lines[__${stat.index}__].taxPct}">
-                  Errore IVA
-                </div>
-              </td>
-              <td>
+                       th:field="*{lines[__${stat.index}__].taxPct}"/>
+              </div>
+
+              <div class="line-col-actions">
                 <button type="submit"
                         name="removeLine"
                         th:value="${stat.index}"
-                        class="btn btn-secondary">
+                        class="btn btn-secondary btn-icon-only"
+                        title="Rimuovi riga"
+                        aria-label="Rimuovi riga">
                   <i class="bi bi-trash"></i>
-                  <span>Rimuovi</span>
                 </button>
-              </td>
-            </tr>
-            </tbody>
-          </table>
+              </div>
+            </div>
+          </div>
           <div class="page-header" style="margin-top: 24px;">
             <div class="page-header-left">
               <h2 class="section-title">Anteprima totali</h2>
               <div class="muted">Calcolo basato sui valori correnti del form</div>
             </div>
-
             <div class="page-header-right">
               <button type="submit" name="recalculate" value="true" class="btn btn-secondary">
                 <i class="bi bi-arrow-clockwise"></i>

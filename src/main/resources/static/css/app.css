@@ -750,8 +750,9 @@ a:hover {
     }
 
     .header-user-area {
-        justify-self:right;
+        justify-self: right;
     }
+
     .app-header .navbar-brand,
     .app-header .navbar-brand span,
     .app-header .navbar-nav > .nav-item > .nav-link,
@@ -763,4 +764,104 @@ a:hover {
     .app-header .text-white i {
         color: #f9fafb !important;
     }
+
+}
+.lines-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.line-grid-header,
+.line-grid-row {
+    display: grid;
+    grid-template-columns: 44px minmax(280px, 1.8fr) 90px 90px 90px 180px 90px 52px;
+    gap: 12px;
+    align-items: center;
+}
+
+.line-grid-header {
+    font-weight: 700;
+    padding: 0 0 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.line-grid-row {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.line-grid-row input,
+.line-grid-row select,
+.line-grid-row textarea {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.line-grid-row input[type="number"] {
+    text-align: right;
+}
+
+.line-col-num {
+    text-align: center;
+    font-weight: 700;
+}
+
+.line-col-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.btn-icon-only {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.field-error-inline {
+    margin-top: 6px;
+    color: #991b1b;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+@media (max-width: 1200px) {
+    .line-grid-header,
+    .line-grid-row {
+        grid-template-columns: 44px minmax(220px, 1.6fr) 80px 80px 80px 150px 80px 52px;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 900px) {
+    .line-grid-header {
+        display: none;
+    }
+
+    .line-grid-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .line-grid-row > div {
+        min-width: 0;
+    }
+
+    .line-col-num,
+    .line-col-description,
+    .line-col-actions {
+        grid-column: span 2;
+    }
+}
+.lines-grid input[type="number"] {
+    text-align: left !important;
 }
