@@ -23,39 +23,24 @@ public class CustomerPageController {
     }
 
     @GetMapping
-    public String listCustomers(@RequestParam(required = false) String search,
-                                @RequestParam(required = false) String status,
-                                @RequestParam(required = false) String type,
-                                @RequestParam(defaultValue = "0") int page,
-                                @RequestParam(defaultValue = "10") int size,
-                                @RequestParam(defaultValue = "name") String sortBy,
-                                @RequestParam(defaultValue = "asc") String sortDir,
-                                @RequestParam(required = false) Long tenantId,
-                                Model model) {
+    public String list(@RequestParam(name = "page", defaultValue = "0") int page,
+                       @RequestParam(name = "size", defaultValue = "10") int size,
+                       @RequestParam(name = "q", required = false) String q,
+                       @RequestParam(name = "status", required = false) String status,
+                       Model model) {
 
-        Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
+        Long tenantId = tenantContext.getCurrentTenantId();
+        var resultPage = customerWebService.findPage(tenantId, page, size, q, status);
 
-        Sort.Direction direction = "desc".equalsIgnoreCase(sortDir)
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC;
-
-        var pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-
-        CustomerSearchRequest request = new CustomerSearchRequest();
-        request.setSearch(search);
-        request.setStatus(status);
-        request.setType(type);
-
-        var result = customerWebService.search(resolvedTenantId, request, pageable);
-
-        model.addAttribute("customersPage", result);
-        model.addAttribute("search", search);
+        model.addAttribute("page", resultPage);
+        model.addAttribute("tenantId", tenantId);
+        model.addAttribute("customersPage", resultPage);
+        model.addAttribute("q", q);
         model.addAttribute("status", status);
-        model.addAttribute("type", type);
-        model.addAttribute("sortBy", sortBy);
-        model.addAttribute("sortDir", sortDir);
-        model.addAttribute("tenantId", resolvedTenantId);
+        model.addAttribute("size", size);
         model.addAttribute("activeMenu", "customers");
+
         return "customer/customer-list";
     }
+
 }

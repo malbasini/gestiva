@@ -44,10 +44,6 @@ public class Customer extends TenantAwareEntity {
     @Column(name="country_code", length = 20)
     private String countryCode;
 
-
-
-
-
     public String getName() {
         return name;
     }

@@ -8,6 +8,8 @@ public class CustomerListItemView {
     private String vatNumber;
     private String type;
     private String status;
+    private String code;
+    private String active;
 
     public Long getId() {
         return id;
@@ -55,5 +57,21 @@ public class CustomerListItemView {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getActive() {
+        return active;
+    }
+
+    public void setActive(String active) {
+        this.active = active;
     }
 }

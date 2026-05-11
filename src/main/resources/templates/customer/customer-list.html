@@ -34,31 +34,45 @@
           </div>
         </div>
 
-        <form method="get" th:action="@{/customers}" class="filters">
-          <input type="hidden" name="tenantId" th:value="${tenantId}"/>
+        <form method="get" class="list-toolbar">
+          <div class="toolbar-field search-field">
+            <label for="q" class="form-label">Cerca</label>
+            <input id="q"
+                   name="q"
+                   type="text"
+                   class="form-control"
+                   th:value="${q}"
+                   placeholder="nome, P.IVA, email..."/>
+          </div>
+          <div class="toolbar-field">
+            <label for="status" class="form-label">Stato</label>
+            <select id="status" name="status" class="form-select">
+              <option value="">Tutti</option>
+              <option value="ACTIVE" th:selected="${status == 'ACTIVE'}">Attivi</option>
+              <option value="INACTIVE" th:selected="${status == 'INACTIVE'}">Non attivi</option>
+            </select>
+          </div>
 
-          <input type="text" name="search" placeholder="Cerca nome, email o P.IVA" th:value="${search}"/>
+          <div class="toolbar-field">
+            <label for="size" class="form-label">Righe</label>
+            <select id="size" name="size" class="form-select">
+              <option value="10" th:selected="${size == 10}">10</option>
+              <option value="20" th:selected="${size == 20}">20</option>
+              <option value="50" th:selected="${size == 50}">50</option>
+            </select>
+          </div>
 
-          <select name="status">
-            <option value="">Tutti gli stati</option>
-            <option value="ACTIVE" th:selected="${status == 'ACTIVE'}">ACTIVE</option>
-            <option value="INACTIVE" th:selected="${status == 'INACTIVE'}">INACTIVE</option>
-          </select>
-
-          <select name="type">
-            <option value="">Tutti i tipi</option>
-            <option value="COMPANY" th:selected="${type == 'COMPANY'}">COMPANY</option>
-            <option value="PERSON" th:selected="${type == 'PERSON'}">PERSON</option>
-          </select>
-
-          <button type="submit" class="btn btn-primary">Filtra</button>
-
-          <a class="btn btn-secondary"
-             th:href="@{/customers(tenantId=${tenantId})}">
-            Reset
-          </a>
+          <div class="toolbar-field toolbar-actions">
+            <button type="submit" class="btn btn-secondary">
+              <i class="bi bi-search"></i>
+              <span>Cerca</span>
+            </button>
+            <a class="btn btn-secondary" th:href="@{/customers}">
+              <i class="bi bi-x-circle"></i>
+              <span>Reset</span>
+            </a>
+          </div>
         </form>
-
         <table class="table">
           <thead>
           <tr>
@@ -106,24 +120,39 @@
           </tbody>
         </table>
 
-        <div class="pagination">
-          <a th:if="${!customersPage.first}"
-             th:href="@{/customers(page=${customersPage.page - 1}, size=${customersPage.size}, search=${search}, status=${status}, type=${type}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
-            ← Precedente
-          </a>
-
-          <span>
-                        Pagina <strong th:text="${customersPage.page + 1}">1</strong>
-                        di <strong th:text="${customersPage.totalPages}">1</strong>
-                        — Totale elementi: <strong th:text="${customersPage.totalElements}">0</strong>
-                    </span>
-
-          <a th:if="${!customersPage.last}"
-             th:href="@{/customers(page=${customersPage.page + 1}, size=${customersPage.size}, search=${search}, status=${status}, type=${type}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
-            Successiva →
-          </a>
+        <div class="list-summary">
+          <div class="muted">
+            Totale risultati:
+            <strong th:text="${page.totalElements}">0</strong>
+          </div>
+          <div class="pagination-wrap" th:if="${page.totalPages > 1}">
+            <nav aria-label="Paginazione">
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item" th:classappend="${page.first} ? ' disabled'">
+                  <a class="page-link"
+                     th:href="${page.first} ? '#' : @{/customers(page=${page.number - 1}, size=${size}, q=${q}, status=${status})}">
+                    Precedente
+                  </a>
+                </li>
+                <li class="page-item"
+                    th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+                    th:classappend="${i == page.number} ? ' active'">
+                  <a class="page-link"
+                     th:text="${i + 1}"
+                     th:href="@{/customers(page=${i}, size=${size}, q=${q}, status=${status})}">
+                    1
+                  </a>
+                </li>
+                <li class="page-item" th:classappend="${page.last} ? ' disabled'">
+                  <a class="page-link"
+                     th:href="${page.last} ? '#' : @{/customers(page=${page.number + 1}, size=${size}, q=${q}, status=${status})}">
+                    Successiva
+                  </a>
+                </li>
+              </ul>
+            </nav>
+          </div>
         </div>
-
       </div>
     </div>
   </main>
