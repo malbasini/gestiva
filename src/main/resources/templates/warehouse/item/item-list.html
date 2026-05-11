@@ -33,7 +33,43 @@
             </a>
           </div>
         </div>
-
+        <form method="get" class="list-toolbar">
+          <div class="toolbar-field search-field">
+            <label for="q" class="form-label">Cerca</label>
+            <input id="q"
+                   name="q"
+                   type="text"
+                   class="form-control"
+                   th:value="${q}"
+                   placeholder="Codice, nome..."/>
+          </div>
+          <div class="toolbar-field">
+            <label for="status" class="form-label">Stato</label>
+            <select id="status" name="status" class="form-select">
+              <option value="">Tutti</option>
+              <option value="ACTIVE" th:selected="${status == 'ACTIVE'}">Attivi</option>
+              <option value="INACTIVE" th:selected="${status == 'INACTIVE'}">Non attivi</option>
+            </select>
+          </div>
+          <div class="toolbar-field">
+            <label for="size" class="form-label">Righe</label>
+            <select id="size" name="size" class="form-select">
+              <option value="10" th:selected="${size == 10}">10</option>
+              <option value="20" th:selected="${size == 20}">20</option>
+              <option value="50" th:selected="${size == 50}">50</option>
+            </select>
+          </div>
+          <div class="toolbar-field toolbar-actions">
+            <button type="submit" class="btn btn-secondary">
+              <i class="bi bi-search"></i>
+              <span>Cerca</span>
+            </button>
+            <a class="btn btn-secondary" th:href="@{/items}">
+              <i class="bi bi-x-circle"></i>
+              <span>Reset</span>
+            </a>
+          </div>
+        </form>
         <table class="table">
           <thead>
           <tr>
@@ -82,7 +118,39 @@
           </tr>
           </tbody>
         </table>
-
+      </div>
+      <div class="list-summary">
+        <div class="muted">
+          Totale risultati:
+          <strong th:text="${page.totalElements}">0</strong>
+        </div>
+        <div class="pagination-wrap" th:if="${page.totalPages > 1}">
+          <nav aria-label="Paginazione">
+            <ul class="pagination pagination-sm mb-0">
+              <li class="page-item" th:classappend="${page.first} ? ' disabled'">
+                <a class="page-link"
+                   th:href="${page.first} ? '#' : @{/items(page=${page.number - 1}, size=${size}, q=${q}, status=${status})}">
+                  Precedente
+                </a>
+              </li>
+              <li class="page-item"
+                  th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+                  th:classappend="${i == page.number} ? ' active'">
+                <a class="page-link"
+                   th:text="${i + 1}"
+                   th:href="@{/items(page=${i}, size=${size}, q=${q}, status=${status})}">
+                  1
+                </a>
+              </li>
+              <li class="page-item" th:classappend="${page.last} ? ' disabled'">
+                <a class="page-link"
+                   th:href="${page.last} ? '#' : @{/items(page=${page.number + 1}, size=${size}, q=${q}, status=${status})}">
+                  Successiva
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
       </div>
     </div>
   </main>

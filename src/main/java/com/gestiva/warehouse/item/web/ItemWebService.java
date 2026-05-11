@@ -6,7 +6,11 @@ import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.warehouse.item.entity.Item;
 import com.gestiva.warehouse.item.repository.ItemRepository;
 import com.gestiva.warehouse.stock.repository.StockMovementRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,9 +23,6 @@ public class ItemWebService {
 
     private final ItemRepository itemRepository;
     private final StockMovementRepository stockMovementRepository;
-
-
-
 
     public ItemWebService(ItemRepository itemRepository,
                           StockMovementRepository stockMovementRepository) {
@@ -189,5 +190,52 @@ public class ItemWebService {
         view.setBasePrice(item.getBasePrice());
         view.setDefaultTaxPct(item.getDefaultTaxPct());
         return view;
+    }
+
+    public Page<ItemListItemView> findPage(Long tenantId, int page, int size, String q, String status) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.asc("code")));
+        Specification<Item> spec = Specification.where(byTenant(tenantId))
+                .and(bySearch(q))
+                .and(byStatus(status));
+        return itemRepository.findAll(spec, pageable).map(this::toListItemViewItem);
+    }
+
+    private Specification<Item> byTenant(Long tenantId) {
+        return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
+    }
+    private Specification<Item> bySearch(String q) {
+        if (q == null || q.trim().isEmpty()) {
+            return null;
+        }
+        String like = "%" + q.trim().toLowerCase() + "%";
+        return (root, query, cb) -> cb.or(
+                cb.like(cb.lower(root.get("code")), like),
+                cb.like(cb.lower(root.get("name")), like)
+        );
+    }
+    private Specification<Item> byStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        return (root, query, cb) -> {
+            if ("ACTIVE".equalsIgnoreCase(status)) {
+                return cb.isTrue(root.get("active"));
+            }
+            if ("INACTIVE".equalsIgnoreCase(status)) {
+                return cb.isFalse(root.get("active"));
+            }
+            return null;
+        };
+    }
+
+    private ItemListItemView toListItemViewItem(Item item) {
+        ItemListItemView v = new ItemListItemView();
+        v.setId(item.getId());
+        v.setCode(item.getCode());
+        v.setName(item.getName());
+        v.setItemType(item.getItemType());
+        v.setTrackStock(item.isTrackStock());
+        v.setActive(item.isActive());
+        return v;
     }
 }

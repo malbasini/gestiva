@@ -4,7 +4,11 @@ import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
 import com.gestiva.purchasing.supplier.entity.Supplier;
 import com.gestiva.purchasing.supplier.repository.SupplierRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -157,5 +161,59 @@ public class SupplierWebService {
                     return v;
                 })
                 .toList();
+    }
+
+    public Page<SupplierListItemView> findPage(Long tenantId, int page, int size, String q, String status) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.asc("code")));
+        Specification<Supplier> spec = Specification.where(byTenant(tenantId))
+                .and(bySearch(q))
+                .and(byStatus(status));
+        return supplierRepository.findAll(spec, pageable).map(this::toListItemViewSupplier);
+    }
+    private Specification<Supplier> byTenant(Long tenantId) {
+        return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
+    }
+
+    private Specification<Supplier> bySearch(String q) {
+        if (q == null || q.trim().isEmpty()) {
+            return null;
+        }
+        String like = "%" + q.trim().toLowerCase() + "%";
+        return (root, query, cb) -> cb.or(
+                cb.like(cb.lower(root.get("code")), like),
+                cb.like(cb.lower(root.get("name")), like),
+                cb.like(cb.lower(root.get("vatNumber")), like),
+                cb.like(cb.lower(root.get("email")), like)
+        );
+
+    }
+
+    private Specification<Supplier> byStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+
+        }
+        return (root, query, cb) -> {
+            if ("ACTIVE".equalsIgnoreCase(status)) {
+                return cb.isTrue(root.get("active"));
+            }
+            if ("INACTIVE".equalsIgnoreCase(status)) {
+                return cb.isFalse(root.get("active"));
+            }
+            return null;
+        };
+    }
+    private SupplierListItemView toListItemViewSupplier(Supplier supplier) {
+
+        SupplierListItemView v = new SupplierListItemView();
+        v.setId(supplier.getId());
+        v.setCode(supplier.getCode());
+        v.setName(supplier.getName());
+        v.setVatNumber(supplier.getVatNumber());
+        v.setEmail(supplier.getEmail());
+        v.setActive(supplier.isActive());
+        v.setPhone(supplier.getPhone());
+        return v;
+
     }
 }

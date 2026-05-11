@@ -865,3 +865,60 @@ a:hover {
 .lines-grid input[type="number"] {
     text-align: left !important;
 }
+.list-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 20px;
+}
+
+.toolbar-actions {
+    display: flex;
+    gap: 4px;
+    align-items: end;
+}
+
+.list-toolbar .toolbar-field {
+    min-width: 180px;
+}
+
+.list-toolbar .toolbar-field.search-field {
+    min-width: 280px;
+    flex: 1 1 280px;
+}
+
+.list-summary {
+    margin-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-wrap .table {
+    min-width: 900px;
+}
+
+.pagination-wrap {
+    margin-top: 8px;
+}
+
+@media (max-width: 700px) {
+    .list-toolbar .toolbar-field,
+    .list-toolbar .toolbar-field.search-field {
+        min-width: 100%;
+        flex: 1 1 100%;
+    }
+
+    .list-summary {
+        align-items: stretch;
+    }
+}
