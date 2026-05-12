@@ -19,14 +19,6 @@ public class SupplierInvoiceViewController {
         this.tenantContext = tenantContext;
     }
 
-    @GetMapping
-    public String list(Model model) {
-        Long tenantId = tenantContext.getCurrentTenantId();
-        model.addAttribute("supplierInvoices", supplierInvoiceWebService.findAll(tenantId));
-        model.addAttribute("activeMenu", "supplierInvoices");
-        return "purchasing/invoice/supplier-invoice-list";
-    }
-
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         Long tenantId = tenantContext.getCurrentTenantId();

@@ -14,19 +14,21 @@
         <div class="page">
             <div class="card">
                 <div th:replace="~{fragments/layout :: flashMessages}"></div>
-
-                <div class="breadcrumb">
-                    <a th:href="@{/dashboard}">Dashboard</a> /
-                    <span>Ordini a fornitore</span>
+                <div class="row">
+                    <div class="col-md-10"></div>
+                    <div class="col-md-2 d-flex justify-content-end">
+                        <a th:href="@{/dashboard}" class="btn btn-secondary" style="margin-right: 10px;">
+                            <span>Dashboard</span>
+                        </a>
+                    </div>
                 </div>
-
                 <div class="page-header">
                     <div class="page-header-left">
                         <h1 class="page-title">Ordini a fornitore</h1>
                         <div class="muted">Gestione ordini di acquisto</div>
                     </div>
                     <div class="page-header-right">
-                        <a class="btn" th:href="@{/purchase-orders/new}">
+                        <a class="btn btn-primary" th:href="@{/purchase-orders/new}">
                             <i class="bi bi-plus-lg"></i>
                             <span>Nuovo ordine</span>
                         </a>

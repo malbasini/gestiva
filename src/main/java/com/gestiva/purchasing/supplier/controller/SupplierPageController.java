@@ -42,19 +42,6 @@ public class SupplierPageController {
         return "purchasing/supplier/supplier-list";
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         Long tenantId = tenantContext.getCurrentTenantId();
