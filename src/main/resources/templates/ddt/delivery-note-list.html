@@ -27,26 +27,59 @@
           </div>
         </div>
 
-        <form method="get" th:action="@{/delivery-notes}" class="filters">
-          <input type="hidden" name="tenantId" th:value="${tenantId}"/>
-
-          <input type="text" name="search" placeholder="Cerca numero, causale o vettore" th:value="${search}"/>
-
-          <select name="status">
-            <option value="">Tutti gli stati</option>
-            <option value="ISSUED" th:selected="${status == 'ISSUED'}">ISSUED</option>
-            <option value="CANCELLED" th:selected="${status == 'CANCELLED'}">CANCELLED</option>
-          </select>
-
-          <input type="number" name="customerId" placeholder="Customer ID" th:value="${customerId}"/>
-          <input type="number" name="salesOrderId" placeholder="Order ID" th:value="${salesOrderId}"/>
-
-          <button type="submit" class="btn btn-primary">Filtra</button>
-
-          <a class="btn btn-secondary"
-             th:href="@{/delivery-notes(tenantId=${tenantId})}">
-            Reset
-          </a>
+        <form method="get" class="row g-3 align-items-end">
+          <div class="col-md-3">
+            <label for="q" class="form-label">Cerca</label>
+            <input id="q"
+                   name="q"
+                   type="text"
+                   class="form-control"
+                   th:value="${q}"
+                   placeholder="Numero DDT..."/>
+          </div>
+          <div class="col-md-2">
+            <label for="status" class="form-label">Stato</label>
+            <select id="status" name="status" class="form-select">
+              <option value="">Tutti</option>
+              <option value="DRAFT" th:selected="${status == 'DRAFT'}">Draft</option>
+              <option value="ISSUED" th:selected="${status == 'ISSUED'}">Issued</option>
+              <option value="CANCELLED" th:selected="${status == 'CANCELLED'}">Cancelled</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label for="dateFrom" class="form-label">Data da</label>
+            <input id="dateFrom"
+                   name="dateFrom"
+                   type="date"
+                   class="form-control"
+                   th:value="${dateFrom != null ? #temporals.format(dateFrom, 'yyyy-MM-dd') : ''}"/>
+          </div>
+          <div class="col-md-2">
+            <label for="dateTo" class="form-label">Data a</label>
+            <input id="dateTo"
+                   name="dateTo"
+                   type="date"
+                   class="form-control"
+                   th:value="${dateTo != null ? #temporals.format(dateTo, 'yyyy-MM-dd') : ''}"/>
+          </div>
+          <div class="col-md-1">
+            <label for="size" class="form-label">Righe</label>
+            <select id="size" name="size" class="form-select">
+              <option value="10" th:selected="${size == 10}">10</option>
+              <option value="20" th:selected="${size == 20}">20</option>
+              <option value="50" th:selected="${size == 50}">50</option>
+            </select>
+          </div>
+          <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-secondary">
+              <i class="bi bi-search"></i>
+              <span>Cerca</span>
+            </button>
+            <a class="btn btn-secondary" th:href="@{/delivery-notes}">
+              <i class="bi bi-x-circle"></i>
+              <span>Reset</span>
+            </a>
+          </div>
         </form>
 
         <table class="table">
@@ -57,7 +90,6 @@
             <th>Data</th>
             <th>Cliente</th>
             <th>Stato</th>
-            <th>Ordine</th>
             <th class="text-right">Totale</th>
             <th>Azioni</th>
           </tr>
@@ -78,7 +110,6 @@
                                 ISSUED
                             </span>
             </td>
-            <td th:text="${deliveryNote.salesOrderId}">9</td>
             <td class="text-right" th:text="${deliveryNote.formattedTotalAmount}">1.220,00 €</td>
             <td class="link-actions">
               <a th:href="@{/delivery-notes/{id}(id=${deliveryNote.id}, tenantId=${tenantId})}">
@@ -102,24 +133,39 @@
           </tbody>
         </table>
 
-        <div class="pagination">
-          <a th:if="${!deliveryNotesPage.first}"
-             th:href="@{/delivery-notes(page=${deliveryNotesPage.page - 1}, size=${deliveryNotesPage.size}, search=${search}, status=${status}, customerId=${customerId}, salesOrderId=${salesOrderId}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
-            ← Precedente
-          </a>
-
-          <span>
-                        Pagina <strong th:text="${deliveryNotesPage.page + 1}">1</strong>
-                        di <strong th:text="${deliveryNotesPage.totalPages}">1</strong>
-                        — Totale elementi: <strong th:text="${deliveryNotesPage.totalElements}">0</strong>
-                    </span>
-
-          <a th:if="${!deliveryNotesPage.last}"
-             th:href="@{/delivery-notes(page=${deliveryNotesPage.page + 1}, size=${deliveryNotesPage.size}, search=${search}, status=${status}, customerId=${customerId}, salesOrderId=${salesOrderId}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
-            Successiva →
-          </a>
+        <div class="list-summary">
+          <div class="muted">
+            Totale risultati:
+            <strong th:text="${page.totalElements}">0</strong>
+          </div>
+          <div class="pagination-wrap" th:if="${page.totalPages > 1}">
+            <nav aria-label="Paginazione">
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item" th:classappend="${page.first} ? ' disabled'">
+                  <a class="page-link"
+                     th:href="${page.first} ? '#' : @{/delivery-notes(page=${page.number - 1}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                    Precedente
+                  </a>
+                </li>
+                <li class="page-item"
+                    th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+                    th:classappend="${i == page.number} ? ' active'">
+                  <a class="page-link"
+                     th:text="${i + 1}"
+                     th:href="@{/delivery-notes(page=${i}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                    1
+                  </a>
+                </li>
+                <li class="page-item" th:classappend="${page.last} ? ' disabled'">
+                  <a class="page-link"
+                     th:href="${page.last} ? '#' : @{/delivery-notes(page=${page.number + 1}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                    Successiva
+                  </a>
+                </li>
+              </ul>
+            </nav>
+          </div>
         </div>
-
       </div>
     </div>
   </main>

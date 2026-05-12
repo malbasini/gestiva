@@ -1,17 +1,16 @@
 package com.gestiva.logistics.ddt.web;
 
-import com.gestiva.common.dto.PageResponse;
+import com.gestiva.crm.contact.entity.Customer;
 import com.gestiva.crm.contact.repository.CustomerRepository;
 import com.gestiva.documents.pdf.PdfFormatUtils;
-import com.gestiva.logistics.ddt.dto.DeliveryNoteSearchRequest;
+import com.gestiva.logistics.ddt.entity.DeliveryNote;
 import com.gestiva.logistics.ddt.repository.DeliveryNoteRepository;
-import com.gestiva.logistics.ddt.repository.DeliveryNoteSpecifications;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.time.LocalDate;
 
 @Service
 @Transactional(readOnly = true)
@@ -22,50 +21,78 @@ public class DeliveryNoteWebService {
 
     public DeliveryNoteWebService(DeliveryNoteRepository deliveryNoteRepository,
                                   CustomerRepository customerRepository) {
+
         this.deliveryNoteRepository = deliveryNoteRepository;
         this.customerRepository = customerRepository;
     }
 
-    public PageResponse<DeliveryNoteListItemView> search(Long tenantId,
-                                                         DeliveryNoteSearchRequest request,
-                                                         Pageable pageable) {
+    public Page<DeliveryNoteListItemView> findPage(Long tenantId,
+                                                   int page,
+                                                   int size,
+                                                   String q,
+                                                   String status,
+                                                   LocalDate dateFrom,
+                                                   LocalDate dateTo) {
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Order.desc("ddtDate"), Sort.Order.desc("id"))
+        );
 
-        var specification = DeliveryNoteSpecifications.hasTenantId(tenantId)
-                .and(DeliveryNoteSpecifications.matchesSearch(request.getSearch()))
-                .and(DeliveryNoteSpecifications.hasStatus(request.getStatus()))
-                .and(DeliveryNoteSpecifications.hasCustomerId(request.getCustomerId()))
-                .and(DeliveryNoteSpecifications.hasSalesOrderId(request.getSalesOrderId()));
+        Specification<DeliveryNote> spec = Specification.where(byTenant(tenantId))
+                .and(bySearch(q))
+                .and(byStatus(status))
+                .and(byDateFrom(dateFrom))
+                .and(byDateTo(dateTo));
 
-        var page = deliveryNoteRepository.findAll(specification, pageable);
+        return deliveryNoteRepository.findAll(spec, pageable).map(this::toListItemView);
+    }
 
-        var customerIds = page.getContent().stream()
-                .map(note -> note.getCustomerId())
-                .collect(Collectors.toSet());
+    private Specification<DeliveryNote> byTenant(Long tenantId) {
+        return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
+    }
 
-        Map<Long, String> customerNames = customerRepository.findAllById(customerIds).stream()
-                .collect(Collectors.toMap(c -> c.getId(), c -> c.getName()));
+    private Specification<DeliveryNote> bySearch(String q) {
+        if (q == null || q.trim().isEmpty()) {
+            return null;
+        }
 
-        var content = page.getContent().stream().map(note -> {
-            DeliveryNoteListItemView item = new DeliveryNoteListItemView();
-            item.setId(note.getId());
-            item.setDdtNumber(note.getDdtNumber());
-            item.setFormattedDdtDate(PdfFormatUtils.formatDate(note.getDdtDate()));
-            item.setCustomerName(customerNames.getOrDefault(note.getCustomerId(), "Cliente"));
-            item.setStatus(note.getStatus());
-            item.setSalesOrderId(note.getSalesOrderId());
-            item.setFormattedTotalAmount(PdfFormatUtils.formatMoney(note.getTotalAmount()));
-            return item;
-        }).toList();
+        String like = "%" + q.trim().toLowerCase() + "%";
+        return (root, query, cb) -> cb.like(cb.lower(root.get("ddtNumber")), like);
+    }
 
-        PageResponse<DeliveryNoteListItemView> response = new PageResponse<>();
-        response.setContent(content);
-        response.setPage(page.getNumber());
-        response.setSize(page.getSize());
-        response.setTotalElements(page.getTotalElements());
-        response.setTotalPages(page.getTotalPages());
-        response.setFirst(page.isFirst());
-        response.setLast(page.isLast());
+    private Specification<DeliveryNote> byStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        return (root, query, cb) -> cb.equal(root.get("status"), status);
+    }
 
-        return response;
+    private Specification<DeliveryNote> byDateFrom(LocalDate dateFrom) {
+        if (dateFrom == null) {
+            return null;
+        }
+        return (root, query, cb) -> cb.greaterThanOrEqualTo(root.get("ddtDate"), dateFrom);
+    }
+
+    private Specification<DeliveryNote> byDateTo(LocalDate dateTo) {
+        if (dateTo == null) {
+            return null;
+        }
+        return (root, query, cb) -> cb.lessThanOrEqualTo(root.get("ddtDate"), dateTo);
+    }
+
+    private DeliveryNoteListItemView toListItemView(DeliveryNote note) {
+        DeliveryNoteListItemView v = new DeliveryNoteListItemView();
+        Customer customer = customerRepository.findById(note.getCustomerId()).orElse(null);
+        if (customer != null) {
+            v.setCustomerName(customer.getName());
+        }
+        v.setId(note.getId());
+        v.setDdtNumber(note.getDdtNumber());
+        v.setFormattedDdtDate(PdfFormatUtils.formatDate(note.getDdtDate()));
+        v.setStatus(note.getStatus());
+        v.setFormattedTotalAmount(PdfFormatUtils.formatMoney(note.getTotalAmount()));
+        return v;
     }
 }
