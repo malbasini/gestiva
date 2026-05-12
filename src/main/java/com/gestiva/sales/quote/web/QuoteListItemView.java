@@ -13,10 +13,10 @@ public class QuoteListItemView {
     private String status;
     private String currencyCode;
     private BigDecimal totalAmount;
-
     private String formattedQuoteDate;
     private String formattedValidUntil;
     private String formattedTotalAmount;
+    private String customerName;
 
     public Long getId() {
         return id;
@@ -104,5 +104,13 @@ public class QuoteListItemView {
 
     public void setFormattedTotalAmount(String formattedTotalAmount) {
         this.formattedTotalAmount = formattedTotalAmount;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
     }
 }

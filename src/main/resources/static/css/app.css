@@ -873,18 +873,12 @@ a:hover {
     margin-bottom: 20px;
 }
 
-.toolbar-actions {
-    display: flex;
-    gap: 4px;
-    align-items: end;
-}
-
 .list-toolbar .toolbar-field {
-    min-width: 180px;
+    min-width: 120px;
 }
 
 .list-toolbar .toolbar-field.search-field {
-    min-width: 280px;
+    min-width: 180px;
     flex: 1 1 280px;
 }
 
@@ -921,4 +915,138 @@ a:hover {
     .list-summary {
         align-items: stretch;
     }
+}
+.table .col-actions,
+.table td.col-actions {
+    white-space: nowrap;
+    width: 1%;
+}
+
+.link-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+.list-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    justify-content: flex-start;
+}
+
+.list-toolbar .toolbar-field {
+    min-width: 180px;
+    flex: 0 0 auto;
+}
+
+.list-toolbar .toolbar-field.search-field {
+    min-width: 280px;
+    flex: 0 0 280px;
+}
+
+.list-toolbar .toolbar-actions {
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+    justify-content: flex-start;
+}
+.list-toolbar > * {
+    margin-left: 0 !important;
+}
+.list-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    justify-content: flex-start;
+    margin-bottom: 20px;
+}
+
+.list-toolbar > * {
+    margin-left: 0 !important;
+}
+
+.list-toolbar .toolbar-field {
+    min-width: 180px;
+    flex: 0 0 auto;
+}
+
+.list-toolbar .toolbar-field.search-field {
+    min-width: 280px;
+    flex: 0 0 280px;
+}
+
+.list-toolbar .toolbar-actions {
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+    justify-content: flex-start;
+}
+
+.list-toolbar label,
+.list-toolbar .form-label {
+    display: block;
+    text-align: left;
+    margin-bottom: 6px;
+}
+
+.list-toolbar input,
+.list-toolbar select {
+    text-align: left;
+}
+
+.table th,
+.table td {
+    text-align: left;
+}
+
+@media (max-width: 900px) {
+    .list-toolbar {
+        gap: 10px;
+    }
+
+    .list-toolbar .toolbar-field,
+    .list-toolbar .toolbar-field.search-field {
+        min-width: 100%;
+        flex: 1 1 100%;
+    }
+
+    .list-toolbar .toolbar-actions {
+        width: 100%;
+    }
+}
+.list-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    justify-content: flex-start;
+    margin-bottom: 20px;
+}
+
+.list-toolbar .toolbar-field {
+    min-width: 180px;
+    flex: 0 0 auto;
+}
+
+.list-toolbar .toolbar-field.search-field {
+    min-width: 280px;
+    flex: 0 0 280px;
+}
+
+.list-toolbar .toolbar-actions {
+    min-width: auto;
+    flex: 0 0 auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    align-self: flex-end;
+    margin-top: 0;
+}
+
+.list-toolbar .toolbar-actions .btn {
+    white-space: nowrap;
 }

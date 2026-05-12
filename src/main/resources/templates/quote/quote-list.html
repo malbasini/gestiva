@@ -33,28 +33,62 @@
                         </a>
                     </div>
                 </div>
+                <form method="get" class="row g-3 align-items-end">
+                    <div class="col-md-2">
+                            <label for="q" class="form-label">Cerca</label>
+                            <input id="q"
+                                   name="q"
+                                   type="text"
+                                   class="form-control"
+                                   th:value="${q}"
+                                   placeholder="Numero preventivo..."/>
+                    </div>
+                    <div class="col-md-2">
+                            <label for="status" class="form-label">Stato</label>
+                            <select id="status" name="status" class="form-select">
+                                <option value="">Tutti</option>
+                                <option value="DRAFT" th:selected="${status == 'DRAFT'}">Draft</option>
+                                <option value="SENT" th:selected="${status == 'SENT'}">Sent</option>
+                                <option value="ACCEPTED" th:selected="${status == 'ACCEPTED'}">Accepted</option>
+                                <option value="REJECTED" th:selected="${status == 'REJECTED'}">Rejected</option>
+                                <option value="EXPIRED" th:selected="${status == 'EXPIRED'}">Expired</option>
+                            </select>
+                        </div>
+                    <div class="col-md-2">
+                            <label for="dateFrom" class="form-label">Data da</label>
+                            <input id="dateFrom"
+                                   name="dateFrom"
+                                   type="date"
+                                   class="form-control"
+                                   th:value="${dateFrom != null ? #temporals.format(dateFrom, 'yyyy-MM-dd') : ''}"/>
+                    </div>
+                    <div class="col-md-2">
+                            <label for="dateTo" class="form-label">Data a</label>
+                            <input id="dateTo"
+                                   name="dateTo"
+                                   type="date"
+                                   class="form-control"
+                                   th:value="${dateTo != null ? #temporals.format(dateTo, 'yyyy-MM-dd') : ''}"/>
+                    </div>
+                    <div class="col-md-1">
+                            <label for="size" class="form-label">Righe</label>
+                            <select id="size" name="size" class="form-select">
+                                <option value="10" th:selected="${size == 10}">10</option>
+                                <option value="20" th:selected="${size == 20}">20</option>
+                                <option value="50" th:selected="${size == 50}">50</option>
+                            </select>
+                    </div>
+                    <div class="col-md-3">
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="bi bi-search"></i>
+                                <span>Cerca</span>
+                            </button>
 
-                <form method="get" th:action="@{/quotes}" class="filters">
-                    <input type="hidden" name="tenantId" th:value="${tenantId}"/>
-
-                    <input type="text" name="search" placeholder="Cerca numero o note" th:value="${search}"/>
-
-                    <select name="status">
-                        <option value="">Tutti gli stati</option>
-                        <option value="DRAFT" th:selected="${status == 'DRAFT'}">DRAFT</option>
-                        <option value="SENT" th:selected="${status == 'SENT'}">SENT</option>
-                        <option value="ACCEPTED" th:selected="${status == 'ACCEPTED'}">ACCEPTED</option>
-                        <option value="REJECTED" th:selected="${status == 'REJECTED'}">REJECTED</option>
-                    </select>
-
-                    <input type="number" name="customerId" placeholder="Customer ID" th:value="${customerId}"/>
-
-                    <button type="submit" class="btn btn-primary">Filtra</button>
-
-                    <a class="btn btn-secondary"
-                       th:href="@{/quotes(tenantId=${tenantId})}">
-                        Reset
-                    </a>
+                            <a class="btn btn-secondary" th:href="@{/quotes}">
+                                <i class="bi bi-x-circle"></i>
+                                <span>Reset</span>
+                            </a>
+                    </div>
                 </form>
                 <div class="table-responsive-wrap">
                     <table class="table table-form">
@@ -62,8 +96,8 @@
                     <tr>
                         <th>ID</th>
                         <th>Numero</th>
-                        <th>Data</th>
-                        <th>Validità</th>
+                        <th>Validità da</th>
+                        <th>Validità a</th>
                         <th>Stato</th>
                         <th class="text-right">Totale</th>
                         <th>Azioni</th>
@@ -106,22 +140,38 @@
                     </tbody>
                 </table>
                 </div>
-                <div class="pagination">
-                    <a th:if="${!quotesPage.first}"
-                       th:href="@{/quotes(page=${quotesPage.page - 1}, size=${quotesPage.size}, search=${search}, status=${status}, customerId=${customerId}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
-                        ← Precedente
-                    </a>
-
-                    <span>
-                        Pagina <strong th:text="${quotesPage.page + 1}">1</strong>
-                        di <strong th:text="${quotesPage.totalPages}">1</strong>
-                        — Totale elementi: <strong th:text="${quotesPage.totalElements}">0</strong>
-                    </span>
-
-                    <a th:if="${!quotesPage.last}"
-                       th:href="@{/quotes(page=${quotesPage.page + 1}, size=${quotesPage.size}, search=${search}, status=${status}, customerId=${customerId}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
-                        Successiva →
-                    </a>
+                <div class="list-summary">
+                    <div class="muted">
+                        Totale risultati:
+                        <strong th:text="${page.totalElements}">0</strong>
+                    </div>
+                    <div class="pagination-wrap" th:if="${page.totalPages > 1}">
+                        <nav aria-label="Paginazione">
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item" th:classappend="${page.first} ? ' disabled'">
+                                    <a class="page-link"
+                                       th:href="${page.first} ? '#' : @{/quotes(page=${page.number - 1}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                                        Precedente
+                                    </a>
+                                </li>
+                                <li class="page-item"
+                                    th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+                                    th:classappend="${i == page.number} ? ' active'">
+                                    <a class="page-link"
+                                       th:text="${i + 1}"
+                                       th:href="@{/quotes(page=${i}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                                        1
+                                    </a>
+                                </li>
+                                <li class="page-item" th:classappend="${page.last} ? ' disabled'">
+                                    <a class="page-link"
+                                       th:href="${page.last} ? '#' : @{/quotes(page=${page.number + 1}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                                        Successiva
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
                 </div>
             </div>
         </div>
