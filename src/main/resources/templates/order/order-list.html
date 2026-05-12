@@ -2,128 +2,185 @@
 <html lang="it" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8"/>
-  <title>Ordini</title>
+  <title>Ordini clienti</title>
   <link rel="stylesheet" th:href="@{/css/app.css}"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
 </head>
 <body>
 <div class="app-shell">
-
   <div th:replace="~{fragments/layout :: appHeader}"></div>
 
   <main class="app-main">
     <div class="page">
       <div class="card">
-
-        <div class="breadcrumb">
-          <a th:href="@{/dashboard(tenantId=${tenantId})}">Dashboard</a> /
-          <span>Ordini</span>
-        </div>
-
-        <div class="page-header">
+        <div th:replace="~{fragments/layout :: flashMessages}"></div>
+        <div class="row">
+          <div class="col-md-10"></div>
+          <div class="col-md-2 d-flex justify-content-end">
+          <a th:href="@{/dashboard}" class="btn btn-secondary" style="margin-right: 10px;">
+              <span>Dashboard</span>
+            </a>
+          </div>
+          <div class="page-header">
           <div class="page-header-left">
-            <h1 class="page-title">Ordini</h1>
-            <div class="muted">Gestione ordini cliente</div>
+            <h1 class="page-title">Ordini clienti</h1>
+            <div class="muted">Gestione ordini del ciclo attivo</div>
           </div>
         </div>
 
-        <form method="get" th:action="@{/orders}" class="filters">
-          <input type="hidden" name="tenantId" th:value="${tenantId}"/>
+        <form method="get" class="row g-3 align-items-end">
+          <div class="col-md-3">
+            <label for="q" class="form-label">Cerca</label>
+            <input id="q"
+                   name="q"
+                   type="text"
+                   class="form-control"
+                   th:value="${q}"
+                   placeholder="Numero ordine, cliente..."/>
+          </div>
 
-          <input type="text" name="search" placeholder="Cerca numero ordine" th:value="${search}"/>
+          <div class="col-md-2">
+            <label for="status" class="form-label">Stato</label>
+            <select id="status" name="status" class="form-select">
+              <option value="">Tutti</option>
+              <option value="DRAFT" th:selected="${status == 'DRAFT'}">Draft</option>
+              <option value="CONFIRMED" th:selected="${status == 'CONFIRMED'}">Confirmed</option>
+              <option value="CANCELLED" th:selected="${status == 'CANCELLED'}">Cancelled</option>
+            </select>
+          </div>
 
-          <select name="status">
-            <option value="">Tutti gli stati</option>
-            <option value="CONFIRMED" th:selected="${status == 'CONFIRMED'}">CONFIRMED</option>
-            <option value="DRAFT" th:selected="${status == 'DRAFT'}">DRAFT</option>
-            <option value="FULFILLED" th:selected="${status == 'FULFILLED'}">FULFILLED</option>
-            <option value="CANCELLED" th:selected="${status == 'CANCELLED'}">CANCELLED</option>
-          </select>
+          <div class="col-md-2">
+            <label for="dateFrom" class="form-label">Data da</label>
+            <input id="dateFrom"
+                   name="dateFrom"
+                   type="date"
+                   class="form-control"
+                   th:value="${dateFrom != null ? #temporals.format(dateFrom, 'yyyy-MM-dd') : ''}"/>
+          </div>
 
-          <input type="number" name="customerId" placeholder="Customer ID" th:value="${customerId}"/>
-          <input type="number" name="quoteId" placeholder="Quote ID" th:value="${quoteId}"/>
+          <div class="col-md-2">
+            <label for="dateTo" class="form-label">Data a</label>
+            <input id="dateTo"
+                   name="dateTo"
+                   type="date"
+                   class="form-control"
+                   th:value="${dateTo != null ? #temporals.format(dateTo, 'yyyy-MM-dd') : ''}"/>
+          </div>
 
-          <button type="submit" class="btn btn-primary">Filtra</button>
+          <div class="col-md-1">
+            <label for="size" class="form-label">Righe</label>
+            <select id="size" name="size" class="form-select">
+              <option value="10" th:selected="${size == 10}">10</option>
+              <option value="20" th:selected="${size == 20}">20</option>
+              <option value="50" th:selected="${size == 50}">50</option>
+            </select>
+          </div>
 
-          <a class="btn btn-secondary"
-             th:href="@{/orders(tenantId=${tenantId})}">
-            Reset
-          </a>
+          <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-secondary">
+              <i class="bi bi-search"></i>
+              <span>Cerca</span>
+            </button>
+
+            <a class="btn btn-secondary" th:href="@{/orders}">
+              <i class="bi bi-x-circle"></i>
+              <span>Reset</span>
+            </a>
+          </div>
         </form>
 
-        <table class="table">
-          <thead>
-          <tr>
-            <th>ID</th>
-            <th>Numero</th>
-            <th>Data</th>
-            <th>Stato</th>
-            <th>Quote ID</th>
-            <th class="text-right">Totale</th>
-            <th>Azioni</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr th:if="${#lists.isEmpty(ordersPage.content)}">
-            <td colspan="7" class="muted">Nessun ordine trovato.</td>
-          </tr>
-          <tr th:each="order : ${ordersPage.content}">
-            <td th:text="${order.id}">1</td>
-            <td th:text="${order.orderNumber}">ORD-2026-00001</td>
-            <td th:text="${order.formattedOrderDate}">28/04/2026</td>
-            <td>
-                            <span class="badge"
-                                  th:classappend="${order.status == 'CONFIRMED'} ? ' badge-confirmed' :
-                                                  (${order.status == 'FULFILLED'} ? ' badge-fulfilled' :
-                                                  (${order.status == 'CANCELLED'} ? ' badge-cancelled' : ' badge-draft'))"
-                                  th:text="${order.status}">
-                                CONFIRMED
-                            </span>
-            </td>
-            <td th:text="${order.quoteId}">58</td>
-            <td class="text-right" th:text="${order.formattedTotalAmount}">1.342,00 €</td>
-            <td class="link-actions">
-              <a th:href="@{/orders/{id}(id=${order.id}, tenantId=${tenantId})}">
-                <i class="bi bi-file-earmark-text"></i>
-                <span>Dettaglio</span>
-              </a>
-              <a th:href="@{/orders/{id}/preview(id=${order.id}, tenantId=${tenantId})}">
-                <i class="bi bi-eye"></i>
-                <span>Preview</span>
-              </a>
-              <a th:href="@{/api/orders/{id}/pdf(id=${order.id}, tenantId=${tenantId})}">
-                <i class="bi bi-file-earmark-pdf"></i>
-                <span>PDF</span>
-              </a>
-            </td>
-          </tr>
-          </tbody>
-        </table>
+        <div class="table-wrap" style="margin-top: 20px;">
+          <table class="table">
+            <thead>
+            <tr>
+              <th>ID</th>
+              <th>Numero</th>
+              <th>Cliente</th>
+              <th>Data ordine</th>
+              <th>Stato</th>
+              <th class="text-right">Totale</th>
+              <th class="col-actions">Azioni</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${page.totalElements == 0}">
+              <td colspan="7" class="muted">Nessun ordine trovato.</td>
+            </tr>
 
-        <div class="pagination">
-          <a th:if="${!ordersPage.first}"
-             th:href="@{/orders(page=${ordersPage.page - 1}, size=${ordersPage.size}, search=${search}, status=${status}, customerId=${customerId}, quoteId=${quoteId}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
-            ← Precedente
-          </a>
-
-          <span>
-                        Pagina <strong th:text="${ordersPage.page + 1}">1</strong>
-                        di <strong th:text="${ordersPage.totalPages}">1</strong>
-                        — Totale elementi: <strong th:text="${ordersPage.totalElements}">0</strong>
-                    </span>
-
-          <a th:if="${!ordersPage.last}"
-             th:href="@{/orders(page=${ordersPage.page + 1}, size=${ordersPage.size}, search=${search}, status=${status}, customerId=${customerId}, quoteId=${quoteId}, sortBy=${sortBy}, sortDir=${sortDir}, tenantId=${tenantId})}">
-            Successiva →
-          </a>
+            <tr th:each="row : ${page.content}">
+              <td th:text="${row.id}">1</td>
+              <td th:text="${row.orderNumber}">SO-00001</td>
+              <td th:text="${row.customerName}">Cliente Demo S.R.L.</td>
+              <td th:text="${row.formattedOrderDate}">12/05/2026</td>
+              <td>
+                                <span class="g-badge"
+                                      th:classappend="
+                                        ${row.status == 'DRAFT'} ? ' g-badge-draft' :
+                                        (${row.status == 'CONFIRMED'} ? ' g-badge-active' :
+                                        (${row.status == 'CANCELLED'} ? ' g-badge-cancelled' : ' g-badge-draft'))"
+                                      th:text="${row.status}">
+                                    DRAFT
+                                </span>
+              </td>
+              <td class="text-right" th:text="${row.formattedTotalAmount}">707,60 €</td>
+              <td class="link-actions col-actions">
+                <a th:href="@{/orders/{id}(id=${row.id})}">
+                  <i class="bi bi-eye"></i>
+                  <span>Dettaglio</span>
+                </a>
+                <a th:if="${row.status == 'DRAFT'}"
+                   th:href="@{/orders/{id}/edit(id=${row.id})}">
+                  <i class="bi bi-pencil-square"></i>
+                  <span>Modifica</span>
+                </a>
+              </td>
+            </tr>
+            </tbody>
+          </table>
         </div>
 
+        <div class="list-summary">
+          <div class="muted">
+            Totale risultati:
+            <strong th:text="${page.totalElements}">0</strong>
+          </div>
+
+          <div class="pagination-wrap" th:if="${page.totalPages > 1}">
+            <nav aria-label="Paginazione">
+              <ul class="pagination pagination-sm mb-0">
+
+                <li class="page-item" th:classappend="${page.first} ? ' disabled'">
+                  <a class="page-link"
+                     th:href="${page.first} ? '#' : @{/orders(page=${page.number - 1}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                    Precedente
+                  </a>
+                </li>
+
+                <li class="page-item"
+                    th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+                    th:classappend="${i == page.number} ? ' active'">
+                  <a class="page-link"
+                     th:text="${i + 1}"
+                     th:href="@{/orders(page=${i}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                    1
+                  </a>
+                </li>
+
+                <li class="page-item" th:classappend="${page.last} ? ' disabled'">
+                  <a class="page-link"
+                     th:href="${page.last} ? '#' : @{/orders(page=${page.number + 1}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                    Successiva
+                  </a>
+                </li>
+
+              </ul>
+            </nav>
+          </div>
+        </div>
       </div>
     </div>
   </main>
-
   <div th:replace="~{fragments/layout :: appFooter}"></div>
-
 </div>
 </body>
 </html>

@@ -16,7 +16,8 @@ public class SalesOrderListItemView {
 
     private String formattedOrderDate;
     private String formattedTotalAmount;
-
+    private String customerName;
+    
     public Long getId() {
         return id;
     }
@@ -95,5 +96,13 @@ public class SalesOrderListItemView {
 
     public void setFormattedTotalAmount(String formattedTotalAmount) {
         this.formattedTotalAmount = formattedTotalAmount;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
     }
 }

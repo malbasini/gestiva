@@ -23,42 +23,42 @@ public class SalesOrderPageController {
     }
 
     @GetMapping
-    public String listOrders(@RequestParam(required = false) String status,
-                             @RequestParam(required = false) Long customerId,
-                             @RequestParam(required = false) Long quoteId,
-                             @RequestParam(required = false) String search,
-                             @RequestParam(defaultValue = "0") int page,
-                             @RequestParam(defaultValue = "10") int size,
-                             @RequestParam(defaultValue = "orderDate") String sortBy,
-                             @RequestParam(defaultValue = "desc") String sortDir,
-                             @RequestParam(required = false) Long tenantId,
-                             Model model) {
+    public String list(@RequestParam(name = "page", defaultValue = "0") int page,
+                       @RequestParam(name = "size", defaultValue = "10") int size,
+                       @RequestParam(name = "q", required = false) String q,
+                       @RequestParam(name = "status", required = false) String status,
+                       @RequestParam(name = "dateFrom", required = false)
+                       @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+                       java.time.LocalDate dateFrom,
+                       @RequestParam(name = "dateTo", required = false)
+                       @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+                       java.time.LocalDate dateTo,
+                       Model model) {
 
-        Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
+        Long tenantId = tenantContext.getCurrentTenantId();
 
-        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir)
-                ? Sort.Direction.ASC
-                : Sort.Direction.DESC;
+        var resultPage = salesOrderWebService.findPage(tenantId, page, size, q, status, dateFrom, dateTo);
 
-        var pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-
-        SalesOrderSearchRequest request = new SalesOrderSearchRequest();
-        request.setStatus(status);
-        request.setCustomerId(customerId);
-        request.setQuoteId(quoteId);
-        request.setSearch(search);
-
-        var result = salesOrderWebService.search(resolvedTenantId, request, pageable);
-
-        model.addAttribute("ordersPage", result);
+        model.addAttribute("page", resultPage);
+        model.addAttribute("tenantId", tenantId);
+        model.addAttribute("q", q);
         model.addAttribute("status", status);
-        model.addAttribute("customerId", customerId);
-        model.addAttribute("quoteId", quoteId);
-        model.addAttribute("search", search);
-        model.addAttribute("sortBy", sortBy);
-        model.addAttribute("sortDir", sortDir);
-        model.addAttribute("tenantId", resolvedTenantId);
+        model.addAttribute("dateFrom", dateFrom);
+        model.addAttribute("dateTo", dateTo);
+        model.addAttribute("size", size);
         model.addAttribute("activeMenu", "orders");
+
         return "order/order-list";
     }
+
+
+
+
+
+
+
+
+
+
+
 }

@@ -1,10 +1,8 @@
 package com.gestiva.sales.order.entity;
 
 import com.gestiva.common.model.TenantAwareEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import com.gestiva.crm.contact.entity.Customer;
+import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -41,6 +39,10 @@ public class SalesOrder extends TenantAwareEntity {
     @Column(name = "tax_amount", precision = 15, scale = 2, nullable = false)
     private BigDecimal taxAmount;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id", insertable = false, updatable = false)
+    private Customer customer;
+    
     public Long getCustomerId() {
         return customerId;
     }
@@ -113,4 +115,11 @@ public class SalesOrder extends TenantAwareEntity {
         this.taxAmount = taxAmount;
     }
 
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
+    }
 }
