@@ -2,7 +2,7 @@
 <html lang="it" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
-    <title>Ordini fornitore</title>
+    <title>Ordini a fornitore</title>
     <link rel="stylesheet" th:href="@{/css/app.css}"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
 </head>
@@ -17,66 +17,173 @@
 
                 <div class="breadcrumb">
                     <a th:href="@{/dashboard}">Dashboard</a> /
-                    <span>Ordini fornitore</span>
+                    <span>Ordini a fornitore</span>
                 </div>
 
                 <div class="page-header">
                     <div class="page-header-left">
-                        <h1 class="page-title">Ordini fornitore</h1>
-                        <div class="muted">Gestione ordini del ciclo passivo</div>
+                        <h1 class="page-title">Ordini a fornitore</h1>
+                        <div class="muted">Gestione ordini di acquisto</div>
                     </div>
                     <div class="page-header-right">
-                        <a class="btn btn-primary" th:href="@{/purchase-orders/new}">
+                        <a class="btn" th:href="@{/purchase-orders/new}">
                             <i class="bi bi-plus-lg"></i>
                             <span>Nuovo ordine</span>
                         </a>
                     </div>
                 </div>
 
-                <table class="table">
-                    <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Numero</th>
-                        <th>Data</th>
-                        <th>Fornitore</th>
-                        <th>Stato</th>
-                        <th>Totale</th>
-                        <th>Azioni</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:if="${#lists.isEmpty(purchaseOrders)}">
-                        <td colspan="7" class="muted">Nessun ordine fornitore trovato.</td>
-                    </tr>
-                    <tr th:each="po : ${purchaseOrders}">
-                        <td th:text="${po.id}">1</td>
-                        <td th:text="${po.orderNumber}">PO-00001</td>
-                        <td th:text="${po.formattedOrderDate}">07/05/2026</td>
-                        <td th:text="${po.supplierName}">Fornitore Demo</td>
-                        <td>
-                            <span class="badge"
-                                  th:classappend="${po.status == 'DRAFT'} ? ' badge-draft' :
-                                                  (${po.status == 'SENT'} ? ' badge-sent' :
-                                                  (${po.status == 'CONFIRMED'} ? ' badge-confirmed' : ' badge-cancelled'))"
-                                  th:text="${po.status}">DRAFT</span>
-                        </td>
-                        <td th:text="${po.formattedTotalAmount}">100,00 €</td>
-                        <td class="link-actions">
-                            <a th:href="@{/purchase-orders/{id}(id=${po.id})}">
-                                <i class="bi bi-eye"></i>
-                                <span>Dettaglio</span>
-                            </a>
-                            <a th:if="${!po.getStatus().equals('CONFIRMED')}"
-                                th:href="@{/purchase-orders/{id}/edit(id=${po.id})}">
-                                <i class="bi bi-pencil-square"></i>
-                                <span>Modifica</span>
-                            </a>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+                <form method="get" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label for="q" class="form-label">Cerca</label>
+                        <input id="q"
+                               name="q"
+                               type="text"
+                               class="form-control"
+                               th:value="${q}"
+                               placeholder="Numero ordine, fornitore..."/>
+                    </div>
 
+                    <div class="col-md-2">
+                        <label for="status" class="form-label">Stato</label>
+                        <select id="status" name="status" class="form-select">
+                            <option value="">Tutti</option>
+                            <option value="DRAFT" th:selected="${status == 'DRAFT'}">Draft</option>
+                            <option value="CONFIRMED" th:selected="${status == 'CONFIRMED'}">Confirmed</option>
+                            <option value="CANCELLED" th:selected="${status == 'CANCELLED'}">Cancelled</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="dateFrom" class="form-label">Data da</label>
+                        <input id="dateFrom"
+                               name="dateFrom"
+                               type="date"
+                               class="form-control"
+                               th:value="${dateFrom != null ? #temporals.format(dateFrom, 'yyyy-MM-dd') : ''}"/>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="dateTo" class="form-label">Data a</label>
+                        <input id="dateTo"
+                               name="dateTo"
+                               type="date"
+                               class="form-control"
+                               th:value="${dateTo != null ? #temporals.format(dateTo, 'yyyy-MM-dd') : ''}"/>
+                    </div>
+
+                    <div class="col-md-1">
+                        <label for="size" class="form-label">Righe</label>
+                        <select id="size" name="size" class="form-select">
+                            <option value="10" th:selected="${size == 10}">10</option>
+                            <option value="20" th:selected="${size == 20}">20</option>
+                            <option value="50" th:selected="${size == 50}">50</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-secondary">
+                            <i class="bi bi-search"></i>
+                            <span>Cerca</span>
+                        </button>
+
+                        <a class="btn btn-secondary" th:href="@{/purchase-orders}">
+                            <i class="bi bi-x-circle"></i>
+                            <span>Reset</span>
+                        </a>
+                    </div>
+                </form>
+
+                <div class="table-wrap" style="margin-top: 20px;">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Numero</th>
+                            <th>Fornitore</th>
+                            <th>Data ordine</th>
+                            <th>Consegna prevista</th>
+                            <th>Stato</th>
+                            <th class="text-right">Totale</th>
+                            <th class="col-actions">Azioni</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${page.totalElements == 0}">
+                            <td colspan="8" class="muted">Nessun ordine trovato.</td>
+                        </tr>
+
+                        <tr th:each="row : ${page.content}">
+                            <td th:text="${row.id}">1</td>
+                            <td th:text="${row.orderNumber}">PO-00001</td>
+                            <td th:text="${row.supplierName}">Fornitore Demo S.R.L.</td>
+                            <td th:text="${row.formattedOrderDate}">12/05/2026</td>
+                            <td th:text="${row.formattedExpectedDeliveryDate != null ? row.formattedExpectedDeliveryDate : '-'}">20/05/2026</td>
+                            <td>
+                                <span class="g-badge"
+                                      th:classappend="
+                                        ${row.status == 'DRAFT'} ? ' g-badge-draft' :
+                                        (${row.status == 'CONFIRMED'} ? ' g-badge-active' :
+                                        (${row.status == 'CANCELLED'} ? ' g-badge-cancelled' : ' g-badge-draft'))"
+                                      th:text="${row.status}">
+                                    DRAFT
+                                </span>
+                            </td>
+                            <td class="text-right" th:text="${row.formattedTotalAmount}">707,60 €</td>
+                            <td class="link-actions col-actions">
+                                <a th:href="@{/purchase-orders/{id}(id=${row.id})}">
+                                    <i class="bi bi-eye"></i>
+                                    <span>Dettaglio</span>
+                                </a>
+                                <a th:if="${row.status == 'DRAFT'}"
+                                   th:href="@{/purchase-orders/{id}/edit(id=${row.id})}">
+                                    <i class="bi bi-pencil-square"></i>
+                                    <span>Modifica</span>
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="list-summary">
+                    <div class="muted">
+                        Totale risultati:
+                        <strong th:text="${page.totalElements}">0</strong>
+                    </div>
+
+                    <div class="pagination-wrap" th:if="${page.totalPages > 1}">
+                        <nav aria-label="Paginazione">
+                            <ul class="pagination pagination-sm mb-0">
+
+                                <li class="page-item" th:classappend="${page.first} ? ' disabled'">
+                                    <a class="page-link"
+                                       th:href="${page.first} ? '#' : @{/purchase-orders(page=${page.number - 1}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                                        Precedente
+                                    </a>
+                                </li>
+
+                                <li class="page-item"
+                                    th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+                                    th:classappend="${i == page.number} ? ' active'">
+                                    <a class="page-link"
+                                       th:text="${i + 1}"
+                                       th:href="@{/purchase-orders(page=${i}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                                        1
+                                    </a>
+                                </li>
+
+                                <li class="page-item" th:classappend="${page.last} ? ' disabled'">
+                                    <a class="page-link"
+                                       th:href="${page.last} ? '#' : @{/purchase-orders(page=${page.number + 1}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                                        Successiva
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
             </div>
         </div>
     </main>

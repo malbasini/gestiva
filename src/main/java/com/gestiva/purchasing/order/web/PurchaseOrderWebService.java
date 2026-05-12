@@ -10,7 +10,13 @@ import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
 import com.gestiva.purchasing.supplier.repository.SupplierRepository;
 import com.gestiva.warehouse.item.repository.ItemRepository;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -314,6 +320,89 @@ public class PurchaseOrderWebService {
         return line;
     }
 
-    private record LineTotals(BigDecimal subtotal, BigDecimal tax, BigDecimal total) {}
-    private record Totals(BigDecimal subtotal, BigDecimal tax, BigDecimal total) {}
+    private record LineTotals(BigDecimal subtotal, BigDecimal tax, BigDecimal total) {
+    }
+
+    private record Totals(BigDecimal subtotal, BigDecimal tax, BigDecimal total) {
+    }
+
+    public Page<PurchaseOrderListItemView> findPage(Long tenantId,
+                                                    int page,
+                                                    int size,
+                                                    String q,
+                                                    String status,
+                                                    LocalDate dateFrom,
+                                                    LocalDate dateTo) {
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Order.desc("orderDate"), Sort.Order.desc("id"))
+        );
+        Specification<PurchaseOrder> spec = Specification.where(byTenant(tenantId))
+                .and(bySearch(q))
+                .and(byStatus(status))
+                .and(byDateFrom(dateFrom))
+                .and(byDateTo(dateTo));
+        return purchaseOrderRepository.findAll(spec, pageable).map(this::toListItemView);
+    }
+
+    private Specification<PurchaseOrder> byTenant(Long tenantId) {
+        return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
+    }
+
+    private Specification<PurchaseOrder> bySearch(String q) {
+        if (q == null || q.trim().isEmpty()) {
+            return null;
+        }
+        String like = "%" + q.trim().toLowerCase() + "%";
+        return (root, query, cb) -> {
+            Join<Object, Object> supplier = root.join("supplier", JoinType.LEFT);
+            return cb.or(
+                    cb.like(cb.lower(root.get("orderNumber")), like),
+                    cb.like(cb.lower(supplier.get("name")), like)
+            );
+        };
+
+    }
+
+    private Specification<PurchaseOrder> byStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        return (root, query, cb) -> cb.equal(root.get("status"), status);
+    }
+
+    private Specification<PurchaseOrder> byDateFrom(LocalDate dateFrom) {
+        if (dateFrom == null) {
+            return null;
+        }
+        return (root, query, cb) -> cb.greaterThanOrEqualTo(root.get("orderDate"), dateFrom);
+    }
+
+    private Specification<PurchaseOrder> byDateTo(LocalDate dateTo) {
+        if (dateTo == null) {
+            return null;
+        }
+        return (root, query, cb) -> cb.lessThanOrEqualTo(root.get("expectedDeliveryDate"), dateTo);
+    }
+
+    private PurchaseOrderListItemView toListItemView(PurchaseOrder order) {
+
+        PurchaseOrderListItemView v = new PurchaseOrderListItemView();
+        v.setId(order.getId());
+        v.setOrderNumber(order.getOrderNumber());
+        v.setFormattedOrderDate(PdfFormatUtils.formatDate(order.getOrderDate()));
+        v.setFormattedExpectedDeliveryDate(PdfFormatUtils.formatDate(order.getExpectedDeliveryDate()));
+        v.setStatus(order.getStatus());
+        v.setFormattedTotalAmount(PdfFormatUtils.formatMoney(order.getTotalAmount()));
+        v.setCurrencyCode(order.getCurrencyCode());
+        v.setSupplierName(
+                supplierRepository.findByTenantIdAndId(order.getTenantId(), order.getSupplierId())
+                        .map(s -> s.getName())
+                        .orElse("-")
+        );
+        return v;
+
+    }
 }

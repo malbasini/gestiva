@@ -8,6 +8,9 @@ public class PurchaseOrderListItemView {
     private String supplierName;
     private String status;
     private String formattedTotalAmount;
+    private String currencyCode;
+    private String formattedExpectedDeliveryDate;
+
 
     public Long getId() {
         return id;
@@ -45,5 +48,21 @@ public class PurchaseOrderListItemView {
 
     public void setFormattedTotalAmount(String formattedTotalAmount) {
         this.formattedTotalAmount = formattedTotalAmount;
+    }
+
+    public String getCurrencyCode() {
+        return currencyCode;
+    }
+
+    public void setCurrencyCode(String currencyCode) {
+        this.currencyCode = currencyCode;
+    }
+
+    public String getFormattedExpectedDeliveryDate() {
+        return formattedExpectedDeliveryDate;
+    }
+
+    public void setFormattedExpectedDeliveryDate(String formattedExpectedDeliveryDate) {
+        this.formattedExpectedDeliveryDate = formattedExpectedDeliveryDate;
     }
 }

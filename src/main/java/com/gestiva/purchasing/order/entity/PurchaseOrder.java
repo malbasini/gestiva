@@ -1,12 +1,8 @@
 package com.gestiva.purchasing.order.entity;
 
 import com.gestiva.common.model.TenantAwareEntity;
-import jakarta.persistence.Access;
-import jakarta.persistence.AccessType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import com.gestiva.purchasing.supplier.entity.Supplier;
+import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -50,6 +46,10 @@ public class PurchaseOrder extends TenantAwareEntity {
 
     @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalAmount;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplier_id", insertable = false, updatable = false)
+    private Supplier supplier;
 
     public String getOrderNumber() {
         return orderNumber;
@@ -129,5 +129,13 @@ public class PurchaseOrder extends TenantAwareEntity {
 
     public void setTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
+    }
+
+    public Supplier getSupplier() {
+        return supplier;
+    }
+
+    public void setSupplier(Supplier supplier) {
+        this.supplier = supplier;
     }
 }
