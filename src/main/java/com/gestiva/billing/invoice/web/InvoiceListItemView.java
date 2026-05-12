@@ -9,6 +9,7 @@ public class InvoiceListItemView {
     private String status;
     private Long deliveryNoteId;
     private String formattedTotalAmount;
+    private String currencyCode;
 
     public Long getId() {
         return id;
@@ -64,5 +65,13 @@ public class InvoiceListItemView {
 
     public void setFormattedTotalAmount(String formattedTotalAmount) {
         this.formattedTotalAmount = formattedTotalAmount;
+    }
+
+    public String getCurrencyCode() {
+        return currencyCode;
+    }
+
+    public void setCurrencyCode(String currencyCode) {
+        this.currencyCode = currencyCode;
     }
 }
