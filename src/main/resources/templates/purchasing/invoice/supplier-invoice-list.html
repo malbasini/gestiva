@@ -9,14 +9,6 @@
 <body>
 <div class="app-shell">
   <div th:replace="~{fragments/layout :: appHeader}"></div>
-  <div class="row">
-    <div class="col-md-10"></div>
-    <div class="col-md-2 d-flex justify-content-end">
-      <a th:href="@{/dashboard}" class="btn btn-secondary" style="margin-right: 10px;">
-        <span>Dashboard</span>
-      </a>
-    </div>
-  </div>
   <main class="app-main">
     <div class="page">
       <div class="card">
@@ -32,6 +24,13 @@
             <h1 class="page-title">Fatture passive</h1>
             <div class="muted">Gestione fatture del ciclo passivo</div>
           </div>
+        </div>
+
+        <div class="page-header-right">
+          <a th:href="@{/dashboard}" class="btn btn-outline-secondary" style="margin-right: 10px;">
+            <i class="bi bi-speedometer"></i>
+            <span>Dashboard</span>
+          </a>
         </div>
 
         <form method="get" class="row g-3 align-items-end">

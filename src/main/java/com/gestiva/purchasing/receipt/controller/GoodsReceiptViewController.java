@@ -24,15 +24,6 @@ public class GoodsReceiptViewController {
         this.tenantContext = tenantContext;
         this.supplierInvoiceService = supplierInvoiceService;
     }
-
-    @GetMapping
-    public String list(Model model) {
-        Long tenantId = tenantContext.getCurrentTenantId();
-        model.addAttribute("goodsReceipts", goodsReceiptWebService.findAll(tenantId));
-        model.addAttribute("activeMenu", "goodsReceipts");
-        return "purchasing/receipt/goods-receipt-list";
-    }
-
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         Long tenantId = tenantContext.getCurrentTenantId();
@@ -41,17 +32,41 @@ public class GoodsReceiptViewController {
         return "purchasing/receipt/goods-receipt-detail";
     }
     @GetMapping("/{id}/invoice")
-    public String invoice(@PathVariable Long id,
+    public String invoice(@PathVariable Long id,Model model,
                           RedirectAttributes redirectAttributes) {
         try {
             Long tenantId = tenantContext.getCurrentTenantId();
             supplierInvoiceService.createFromGoodsReceipt(tenantId, id);
             redirectAttributes.addFlashAttribute("successMessage", "Fattura generata con successo.");
+            model.addAttribute("activeMenu", "goodsReceipts");
             return "redirect:/goods-receipts/" + id;
         }
         catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/goods-receipts/" + id;
         }
+    }
+    @GetMapping
+    public String list(@RequestParam(name = "page", defaultValue = "0") int page,
+                       @RequestParam(name = "size", defaultValue = "10") int size,
+                       @RequestParam(name = "q", required = false) String q,
+                       @RequestParam(name = "dateFrom", required = false)
+                       @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+                       java.time.LocalDate dateFrom,
+                       @RequestParam(name = "dateTo", required = false)
+                       @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+                       java.time.LocalDate dateTo,
+                       Model model) {
+
+        Long tenantId = tenantContext.getCurrentTenantId();
+        var resultPage = goodsReceiptWebService.findPage(tenantId, page, size, q, dateFrom, dateTo);
+        model.addAttribute("goodsReceipts", resultPage);
+        model.addAttribute("page", resultPage);
+        model.addAttribute("q", q);
+        model.addAttribute("dateFrom", dateFrom);
+        model.addAttribute("dateTo", dateTo);
+        model.addAttribute("size", size);
+        model.addAttribute("activeMenu", "goodsReceipts");
+        return "purchasing/receipt/goods-receipt-list";
     }
 }

@@ -27,18 +27,18 @@
                         <div class="muted" th:text="${supplierInvoice.supplierName}">Fornitore Demo</div>
                     </div>
                     <div class="page-header-right">
-                        <a class="btn btn-secondary" th:href="@{/supplier-invoices}">
+                        <a class="btn btn-outline-secondary" th:href="@{/supplier-invoices}">
                             <i class="bi bi-arrow-left"></i>
                             <span>Torna alla lista</span>
                         </a>
-                        <a class="btn btn-secondary"
+                        <a class="btn btn-outline-info"
                            th:if="${supplierInvoice.goodsReceiptId != null}"
                            th:href="@{/goods-receipts/{id}(id=${supplierInvoice.goodsReceiptId})}">
                             <i class="bi bi-box-arrow-in-down"></i>
                             <span>Ricezione</span>
                         </a>
 
-                        <a class="btn btn-secondary"
+                        <a class="btn btn-outline-success"
                            th:if="${supplierInvoice.purchaseOrderId != null}"
                            th:href="@{/purchase-orders/{id}(id=${supplierInvoice.purchaseOrderId})}">
                             <i class="bi bi-box"></i>

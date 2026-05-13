@@ -3,11 +3,14 @@ package com.gestiva.purchasing.receipt.controller;
 import com.gestiva.purchasing.invoice.service.SupplierInvoiceService;
 import com.gestiva.purchasing.invoice.web.SupplierInvoiceWebService;
 import com.gestiva.purchasing.receipt.service.GoodsReceiptService;
+import com.gestiva.purchasing.receipt.web.GoodsReceiptWebService;
 import com.gestiva.security.usercontext.TenantContext;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -16,6 +19,7 @@ public class GoodsReceiptPageController {
 
     private final GoodsReceiptService goodsReceiptService;
     private final TenantContext tenantContext;
+
 
 
     public GoodsReceiptPageController(GoodsReceiptService goodsReceiptService,
@@ -37,4 +41,5 @@ public class GoodsReceiptPageController {
             return "redirect:/goods-receipts/" + id;
         }
     }
+
 }
