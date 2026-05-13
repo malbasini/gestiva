@@ -17,8 +17,9 @@
            <div class="row">
               <div class="col-md-10"></div>
               <div class="col-md-2 d-flex justify-content-end">
-              <a th:href="@{/dashboard}" class="btn btn-secondary" style="margin-right: 10px;">
-                  <span>Dashboard</span>
+              <a th:href="@{/dashboard}" class="btn btn-outline-secondary" style="margin-right: 10px;">
+                <i class="bi bi-speedometer"></i>
+                <span>Dashboard</span>
                 </a>
               </div>
           </div>
@@ -124,15 +125,18 @@
                                 </span>
               </td>
               <td class="text-right" th:text="${row.formattedTotalAmount}">707,60 €</td>
-              <td class="link-actions col-actions">
-                <a th:href="@{/orders/{id}(id=${row.id})}">
-                  <i class="bi bi-eye"></i>
+              <td class="link-actions">
+                <a th:href="@{/orders/{id}(id=${row.id}, tenantId=${tenantId})}">
+                  <i class="bi bi-file-earmark-text"></i>
                   <span>Dettaglio</span>
                 </a>
-                <a th:if="${row.status == 'DRAFT'}"
-                   th:href="@{/orders/{id}/edit(id=${row.id})}">
-                  <i class="bi bi-pencil-square"></i>
-                  <span>Modifica</span>
+                <a th:href="@{/orders/{id}/preview(id=${row.id}, tenantId=${tenantId})}">
+                  <i class="bi bi-eye"></i>
+                  <span>Preview</span>
+                </a>
+                <a th:href="@{/api/orders/{id}/pdf(id=${row.id}, tenantId=${tenantId})}">
+                  <i class="bi bi-file-earmark-pdf"></i>
+                  <span>PDF</span>
                 </a>
               </td>
             </tr>

@@ -135,6 +135,7 @@ public class InvoiceWebService {
         v.setStatus(invoice.getStatus());
         v.setFormattedTotalAmount(PdfFormatUtils.formatMoney(invoice.getTotalAmount()));
         v.setCurrencyCode(invoice.getCurrencyCode());
+        v.setDeliveryNoteId(invoice.getDeliveryNoteId());
         return v;
 
     }

@@ -16,18 +16,17 @@
 
         <div th:replace="~{fragments/layout :: flashMessages}"></div>
 
-        <div class="breadcrumb">
-          <a th:href="@{/dashboard}">Dashboard</a> /
-          <span>Articoli</span>
-        </div>
-
         <div class="page-header">
           <div class="page-header-left">
             <h1 class="page-title">Articoli</h1>
             <div class="muted">Anagrafica prodotti e servizi</div>
           </div>
           <div class="page-header-right">
-            <a class="btn btn-primary" th:href="@{/items/new}">
+            <a th:href="@{/dashboard}" class="btn btn-outline-secondary" style="margin-right: 10px;">
+              <i class="bi bi-speedometer"></i>
+              <span>Dashboard</span>
+            </a>
+            <a class="btn btn-outline-success" th:href="@{/items/new}">
               <i class="bi bi-plus-lg"></i>
               <span>Nuovo articolo</span>
             </a>

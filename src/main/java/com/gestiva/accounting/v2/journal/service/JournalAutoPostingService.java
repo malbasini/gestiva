@@ -162,7 +162,7 @@ public class JournalAutoPostingService {
         return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
     }
 
-    public Long postCustomerInvoice(Long tenantId,
+    public void postCustomerInvoice(Long tenantId,
                                     LocalDate entryDate,
                                     String documentNumber,
                                     BigDecimal taxableAmount,
@@ -227,7 +227,6 @@ public class JournalAutoPostingService {
         journalEntryLineRepository.save(line2);
         journalEntryLineRepository.save(line3);
 
-        return saved.getId();
     }
 
     public Long postSupplierInvoice(Long tenantId,

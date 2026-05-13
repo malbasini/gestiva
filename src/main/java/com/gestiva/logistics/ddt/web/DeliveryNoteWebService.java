@@ -93,6 +93,7 @@ public class DeliveryNoteWebService {
         v.setFormattedDdtDate(PdfFormatUtils.formatDate(note.getDdtDate()));
         v.setStatus(note.getStatus());
         v.setFormattedTotalAmount(PdfFormatUtils.formatMoney(note.getTotalAmount()));
+        v.setSalesOrderId(note.getSalesOrderId());
         return v;
     }
 }

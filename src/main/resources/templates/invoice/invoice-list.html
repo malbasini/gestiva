@@ -18,7 +18,8 @@
         <div class="row">
           <div class="col-md-10"></div>
           <div class="col-md-2 d-flex justify-content-end">
-            <a th:href="@{/dashboard}" class="btn btn-secondary" style="margin-right: 10px;">
+            <a th:href="@{/dashboard}" class="btn btn-outline-secondary" style="margin-right: 10px;">
+              <i class="bi bi-speedometer"></i>
               <span>Dashboard</span>
             </a>
           </div>
@@ -128,15 +129,22 @@
                                 </span>
               </td>
               <td class="text-right" th:text="${row.formattedTotalAmount}">707,60 €</td>
-              <td class="link-actions col-actions">
-                <a th:href="@{/invoices/{id}(id=${row.id})}">
-                  <i class="bi bi-eye"></i>
+              <td class="link-actions">
+                <a th:href="@{/invoices/{id}(id=${row.id}, tenantId=${tenantId})}">
+                  <i class="bi bi-file-earmark-text"></i>
                   <span>Dettaglio</span>
                 </a>
-                <a th:if="${row.status == 'DRAFT'}"
-                   th:href="@{/invoices/{id}/edit(id=${row.id})}">
-                  <i class="bi bi-pencil-square"></i>
-                  <span>Modifica</span>
+                <a th:href="@{/delivery-notes/{id}(id=${row.deliveryNoteId}, tenantId=${tenantId})}">
+                  <i class="bi bi-truck"></i>
+                  <span>DDT</span>
+                </a>
+                <a th:href="@{/invoices/{id}/preview(id=${row.id}, tenantId=${tenantId})}">
+                  <i class="bi bi-eye"></i>
+                  <span>Preview</span>
+                </a>
+                <a th:href="@{/api/invoices/{id}/pdf(id=${row.id}, tenantId=${tenantId})}">
+                  <i class="bi bi-file-earmark-pdf"></i>
+                  <span>PDF</span>
                 </a>
               </td>
             </tr>

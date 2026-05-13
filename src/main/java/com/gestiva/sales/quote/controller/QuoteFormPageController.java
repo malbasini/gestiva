@@ -44,7 +44,7 @@ public class QuoteFormPageController {
         model.addAttribute("quoteForm", form);
         model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(resolvedTenantId));
         model.addAttribute("totalsPreview", quoteManageWebService.calculatePreviewTotals(form));
-        model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
+        model.addAttribute("itemOptions", itemWebService.findOptions(resolvedTenantId));
         model.addAttribute("formMode", "create");
         model.addAttribute("tenantId", resolvedTenantId);
         model.addAttribute("activeMenu", "quotes");
@@ -65,7 +65,7 @@ public class QuoteFormPageController {
         model.addAttribute("quoteForm", form);
         model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(resolvedTenantId));
         model.addAttribute("totalsPreview", quoteManageWebService.calculatePreviewTotals(form));
-        model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
+        model.addAttribute("itemOptions", itemWebService.findOptions(resolvedTenantId));
         model.addAttribute("quoteId", id);
         model.addAttribute("formMode", "edit");
         model.addAttribute("tenantId", resolvedTenantId);

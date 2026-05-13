@@ -13,24 +13,23 @@
 
     <main class="app-main">
         <div class="page">
-            <div class="card">
-
-                <div class="breadcrumb">
-                    <a th:href="@{/dashboard(tenantId=${tenantId})}">Dashboard</a> /
-                    <span>Preventivi</span>
+            <div th:replace="~{fragments/layout :: flashMessages}"></div>
+            <div class="card row g-3 align-items-end">
+                <div class="col-md-6"></div>
+                <div class="col-md-6 d-flex justify-content-end gap-2">
+                    <a th:href="@{/dashboard}" class="btn btn-outline-secondary">
+                        <i class="bi bi-speedometer"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a class="btn btn-outline-success" th:href="@{/quotes/new(tenantId=${tenantId})}">
+                        <i class="bi bi-plus-lg"></i>
+                        <span>Nuovo</span>
+                    </a>
                 </div>
-
-                <div class="page-header">
-                    <div class="page-header-left">
+                    <div class="page-header">
+                      <div class="page-header-left">
                         <h1 class="page-title">Preventivi</h1>
                         <div class="muted">Gestione documenti preventivi</div>
-                    </div>
-
-                    <div class="page-header-right">
-                        <a class="btn btn-primary" th:href="@{/quotes/new(tenantId=${tenantId})}">
-                            <i class="bi bi-plus-lg"></i>
-                            <span>Nuovo preventivo</span>
-                        </a>
                     </div>
                 </div>
                 <form method="get" class="row g-3 align-items-end">
@@ -79,40 +78,40 @@
                             </select>
                     </div>
                     <div class="col-md-3">
-                            <button type="submit" class="btn btn-secondary">
+                            <button type="submit" class="btn btn-outline-primary">
                                 <i class="bi bi-search"></i>
                                 <span>Cerca</span>
                             </button>
 
-                            <a class="btn btn-secondary" th:href="@{/quotes}">
+                            <a class="btn btn-outline-secondary" th:href="@{/quotes}">
                                 <i class="bi bi-x-circle"></i>
                                 <span>Reset</span>
                             </a>
                     </div>
                 </form>
                 <div class="table-responsive-wrap">
-                    <table class="table table-form">
-                    <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Numero</th>
-                        <th>Validità da</th>
-                        <th>Validità a</th>
-                        <th>Stato</th>
-                        <th class="text-right">Totale</th>
-                        <th>Azioni</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:if="${#lists.isEmpty(quotesPage.content)}">
-                        <td colspan="7" class="muted">Nessun preventivo trovato.</td>
-                    </tr>
-                    <tr th:each="quote : ${quotesPage.content}">
-                        <td th:text="${quote.id}">1</td>
-                        <td th:text="${quote.quoteNumber}">PRE-2026-00001</td>
-                        <td th:text="${quote.formattedQuoteDate}">28/04/2026</td>
-                        <td th:text="${quote.formattedValidUntil}">28/05/2026</td>
-                        <td>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Numero</th>
+                            <th>Data</th>
+                            <th>Validità</th>
+                            <th>Stato</th>
+                            <th class="text-right">Totale</th>
+                            <th>Azioni</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(quotesPage.content)}">
+                            <td colspan="7" class="muted">Nessun preventivo trovato.</td>
+                        </tr>
+                        <tr th:each="quote : ${quotesPage.content}">
+                            <td th:text="${quote.id}">1</td>
+                            <td th:text="${quote.quoteNumber}">PRE-2026-00001</td>
+                            <td th:text="${quote.formattedQuoteDate}">28/04/2026</td>
+                            <td th:text="${quote.formattedValidUntil}">28/05/2026</td>
+                            <td>
                             <span class="badge"
                                   th:classappend="${quote.status == 'DRAFT'} ? ' badge-draft' :
                                                   (${quote.status == 'SENT'} ? ' badge-sent' :
@@ -120,25 +119,25 @@
                                   th:text="${quote.status}">
                                 SENT
                             </span>
-                        </td>
-                        <td class="text-right" th:text="${quote.formattedTotalAmount}">1.342,00 €</td>
-                        <td class="link-actions">
-                            <a th:href="@{/quotes/{id}(id=${quote.id}, tenantId=${tenantId})}">
-                                <i class="bi bi-file-earmark-text"></i>
-                                <span>Dettaglio</span>
-                            </a>
-                            <a th:href="@{/quotes/{id}/preview(id=${quote.id}, tenantId=${tenantId})}">
-                                <i class="bi bi-eye"></i>
-                                <span>Preview</span>
-                            </a>
-                            <a th:href="@{/api/quotes/{id}/pdf(id=${quote.id}, tenantId=${tenantId})}">
-                                <i class="bi bi-file-earmark-pdf"></i>
-                                <span>PDF</span>
-                            </a>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+                            </td>
+                            <td class="text-right" th:text="${quote.formattedTotalAmount}">1.342,00 €</td>
+                            <td class="link-actions">
+                                <a th:href="@{/quotes/{id}(id=${quote.id}, tenantId=${tenantId})}">
+                                    <i class="bi bi-file-earmark-text"></i>
+                                    <span>Dettaglio</span>
+                                </a>
+                                <a th:href="@{/quotes/{id}/preview(id=${quote.id}, tenantId=${tenantId})}">
+                                    <i class="bi bi-eye"></i>
+                                    <span>Preview</span>
+                                </a>
+                                <a th:href="@{/api/quotes/{id}/pdf(id=${quote.id}, tenantId=${tenantId})}">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                    <span>PDF</span>
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
                 <div class="list-summary">
                     <div class="muted">
@@ -150,7 +149,7 @@
                             <ul class="pagination pagination-sm mb-0">
                                 <li class="page-item" th:classappend="${page.first} ? ' disabled'">
                                     <a class="page-link"
-                                       th:href="${page.first} ? '#' : @{/quotes(page=${page.number - 1}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                                       th:href="${page.first} ? '#' : '@{/quotes(page=${page.number - 1}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
                                         Precedente
                                     </a>
                                 </li>
@@ -165,7 +164,7 @@
                                 </li>
                                 <li class="page-item" th:classappend="${page.last} ? ' disabled'">
                                     <a class="page-link"
-                                       th:href="${page.last} ? '#' : @{/quotes(page=${page.number + 1}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                                       th:href="${page.last} ? '#' : '@{/quotes(page=${page.number + 1}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
                                         Successiva
                                     </a>
                                 </li>

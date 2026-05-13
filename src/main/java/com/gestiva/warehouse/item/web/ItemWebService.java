@@ -236,6 +236,9 @@ public class ItemWebService {
         v.setItemType(item.getItemType());
         v.setTrackStock(item.isTrackStock());
         v.setActive(item.isActive());
+        v.setUnitOfMeasure(item.getUnitOfMeasure());
+        v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatMoney(item.getBasePrice()) : "-");
+        v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimal(item.getDefaultTaxPct()) + "%" : "-");
         return v;
     }
 }

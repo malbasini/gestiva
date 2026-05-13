@@ -14,7 +14,15 @@
   <main class="app-main">
     <div class="page">
       <div class="card">
-
+        <div class="row">
+          <div class="col-md-10"></div>
+          <div class="col-md-2 d-flex justify-content-end">
+            <a th:href="@{/dashboard}" class="btn btn-outline-secondary" style="margin-right: 10px;">
+              <i class="bi bi-speedometer"></i>
+              <span>Dashboard</span>
+            </a>
+          </div>
+        </div>
         <div class="breadcrumb">
           <a th:href="@{/dashboard(tenantId=${tenantId})}">Dashboard</a> /
           <span>DDT</span>
