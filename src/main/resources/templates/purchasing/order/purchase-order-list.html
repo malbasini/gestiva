@@ -14,27 +14,22 @@
         <div class="page">
             <div class="card">
                 <div th:replace="~{fragments/layout :: flashMessages}"></div>
-                <div class="row">
-                    <div class="col-md-10"></div>
-                    <div class="col-md-2 d-flex justify-content-end">
-                        <a th:href="@{/dashboard}" class="btn btn-secondary" style="margin-right: 10px;">
-                            <span>Dashboard</span>
-                        </a>
-                    </div>
-                </div>
                 <div class="page-header">
                     <div class="page-header-left">
                         <h1 class="page-title">Ordini a fornitore</h1>
                         <div class="muted">Gestione ordini di acquisto</div>
                     </div>
                     <div class="page-header-right">
-                        <a class="btn btn-primary" th:href="@{/purchase-orders/new}">
+                        <a th:href="@{/dashboard}" class="btn btn-outline-secondary" style="margin-right: 10px;">
+                            <i class="bi bi-speedometer"></i>
+                            <span>Dashboard</span>
+                        </a>
+                        <a class="btn btn-outline-primary" th:href="@{/purchase-orders/new}">
                             <i class="bi bi-plus-lg"></i>
                             <span>Nuovo ordine</span>
                         </a>
                     </div>
                 </div>
-
                 <form method="get" class="row g-3 align-items-end">
                     <div class="col-md-3">
                         <label for="q" class="form-label">Cerca</label>

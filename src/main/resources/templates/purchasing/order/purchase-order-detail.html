@@ -27,23 +27,23 @@
             <div class="muted" th:text="${purchaseOrder.supplierName}">Fornitore Demo</div>
           </div>
           <div class="page-header-right">
-            <a class="btn btn-secondary" th:href="@{/purchase-orders}">
+            <a class="btn btn-outline-secondary" th:href="@{/purchase-orders}">
               <i class="bi bi-arrow-left"></i>
               <span>Torna alla lista</span>
             </a>
-            <a class="btn btn-primary"
+            <a class="btn btn-outline-success"
                th:if="${purchaseOrder.canEdit}"
                th:href="@{/purchase-orders/{id}/edit(id=${purchaseOrder.id})}">
               <i class="bi bi-pencil-square"></i>
               <span>Modifica</span>
             </a>
-            <a class="btn btn-primary"
+            <a class="btn btn-outline-primary"
                th:if="${purchaseOrder.canReceiveGoods}"
                th:href="@{/purchase-orders/{id}/receive(id=${purchaseOrder.id})}">
               <i class="bi bi-box-arrow-in-down"></i>
               <span>Ricevi merce</span>
             </a>
-            <a class="btn btn-secondary"
+            <a class="btn btn-outline-secondary"
                th:if="${purchaseOrder.hasGoodsReceipt}"
                th:href="@{/goods-receipts/{id}(id=${purchaseOrder.goodsReceiptId})}">
               <i class="bi bi-box-arrow-in-down"></i>

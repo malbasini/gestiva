@@ -13,6 +13,7 @@
   <main class="app-main">
     <div class="page">
       <div class="card">
+        <div th:replace="~{fragments/layout :: flashMessages}"></div>
 
         <div class="breadcrumb">
           <a th:href="@{/dashboard}">Dashboard</a> /
@@ -26,7 +27,7 @@
             <div class="muted">Ciclo passivo</div>
           </div>
           <div class="page-header-right">
-            <a class="btn btn-secondary" th:href="@{/purchase-orders}">
+            <a class="btn btn-outline-secondary" th:href="@{/purchase-orders}">
               <i class="bi bi-arrow-left"></i>
               <span>Torna alla lista</span>
             </a>
@@ -197,7 +198,7 @@
           </div>
           </div>
           <div class="actions" style="margin-top:24px;">
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-outline-primary">
               <i class="bi bi-floppy"></i>
               <span th:text="${formMode == 'create'} ? 'Crea ordine' : 'Salva modifiche'">Salva</span>
             </button>

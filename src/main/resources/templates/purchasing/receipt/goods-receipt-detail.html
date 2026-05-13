@@ -27,21 +27,21 @@
             <div class="muted" th:text="${goodsReceipt.supplierName}">Fornitore Demo</div>
           </div>
           <div class="page-header-right">
-            <a class="btn btn-secondary" th:href="@{/goods-receipts}">
+            <a class="btn btn-outline-secondary" th:href="@{/goods-receipts}">
               <i class="bi bi-arrow-left"></i>
               <span>Torna alla lista</span>
             </a>
-            <a class="btn btn-secondary" th:href="@{/purchase-orders/{id}(id=${goodsReceipt.purchaseOrderId})}">
+            <a class="btn btn-outline-info" th:href="@{/purchase-orders/{id}(id=${goodsReceipt.purchaseOrderId})}">
               <i class="bi bi-box"></i>
               <span>Ordine</span>
             </a>
-            <a class="btn btn-primary"
+            <a class="btn btn-outline-success"
                th:if="${goodsReceipt.canCreateSupplierInvoice}"
                th:href="@{/goods-receipts/{id}/invoice(id=${goodsReceipt.id})}">
               <i class="bi bi-receipt"></i>
               <span>Genera fattura fornitore</span>
             </a>
-            <a class="btn btn-secondary"
+            <a class="btn btn-outline-secondary"
                th:if="${goodsReceipt.hasSupplierInvoice}"
                th:href="@{/supplier-invoices/{id}(id=${goodsReceipt.supplierInvoiceId})}">
               <i class="bi bi-receipt"></i>
