@@ -1,13 +1,25 @@
 package com.gestiva.accounting.v2.journal.web;
 
 import com.gestiva.accounting.v2.account.repository.AccountRepository;
+import com.gestiva.accounting.v2.journal.entity.JournalEntry;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryLineRepository;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryRepository;
 import com.gestiva.common.exception.NotFoundException;
 import com.gestiva.documents.pdf.PdfFormatUtils;
+import com.gestiva.purchasing.order.entity.PurchaseOrder;
+import com.gestiva.purchasing.receipt.entity.GoodsReceipt;
+import com.gestiva.purchasing.receipt.web.GoodsReceiptListItemView;
+import com.gestiva.purchasing.supplier.entity.Supplier;
+import com.gestiva.warehouse.item.web.ItemOptionView;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +101,73 @@ public class JournalEntryWebService {
             v.getLines().add(lv);
         }
 
+        return v;
+    }
+
+    public Page<JournalEntryDetailView> findPage(Long tenantId,
+                                                   int page,
+                                                   int size,
+                                                   String causalCode,
+                                                   String q,
+                                                   LocalDate dateFrom,
+                                                   LocalDate dateTo) {
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Order.desc("entryDate"), Sort.Order.desc("id"))
+        );
+        Specification<JournalEntry> spec = Specification.where(byTenant(tenantId))
+                .and(byCausalCode(causalCode))
+                .and(bySearch(q))
+                .and(byDateFrom(dateFrom))
+                .and(byDateTo(dateTo));
+        return journalEntryRepository.findAll(spec, pageable).map(this::toListItemView);
+
+    }
+
+    private Specification<JournalEntry> byTenant(Long tenantId) {
+        return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
+    }
+
+    private Specification<JournalEntry> byCausalCode(String causalCode) {
+        if (causalCode == null ||causalCode.trim().isEmpty()) {
+            return null;
+        }
+        return (root, query, cb) -> cb.equal(root.get("causalCode"), causalCode);
+    }
+
+    private Specification<JournalEntry> bySearch(String q) {
+        if (q == null || q.trim().isEmpty()) {
+            return null;
+        }
+        String like = "%" + q.trim().toLowerCase() + "%";
+        return (root, query, cb) -> cb.like(cb.lower(root.get("entryNumber")), like);
+    }
+
+    private Specification<JournalEntry> byDateFrom(LocalDate dateFrom) {
+        if (dateFrom == null) {
+            return null;
+        }
+        return (root, query, cb) -> cb.greaterThanOrEqualTo(root.get("entryDate"), dateFrom);
+    }
+
+    private Specification<JournalEntry> byDateTo(LocalDate dateTo) {
+        if (dateTo == null) {
+            return null;
+        }
+        return (root, query, cb) -> cb.lessThanOrEqualTo(root.get("entryDate"), dateTo);
+    }
+
+    private JournalEntryDetailView toListItemView(JournalEntry entry) {
+        JournalEntryDetailView v = new JournalEntryDetailView();
+        v.setId(entry.getId());
+        v.setEntryNumber(entry.getEntryNumber());
+        v.setFormattedEntryDate(PdfFormatUtils.formatDate(entry.getEntryDate()));
+        v.setCausalCode(entry.getCausalCode());
+        v.setDescription(entry.getDescription());
+        v.setFormattedTotalCredit(PdfFormatUtils.formatMoney(entry.getTotalCredit()));
+        v.setFormattedTotalDebit(PdfFormatUtils.formatMoney(entry.getTotalDebit()));
+        v.setPosted(entry.isPosted());
         return v;
     }
 }

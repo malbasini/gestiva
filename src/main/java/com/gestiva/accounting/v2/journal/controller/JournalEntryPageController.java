@@ -2,6 +2,7 @@ package com.gestiva.accounting.v2.journal.controller;
 
 import com.gestiva.accounting.v2.account.service.AccountChartBootstrapService;
 import com.gestiva.accounting.v2.account.web.AccountWebService;
+import com.gestiva.accounting.v2.journal.repository.JournalEntryRepository;
 import com.gestiva.accounting.v2.journal.service.JournalEntryService;
 import com.gestiva.accounting.v2.journal.web.JournalEntryForm;
 import com.gestiva.accounting.v2.journal.web.JournalEntryLineForm;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Controller
 @RequestMapping("/v2/journal-entries")
@@ -25,27 +27,20 @@ public class JournalEntryPageController {
     private final AccountWebService accountWebService;
     private final AccountChartBootstrapService accountChartBootstrapService;
     private final TenantContext tenantContext;
+    private final JournalEntryRepository journalEntryRepository;
 
     public JournalEntryPageController(JournalEntryService journalEntryService,
                                       JournalEntryWebService journalEntryWebService,
                                       AccountWebService accountWebService,
                                       AccountChartBootstrapService accountChartBootstrapService,
-                                      TenantContext tenantContext) {
+                                      TenantContext tenantContext,
+                                      JournalEntryRepository journalEntryRepository) {
         this.journalEntryService = journalEntryService;
         this.journalEntryWebService = journalEntryWebService;
         this.accountWebService = accountWebService;
         this.accountChartBootstrapService = accountChartBootstrapService;
         this.tenantContext = tenantContext;
-    }
-
-    @GetMapping
-    public String list(Model model) {
-        Long tenantId = tenantContext.getCurrentTenantId();
-        accountChartBootstrapService.initializeDefaultChartOfAccounts(tenantId);
-
-        model.addAttribute("entries", journalEntryWebService.findAll(tenantId));
-        model.addAttribute("activeMenu", "v2JournalEntries");
-        return "accounting/v2/journal/journal-entry-list";
+        this.journalEntryRepository = journalEntryRepository;
     }
 
     @GetMapping("/{id}")
@@ -142,4 +137,39 @@ public class JournalEntryPageController {
         line.setCreditAmount(java.math.BigDecimal.ZERO);
         return line;
     }
+
+    @GetMapping
+    public String list(@RequestParam(name = "page", defaultValue = "0") int page,
+                       @RequestParam(name = "size", defaultValue = "2") int size,
+                       @RequestParam(name = "q", required = false) String q,
+                       @RequestParam(name = "causalCode", required = false) String causalCode,
+                       @RequestParam(name = "dateFrom", required = false)
+                       @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+                       java.time.LocalDate dateFrom,
+                       @RequestParam(name = "dateTo", required = false)
+                       @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+                       java.time.LocalDate dateTo,
+                       Model model) {
+
+        Long tenantId = tenantContext.getCurrentTenantId();
+        accountChartBootstrapService.initializeDefaultChartOfAccounts(tenantId);
+        var resultPage = journalEntryWebService.findPage(tenantId, page, size, causalCode, q, dateFrom, dateTo);
+        model.addAttribute("entries", resultPage);
+        model.addAttribute("causalOptions", journalEntryRepository.findDistinctCausalCodesByTenantId(tenantId));
+        model.addAttribute("page", resultPage);
+        model.addAttribute("q", q);
+        model.addAttribute("causalCode", causalCode);
+        model.addAttribute("dateFrom", dateFrom);
+        model.addAttribute("dateTo", dateTo);
+        model.addAttribute("size", size);
+        model.addAttribute("activeMenu", "v2JournalEntries");
+        return "accounting/v2/journal/journal-entry-list";
+    }
+
+
+
+
+
+
+
 }
