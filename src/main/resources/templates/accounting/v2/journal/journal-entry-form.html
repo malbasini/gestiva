@@ -23,6 +23,12 @@
             <h1 class="page-title">Nuova scrittura contabile V2</h1>
             <div class="muted">Inserimento manuale in partita doppia</div>
           </div>
+          <div class="page-header-right">
+            <a class="btn btn-outline-secondary" th:href="@{/v2/journal-entries}">
+              <i class="bi bi-arrow-left"></i>
+              <span>Torna alla lista</span>
+            </a>
+          </div>
         </div>
 
         <form method="post" th:action="@{/v2/journal-entries}" th:object="${journalEntryForm}">
