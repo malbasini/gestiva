@@ -37,10 +37,12 @@ public class RegistrationPageController {
 
         try {
             var result = registrationService.register(form);
+            registrationService.registerAccount(result.getTenantId());
             redirectAttributes.addFlashAttribute(
                     "successMessage",
                     "Registrazione completata. Ora puoi accedere con tenant '" + result.getTenantSlug() + "'."
             );
+
             return "redirect:/login";
         } catch (BusinessException ex) {
             model.addAttribute("errorMessage", ex.getMessage());

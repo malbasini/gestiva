@@ -19,4 +19,6 @@ public interface AccountRepository extends JpaRepository<Account, Long>, JpaSpec
     List<Account> findByTenantIdAndActiveTrueOrderByCodeAsc(Long tenantId);
 
     List<Account> findByTenantIdAndLeafAccountTrueAndActiveTrueOrderByCodeAsc(Long tenantId);
+
+    List<Account> findByTenantId(Long tenantId);
 }

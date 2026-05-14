@@ -1,5 +1,7 @@
 package com.gestiva.security.service;
 
+import com.gestiva.accounting.v2.account.entity.Account;
+import com.gestiva.accounting.v2.account.repository.AccountRepository;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.platform.role.entity.Role;
 import com.gestiva.platform.role.entity.UserRole;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.Normalizer;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Locale;
 
 @Service
@@ -30,17 +33,24 @@ public class RegistrationService {
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AccountRepository accountRepository;
+
+
+
 
     public RegistrationService(TenantRepository tenantRepository,
                                AppUserRepository appUserRepository,
                                RoleRepository roleRepository,
                                UserRoleRepository userRoleRepository,
-                               PasswordEncoder passwordEncoder) {
+                               PasswordEncoder passwordEncoder,
+                               AccountRepository accountRepository) {
+
         this.tenantRepository = tenantRepository;
         this.appUserRepository = appUserRepository;
         this.roleRepository = roleRepository;
         this.userRoleRepository = userRoleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.accountRepository = accountRepository;
     }
 
     public RegistrationResult register(RegistrationForm form) {
@@ -151,5 +161,28 @@ public class RegistrationService {
         }
 
         return slug;
+    }
+    @Transactional
+    public void registerAccount(Long tenantId){
+        if(!accountRepository.findByTenantId(tenantId).isEmpty())
+            return;
+        List<Account> accounts = accountRepository.findByTenantIdOrderByCodeAsc(0L);
+        if(!accounts.isEmpty()){
+            for (Account account : accounts) {
+                Account a = new Account();
+                a.setTenantId(tenantId);
+                a.setCode(account.getCode());
+                a.setName(account.getName());
+                a.setAccountType(account.getAccountType());
+                a.setNature(account.getNature());
+                a.setLevelNo(account.getLevelNo());
+                a.setParentId(account.getParentId());
+                a.setLeafAccount(account.isLeafAccount());
+                a.setSystemAccount(account.isSystemAccount());
+                a.setActive(account.isActive());
+                a.setDescription(account.getDescription());
+                accountRepository.save(a);
+            }
+        }
     }
 }
