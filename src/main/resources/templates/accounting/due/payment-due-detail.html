@@ -15,31 +15,25 @@
             <div class="card">
                 <div th:replace="~{fragments/layout :: flashMessages}"></div>
 
-                <div class="breadcrumb">
-                    <a th:href="@{/dashboard}">Dashboard</a> /
-                    <a th:href="@{/payment-dues}">Scadenzario</a> /
-                    <span th:text="${due.documentNumber}">INV-001</span>
-                </div>
-
                 <div class="page-header">
                     <div class="page-header-left">
                         <h1 class="page-title" th:text="${due.documentNumber}">INV-001</h1>
                         <div class="muted" th:text="${due.partyName}">Controparte</div>
                     </div>
                     <div class="page-header-right">
-                        <a class="btn btn-secondary" th:href="@{/payment-dues}">
+                        <a class="btn btn-outline-secondary" th:href="@{/payment-dues}">
                             <i class="bi bi-arrow-left"></i>
                             <span>Torna allo scadenzario</span>
                         </a>
 
-                        <a class="btn btn-secondary"
+                        <a class="btn btn-outline-success"
                            th:if="${due.referenceType == 'CUSTOMER_INVOICE'}"
                            th:href="@{/invoices/{id}(id=${due.referenceId})}">
                             <i class="bi bi-receipt"></i>
                             <span>Fattura</span>
                         </a>
 
-                        <a class="btn btn-secondary"
+                        <a class="btn btn-outline-success"
                            th:if="${due.referenceType == 'SUPPLIER_INVOICE'}"
                            th:href="@{/supplier-invoices/{id}(id=${due.referenceId})}">
                             <i class="bi bi-receipt"></i>

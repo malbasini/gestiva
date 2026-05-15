@@ -672,6 +672,9 @@ a:hover {
 .app-header .text-white i {
     color: #f9fafb !important;
 }
+.btn-logout{
+    color: #f9fafb !important;
+}
 
 .app-header .top-nav a {
     background: transparent !important;

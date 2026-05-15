@@ -1,11 +1,19 @@
 package com.gestiva.accounting.due.web;
 
+import com.gestiva.accounting.due.entity.PaymentDue;
 import com.gestiva.accounting.due.entity.PaymentDueTransaction;
 import com.gestiva.accounting.due.repository.PaymentDueRepository;
 import com.gestiva.accounting.due.repository.PaymentDueTransactionRepository;
+import com.gestiva.accounting.v2.journal.entity.JournalEntry;
+import com.gestiva.accounting.v2.journal.web.JournalEntryDetailView;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.purchasing.supplier.repository.SupplierRepository;
 import com.gestiva.crm.contact.repository.CustomerRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -123,4 +131,84 @@ public class PaymentDueWebService {
 
         return v;
     }
+
+    public Page<PaymentDueListItemView> findPage(Long tenantId,
+                                                 int page,
+                                                 int size,
+                                                 String status,
+                                                 String direction,
+                                                 String q,
+                                                 LocalDate dateFrom,
+                                                 LocalDate dateTo) {
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Order.desc("documentDate"), Sort.Order.desc("id"))
+        );
+        Specification<PaymentDue> spec = Specification.where(byTenant(tenantId))
+                .and(byStatus(status))
+                .and(byDirection(direction))
+                .and(bySearch(q))
+                .and(byDateFrom(dateFrom))
+                .and(byDateTo(dateTo));
+        return paymentDueRepository.findAll(spec, pageable).map(this::toListItemView);
+
+    }
+
+    private Specification<PaymentDue> byTenant(Long tenantId) {
+        return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
+    }
+
+    private Specification<PaymentDue> byStatus(String status) {
+        if (status == null ||status.trim().isEmpty()) {
+            return null;
+        }
+        return (root, query, cb) -> cb.equal(root.get("status"), status);
+    }
+
+    private Specification<PaymentDue> byDirection(String direction) {
+        if (direction == null ||direction.trim().isEmpty()) {
+            return null;
+        }
+        return (root, query, cb) -> cb.equal(root.get("direction"), direction);
+    }
+
+    private Specification<PaymentDue> bySearch(String q) {
+        if (q == null || q.trim().isEmpty()) {
+            return null;
+        }
+        String like = "%" + q.trim().toLowerCase() + "%";
+        return (root, query, cb) -> cb.like(cb.lower(root.get("documentNumber")), like);
+    }
+
+    private Specification<PaymentDue> byDateFrom(LocalDate dateFrom) {
+        if (dateFrom == null) {
+            return null;
+        }
+        return (root, query, cb) -> cb.greaterThanOrEqualTo(root.get("documentDate"), dateFrom);
+    }
+
+    private Specification<PaymentDue> byDateTo(LocalDate dateTo) {
+        if (dateTo == null) {
+            return null;
+        }
+        return (root, query, cb) -> cb.lessThanOrEqualTo(root.get("documentDate"), dateTo);
+    }
+
+    private PaymentDueListItemView toListItemView(PaymentDue entry) {
+        PaymentDueListItemView v = new PaymentDueListItemView();
+        v.setId(entry.getId());
+        v.setDocumentNumber(entry.getDocumentNumber());
+        v.setFormattedDocumentDate(PdfFormatUtils.formatDate(entry.getDocumentDate()));
+        v.setFormattedDueDate(PdfFormatUtils.formatDate(entry.getDueDate()));
+        v.setDirection(entry.getDirection());
+        v.setPartyName(resolvePartyName(entry.getTenantId(), entry.getPartyType(), entry.getPartyId()));
+        v.setFormattedGrossAmount(PdfFormatUtils.formatMoney(entry.getGrossAmount()));
+        v.setFormattedOpenAmount(PdfFormatUtils.formatMoney(entry.getOpenAmount()));
+        v.setFormattedPaidAmount(PdfFormatUtils.formatMoney(entry.getPaidAmount()));
+        v.setStatus(entry.getStatus());
+        return v;
+    }
+
+
 }

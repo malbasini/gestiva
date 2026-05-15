@@ -140,7 +140,7 @@ public class JournalEntryPageController {
 
     @GetMapping
     public String list(@RequestParam(name = "page", defaultValue = "0") int page,
-                       @RequestParam(name = "size", defaultValue = "2") int size,
+                       @RequestParam(name = "size", defaultValue = "10") int size,
                        @RequestParam(name = "q", required = false) String q,
                        @RequestParam(name = "causalCode", required = false) String causalCode,
                        @RequestParam(name = "dateFrom", required = false)

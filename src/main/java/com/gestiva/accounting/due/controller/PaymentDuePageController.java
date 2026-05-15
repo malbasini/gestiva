@@ -29,19 +29,6 @@ public class PaymentDuePageController {
         this.paymentDueRegistrationService = paymentDueRegistrationService;
     }
 
-    @GetMapping
-    public String list(@RequestParam(name = "direction", required = false) String direction,
-                       @RequestParam(name = "openOnly", required = false, defaultValue = "true") boolean openOnly,
-                       Model model) {
-        Long tenantId = tenantContext.getCurrentTenantId();
-
-        model.addAttribute("dues", paymentDueWebService.findAll(tenantId, direction, openOnly));
-        model.addAttribute("selectedDirection", direction);
-        model.addAttribute("openOnly", openOnly);
-        model.addAttribute("activeMenu", "paymentDues");
-
-        return "accounting/due/payment-due-list";
-    }
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         Long tenantId = tenantContext.getCurrentTenantId();
@@ -76,6 +63,84 @@ public class PaymentDuePageController {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }
         return "redirect:/payment-dues/" + id;
-
     }
+
+    @GetMapping
+    public String list(@RequestParam(name = "page", defaultValue = "0") int page,
+                               @RequestParam(name = "size", defaultValue = "10") int size,
+                               @RequestParam(name = "q", required = false) String q,
+                               @RequestParam(name = "status", required = false) String status,
+                               @RequestParam(name = "direction", required = false) String direction,
+                               @RequestParam(name = "dateFrom", required = false)
+                               @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+                               java.time.LocalDate dateFrom,
+                               @RequestParam(name = "dateTo", required = false)
+                               @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+                               java.time.LocalDate dateTo,
+                               Model model) {
+
+                Long tenantId = tenantContext.getCurrentTenantId();
+                var resultPage = paymentDueWebService.findPage(tenantId, page, size, status,direction, q, dateFrom, dateTo);
+                model.addAttribute("dues", resultPage);
+                model.addAttribute("page", resultPage);
+                model.addAttribute("q", q);
+                model.addAttribute("status", status);
+                model.addAttribute("direction", direction);
+                model.addAttribute("dateFrom", dateFrom);
+                model.addAttribute("dateTo", dateTo);
+                model.addAttribute("size", size);
+                model.addAttribute("activeMenu", "paymentDues");
+              return "accounting/due/payment-due-list";
+            }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
