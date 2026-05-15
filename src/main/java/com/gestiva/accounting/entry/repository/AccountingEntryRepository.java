@@ -22,4 +22,18 @@ public interface AccountingEntryRepository extends JpaRepository<AccountingEntry
        """)
     java.math.BigDecimal sumTotalByCausalCodeAndPeriod(Long tenantId, String causalCode, java.time.LocalDate startDate, java.time.LocalDate endDate);
     java.util.List<AccountingEntry> findTop10ByTenantIdOrderByEntryDateDescIdDesc(Long tenantId);
+
+
+
+
+
+
+    @Query("""
+       select distinct a.causalCode
+       from AccountingEntry a
+       where a.tenantId = :tenantId
+         and a.causalCode is not null
+         order by a.causalCode
+       """)
+    List<String> findDistinctCausalCodesByTenantId(Long tenantId);
 }

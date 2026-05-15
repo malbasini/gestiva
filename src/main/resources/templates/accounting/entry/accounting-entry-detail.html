@@ -15,24 +15,18 @@
       <div class="card">
         <div th:replace="~{fragments/layout :: flashMessages}"></div>
 
-        <div class="breadcrumb">
-          <a th:href="@{/dashboard}">Dashboard</a> /
-          <a th:href="@{/accounting-entries}">Prima nota</a> /
-          <span th:text="${entry.entryNumber}">PN-00001</span>
-        </div>
-
         <div class="page-header">
           <div class="page-header-left">
             <h1 class="page-title" th:text="${entry.entryNumber}">PN-00001</h1>
             <div class="muted" th:text="${entry.description}">Descrizione movimento</div>
           </div>
           <div class="page-header-right">
-            <a class="btn btn-secondary" th:href="@{/accounting-entries}">
+            <a class="btn btn-outline-secondary" th:href="@{/accounting-entries}">
               <i class="bi bi-arrow-left"></i>
               <span>Torna alla lista</span>
             </a>
 
-            <a class="btn btn-secondary"
+            <a class="btn btn-outline-info"
                th:if="${entry.referenceType == 'PAYMENT_DUE' and entry.referenceId != null}"
                th:href="@{/payment-dues/{id}(id=${entry.referenceId})}">
               <i class="bi bi-calendar-check"></i>

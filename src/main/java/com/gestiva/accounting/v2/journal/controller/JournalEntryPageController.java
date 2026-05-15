@@ -165,11 +165,4 @@ public class JournalEntryPageController {
         model.addAttribute("activeMenu", "v2JournalEntries");
         return "accounting/v2/journal/journal-entry-list";
     }
-
-
-
-
-
-
-
 }

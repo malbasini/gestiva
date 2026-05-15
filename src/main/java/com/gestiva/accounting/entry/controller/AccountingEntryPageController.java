@@ -1,5 +1,6 @@
 package com.gestiva.accounting.entry.controller;
 
+import com.gestiva.accounting.entry.repository.AccountingEntryRepository;
 import com.gestiva.accounting.entry.service.AccountingEntryService;
 import com.gestiva.accounting.entry.web.AccountingEntryManualForm;
 import com.gestiva.accounting.entry.web.AccountingEntryWebService;
@@ -21,21 +22,19 @@ public class AccountingEntryPageController {
     private final AccountingEntryWebService accountingEntryWebService;
     private final AccountingEntryService accountingEntryService;
     private final TenantContext tenantContext;
+    private final AccountingEntryRepository accountEntryRepository;
+
+
 
     public AccountingEntryPageController(AccountingEntryWebService accountingEntryWebService,
                                          AccountingEntryService accountingEntryService,
-                                         TenantContext tenantContext) {
+                                         TenantContext tenantContext,
+                                         AccountingEntryRepository accountEntryRepository) {
+
         this.accountingEntryWebService = accountingEntryWebService;
         this.accountingEntryService = accountingEntryService;
         this.tenantContext = tenantContext;
-    }
-
-    @GetMapping
-    public String list(Model model) {
-        Long tenantId = tenantContext.getCurrentTenantId();
-        model.addAttribute("entries", accountingEntryWebService.findAll(tenantId));
-        model.addAttribute("activeMenu", "accountingEntries");
-        return "accounting/entry/accounting-entry-list";
+        this.accountEntryRepository = accountEntryRepository;
     }
 
     @GetMapping("/{id}")
@@ -77,5 +76,31 @@ public class AccountingEntryPageController {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
             return "accounting/entry/accounting-entry-form";
         }
+    }
+    @GetMapping
+    public String list(@RequestParam(name = "page", defaultValue = "0") int page,
+                       @RequestParam(name = "size", defaultValue = "10") int size,
+                       @RequestParam(name = "q", required = false) String q,
+                       @RequestParam(name = "causalCode", required = false) String causalCode,
+                       @RequestParam(name = "dateFrom", required = false)
+                       @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+                       java.time.LocalDate dateFrom,
+                       @RequestParam(name = "dateTo", required = false)
+                       @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+                       java.time.LocalDate dateTo,
+                       Model model) {
+
+        Long tenantId = tenantContext.getCurrentTenantId();
+        var resultPage = accountingEntryWebService.findPage(tenantId, page, size, causalCode, q, dateFrom, dateTo);
+        model.addAttribute("entries", resultPage);
+        model.addAttribute("causalOptions", accountEntryRepository.findDistinctCausalCodesByTenantId(tenantId));
+        model.addAttribute("page", resultPage);
+        model.addAttribute("q", q);
+        model.addAttribute("causalCode", causalCode);
+        model.addAttribute("dateFrom", dateFrom);
+        model.addAttribute("dateTo", dateTo);
+        model.addAttribute("size", size);
+        model.addAttribute("activeMenu", "accountingEntries");
+        return "accounting/entry/accounting-entry-list";
     }
 }
