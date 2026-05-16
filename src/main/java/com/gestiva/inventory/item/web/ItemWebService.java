@@ -170,6 +170,7 @@ public class ItemWebService {
                     v.setName(item.getName());
                     v.setItemType(item.getItemType());
                     v.setUnitOfMeasure(item.getUnitOfMeasure());
+                    v.setLabel(item.getCode() + " - " + item.getName() + " (" + item.getItemType() + ")");
                     return v;
                 })
                 .toList();
