@@ -2,6 +2,7 @@ package com.gestiva.inventory.movement.service;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.inventory.movement.web.InventoryAdjustmentForm;
+import com.gestiva.inventory.valuation.service.InventoryValuationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,9 +11,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class InventoryAdjustmentService {
 
     private final InventoryMovementService inventoryMovementService;
+    private final InventoryValuationService inventoryValuationService;
 
-    public InventoryAdjustmentService(InventoryMovementService inventoryMovementService) {
+    public InventoryAdjustmentService(InventoryMovementService inventoryMovementService,
+                                      InventoryValuationService inventoryValuationService) {
+
         this.inventoryMovementService = inventoryMovementService;
+        this.inventoryValuationService = inventoryValuationService;
     }
 
     public Long registerAdjustment(Long tenantId, InventoryAdjustmentForm form) {
@@ -33,7 +38,7 @@ public class InventoryAdjustmentService {
             throw new BusinessException("Tipo rettifica non valido.");
         }
 
-        return inventoryMovementService.registerMovement(
+        Long movementId = inventoryMovementService.registerMovement(
                 tenantId,
                 form.getItemId(),
                 form.getMovementDate(),
@@ -45,5 +50,11 @@ public class InventoryAdjustmentService {
                 null,
                 form.getNotes()
         );
+        if ("ADJUSTMENT_IN".equalsIgnoreCase(movementType)) {
+            inventoryValuationService.applyInboundValuation(tenantId, movementId);
+        } else {
+            inventoryValuationService.applyOutboundValuation(tenantId, movementId);
+        }
+        return movementId;
     }
 }

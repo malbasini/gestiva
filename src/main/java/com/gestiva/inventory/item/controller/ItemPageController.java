@@ -1,6 +1,7 @@
-package com.gestiva.inventory.movement.controller;
+package com.gestiva.inventory.item.controller;
 
 import com.gestiva.inventory.movement.web.InventoryLedgerWebService;
+import com.gestiva.inventory.valuation.web.InventoryValuationWebService;
 import com.gestiva.security.usercontext.TenantContext;
 import com.gestiva.inventory.item.web.ItemForm;
 import com.gestiva.inventory.item.web.ItemWebService;
@@ -20,16 +21,19 @@ public class ItemPageController {
     private final TenantContext tenantContext;
     private final StockMovementWebService stockMovementWebService;
     private final InventoryLedgerWebService inventoryLedgerWebService;
+    private final InventoryValuationWebService inventoryValuationWebService;
 
     public ItemPageController(ItemWebService itemWebService,
                               TenantContext tenantContext,
                               StockMovementWebService stockMovementWebService,
-                              InventoryLedgerWebService inventoryLedgerWebService) {
+                              InventoryLedgerWebService inventoryLedgerWebService,
+                              InventoryValuationWebService inventoryValuationWebService) {
 
         this.itemWebService = itemWebService;
         this.tenantContext = tenantContext;
         this.stockMovementWebService = stockMovementWebService;
         this.inventoryLedgerWebService = inventoryLedgerWebService;
+        this.inventoryValuationWebService = inventoryValuationWebService;
     }
 
     @GetMapping
@@ -128,5 +132,12 @@ public class ItemPageController {
         model.addAttribute("activeMenu", "items");
 
         return "warehouse/item/item-inventory-ledger";
+    }
+    @GetMapping("/{id}/valuation")
+    public String valuation(@PathVariable Long id, Model model) {
+        Long tenantId = tenantContext.getCurrentTenantId();
+        model.addAttribute("valuation", inventoryValuationWebService.getItemValuation(tenantId, id));
+        model.addAttribute("activeMenu", "items");
+        return "warehouse/item/item-valuation";
     }
 }

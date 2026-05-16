@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Valorizzazione articolo</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+  <main class="app-main">
+    <div class="page">
+      <div class="card">
+        <div class="breadcrumb">
+          <a th:href="@{/dashboard}">Dashboard</a> /
+          <a th:href="@{/items}">Articoli</a> /
+          <span>Valorizzazione</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title" th:text="${valuation.itemCode + ' - ' + valuation.itemName}">ART-001 - Articolo Demo</h1>
+            <div class="muted">Controllo valorizzazione magazzino</div>
+          </div>
+          <div class="page-header-right">
+            <a class="btn btn-outline-success" th:href="@{/items/{id}/inventory(id=${valuation.itemId})}">
+              <i class="bi bi-box-seam"></i>
+              <span>Scheda movimenti</span>
+            </a>
+            <a class="btn btn-outline-secondary" th:href="@{/items/{id}(id=${valuation.itemId})}">
+              <i class="bi bi-arrow-left"></i>
+              <span>Torna al dettaglio</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="info-grid three-cols">
+          <div class="info-box">
+            <div class="label">Metodo valorizzazione</div>
+            <div class="value" th:text="${valuation.valuationMethod}">FIFO</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Giacenza attuale</div>
+            <div class="value" th:text="${valuation.formattedCurrentQty}">120.000</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Valore magazzino</div>
+            <div class="value" th:text="${valuation.formattedInventoryValue}">1140.0000</div>
+          </div>
+        </div>
+
+        <div class="info-grid three-cols">
+          <div class="info-box">
+            <div class="label">Costo medio residuo</div>
+            <div class="value" th:text="${valuation.formattedAverageResidualCost}">9.5000</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Numero layer aperti</div>
+            <div class="value" th:text="${#lists.size(valuation.layers)}">2</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Articolo</div>
+            <div class="value" th:text="${valuation.itemCode}">ART-001</div>
+          </div>
+        </div>
+
+        <div class="table-wrap" style="margin-top:20px;">
+          <table class="table">
+            <thead>
+            <tr>
+              <th>Layer</th>
+              <th>Data</th>
+              <th>Movimento sorgente</th>
+              <th class="text-right">Qty originaria</th>
+              <th class="text-right">Qty residua</th>
+              <th class="text-right">Costo unitario</th>
+              <th class="text-right">Valore residuo</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${#lists.isEmpty(valuation.layers)}">
+              <td colspan="7" class="muted">Nessun layer aperto per questo articolo.</td>
+            </tr>
+
+            <tr th:each="layer : ${valuation.layers}">
+              <td th:text="${layer.layerId}">1</td>
+              <td th:text="${layer.formattedLayerDate}">16/05/2026</td>
+              <td th:text="${layer.sourceMovementId}">100</td>
+              <td class="text-right" th:text="${layer.formattedOriginalQty}">11.000</td>
+              <td class="text-right" th:text="${layer.formattedRemainingQty}">9.000</td>
+              <td class="text-right" th:text="${layer.formattedUnitCost}">9.5000</td>
+              <td class="text-right" th:text="${layer.formattedResidualValue}">85.5000</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </main>
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
+</div>
+</body>
+</html>

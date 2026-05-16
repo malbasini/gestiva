@@ -105,7 +105,6 @@ public class GoodsReceiptService {
             movement.setNotes("Carico automatico da ricezione merci " + savedReceipt.getReceiptNumber());
             movement.setReferenceType("GOODS_RECEIPT");
             movement.setReferenceId(savedReceipt.getId());
-
             stockMovementRepository.save(movement);
         }
 

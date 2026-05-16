@@ -27,6 +27,18 @@ public class InventoryAdjustmentForm {
     @Size(max = 1000, message = "Le note non possono superare 1000 caratteri.")
     private String notes;
 
+    @NotNull(message = "Inserisci il costo unitario.")
+    @DecimalMin(value = "0.0001", message = "Il costo unitario deve essere maggiore di zero.")
+    private BigDecimal unitCost;
+
+    public BigDecimal getUnitCost() {
+        return unitCost;
+    }
+
+    public void setUnitCost(BigDecimal unitCost) {
+        this.unitCost = unitCost;
+    }
+
     public Long getItemId() {
         return itemId;
     }

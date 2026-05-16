@@ -47,8 +47,10 @@ public class InventoryMovementService {
             throw new BusinessException("La quantità deve essere maggiore di zero.");
         }
 
-        BigDecimal cost = scaleCost(unitCost);
-        BigDecimal totalCost = cost != null ? cost.multiply(qty).setScale(4, RoundingMode.HALF_UP) : null;
+        BigDecimal cost = unitCost == null ? null : scaleCost(unitCost);
+        BigDecimal totalCost = cost != null
+                ? scaleCost(cost.multiply(qty))
+                : null;
 
         InventoryMovement movement = new InventoryMovement();
         movement.setTenantId(tenantId);

@@ -1,9 +1,8 @@
 package com.gestiva.platform.tenant.entity;
 
 import com.gestiva.common.model.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import com.gestiva.inventory.valuation.model.InventoryValuationMethod;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "tenant")
@@ -27,6 +26,9 @@ public class Tenant extends BaseEntity {
     @Column(name = "default_currency", nullable = false, length = 3)
     private String defaultCurrency; // EUR
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "inventory_valuation_method", nullable = false, length = 20)
+    private InventoryValuationMethod inventoryValuationMethod = InventoryValuationMethod.FIFO;
 
     public String getName() {
         return name;
@@ -74,5 +76,13 @@ public class Tenant extends BaseEntity {
 
     public void setDefaultCurrency(String defaultCurrency) {
         this.defaultCurrency = defaultCurrency;
+    }
+
+    public InventoryValuationMethod getInventoryValuationMethod() {
+        return inventoryValuationMethod;
+    }
+
+    public void setInventoryValuationMethod(InventoryValuationMethod inventoryValuationMethod) {
+        this.inventoryValuationMethod = inventoryValuationMethod;
     }
 }
