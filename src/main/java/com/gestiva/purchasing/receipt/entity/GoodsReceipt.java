@@ -1,14 +1,12 @@
 package com.gestiva.purchasing.receipt.entity;
 
 import com.gestiva.common.model.TenantAwareEntity;
-import jakarta.persistence.Access;
-import jakarta.persistence.AccessType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import com.gestiva.logistics.ddt.entity.DeliveryNoteLine;
+import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Access(AccessType.FIELD)
@@ -34,6 +32,9 @@ public class GoodsReceipt extends TenantAwareEntity {
 
     @Column(name = "notes", length = 1000)
     private String notes;
+
+    @OneToMany(mappedBy = "goodsReceipt", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<GoodsReceiptLine> lines = new ArrayList<>();
 
     public String getReceiptNumber() {
         return receiptNumber;
@@ -73,5 +74,13 @@ public class GoodsReceipt extends TenantAwareEntity {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public List<GoodsReceiptLine> getLines() {
+        return lines;
+    }
+
+    public void setLines(List<GoodsReceiptLine> lines) {
+        this.lines = lines;
     }
 }

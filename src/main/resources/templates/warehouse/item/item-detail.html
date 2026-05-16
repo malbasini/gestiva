@@ -16,25 +16,27 @@
 
         <div th:replace="~{fragments/layout :: flashMessages}"></div>
 
-        <div class="breadcrumb">
-          <a th:href="@{/dashboard}">Dashboard</a> /
-          <a th:href="@{/items}">Articoli</a> /
-          <span th:text="${item.code}">ART-001</span>
-        </div>
-
         <div class="page-header">
           <div class="page-header-left">
             <h1 class="page-title" th:text="${item.name}">Articolo</h1>
             <div class="muted" th:text="${item.code}">ART-001</div>
           </div>
           <div class="page-header-right">
-            <a class="btn btn-secondary" th:href="@{/items}">
+            <a class="btn btn-outline-secondary" th:href="@{/items}">
               <i class="bi bi-arrow-left"></i>
               <span>Torna alla lista</span>
             </a>
-            <a class="btn btn-primary" th:href="@{/items/{id}/edit(id=${item.id})}">
+            <a class="btn btn-outline-primary" th:href="@{/items/{id}/edit(id=${item.id})}">
               <i class="bi bi-pencil-square"></i>
               <span>Modifica</span>
+            </a>
+            <a class="btn btn-outline-success" th:href="@{/items/{id}/inventory(id=${item.id})}">
+              <i class="bi bi-box-seam"></i>
+              <span>Scheda magazzino</span>
+            </a>
+            <a class="btn btn-outline-warning" th:href="@{/inventory-adjustments/new}">
+              <i class="bi bi-sliders"></i>
+              <span>Rettifica inventario</span>
             </a>
           </div>
         </div>

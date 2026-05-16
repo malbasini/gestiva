@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Rettifica inventario</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+    <main class="app-main">
+        <div class="page" style="max-width: 900px;">
+            <div class="card">
+                <div th:replace="~{fragments/layout :: flashMessages}"></div>
+
+                <div class="breadcrumb">
+                    <a th:href="@{/templates/dashboard}">Dashboard</a> /
+                    <a th:href="@{/items}">Articoli</a> /
+                    <span>Rettifica inventario</span>
+                </div>
+
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1 class="page-title">Rettifica inventario</h1>
+                        <div class="muted">Correzione manuale della giacenza articolo</div>
+                    </div>
+                    <div class="page-header-right">
+                        <a class="btn btn-outline-secondary" th:href="@{/items}">
+                            <i class="bi bi-arrow-left"></i>
+                            <span>Torna agli articoli</span>
+                        </a>
+                    </div>
+                </div>
+
+                <form th:action="@{/inventory-adjustments}" th:object="${inventoryAdjustmentForm}" method="post">
+                    <div class="form-grid">
+                        <div class="form-field full">
+                            <label for="itemId">Articolo</label>
+                            <select id="itemId" th:field="*{itemId}">
+                                <option value="">-- seleziona articolo --</option>
+                                <option th:each="opt : ${itemOptions}"
+                                        th:value="${opt.id}"
+                                        th:text="${opt.label}">
+                                    ART-001 - Articolo Demo
+                                </option>
+                            </select>
+                            <div class="field-error" th:if="${#fields.hasErrors('itemId')}" th:errors="*{itemId}">
+                                Errore articolo
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="adjustmentType">Tipo rettifica</label>
+                            <select id="adjustmentType" th:field="*{adjustmentType}">
+                                <option value="IN">Aumento giacenza</option>
+                                <option value="OUT">Diminuzione giacenza</option>
+                            </select>
+                            <div class="field-error" th:if="${#fields.hasErrors('adjustmentType')}" th:errors="*{adjustmentType}">
+                                Errore tipo rettifica
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="movementDate">Data movimento</label>
+                            <input id="movementDate" type="date" th:field="*{movementDate}"/>
+                            <div class="field-error" th:if="${#fields.hasErrors('movementDate')}" th:errors="*{movementDate}">
+                                Errore data movimento
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="quantity">Quantità</label>
+                            <input id="quantity" type="number" step="0.001" th:field="*{quantity}"/>
+                            <div class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}">
+                                Errore quantità
+                            </div>
+                        </div>
+
+                        <div class="form-field full">
+                            <label for="notes">Note</label>
+                            <textarea id="notes" th:field="*{notes}" rows="4"></textarea>
+                            <div class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}">
+                                Errore note
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="actions" style="margin-top: 24px;">
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-check2-circle"></i>
+                            <span>Registra rettifica</span>
+                        </button>
+
+                        <a class="btn btn-outline-secondary" th:href="@{/items}">
+                            <i class="bi bi-x-circle"></i>
+                            <span>Annulla</span>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+    <div th:replace="~{fragments/layout :: appFooter}"></div>
+</div>
+</body>
+</html>

@@ -5,7 +5,7 @@ import com.gestiva.purchasing.order.web.PurchaseOrderForm;
 import com.gestiva.purchasing.order.web.PurchaseOrderWebService;
 import com.gestiva.purchasing.supplier.web.SupplierWebService;
 import com.gestiva.security.usercontext.TenantContext;
-import com.gestiva.warehouse.item.web.ItemWebService;
+import com.gestiva.inventory.item.web.ItemWebService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

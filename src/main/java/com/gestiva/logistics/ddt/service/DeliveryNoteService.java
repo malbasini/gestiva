@@ -2,6 +2,7 @@ package com.gestiva.logistics.ddt.service;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
+import com.gestiva.inventory.movement.service.InventoryDocumentPostingService;
 import com.gestiva.logistics.ddt.dto.DeliveryNoteResponse;
 import com.gestiva.logistics.ddt.entity.DeliveryNote;
 import com.gestiva.logistics.ddt.entity.DeliveryNoteLine;
@@ -11,7 +12,7 @@ import com.gestiva.sales.order.entity.SalesOrder;
 import com.gestiva.sales.order.entity.SalesOrderLine;
 import com.gestiva.sales.order.repository.SalesOrderLineRepository;
 import com.gestiva.sales.order.repository.SalesOrderRepository;
-import com.gestiva.warehouse.stock.service.StockMovementIntegrationService;
+import com.gestiva.inventory.stock.service.StockMovementIntegrationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -28,18 +29,21 @@ public class DeliveryNoteService {
     private final SalesOrderRepository salesOrderRepository;
     private final SalesOrderLineRepository salesOrderLineRepository;
     private final StockMovementIntegrationService stockMovementIntegrationService;
+    private final InventoryDocumentPostingService inventoryDocumentPostingService;
 
     public DeliveryNoteService(DeliveryNoteRepository deliveryNoteRepository,
                                DeliveryNoteLineRepository deliveryNoteLineRepository,
                                SalesOrderRepository salesOrderRepository,
                                SalesOrderLineRepository salesOrderLineRepository,
-                               StockMovementIntegrationService stockMovementIntegrationService) {
+                               StockMovementIntegrationService stockMovementIntegrationService,
+                               InventoryDocumentPostingService inventoryDocumentPostingService) {
 
         this.deliveryNoteRepository = deliveryNoteRepository;
         this.deliveryNoteLineRepository = deliveryNoteLineRepository;
         this.salesOrderRepository = salesOrderRepository;
         this.salesOrderLineRepository = salesOrderLineRepository;
         this.stockMovementIntegrationService = stockMovementIntegrationService;
+        this.inventoryDocumentPostingService = inventoryDocumentPostingService;
     }
 
     public DeliveryNoteResponse createFromSalesOrder(Long tenantId, Long salesOrderId) {
@@ -76,9 +80,8 @@ public class DeliveryNoteService {
         note.setNotes(null);
         note.setCreatedAt(now);
         note.setUpdatedAt(now);
-
         DeliveryNote savedNote = deliveryNoteRepository.save(note);
-
+        inventoryDocumentPostingService.postSalesDeliveryFromDeliveryNote(tenantId, savedNote);
         int lineNo = 1;
         for (SalesOrderLine orderLine : orderLines) {
             DeliveryNoteLine line = new DeliveryNoteLine();

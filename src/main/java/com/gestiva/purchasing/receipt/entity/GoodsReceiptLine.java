@@ -1,11 +1,7 @@
 package com.gestiva.purchasing.receipt.entity;
 
 import com.gestiva.common.model.TenantAwareEntity;
-import jakarta.persistence.Access;
-import jakarta.persistence.AccessType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 
@@ -31,6 +27,17 @@ public class GoodsReceiptLine extends TenantAwareEntity {
 
     @Column(name = "quantity_received", nullable = false, precision = 15, scale = 3)
     private BigDecimal quantityReceived;
+
+    @Column(name = "unit_cost", precision = 15, scale = 4)
+    private BigDecimal unitCost;
+
+    @Column(name = "total_cost", precision = 15, scale = 4)
+    private BigDecimal totalCost;
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "goods_receipt_id", nullable = false, insertable = false, updatable = false)
+    private GoodsReceipt goodsReceipt;
 
     public Long getGoodsReceiptId() {
         return goodsReceiptId;
@@ -78,5 +85,29 @@ public class GoodsReceiptLine extends TenantAwareEntity {
 
     public void setQuantityReceived(BigDecimal quantityReceived) {
         this.quantityReceived = quantityReceived;
+    }
+
+    public BigDecimal getUnitCost() {
+        return unitCost;
+    }
+
+    public void setUnitCost(BigDecimal unitCost) {
+        this.unitCost = unitCost;
+    }
+
+    public BigDecimal getTotalCost() {
+        return totalCost;
+    }
+
+    public void setTotalCost(BigDecimal totalCost) {
+        this.totalCost = totalCost;
+    }
+
+    public GoodsReceipt getGoodsReceipt() {
+        return goodsReceipt;
+    }
+
+    public void setGoodsReceipt(GoodsReceipt goodsReceipt) {
+        this.goodsReceipt = goodsReceipt;
     }
 }

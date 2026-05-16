@@ -51,6 +51,11 @@ public class DeliveryNoteLine {
     @Column(name = "item_id")
     private Long itemId;
 
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "delivery_note_id", nullable = false, insertable = false, updatable = false)
+    private DeliveryNote deliveryNote;
+
     public Long getItemId() {
         return itemId;
     }
@@ -157,5 +162,13 @@ public class DeliveryNoteLine {
 
     public void setLineTotal(BigDecimal lineTotal) {
         this.lineTotal = lineTotal;
+    }
+
+    public DeliveryNote getDeliveryNote() {
+        return deliveryNote;
+    }
+
+    public void setDeliveryNote(DeliveryNote deliveryNote) {
+        this.deliveryNote = deliveryNote;
     }
 }

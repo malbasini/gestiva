@@ -1,15 +1,16 @@
 package com.gestiva.purchasing.receipt.service;
 
 import com.gestiva.common.exception.BusinessException;
+import com.gestiva.inventory.movement.service.InventoryDocumentPostingService;
 import com.gestiva.purchasing.order.repository.PurchaseOrderLineRepository;
 import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
 import com.gestiva.purchasing.receipt.entity.GoodsReceipt;
 import com.gestiva.purchasing.receipt.entity.GoodsReceiptLine;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptLineRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
-import com.gestiva.warehouse.item.repository.ItemRepository;
-import com.gestiva.warehouse.stock.entity.StockMovement;
-import com.gestiva.warehouse.stock.repository.StockMovementRepository;
+import com.gestiva.inventory.item.repository.ItemRepository;
+import com.gestiva.inventory.stock.entity.StockMovement;
+import com.gestiva.inventory.stock.repository.StockMovementRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,19 +26,24 @@ public class GoodsReceiptService {
     private final GoodsReceiptLineRepository goodsReceiptLineRepository;
     private final ItemRepository itemRepository;
     private final StockMovementRepository stockMovementRepository;
+    private final InventoryDocumentPostingService inventoryDocumentPostingService;
 
     public GoodsReceiptService(PurchaseOrderRepository purchaseOrderRepository,
                                PurchaseOrderLineRepository purchaseOrderLineRepository,
                                GoodsReceiptRepository goodsReceiptRepository,
                                GoodsReceiptLineRepository goodsReceiptLineRepository,
                                ItemRepository itemRepository,
-                               StockMovementRepository stockMovementRepository) {
+                               StockMovementRepository stockMovementRepository,
+                               InventoryDocumentPostingService inventoryDocumentPostingService) {
+
+
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.purchaseOrderLineRepository = purchaseOrderLineRepository;
         this.goodsReceiptRepository = goodsReceiptRepository;
         this.goodsReceiptLineRepository = goodsReceiptLineRepository;
         this.itemRepository = itemRepository;
         this.stockMovementRepository = stockMovementRepository;
+        this.inventoryDocumentPostingService = inventoryDocumentPostingService;
     }
 
     public Long createFromPurchaseOrder(Long tenantId, Long purchaseOrderId) {
@@ -65,9 +71,8 @@ public class GoodsReceiptService {
         receipt.setPurchaseOrderId(po.getId());
         receipt.setSupplierId(po.getSupplierId());
         receipt.setNotes("Ricezione automatica da ordine fornitore " + po.getOrderNumber());
-
         GoodsReceipt savedReceipt = goodsReceiptRepository.save(receipt);
-
+        inventoryDocumentPostingService.postPurchaseReceiptFromGoodsReceipt(tenantId, savedReceipt);
         int lineNo = 1;
         for (var poLine : lines) {
             GoodsReceiptLine receiptLine = new GoodsReceiptLine();

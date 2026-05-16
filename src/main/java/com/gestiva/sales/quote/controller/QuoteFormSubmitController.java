@@ -4,7 +4,7 @@ import com.gestiva.crm.contact.web.CustomerLookupWebService;
 import com.gestiva.security.usercontext.TenantContext;
 import com.gestiva.sales.quote.web.QuoteForm;
 import com.gestiva.sales.quote.web.QuoteManageWebService;
-import com.gestiva.warehouse.item.web.ItemWebService;
+import com.gestiva.inventory.item.web.ItemWebService;
 import jakarta.validation.Valid;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Controller;

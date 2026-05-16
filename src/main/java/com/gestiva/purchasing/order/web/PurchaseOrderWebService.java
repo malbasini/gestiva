@@ -9,7 +9,7 @@ import com.gestiva.purchasing.order.repository.PurchaseOrderLineRepository;
 import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
 import com.gestiva.purchasing.supplier.repository.SupplierRepository;
-import com.gestiva.warehouse.item.repository.ItemRepository;
+import com.gestiva.inventory.item.repository.ItemRepository;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.domain.Page;

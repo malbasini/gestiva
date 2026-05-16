@@ -1,10 +1,13 @@
 package com.gestiva.logistics.ddt.entity;
 
 import jakarta.persistence.*;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "delivery_note")
@@ -14,6 +17,7 @@ public class DeliveryNote {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Setter
     @Column(name = "tenant_id", nullable = false)
     private Long tenantId;
 
@@ -62,16 +66,15 @@ public class DeliveryNote {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @OneToMany(mappedBy = "deliveryNote", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DeliveryNoteLine> lines = new ArrayList<>();
+
     public Long getId() {
         return id;
     }
 
     public Long getTenantId() {
         return tenantId;
-    }
-
-    public void setTenantId(Long tenantId) {
-        this.tenantId = tenantId;
     }
 
     public Long getSalesOrderId() {
@@ -192,5 +195,13 @@ public class DeliveryNote {
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public List<DeliveryNoteLine> getLines() {
+        return lines;
+    }
+
+    public void setLines(List<DeliveryNoteLine> lines) {
+        this.lines = lines;
     }
 }
