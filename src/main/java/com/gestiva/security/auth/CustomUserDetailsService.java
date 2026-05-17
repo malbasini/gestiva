@@ -1,12 +1,11 @@
 package com.gestiva.security.auth;
 
-import com.gestiva.common.exception.NotFoundException;
 import com.gestiva.platform.permission.repository.PermissionRepository;
 import com.gestiva.platform.role.repository.RolePermissionRepository;
 import com.gestiva.platform.role.repository.RoleRepository;
 import com.gestiva.platform.role.repository.UserRoleRepository;
 import com.gestiva.platform.tenant.repository.AppUserRepository;
-import com.gestiva.platform.tenant.repository.TenantRepository;
+import com.gestiva.security.tenant.repository.TenantRepository;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.*;

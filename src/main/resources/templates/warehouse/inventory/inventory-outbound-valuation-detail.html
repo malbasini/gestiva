@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Dettaglio valorizzazione scarico</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+    <main class="app-main">
+        <div class="page">
+            <div class="card">
+                <div class="breadcrumb">
+                    <a th:href="@{/dashboard}">Dashboard</a> /
+                    <a th:href="@{/items/{id}/valuation(id=${valuationDetail.itemId})}">Valorizzazione articolo</a> /
+                    <span>Dettaglio scarico</span>
+                </div>
+
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1 class="page-title" th:text="${valuationDetail.itemCode + ' - ' + valuationDetail.itemName}">ART-001 - Demo</h1>
+                        <div class="muted">Dettaglio valorizzazione movimento di uscita</div>
+                    </div>
+                    <div class="page-header-right">
+                        <a class="btn btn-outline-secondary" th:href="@{/items/{id}/valuation(id=${valuationDetail.itemId})}">
+                            <i class="bi bi-arrow-left"></i>
+                            <span>Torna alla valorizzazione</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="info-grid three-cols">
+                    <div class="info-box">
+                        <div class="label">Data movimento</div>
+                        <div class="value" th:text="${valuationDetail.formattedMovementDate}">17/05/2026</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">Causale</div>
+                        <div class="value" th:text="${valuationDetail.causalCode}">SALES_DELIVERY</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">Riferimento</div>
+                        <div class="value" th:text="${valuationDetail.referenceLabel}">DELIVERY_NOTE #30</div>
+                    </div>
+                </div>
+
+                <div class="info-grid three-cols">
+                    <div class="info-box">
+                        <div class="label">Quantità scaricata</div>
+                        <div class="value" th:text="${valuationDetail.formattedQuantity}">12.000</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">Costo unitario medio</div>
+                        <div class="value" th:text="${valuationDetail.formattedUnitCost}">5.3333</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">Costo totale scarico</div>
+                        <div class="value" th:text="${valuationDetail.formattedTotalCost}">64.0000</div>
+                    </div>
+                </div>
+
+                <div class="table-wrap" style="margin-top:20px;">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Layer</th>
+                            <th>Data layer</th>
+                            <th class="text-right">Qty consumata</th>
+                            <th class="text-right">Costo unitario</th>
+                            <th class="text-right">Costo totale</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(valuationDetail.consumptions)}">
+                            <td colspan="5" class="muted">Nessun consumo layer trovato.</td>
+                        </tr>
+
+                        <tr th:each="line : ${valuationDetail.consumptions}">
+                            <td th:text="${line.layerId}">1</td>
+                            <td th:text="${line.formattedLayerDate}">17/05/2026</td>
+                            <td class="text-right" th:text="${line.formattedConsumedQty}">10.000</td>
+                            <td class="text-right" th:text="${line.formattedUnitCost}">5.0000</td>
+                            <td class="text-right" th:text="${line.formattedTotalCost}">50.0000</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </main>
+    <div th:replace="~{fragments/layout :: appFooter}"></div>
+</div>
+</body>
+</html>

@@ -2,7 +2,7 @@ package com.gestiva.security;
 
 import com.gestiva.common.exception.NotFoundException;
 import com.gestiva.crm.contact.entity.Customer;
-import com.gestiva.platform.tenant.entity.Tenant;
+import com.gestiva.security.tenant.entity.Tenant;
 import com.gestiva.sales.order.service.SalesOrderService;
 import com.gestiva.sales.quote.dto.QuoteCreateRequest;
 import com.gestiva.sales.quote.dto.QuoteLineRequest;

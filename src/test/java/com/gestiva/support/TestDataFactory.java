@@ -2,8 +2,8 @@ package com.gestiva.support;
 
 import com.gestiva.crm.contact.entity.Customer;
 import com.gestiva.crm.contact.repository.CustomerRepository;
-import com.gestiva.platform.tenant.entity.Tenant;
-import com.gestiva.platform.tenant.repository.TenantRepository;
+import com.gestiva.security.tenant.entity.Tenant;
+import com.gestiva.security.tenant.repository.TenantRepository;
 import org.springframework.stereotype.Component;
 
 @Component

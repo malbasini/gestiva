@@ -4,7 +4,7 @@ import com.gestiva.common.exception.BusinessException;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.inventory.item.repository.ItemRepository;
 import com.gestiva.inventory.valuation.repository.InventoryLayerRepository;
-import com.gestiva.platform.tenant.repository.TenantRepository;
+import com.gestiva.security.tenant.repository.TenantRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

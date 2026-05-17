@@ -1,11 +1,10 @@
 package com.gestiva.sales.quote.controller;
 import com.gestiva.crm.contact.entity.Customer;
-import com.gestiva.platform.tenant.entity.Tenant;
+import com.gestiva.security.tenant.entity.Tenant;
 import com.gestiva.sales.quote.dto.QuoteCreateRequest;
 import com.gestiva.sales.quote.dto.QuoteLineRequest;
 import com.gestiva.sales.quote.dto.QuoteResponse;
 import com.gestiva.sales.quote.service.QuoteService;
-import com.gestiva.security.usercontext.TenantContext;
 import com.gestiva.support.AbstractMySqlIntegrationTest;
 import com.gestiva.support.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;

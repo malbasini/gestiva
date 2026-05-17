@@ -2,15 +2,15 @@ package com.gestiva.inventory.valuation.service;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.inventory.movement.entity.InventoryMovement;
-import com.gestiva.inventory.movement.repository.InventoryMovementRepository;
 import com.gestiva.inventory.valuation.entity.InventoryLayer;
 import com.gestiva.inventory.valuation.entity.InventoryLayerConsumption;
 import com.gestiva.inventory.valuation.model.InventoryValuationMethod;
 import com.gestiva.inventory.valuation.model.InventoryValuationResult;
 import com.gestiva.inventory.valuation.repository.InventoryLayerConsumptionRepository;
 import com.gestiva.inventory.valuation.repository.InventoryLayerRepository;
-import com.gestiva.platform.tenant.entity.Tenant;
-import com.gestiva.platform.tenant.repository.TenantRepository;
+import com.gestiva.inventory.valuation.repository.InventoryMovementRepository;
+import com.gestiva.security.tenant.entity.Tenant;
+import com.gestiva.security.tenant.repository.TenantRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -98,7 +98,6 @@ public class InventoryValuationService {
                     .findByTenantIdAndItemIdAndClosedFalseOrderByLayerDateAscIdAsc(tenantId, movement.getItemId());
             case LIFO -> inventoryLayerRepository
                     .findByTenantIdAndItemIdAndClosedFalseOrderByLayerDateDescIdDesc(tenantId, movement.getItemId());
-            case AVERAGE -> throw new BusinessException("Metodo AVERAGE non ancora implementato.");
         };
 
         BigDecimal qtyToConsume = scaleQty(movement.getQuantity());

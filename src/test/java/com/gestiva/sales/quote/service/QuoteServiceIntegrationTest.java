@@ -2,7 +2,7 @@ package com.gestiva.sales.quote.service;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.crm.contact.entity.Customer;
-import com.gestiva.platform.tenant.entity.Tenant;
+import com.gestiva.security.tenant.entity.Tenant;
 import com.gestiva.sales.quote.dto.QuoteCreateRequest;
 import com.gestiva.sales.quote.dto.QuoteLineRequest;
 import com.gestiva.sales.quote.dto.QuoteResponse;

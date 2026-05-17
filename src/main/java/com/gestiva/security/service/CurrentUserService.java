@@ -1,8 +1,8 @@
 package com.gestiva.security.service;
 
 import com.gestiva.platform.tenant.repository.AppUserRepository;
-import com.gestiva.platform.tenant.repository.TenantRepository;
 import com.gestiva.security.auth.AuthenticatedUser;
+import com.gestiva.security.tenant.repository.TenantRepository;
 import com.gestiva.security.web.CurrentUserView;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;

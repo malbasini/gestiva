@@ -6,12 +6,12 @@ import com.gestiva.crm.contact.repository.CustomerRepository;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.platform.company.entity.CompanyProfile;
 import com.gestiva.platform.company.repository.CompanyProfileRepository;
-import com.gestiva.platform.tenant.entity.Tenant;
-import com.gestiva.platform.tenant.repository.TenantRepository;
+import com.gestiva.security.tenant.entity.Tenant;
 import com.gestiva.sales.order.entity.SalesOrder;
 import com.gestiva.sales.order.entity.SalesOrderLine;
 import com.gestiva.sales.order.repository.SalesOrderLineRepository;
 import com.gestiva.sales.order.repository.SalesOrderRepository;
+import com.gestiva.security.tenant.repository.TenantRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

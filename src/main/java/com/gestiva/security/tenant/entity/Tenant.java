@@ -1,4 +1,4 @@
-package com.gestiva.platform.tenant.entity;
+package com.gestiva.security.tenant.entity;
 
 import com.gestiva.common.model.BaseEntity;
 import com.gestiva.inventory.valuation.model.InventoryValuationMethod;

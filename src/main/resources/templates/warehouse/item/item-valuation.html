@@ -13,11 +13,6 @@
   <main class="app-main">
     <div class="page">
       <div class="card">
-        <div class="breadcrumb">
-          <a th:href="@{/dashboard}">Dashboard</a> /
-          <a th:href="@{/items}">Articoli</a> /
-          <span>Valorizzazione</span>
-        </div>
 
         <div class="page-header">
           <div class="page-header-left">
@@ -29,6 +24,16 @@
               <i class="bi bi-box-seam"></i>
               <span>Scheda movimenti</span>
             </a>
+            <a class="btn btn-outline-info" th:href="@{/tenant-settings/inventory-valuation}">
+              <i class="bi bi-gear"></i>
+              <span>Metodo FIFO/LIFO</span>
+            </a>
+
+            <a class="btn btn-outline-warning" th:href="@{/inventory-valuations/outbound}">
+              <i class="bi bi-list-ul"></i>
+              <span>Scarichi valorizzati</span>
+            </a>
+
             <a class="btn btn-outline-secondary" th:href="@{/items/{id}(id=${valuation.itemId})}">
               <i class="bi bi-arrow-left"></i>
               <span>Torna al dettaglio</span>
