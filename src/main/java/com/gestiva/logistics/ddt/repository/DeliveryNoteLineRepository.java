@@ -13,7 +13,8 @@ public interface DeliveryNoteLineRepository extends JpaRepository<DeliveryNoteLi
        select j
        from DeliveryNoteLine j
        where j.tenantId = :tenantId
-       and j.id = :id
+       and j.deliveryNoteId = :id
+       order by j.lineNo asc
        """)
 
     List<DeliveryNoteLine> findByTenantIdAndDeliveryNoteIdOrderByLineNoAsc(Long tenantId, Long id);

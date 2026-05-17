@@ -72,7 +72,6 @@ public class GoodsReceiptService {
         receipt.setSupplierId(po.getSupplierId());
         receipt.setNotes("Ricezione automatica da ordine fornitore " + po.getOrderNumber());
         GoodsReceipt savedReceipt = goodsReceiptRepository.save(receipt);
-        inventoryDocumentPostingService.postPurchaseReceiptFromGoodsReceipt(tenantId, savedReceipt);
         int lineNo = 1;
         for (var poLine : lines) {
             GoodsReceiptLine receiptLine = new GoodsReceiptLine();
@@ -83,9 +82,9 @@ public class GoodsReceiptService {
             receiptLine.setItemId(poLine.getItemId());
             receiptLine.setDescription(poLine.getDescription());
             receiptLine.setQuantityReceived(poLine.getQuantity());
-
+            receiptLine.setUnitCost(poLine.getUnitPrice());
+            receiptLine.setTotalCost(poLine.getUnitPrice().multiply(poLine.getQuantity()));
             goodsReceiptLineRepository.save(receiptLine);
-
             if (poLine.getItemId() == null) {
                 continue;
             }
@@ -107,7 +106,7 @@ public class GoodsReceiptService {
             movement.setReferenceId(savedReceipt.getId());
             stockMovementRepository.save(movement);
         }
-
+        inventoryDocumentPostingService.postPurchaseReceiptFromGoodsReceipt(tenantId, savedReceipt);
         return savedReceipt.getId();
     }
 

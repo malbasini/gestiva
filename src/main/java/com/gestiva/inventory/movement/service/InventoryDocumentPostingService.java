@@ -93,7 +93,6 @@ public class InventoryDocumentPostingService {
         }
 
         var lines = goodsReceiptLineRepository.findByTenantIdAndGoodsReceiptIdOrderByLineNoAsc(tenantId, goodsReceipt.getId());
-
         if (lines.isEmpty()) {
             return;
         }
@@ -117,7 +116,7 @@ public class InventoryDocumentPostingService {
                     "IN",
                     "PURCHASE_RECEIPT",
                     line.getQuantityReceived(),
-                    null,
+                    line.getUnitCost(),
                     "GOODS_RECEIPT",
                     goodsReceipt.getId(),
                     "Carico da ricezione merci " + goodsReceipt.getReceiptNumber()

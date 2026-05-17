@@ -3,6 +3,7 @@ package com.gestiva.purchasing.receipt.repository;
 import com.gestiva.purchasing.receipt.entity.GoodsReceiptLine;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -12,8 +13,11 @@ public interface GoodsReceiptLineRepository extends JpaRepository<GoodsReceiptLi
        select j
        from GoodsReceiptLine j
        where j.tenantId = :tenantId
-       and j.id = :id
-       order by j.id asc
+       and j.goodsReceiptId = :id
+       order by j.lineNo asc
        """)
-    List<GoodsReceiptLine> findByTenantIdAndGoodsReceiptIdOrderByLineNoAsc(Long tenantId, Long id);
+    List<GoodsReceiptLine> findByTenantIdAndGoodsReceiptIdOrderByLineNoAsc(@Param("tenantId") Long tenantId,
+                                                                           @Param("id") Long id);
+
+    List<GoodsReceiptLine> findByTenantIdAndGoodsReceipt_Id(Long tenantId, Long id);
 }

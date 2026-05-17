@@ -81,7 +81,6 @@ public class DeliveryNoteService {
         note.setCreatedAt(now);
         note.setUpdatedAt(now);
         DeliveryNote savedNote = deliveryNoteRepository.save(note);
-        inventoryDocumentPostingService.postSalesDeliveryFromDeliveryNote(tenantId, savedNote);
         int lineNo = 1;
         for (SalesOrderLine orderLine : orderLines) {
             DeliveryNoteLine line = new DeliveryNoteLine();
@@ -101,7 +100,7 @@ public class DeliveryNoteService {
             deliveryNoteLineRepository.save(line);
             stockMovementIntegrationService.createOutboundMovementsFromDeliveryNote(tenantId, savedNote.getId());
         }
-
+        inventoryDocumentPostingService.postSalesDeliveryFromDeliveryNote(tenantId, savedNote);
         return toResponse(savedNote);
     }
 
