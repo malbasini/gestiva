@@ -98,10 +98,10 @@
                 <input type="text" th:field="*{lines[__${stat.index}__].description}" placeholder="Descrizione riga"/>
               </td>
               <td class="text-right">
-                <input type="number" step="0.01" th:field="*{lines[__${stat.index}__].debitAmount}"/>
+                <input type="number" step="1" th:field="*{lines[__${stat.index}__].debitAmount}"/>
               </td>
               <td class="text-right">
-                <input type="number" step="0.01" th:field="*{lines[__${stat.index}__].creditAmount}"/>
+                <input type="number" step="1" th:field="*{lines[__${stat.index}__].creditAmount}"/>
               </td>
               <td>
                 <button type="submit"

@@ -15,4 +15,6 @@ public interface InventoryLayerRepository extends JpaRepository<InventoryLayer, 
     List<InventoryLayer> findByTenantIdAndItemIdAndClosedFalseOrderByLayerDateDescIdDesc(Long tenantId, Long itemId);
 
     List<InventoryLayer> findByTenantIdAndSourceMovementIdOrderByIdAsc(Long tenantId, Long sourceMovementId);
+
+    List<InventoryLayer> findByTenantIdAndClosedFalseOrderByItemIdAscLayerDateAscIdAsc(Long tenantId);
 }

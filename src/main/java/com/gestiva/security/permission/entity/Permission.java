@@ -1,4 +1,4 @@
-package com.gestiva.platform.permission.entity;
+package com.gestiva.security.permission.entity;
 
 import com.gestiva.common.model.BaseEntity;
 import jakarta.persistence.Column;

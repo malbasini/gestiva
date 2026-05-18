@@ -60,10 +60,10 @@ public class SalesOrderDetailWebService {
             SalesOrderDetailLineView l = new SalesOrderDetailLineView();
             l.setLineNo(line.getLineNo());
             l.setDescription(line.getDescription());
-            l.setFormattedQuantity(PdfFormatUtils.formatDecimal(line.getQuantity()));
+            l.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),2));
             l.setFormattedUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
             l.setFormattedDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct()));
-            l.setFormattedTaxPct(PdfFormatUtils.formatDecimal(line.getTaxPct()));
+            l.setFormattedTaxPct(PdfFormatUtils.formatDecimalTrimmed(line.getTaxPct(),2));
             java.math.BigDecimal gross = line.getQuantity().multiply(line.getUnitPrice());
             java.math.BigDecimal discountAmount = gross
                     .multiply(line.getDiscountPct())

@@ -83,13 +83,11 @@ public class InventoryConsumptionWebService {
 
     private String formatQty(BigDecimal value) {
         return value == null
-                ? "0.000"
-                : value.setScale(3, RoundingMode.HALF_UP).toPlainString();
+                ? "0"
+                : value.setScale(0, RoundingMode.HALF_UP).toPlainString();
     }
 
     private String formatCost(BigDecimal value) {
-        return value == null
-                ? "0.0000"
-                : value.setScale(4, RoundingMode.HALF_UP).toPlainString();
+        return PdfFormatUtils.formatDecimal(value, 2);
     }
 }

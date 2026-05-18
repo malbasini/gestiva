@@ -1,6 +1,6 @@
-package com.gestiva.platform.role.repository;
+package com.gestiva.security.role.repository;
 
-import com.gestiva.platform.role.entity.RolePermission;
+import com.gestiva.security.role.entity.RolePermission;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 

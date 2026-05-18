@@ -76,13 +76,13 @@
 
                         <div class="form-field">
                             <label for="basePrice">Prezzo base</label>
-                            <input id="basePrice" type="number" step="0.01" th:field="*{basePrice}" placeholder="0.00"/>
+                            <input id="basePrice" type="number" step="1" th:field="*{basePrice}" placeholder="0.00"/>
                             <div class="field-error" th:if="${#fields.hasErrors('basePrice')}" th:errors="*{basePrice}">Errore</div>
                         </div>
 
                         <div class="form-field">
                             <label for="defaultTaxPct">IVA standard %</label>
-                            <input id="defaultTaxPct" type="number" step="0.01" th:field="*{defaultTaxPct}" placeholder="22.00"/>
+                            <input id="defaultTaxPct" type="number" step="1" th:field="*{defaultTaxPct}" placeholder="22.00"/>
                             <div class="field-error" th:if="${#fields.hasErrors('defaultTaxPct')}" th:errors="*{defaultTaxPct}">Errore</div>
                         </div>
 

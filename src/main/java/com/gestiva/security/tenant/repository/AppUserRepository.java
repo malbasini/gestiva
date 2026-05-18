@@ -1,6 +1,6 @@
-package com.gestiva.platform.tenant.repository;
+package com.gestiva.security.tenant.repository;
 
-import com.gestiva.platform.tenant.entity.AppUser;
+import com.gestiva.security.tenant.entity.AppUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;

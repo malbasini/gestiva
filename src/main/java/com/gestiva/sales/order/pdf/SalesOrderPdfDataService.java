@@ -96,10 +96,10 @@ public class SalesOrderPdfDataService {
             l.setTaxPct(line.getTaxPct());
             l.setTaxAmount(line.getTaxAmount());
             l.setLineTotal(line.getLineTotal());
-            l.setFormattedQuantity(PdfFormatUtils.formatDecimal(line.getQuantity()));
+            l.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),2));
             l.setFormattedUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
             l.setFormattedDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct()));
-            l.setFormattedTaxPct(PdfFormatUtils.formatDecimal(line.getTaxPct()));
+            l.setFormattedTaxPct(PdfFormatUtils.formatDecimalTrimmed(line.getTaxPct(),2));
             l.setFormattedTaxAmount(PdfFormatUtils.formatMoney(line.getTaxAmount()));
             java.math.BigDecimal gross = line.getQuantity().multiply(line.getUnitPrice());
             java.math.BigDecimal discountAmount = gross

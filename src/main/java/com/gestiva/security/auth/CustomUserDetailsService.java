@@ -1,10 +1,10 @@
 package com.gestiva.security.auth;
 
-import com.gestiva.platform.permission.repository.PermissionRepository;
-import com.gestiva.platform.role.repository.RolePermissionRepository;
-import com.gestiva.platform.role.repository.RoleRepository;
-import com.gestiva.platform.role.repository.UserRoleRepository;
-import com.gestiva.platform.tenant.repository.AppUserRepository;
+import com.gestiva.security.permission.repository.PermissionRepository;
+import com.gestiva.security.role.repository.RolePermissionRepository;
+import com.gestiva.security.role.repository.RoleRepository;
+import com.gestiva.security.role.repository.UserRoleRepository;
+import com.gestiva.security.tenant.repository.AppUserRepository;
 import com.gestiva.security.tenant.repository.TenantRepository;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

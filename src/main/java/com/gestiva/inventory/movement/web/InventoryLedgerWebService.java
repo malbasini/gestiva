@@ -106,6 +106,8 @@ public class InventoryLedgerWebService {
     }
 
     private String formatQty(BigDecimal value) {
-        return value == null ? "0,000" : value.setScale(3, RoundingMode.HALF_UP).toPlainString();
+        return value == null
+                ? "0"
+                : value.setScale(0, RoundingMode.HALF_UP).toPlainString();
     }
 }

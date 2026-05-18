@@ -81,6 +81,14 @@ public class InventoryValuationWebService {
         return view;
     }
 
+    private BigDecimal zeroQty() {
+        return BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal zeroCost() {
+        return BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP);
+    }
+
     private BigDecimal qty(BigDecimal value) {
         return value == null
                 ? BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP)
@@ -93,19 +101,13 @@ public class InventoryValuationWebService {
                 : value.setScale(4, RoundingMode.HALF_UP);
     }
 
-    private BigDecimal zeroQty() {
-        return BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP);
-    }
-
-    private BigDecimal zeroCost() {
-        return BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP);
-    }
-
     private String formatQty(BigDecimal value) {
-        return qty(value).toPlainString();
+        return value == null
+                ? "0"
+                : value.setScale(0, RoundingMode.HALF_UP).toPlainString();
     }
 
     private String formatCost(BigDecimal value) {
-        return cost(value).toPlainString();
+        return PdfFormatUtils.formatDecimal(value == null ? BigDecimal.ZERO : value, 2);
     }
 }

@@ -1,4 +1,4 @@
-package com.gestiva.platform.role.entity;
+package com.gestiva.security.role.entity;
 
 import com.gestiva.common.model.TenantAwareEntity;
 import jakarta.persistence.Column;

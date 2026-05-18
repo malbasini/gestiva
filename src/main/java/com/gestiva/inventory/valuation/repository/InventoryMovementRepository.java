@@ -22,13 +22,6 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
             Long referenceId,
             String causalCode
     );
-
-
-
-
-
-
-
     @Query("""
        select distinct m.causalCode
        from InventoryMovement m
@@ -39,9 +32,25 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
        """)
     List<String> findDistinctOutboundCausalCodesByTenantId(@Param("tenantId") Long tenantId);
 
-
-
-
-
-
+    @Query("""
+       select new com.gestiva.inventory.valuation.web.CostOfGoodsSoldSummaryRow(
+           m.itemId,
+           coalesce(sum(m.quantity), 0),
+           coalesce(sum(m.totalCost), 0)
+       )
+       from InventoryMovement m
+       where m.tenantId = :tenantId
+         and (upper(m.movementType) = 'OUT' or upper(m.movementType) = 'ADJUSTMENT_OUT')
+         and (:itemId is null or m.itemId = :itemId)
+         and (:dateFrom is null or m.movementDate >= :dateFrom)
+         and (:dateTo is null or m.movementDate <= :dateTo)
+       group by m.itemId
+       order by m.itemId
+       """)
+    List<com.gestiva.inventory.valuation.web.CostOfGoodsSoldSummaryRow> summarizeCostOfGoodsSoldByItem(
+            @Param("tenantId") Long tenantId,
+            @Param("itemId") Long itemId,
+            @Param("dateFrom") java.time.LocalDate dateFrom,
+            @Param("dateTo") java.time.LocalDate dateTo
+    );
 }

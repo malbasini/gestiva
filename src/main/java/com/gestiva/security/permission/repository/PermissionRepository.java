@@ -1,6 +1,6 @@
-package com.gestiva.platform.permission.repository;
+package com.gestiva.security.permission.repository;
 
-import com.gestiva.platform.permission.entity.Permission;
+import com.gestiva.security.permission.entity.Permission;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;

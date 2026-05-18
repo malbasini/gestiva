@@ -119,10 +119,10 @@ public class PurchaseOrderWebService {
             PurchaseOrderDetailLineView lv = new PurchaseOrderDetailLineView();
             lv.setLineNo(line.getLineNo());
             lv.setDescription(line.getDescription());
-            lv.setFormattedQuantity(PdfFormatUtils.formatDecimal(line.getQuantity()));
+            lv.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),2));
             lv.setFormattedUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
             lv.setFormattedDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct()) + "%");
-            lv.setFormattedTaxPct(PdfFormatUtils.formatDecimal(line.getTaxPct()) + "%");
+            lv.setFormattedTaxPct(PdfFormatUtils.formatDecimalTrimmed(line.getTaxPct(),2) + "%");
             lv.setFormattedLineTotal(PdfFormatUtils.formatMoney(line.getLineTotal()));
             v.getLines().add(lv);
         }

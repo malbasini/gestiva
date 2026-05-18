@@ -1,6 +1,6 @@
 package com.gestiva.security.service;
 
-import com.gestiva.platform.tenant.repository.AppUserRepository;
+import com.gestiva.security.tenant.repository.AppUserRepository;
 import com.gestiva.security.auth.AuthenticatedUser;
 import com.gestiva.security.tenant.repository.TenantRepository;
 import com.gestiva.security.web.CurrentUserView;

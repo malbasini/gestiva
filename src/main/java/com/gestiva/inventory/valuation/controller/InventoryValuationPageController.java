@@ -1,7 +1,10 @@
 package com.gestiva.inventory.valuation.controller;
 
+import com.gestiva.inventory.item.web.ItemWebService;
 import com.gestiva.inventory.valuation.repository.InventoryMovementRepository;
+import com.gestiva.inventory.valuation.web.CostOfGoodsSoldSummaryWebService;
 import com.gestiva.inventory.valuation.web.InventoryConsumptionWebService;
+import com.gestiva.inventory.valuation.web.InventoryStockValuationListWebService;
 import com.gestiva.inventory.valuation.web.OutboundValuationListWebService;
 import com.gestiva.security.usercontext.TenantContext;
 import org.springframework.stereotype.Controller;
@@ -16,16 +19,26 @@ public class InventoryValuationPageController {
     private final TenantContext tenantContext;
     private final InventoryMovementRepository inventoryMovementRepository;
     private final OutboundValuationListWebService outboundValuationListWebService;
+    private final CostOfGoodsSoldSummaryWebService costOfGoodsSoldSummaryWebService;
+    private final ItemWebService itemWebService;
+    private final InventoryStockValuationListWebService inventoryStockValuationListWebService;
+
 
     public InventoryValuationPageController(InventoryConsumptionWebService inventoryConsumptionWebService,
                                             TenantContext tenantContext,
                                             InventoryMovementRepository inventoryMovementRepository,
-                                            OutboundValuationListWebService outboundValuationListWebService) {
+                                            OutboundValuationListWebService outboundValuationListWebService,
+                                            CostOfGoodsSoldSummaryWebService costOfGoodsSoldSummaryWebService,
+                                            ItemWebService itemWebService,
+                                            InventoryStockValuationListWebService inventoryStockValuationListWebService) {
 
         this.inventoryConsumptionWebService = inventoryConsumptionWebService;
         this.tenantContext = tenantContext;
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.outboundValuationListWebService = outboundValuationListWebService;
+        this.costOfGoodsSoldSummaryWebService = costOfGoodsSoldSummaryWebService;
+        this.itemWebService = itemWebService;
+        this.inventoryStockValuationListWebService=inventoryStockValuationListWebService;
     }
 
     @GetMapping("/movements/{movementId}")
@@ -69,4 +82,40 @@ public class InventoryValuationPageController {
 
         return "warehouse/inventory/inventory-outbound-valuations";
     }
+
+    @GetMapping("/cogs-summary")
+    public String costOfGoodsSoldSummary(@RequestParam(name = "itemId", required = false) Long itemId,
+                                         @RequestParam(name = "dateFrom", required = false)
+                                         @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+                                         java.time.LocalDate dateFrom,
+                                         @RequestParam(name = "dateTo", required = false)
+                                         @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+                                         java.time.LocalDate dateTo,
+                                         Model model) {
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        model.addAttribute("rows",
+                costOfGoodsSoldSummaryWebService.summarize(tenantId, itemId, dateFrom, dateTo));
+        model.addAttribute("itemOptions", itemWebService.findStockManagedOptions(tenantId));
+        model.addAttribute("itemId", itemId);
+        model.addAttribute("dateFrom", dateFrom);
+        model.addAttribute("dateTo", dateTo);
+        model.addAttribute("activeMenu", "items");
+
+        return "warehouse/inventory/inventory-cogs-summary";
+    }
+
+    @GetMapping("/stock-summary")
+    public String stockSummary(@RequestParam(name = "q", required = false) String q,
+                               Model model) {
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        model.addAttribute("rows", inventoryStockValuationListWebService.findAll(tenantId, q));
+        model.addAttribute("q", q);
+        model.addAttribute("activeMenu", "items");
+
+        return "warehouse/inventory/inventory-stock-summary";
+    }
+
+
 }

@@ -33,7 +33,10 @@
               <i class="bi bi-list-ul"></i>
               <span>Scarichi valorizzati</span>
             </a>
-
+            <a class="btn btn-outline-info" th:href="@{/inventory-valuations/stock-summary}">
+              <i class="bi bi-table"></i>
+              <span>Giacenza valorizzata</span>
+            </a>
             <a class="btn btn-outline-secondary" th:href="@{/items/{id}(id=${valuation.itemId})}">
               <i class="bi bi-arrow-left"></i>
               <span>Torna al dettaglio</span>

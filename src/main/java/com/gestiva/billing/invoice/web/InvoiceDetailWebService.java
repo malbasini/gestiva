@@ -56,11 +56,11 @@ public class InvoiceDetailWebService {
             InvoiceDetailLineView l = new InvoiceDetailLineView();
             l.setLineNo(line.getLineNo());
             l.setDescription(line.getDescription());
-            l.setFormattedQuantity(PdfFormatUtils.formatDecimal(line.getQuantity()));
+            l.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),2));
             l.setUnitOfMeasure(line.getUnitOfMeasure());
             l.setFormattedUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
             l.setFormattedDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct()));
-            l.setFormattedTaxPct(PdfFormatUtils.formatDecimal(line.getTaxPct()));
+            l.setFormattedTaxPct(PdfFormatUtils.formatDecimalTrimmed(line.getTaxPct(),2));
 
             BigDecimal gross = line.getQuantity().multiply(line.getUnitPrice());
             BigDecimal discountAmount = gross
