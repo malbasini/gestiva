@@ -114,7 +114,7 @@ public class StockMovementWebService {
         v.setFormattedMovementDate(PdfFormatUtils.formatDate(movement.getMovementDate()));
         v.setDirection(movement.getDirection());
         v.setReasonCode(movement.getReasonCode());
-        v.setFormattedQuantity(PdfFormatUtils.formatDecimal(movement.getQuantity()));
+        v.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(movement.getQuantity(),2));
         v.setNotes(movement.getNotes());
         v.setReferenceType(movement.getReferenceType());
         v.setReferenceId(movement.getReferenceId());

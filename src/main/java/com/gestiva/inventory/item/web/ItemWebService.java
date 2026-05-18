@@ -133,7 +133,7 @@ public class ItemWebService {
         v.setActive(item.isActive());
         v.setTrackStock(item.isTrackStock());
         v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatMoney(item.getBasePrice()) : "-");
-        v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimal(item.getDefaultTaxPct()) + "%" : "-");
+        v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimalTrimmed(item.getDefaultTaxPct(),2) + "%" : "-");
         return v;
     }
 
@@ -149,10 +149,10 @@ public class ItemWebService {
         v.setTrackStock(item.isTrackStock());
         v.setStockManaged(item.isTrackStock());
         v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatMoney(item.getBasePrice()) : "-");
-        v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimal(item.getDefaultTaxPct()) + "%" : "-");
+        v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimalTrimmed(item.getDefaultTaxPct(),2) + "%" : "-");
         if (item.isTrackStock()) {
             var balance = stockMovementRepository.calculateStockBalance(item.getTenantId(), item.getId());
-            v.setFormattedStockBalance(PdfFormatUtils.formatDecimal(balance));
+            v.setFormattedStockBalance(PdfFormatUtils.formatDecimalTrimmed(balance,2));
         } else {
             v.setFormattedStockBalance("-");
         }
@@ -239,7 +239,7 @@ public class ItemWebService {
         v.setActive(item.isActive());
         v.setUnitOfMeasure(item.getUnitOfMeasure());
         v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatMoney(item.getBasePrice()) : "-");
-        v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimal(item.getDefaultTaxPct()) + "%" : "-");
+        v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimalTrimmed(item.getDefaultTaxPct(),2) + "%" : "-");
         return v;
     }
 

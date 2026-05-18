@@ -117,7 +117,7 @@
 
               <div>
                 <input type="number"
-                       step="0.001"
+                       step="1"
                        th:field="*{lines[__${stat.index}__].quantity}"/>
                 <div class="field-error-inline"
                      th:if="${#fields.hasErrors('lines[' + stat.index + '].quantity')}"
@@ -128,7 +128,7 @@
 
               <div>
                 <input type="number"
-                       step="0.01"
+                       step="1"
                        class="js-line-unit-price"
                        th:attr="data-row-index=${stat.index}"
                        th:field="*{lines[__${stat.index}__].unitPrice}"/>
@@ -141,7 +141,7 @@
 
               <div>
                 <input type="number"
-                       step="0.01"
+                       step="1"
                        th:field="*{lines[__${stat.index}__].discountPct}"/>
                 <div class="field-error-inline"
                      th:if="${#fields.hasErrors('lines[' + stat.index + '].discountPct')}"
@@ -165,7 +165,7 @@
 
               <div>
                 <input type="number"
-                       step="0.01"
+                       step="1"
                        class="js-line-tax-pct"
                        th:attr="data-row-index=${stat.index}"
                        th:field="*{lines[__${stat.index}__].taxPct}"/>
