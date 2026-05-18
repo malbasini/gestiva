@@ -26,13 +26,17 @@
                         <div class="muted">Situazione attuale quantità e valore residuo per articolo</div>
                     </div>
                     <div class="page-header-right">
-                        <a class="btn btn-secondary" th:href="@{/inventory-valuations/outbound}">
+                        <a class="btn btn-outline-secondary" th:href="@{/inventory-valuations/outbound}">
                             <i class="bi bi-list-ul"></i>
                             <span>Scarichi valorizzati</span>
                         </a>
-                        <a class="btn btn-secondary" th:href="@{/inventory-valuations/cogs-summary}">
+                        <a class="btn btn-outline-success" th:href="@{/inventory-valuations/cogs-summary}">
                             <i class="bi bi-bar-chart"></i>
                             <span>Costo del venduto</span>
+                        </a>
+                        <a class="btn btn-outline-primary" th:href="@{/inventory-valuations/consistency-check}">
+                            <i class="bi bi-shield-check"></i>
+                            <span>Controllo coerenza</span>
                         </a>
                     </div>
                 </div>

@@ -2,10 +2,7 @@ package com.gestiva.inventory.valuation.controller;
 
 import com.gestiva.inventory.item.web.ItemWebService;
 import com.gestiva.inventory.valuation.repository.InventoryMovementRepository;
-import com.gestiva.inventory.valuation.web.CostOfGoodsSoldSummaryWebService;
-import com.gestiva.inventory.valuation.web.InventoryConsumptionWebService;
-import com.gestiva.inventory.valuation.web.InventoryStockValuationListWebService;
-import com.gestiva.inventory.valuation.web.OutboundValuationListWebService;
+import com.gestiva.inventory.valuation.web.*;
 import com.gestiva.security.usercontext.TenantContext;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,7 +19,7 @@ public class InventoryValuationPageController {
     private final CostOfGoodsSoldSummaryWebService costOfGoodsSoldSummaryWebService;
     private final ItemWebService itemWebService;
     private final InventoryStockValuationListWebService inventoryStockValuationListWebService;
-
+    private final InventoryConsistencyCheckWebService inventoryConsistencyCheckWebService;
 
     public InventoryValuationPageController(InventoryConsumptionWebService inventoryConsumptionWebService,
                                             TenantContext tenantContext,
@@ -30,7 +27,8 @@ public class InventoryValuationPageController {
                                             OutboundValuationListWebService outboundValuationListWebService,
                                             CostOfGoodsSoldSummaryWebService costOfGoodsSoldSummaryWebService,
                                             ItemWebService itemWebService,
-                                            InventoryStockValuationListWebService inventoryStockValuationListWebService) {
+                                            InventoryStockValuationListWebService inventoryStockValuationListWebService,
+                                            InventoryConsistencyCheckWebService inventoryConsistencyCheckWebService) {
 
         this.inventoryConsumptionWebService = inventoryConsumptionWebService;
         this.tenantContext = tenantContext;
@@ -39,6 +37,7 @@ public class InventoryValuationPageController {
         this.costOfGoodsSoldSummaryWebService = costOfGoodsSoldSummaryWebService;
         this.itemWebService = itemWebService;
         this.inventoryStockValuationListWebService=inventoryStockValuationListWebService;
+        this.inventoryConsistencyCheckWebService=inventoryConsistencyCheckWebService;
     }
 
     @GetMapping("/movements/{movementId}")
@@ -115,6 +114,27 @@ public class InventoryValuationPageController {
         model.addAttribute("activeMenu", "items");
 
         return "warehouse/inventory/inventory-stock-summary";
+    }
+
+    @GetMapping("/consistency-check")
+    public String consistencyCheck(@RequestParam(name = "q", required = false) String q,
+                                   @RequestParam(name = "onlyDifferences", required = false) Boolean onlyDifferences,
+                                   Model model) {
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        try {
+            model.addAttribute("rows",
+                    inventoryConsistencyCheckWebService.findAll(tenantId, q, onlyDifferences));
+            model.addAttribute("q", q);
+            model.addAttribute("onlyDifferences", Boolean.TRUE.equals(onlyDifferences));
+            model.addAttribute("activeMenu", "items");
+            return "warehouse/inventory/inventory-consistency-check";
+        }
+        catch (Exception ex) {
+            model.addAttribute("errorMessage", ex.getMessage());
+            model.addAttribute("activeMenu", "items");
+            return "warehouse/inventory/inventory-consistency-check";
+        }
     }
 
 

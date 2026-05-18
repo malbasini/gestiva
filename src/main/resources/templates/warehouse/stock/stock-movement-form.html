@@ -2,7 +2,7 @@
 <html lang="it" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
-    <title>Nuovo movimento di magazzino</title>
+    <title>Movimentazione manuale di magazzino</title>
     <link rel="stylesheet" th:href="@{/css/app.css}"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
 </head>
@@ -11,84 +11,151 @@
     <div th:replace="~{fragments/layout :: appHeader}"></div>
 
     <main class="app-main">
-        <div class="page">
+        <div class="page" style="max-width: 900px;">
             <div class="card">
+                <div th:replace="~{fragments/layout :: flashMessages}"></div>
 
                 <div class="breadcrumb">
                     <a th:href="@{/dashboard}">Dashboard</a> /
                     <a th:href="@{/items}">Articoli</a> /
-                    <a th:href="@{/items/{id}(id=${itemId})}">Dettaglio articolo</a> /
-                    <span>Nuovo movimento</span>
+                    <span>Movimentazione manuale</span>
                 </div>
 
                 <div class="page-header">
                     <div class="page-header-left">
-                        <h1 class="page-title">Nuovo movimento di magazzino</h1>
-                        <div class="muted">Carico o scarico manuale</div>
+                        <h1 class="page-title">Movimentazione manuale di magazzino</h1>
+                        <div class="muted">Carico o scarico manuale articolo</div>
                     </div>
                     <div class="page-header-right">
                         <a class="btn btn-secondary" th:href="@{/items/{id}(id=${itemId})}">
                             <i class="bi bi-arrow-left"></i>
-                            <span>Torna all'articolo</span>
+                            <span>Torna al dettaglio</span>
                         </a>
                     </div>
                 </div>
 
-                <form th:action="@{/items/{itemId}/stock-movements(itemId=${itemId})}"
+                <form th:action="@{/items/{id}/stock-movements(id=${itemId})}"
                       th:object="${stockMovementForm}"
                       method="post">
-
-                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
                     <div class="form-grid">
                         <div class="form-field">
                             <label for="movementDate">Data movimento</label>
                             <input id="movementDate" type="date" th:field="*{movementDate}"/>
-                            <div class="field-error" th:if="${#fields.hasErrors('movementDate')}" th:errors="*{movementDate}">Errore</div>
+                            <div class="field-error"
+                                 th:if="${#fields.hasErrors('movementDate')}"
+                                 th:errors="*{movementDate}">
+                                Errore data
+                            </div>
                         </div>
 
                         <div class="form-field">
                             <label for="direction">Direzione</label>
                             <select id="direction" th:field="*{direction}">
-                                <option value="IN">IN</option>
-                                <option value="OUT">OUT</option>
+                                <option value="IN">Carico</option>
+                                <option value="OUT">Scarico</option>
                             </select>
-                            <div class="field-error" th:if="${#fields.hasErrors('direction')}" th:errors="*{direction}">Errore</div>
+                            <div class="field-error"
+                                 th:if="${#fields.hasErrors('direction')}"
+                                 th:errors="*{direction}">
+                                Errore direzione
+                            </div>
                         </div>
 
                         <div class="form-field">
                             <label for="reasonCode">Causale</label>
-                            <select id="reasonCode" th:field="*{reasonCode}">
+                            <select id="reasonCode" th:readonly="true" th:field="*{reasonCode}">
                                 <option value="MANUAL_LOAD">MANUAL_LOAD</option>
                                 <option value="MANUAL_UNLOAD">MANUAL_UNLOAD</option>
                             </select>
-                            <div class="field-error" th:if="${#fields.hasErrors('reasonCode')}" th:errors="*{reasonCode}">Errore</div>
+                            <div class="field-error"
+                                 th:if="${#fields.hasErrors('reasonCode')}"
+                                 th:errors="*{reasonCode}">
+                                Errore causale
+                            </div>
                         </div>
 
                         <div class="form-field">
                             <label for="quantity">Quantità</label>
-                            <input id="quantity" type="number" step="0.001" th:field="*{quantity}" placeholder="1.000"/>
-                            <div class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}">Errore</div>
+                            <input id="quantity" type="number" step="1" th:field="*{quantity}"/>
+                            <div class="field-error"
+                                 th:if="${#fields.hasErrors('quantity')}"
+                                 th:errors="*{quantity}">
+                                Errore quantità
+                            </div>
+                        </div>
+
+                        <div class="form-field" id="unitCostField">
+                            <label for="unitCost">Costo unitario</label>
+                            <input id="unitCost" type="number" step="1" th:field="*{unitCost}"/>
+                            <div class="field-error"
+                                 th:if="${#fields.hasErrors('unitCost')}"
+                                 th:errors="*{unitCost}">
+                                Errore costo unitario
+                            </div>
                         </div>
 
                         <div class="form-field full">
                             <label for="notes">Note</label>
-                            <textarea id="notes" th:field="*{notes}" rows="3" placeholder="Note opzionali"></textarea>
+                            <textarea id="notes" rows="4" th:field="*{notes}"></textarea>
+                            <div class="field-error"
+                                 th:if="${#fields.hasErrors('notes')}"
+                                 th:errors="*{notes}">
+                                Errore note
+                            </div>
                         </div>
                     </div>
 
+                    <div class="notes" style="margin-top:20px;">
+                        <strong>Nota:</strong>
+                        per i <strong>carichi manuali</strong> il costo unitario è obbligatorio, perché viene usato per creare il layer di valorizzazione.
+                        Per gli <strong>scarichi manuali</strong>, il costo viene determinato automaticamente dal metodo FIFO/LIFO.
+                    </div>
+
                     <div class="actions" style="margin-top:24px;">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-floppy"></i>
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-check2-circle"></i>
                             <span>Registra movimento</span>
                         </button>
+
+                        <a class="btn btn-outline-secondary" th:href="@{/items/{id}(id=${itemId})}">
+                            <i class="bi bi-x-circle"></i>
+                            <span>Annulla</span>
+                        </a>
                     </div>
                 </form>
-
             </div>
         </div>
     </main>
+
     <div th:replace="~{fragments/layout :: appFooter}"></div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const directionSelect = document.getElementById('direction');
+        const reasonCodeSelect = document.getElementById('reasonCode');
+        const unitCostField = document.getElementById('unitCostField');
+        const unitCostInput = document.getElementById('unitCost');
+
+        function syncManualMovementForm() {
+            const direction = directionSelect.value;
+
+            if (direction === 'IN') {
+                reasonCodeSelect.value = 'MANUAL_LOAD';
+                unitCostField.style.display = '';
+            } else {
+                reasonCodeSelect.value = 'MANUAL_UNLOAD';
+                unitCostField.style.display = 'none';
+                if (unitCostInput) {
+                    unitCostInput.value = '';
+                }
+            }
+        }
+
+        directionSelect.addEventListener('change', syncManualMovementForm);
+        syncManualMovementForm();
+    });
+</script>
 </body>
 </html>

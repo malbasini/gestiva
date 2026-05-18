@@ -3,6 +3,7 @@ package com.gestiva.inventory.movement.service;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.inventory.item.repository.ItemRepository;
 import com.gestiva.inventory.valuation.repository.InventoryMovementRepository;
+import com.gestiva.inventory.valuation.service.InventoryAvailabilityService;
 import com.gestiva.inventory.valuation.service.InventoryValuationService;
 import com.gestiva.logistics.ddt.repository.DeliveryNoteLineRepository;
 import com.gestiva.purchasing.receipt.entity.GoodsReceipt;
@@ -26,13 +27,17 @@ public class InventoryDocumentPostingService {
     private final GoodsReceiptLineRepository goodsReceiptLineRepository;
     private final DeliveryNoteLineRepository deliveryNoteLineRepository;
     private final InventoryValuationService inventoryValuationService;
+    private final InventoryAvailabilityService inventoryAvailabilityService;
+
+
 
     public InventoryDocumentPostingService(InventoryMovementService inventoryMovementService,
                                            InventoryMovementRepository inventoryMovementRepository,
                                            ItemRepository itemRepository,
                                            GoodsReceiptLineRepository goodsReceiptLineRepository,
                                            DeliveryNoteLineRepository deliveryNoteLineRepository,
-                                           InventoryValuationService inventoryValuationService) {
+                                           InventoryValuationService inventoryValuationService,
+                                           InventoryAvailabilityService inventoryAvailabilityService) {
 
         this.inventoryMovementService = inventoryMovementService;
         this.inventoryMovementRepository = inventoryMovementRepository;
@@ -40,6 +45,7 @@ public class InventoryDocumentPostingService {
         this.goodsReceiptLineRepository = goodsReceiptLineRepository;
         this.deliveryNoteLineRepository = deliveryNoteLineRepository;
         this.inventoryValuationService = inventoryValuationService;
+        this.inventoryAvailabilityService = inventoryAvailabilityService;
     }
 
     public void postSalesDeliveryFromDeliveryNote(Long tenantId, DeliveryNote deliveryNote) {
@@ -69,7 +75,11 @@ public class InventoryDocumentPostingService {
             if (!item.isTrackStock()) {
                 continue;
             }
-
+            inventoryAvailabilityService.validateAvailability(
+                    tenantId,
+                    line.getItemId(),
+                    line.getQuantity()
+            );
             Long idMovement = inventoryMovementService.registerMovement(
                     tenantId,
                     line.getItemId(),

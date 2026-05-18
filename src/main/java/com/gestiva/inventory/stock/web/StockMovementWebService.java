@@ -4,8 +4,11 @@ import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.inventory.item.repository.ItemRepository;
+import com.gestiva.inventory.movement.service.InventoryMovementService;
 import com.gestiva.inventory.stock.entity.StockMovement;
 import com.gestiva.inventory.stock.repository.StockMovementRepository;
+import com.gestiva.inventory.valuation.service.InventoryAvailabilityService;
+import com.gestiva.inventory.valuation.service.InventoryValuationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,11 +22,22 @@ public class StockMovementWebService {
 
     private final ItemRepository itemRepository;
     private final StockMovementRepository stockMovementRepository;
+    private final InventoryAvailabilityService inventoryAvailabilityService;
+    private final InventoryMovementService inventoryMovementService;
+    private final InventoryValuationService inventoryValuationService;
 
     public StockMovementWebService(ItemRepository itemRepository,
-                                   StockMovementRepository stockMovementRepository) {
+                                   StockMovementRepository stockMovementRepository,
+                                   InventoryAvailabilityService inventoryAvailabilityService,
+                                   InventoryMovementService inventoryMovementService,
+                                   InventoryValuationService inventoryValuationService
+                                   ) {
+
         this.itemRepository = itemRepository;
         this.stockMovementRepository = stockMovementRepository;
+        this.inventoryAvailabilityService = inventoryAvailabilityService;
+        this.inventoryMovementService = inventoryMovementService;
+        this.inventoryValuationService = inventoryValuationService;
     }
 
     @Transactional(readOnly = true)
@@ -75,10 +89,22 @@ public class StockMovementWebService {
             throw new BusinessException("Per gli scarichi manuali usare causale MANUAL_UNLOAD.");
         }
 
-        BigDecimal currentBalance = stockMovementRepository.calculateStockBalance(tenantId, itemId);
+        BigDecimal quantity = form.getQuantity();
+        if (quantity == null || quantity.signum() <= 0) {
+            throw new BusinessException("La quantità deve essere maggiore di zero.");
+        }
 
-        if ("OUT".equals(direction) && currentBalance.compareTo(form.getQuantity()) < 0) {
-            throw new BusinessException("Giacenza insufficiente per effettuare lo scarico.");
+        if ("OUT".equals(direction)) {
+            BigDecimal currentBalance = stockMovementRepository.calculateStockBalance(tenantId, itemId);
+            if (currentBalance.compareTo(quantity) < 0) {
+                throw new BusinessException("Giacenza insufficiente per effettuare lo scarico.");
+            }
+
+            inventoryAvailabilityService.validateAvailability(tenantId, itemId, quantity);
+        }
+
+        if ("IN".equals(direction) && (form.getUnitCost() == null || form.getUnitCost().signum() <= 0)) {
+            throw new BusinessException("Per i carichi manuali il costo unitario è obbligatorio.");
         }
 
         StockMovement movement = new StockMovement();
@@ -87,14 +113,32 @@ public class StockMovementWebService {
         movement.setMovementDate(form.getMovementDate());
         movement.setDirection(direction);
         movement.setReasonCode(reasonCode);
-        movement.setQuantity(form.getQuantity());
+        movement.setQuantity(quantity);
         movement.setNotes(form.getNotes());
         movement.setReferenceType("MANUAL");
         movement.setReferenceId(null);
 
-        stockMovementRepository.save(movement);
-    }
+        StockMovement saved = stockMovementRepository.save(movement);
 
+        Long inventoryMovementId = inventoryMovementService.registerMovement(
+                tenantId,
+                itemId,
+                form.getMovementDate(),
+                "IN".equals(direction) ? "IN" : "OUT",
+                "IN".equals(direction) ? "MANUAL_IN" : "MANUAL_OUT",
+                quantity,
+                "IN".equals(direction) ? form.getUnitCost() : null,
+                "MANUAL_MOVEMENT",
+                saved.getId(),
+                form.getNotes()
+        );
+
+        if ("IN".equals(direction)) {
+            inventoryValuationService.applyInboundValuation(tenantId, inventoryMovementId);
+        } else {
+            inventoryValuationService.applyOutboundValuation(tenantId, inventoryMovementId);
+        }
+    }
     private void ensureTrackableProduct(Long tenantId, Long itemId) {
         var item = itemRepository.findByTenantIdAndId(tenantId, itemId)
                 .orElseThrow(() -> new NotFoundException("Articolo non trovato"));

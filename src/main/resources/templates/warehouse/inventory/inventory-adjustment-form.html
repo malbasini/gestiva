@@ -15,12 +15,6 @@
             <div class="card">
                 <div th:replace="~{fragments/layout :: flashMessages}"></div>
 
-                <div class="breadcrumb">
-                    <a th:href="@{/templates/dashboard}">Dashboard</a> /
-                    <a th:href="@{/items}">Articoli</a> /
-                    <span>Rettifica inventario</span>
-                </div>
-
                 <div class="page-header">
                     <div class="page-header-left">
                         <h1 class="page-title">Rettifica inventario</h1>
@@ -71,14 +65,14 @@
                         </div>
                         <div class="form-field">
                             <label for="unitCost">Costo unitario</label>
-                            <input id="unitCost" type="number" step="0.0001" th:field="*{unitCost}"/>
+                            <input id="unitCost" type="number" step="1" th:field="*{unitCost}"/>
                             <div class="field-error" th:if="${#fields.hasErrors('unitCost')}" th:errors="*{unitCost}">
                                 Errore costo unitario
                             </div>
                         </div>
                         <div class="form-field">
                             <label for="quantity">Quantità</label>
-                            <input id="quantity" type="number" step="0.001" th:field="*{quantity}"/>
+                            <input id="quantity" type="number" step="1" th:field="*{quantity}"/>
                             <div class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}">
                                 Errore quantità
                             </div>

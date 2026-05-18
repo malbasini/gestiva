@@ -58,9 +58,20 @@ public class InventoryAdjustmentPageController {
             model.addAttribute("activeMenu", "items");
             return "warehouse/inventory/inventory-adjustment-form";
         }
-        inventoryAdjustmentService.registerAdjustment(tenantId, inventoryAdjustmentForm);
-        Long itemId = inventoryAdjustmentForm.getItemId();
-        redirectAttributes.addFlashAttribute("successMessage", "Rettifica inventario registrata con successo.");
-        return "redirect:/items/" + itemId + "/inventory";
+        Long itemId = 0L;
+        try {
+            inventoryAdjustmentService.registerAdjustment(tenantId, inventoryAdjustmentForm);
+            itemId = inventoryAdjustmentForm.getItemId();
+            redirectAttributes.addFlashAttribute("successMessage", "Rettifica inventario registrata con successo.");
+            return "redirect:/items/" + itemId + "/inventory";
+        }
+        catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            model.addAttribute("itemOptions", itemWebService.findStockManagedOptions(tenantId));
+            model.addAttribute("activeMenu", "items");
+            model.addAttribute("errorMessage", ex.getMessage());
+            return "warehouse/inventory/inventory-adjustment-form";
+
+        }
     }
 }

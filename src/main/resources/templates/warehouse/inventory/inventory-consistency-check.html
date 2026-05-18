@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Controllo coerenza magazzino</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+  <main class="app-main">
+    <div class="page">
+      <div class="card">
+        <div th:replace="~{fragments/layout :: flashMessages}"></div>
+
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title">Controllo coerenza magazzino</h1>
+            <div class="muted">Confronto tra giacenza ledger e giacenza valorizzata</div>
+          </div>
+          <div class="page-header-right">
+            <a class="btn btn-outline-warning" th:href="@{/inventory-valuations/stock-summary}">
+              <i class="bi bi-table"></i>
+              <span>Giacenza valorizzata</span>
+            </a>
+          </div>
+        </div>
+
+        <form method="get" class="list-toolbar">
+          <div class="toolbar-field search-field">
+            <label for="q" class="form-label">Cerca</label>
+            <input id="q"
+                   name="q"
+                   type="text"
+                   class="form-control"
+                   th:value="${q}"
+                   placeholder="Codice o nome articolo..."/>
+          </div>
+
+          <div class="toolbar-field">
+            <label class="form-label">Filtro</label>
+            <div class="checkbox-field" style="min-height:42px;">
+              <input id="onlyDifferences" name="onlyDifferences" type="checkbox" value="true"
+                     th:checked="${onlyDifferences}"/>
+              <label for="onlyDifferences">Solo articoli con differenze</label>
+            </div>
+          </div>
+
+          <div class="toolbar-actions">
+            <button type="submit" class="btn btn-outline-primary">
+              <i class="bi bi-search"></i>
+              <span>Cerca</span>
+            </button>
+
+            <a class="btn btn-outline-secondary" th:href="@{/inventory-valuations/consistency-check}">
+              <i class="bi bi-x-circle"></i>
+              <span>Reset</span>
+            </a>
+          </div>
+        </form>
+
+        <div class="notes" style="margin-top:20px;">
+          <strong>Nota:</strong>
+          la giacenza <strong>ledger</strong> deriva dai movimenti legacy/manuali,
+          mentre la giacenza <strong>layer</strong> deriva dal motore di valorizzazione FIFO/LIFO.
+          Se non coincidono, l'articolo è da verificare.
+        </div>
+
+        <div class="table-wrap" style="margin-top:20px;">
+          <table class="table">
+            <thead>
+            <tr>
+              <th>Articolo</th>
+              <th class="text-right">Giacenza ledger</th>
+              <th class="text-right">Giacenza layer</th>
+              <th class="text-right">Differenza</th>
+              <th>Stato</th>
+              <th class="col-actions">Azioni</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${#lists.isEmpty(rows)}">
+              <td colspan="6" class="muted">Nessun articolo trovato.</td>
+            </tr>
+
+            <tr th:each="row : ${rows}">
+              <td th:text="${row.itemCode + ' - ' + row.itemName}">ART-001 - Demo</td>
+              <td class="text-right" th:text="${row.formattedLedgerQty}">8</td>
+              <td class="text-right" th:text="${row.formattedLayerQty}">8</td>
+              <td class="text-right" th:text="${row.formattedDifferenceQty}">0</td>
+              <td>
+                                <span class="badge"
+                                      th:classappend="${row.aligned} ? ' badge-active' : ' badge-overdue'"
+                                      th:text="${row.statusLabel}">
+                                    OK
+                                </span>
+              </td>
+              <td class="link-actions col-actions">
+                <a th:href="@{/items/{id}/inventory(id=${row.itemId})}">
+                  <i class="bi bi-box-seam"></i>
+                  <span>Scheda</span>
+                </a>
+                <a th:href="@{/items/{id}/valuation(id=${row.itemId})}">
+                  <i class="bi bi-calculator"></i>
+                  <span>Valorizzazione</span>
+                </a>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
+</div>
+</body>
+</html>

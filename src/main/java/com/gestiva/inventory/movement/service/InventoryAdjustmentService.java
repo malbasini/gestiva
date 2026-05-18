@@ -2,6 +2,7 @@ package com.gestiva.inventory.movement.service;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.inventory.movement.web.InventoryAdjustmentForm;
+import com.gestiva.inventory.valuation.service.InventoryAvailabilityService;
 import com.gestiva.inventory.valuation.service.InventoryValuationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,12 +13,15 @@ public class InventoryAdjustmentService {
 
     private final InventoryMovementService inventoryMovementService;
     private final InventoryValuationService inventoryValuationService;
+    private final InventoryAvailabilityService inventoryAvailabilityService;
 
     public InventoryAdjustmentService(InventoryMovementService inventoryMovementService,
-                                      InventoryValuationService inventoryValuationService) {
+                                      InventoryValuationService inventoryValuationService,
+                                      InventoryAvailabilityService inventoryAvailabilityService) {
 
         this.inventoryMovementService = inventoryMovementService;
         this.inventoryValuationService = inventoryValuationService;
+        this.inventoryAvailabilityService = inventoryAvailabilityService;
     }
 
     public Long registerAdjustment(Long tenantId, InventoryAdjustmentForm form) {
@@ -34,6 +38,11 @@ public class InventoryAdjustmentService {
         } else if ("OUT".equalsIgnoreCase(form.getAdjustmentType())) {
             movementType = "ADJUSTMENT_OUT";
             causalCode = "MANUAL_ADJUSTMENT_OUT";
+            inventoryAvailabilityService.validateAvailability(
+                    tenantId,
+                    form.getItemId(),
+                    form.getQuantity()
+            );
         } else {
             throw new BusinessException("Tipo rettifica non valido.");
         }
@@ -45,7 +54,7 @@ public class InventoryAdjustmentService {
                 movementType,
                 causalCode,
                 form.getQuantity(),
-                null,
+                form.getUnitCost(),
                 "MANUAL_INVENTORY",
                 null,
                 form.getNotes()

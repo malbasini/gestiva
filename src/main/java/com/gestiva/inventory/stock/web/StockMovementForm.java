@@ -23,6 +23,8 @@ public class StockMovementForm {
 
     private String notes;
 
+    private BigDecimal unitCost;
+
     public LocalDate getMovementDate() {
         return movementDate;
     }
@@ -61,5 +63,13 @@ public class StockMovementForm {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public BigDecimal getUnitCost() {
+        return unitCost;
+    }
+
+    public void setUnitCost(BigDecimal unitCost) {
+        this.unitCost = unitCost;
     }
 }
