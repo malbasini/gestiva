@@ -65,7 +65,15 @@
                         </ul>
                     </li>
 
-                    <li class="nav-item dropdown" th:classappend="${activeMenu == 'customers' or activeMenu == 'quotes' or activeMenu == 'orders' or activeMenu == 'deliveryNotes' or activeMenu == 'invoices'} ? ' active' : ''">
+                    <li class="nav-item dropdown"
+                        th:classappend="${activeMenu == 'items'
+                     or activeMenu == 'stockMovements'
+                     or activeMenu == 'inventoryAdjustments'
+                     or activeMenu == 'inventoryStockSummary'
+                     or activeMenu == 'inventoryOutboundValuations'
+                     or activeMenu == 'inventoryCogsSummary'
+                     or activeMenu == 'inventoryConsistencyCheck'
+                     or activeMenu == 'inventoryValuationSettings'} ? ' active' : ''">
                         <a class="nav-link dropdown-toggle"
                            href="#"
                            role="button"
@@ -75,6 +83,18 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" th:href="@{/items}">Articoli</a></li>
+                            <li><a class="dropdown-item" th:href="@{/inventory-adjustments/new}">Rettifiche inventario</a></li>
+
+                            <li><hr class="dropdown-divider"></li>
+
+                            <li><a class="dropdown-item" th:href="@{/inventory-valuations/stock-summary}">Giacenza valorizzata</a></li>
+                            <li><a class="dropdown-item" th:href="@{/inventory-valuations/outbound}">Scarichi valorizzati</a></li>
+                            <li><a class="dropdown-item" th:href="@{/inventory-valuations/cogs-summary}">Costo del venduto</a></li>
+                            <li><a class="dropdown-item" th:href="@{/inventory-valuations/consistency-check}">Controllo coerenza</a></li>
+
+                            <li><hr class="dropdown-divider"></li>
+
+                            <li><a class="dropdown-item" th:href="@{/tenant-settings/inventory-valuation}">Metodo valorizzazione</a></li>
                         </ul>
                     </li>
 

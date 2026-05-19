@@ -43,14 +43,6 @@ public class OutboundValuationListWebService {
                 size,
                 Sort.by(Sort.Order.desc("movementDate"), Sort.Order.desc("id"))
         );
-
-        Map<Long, Item> itemsById = itemRepository
-                .findByTenantIdOrderByCodeAsc(tenantId)
-                .stream()
-                .collect(Collectors.toMap(
-                        com.gestiva.inventory.item.entity.Item::getId,
-                        Function.identity()
-                ));
         Specification<InventoryMovement> spec = Specification.where(byTenant(tenantId))
                 .and(byOutboundType())
                 .and(bySearch(q, tenantId))
@@ -58,12 +50,17 @@ public class OutboundValuationListWebService {
                 .and(byDateFrom(dateFrom))
                 .and(byDateTo(dateTo));
 
-        return inventoryMovementRepository.findAll(spec, pageable).map(this::toListItemViewInventory);
+        return inventoryMovementRepository.findAll(spec, pageable).map(this::toListItemView);
     }
 
-    private OutboundValuationListItemView toListItemViewInventory(InventoryMovement movement) {
+    private OutboundValuationListItemView toListItemView(InventoryMovement movement) {
 
         OutboundValuationListItemView v = new OutboundValuationListItemView();
+        Item item = itemRepository.findByTenantIdAndId(movement.getTenantId(), movement.getItemId()).orElse(null);
+        if (item != null) {
+            v.setItemCode(item.getCode());
+            v.setItemName(item.getName());
+        }
         v.setMovementId(movement.getId());
         v.setItemId(movement.getItemId());
         v.setFormattedMovementDate(formatDate(movement.getMovementDate()));
@@ -73,12 +70,6 @@ public class OutboundValuationListWebService {
         v.setFormattedUnitCost(formatCost(movement.getUnitCost()));
         v.setFormattedTotalCost(formatCost(movement.getTotalCost()));
         return v;
-
-
-
-
-
-
     }
 
     private Specification<InventoryMovement> byTenant(Long tenantId) {

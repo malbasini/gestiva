@@ -24,19 +24,6 @@
               <i class="bi bi-box-seam"></i>
               <span>Scheda movimenti</span>
             </a>
-            <a class="btn btn-outline-info" th:href="@{/tenant-settings/inventory-valuation}">
-              <i class="bi bi-gear"></i>
-              <span>Metodo FIFO/LIFO</span>
-            </a>
-
-            <a class="btn btn-outline-warning" th:href="@{/inventory-valuations/outbound}">
-              <i class="bi bi-list-ul"></i>
-              <span>Scarichi valorizzati</span>
-            </a>
-            <a class="btn btn-outline-info" th:href="@{/inventory-valuations/stock-summary}">
-              <i class="bi bi-table"></i>
-              <span>Giacenza valorizzata</span>
-            </a>
             <a class="btn btn-outline-secondary" th:href="@{/items/{id}(id=${valuation.itemId})}">
               <i class="bi bi-arrow-left"></i>
               <span>Torna al dettaglio</span>
