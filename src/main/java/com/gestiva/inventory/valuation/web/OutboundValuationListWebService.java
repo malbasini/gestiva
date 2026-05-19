@@ -1,6 +1,7 @@
 package com.gestiva.inventory.valuation.web;
 
 import com.gestiva.documents.pdf.PdfFormatUtils;
+import com.gestiva.inventory.item.entity.Item;
 import com.gestiva.inventory.item.repository.ItemRepository;
 import com.gestiva.inventory.movement.entity.InventoryMovement;
 import com.gestiva.inventory.valuation.repository.InventoryMovementRepository;
@@ -12,6 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -39,6 +44,13 @@ public class OutboundValuationListWebService {
                 Sort.by(Sort.Order.desc("movementDate"), Sort.Order.desc("id"))
         );
 
+        Map<Long, Item> itemsById = itemRepository
+                .findByTenantIdOrderByCodeAsc(tenantId)
+                .stream()
+                .collect(Collectors.toMap(
+                        com.gestiva.inventory.item.entity.Item::getId,
+                        Function.identity()
+                ));
         Specification<InventoryMovement> spec = Specification.where(byTenant(tenantId))
                 .and(byOutboundType())
                 .and(bySearch(q, tenantId))
@@ -46,7 +58,27 @@ public class OutboundValuationListWebService {
                 .and(byDateFrom(dateFrom))
                 .and(byDateTo(dateTo));
 
-        return inventoryMovementRepository.findAll(spec, pageable).map(this::toListItemView);
+        return inventoryMovementRepository.findAll(spec, pageable).map(this::toListItemViewInventory);
+    }
+
+    private OutboundValuationListItemView toListItemViewInventory(InventoryMovement movement) {
+
+        OutboundValuationListItemView v = new OutboundValuationListItemView();
+        v.setMovementId(movement.getId());
+        v.setItemId(movement.getItemId());
+        v.setFormattedMovementDate(formatDate(movement.getMovementDate()));
+        v.setCausalCode(movement.getCausalCode());
+        v.setReferenceLabel(buildReferenceLabel(movement.getReferenceType(), movement.getReferenceId()));
+        v.setFormattedQuantity(formatQty(movement.getQuantity()));
+        v.setFormattedUnitCost(formatCost(movement.getUnitCost()));
+        v.setFormattedTotalCost(formatCost(movement.getTotalCost()));
+        return v;
+
+
+
+
+
+
     }
 
     private Specification<InventoryMovement> byTenant(Long tenantId) {
@@ -111,8 +143,9 @@ public class OutboundValuationListWebService {
         };
     }
 
-    private OutboundValuationListItemView toListItemView(InventoryMovement movement) {
-        var item = itemRepository.findByTenantIdAndId(movement.getTenantId(), movement.getItemId()).orElse(null);
+    private OutboundValuationListItemView toListItemView(InventoryMovement movement,
+                                                         Map<Long, Item> itemsById) {
+        Item item = itemsById.get(movement.getItemId());
 
         OutboundValuationListItemView v = new OutboundValuationListItemView();
         v.setMovementId(movement.getId());
@@ -127,6 +160,48 @@ public class OutboundValuationListWebService {
         v.setFormattedTotalCost(formatCost(movement.getTotalCost()));
         return v;
     }
+    @Transactional(readOnly = true)
+    public List<OutboundValuationListItemView> findAll(Long tenantId,
+                                                       String q,
+                                                       String causalCode,
+                                                       LocalDate dateFrom,
+                                                       LocalDate dateTo) {
+        Specification<InventoryMovement> spec = Specification.where(byTenant(tenantId))
+                .and(byOutboundType())
+                .and(bySearch(q, tenantId))
+                .and(byCausalCode(causalCode))
+                .and(byDateFrom(dateFrom))
+                .and(byDateTo(dateTo));
+
+        List<InventoryMovement> movements = inventoryMovementRepository.findAll(
+                spec,
+                Sort.by(Sort.Order.desc("movementDate"), Sort.Order.desc("id"))
+        );
+
+        Map<Long, Item> itemsById = itemRepository
+                .findByTenantIdOrderByCodeAsc(tenantId)
+                .stream()
+                .collect(Collectors.toMap(
+                        com.gestiva.inventory.item.entity.Item::getId,
+                        Function.identity()
+                ));
+
+        return movements.stream()
+                .map(movement -> toListItemView(movement, itemsById))
+                .toList();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
     private String buildReferenceLabel(String referenceType, Long referenceId) {
         if (referenceType == null || referenceId == null) {

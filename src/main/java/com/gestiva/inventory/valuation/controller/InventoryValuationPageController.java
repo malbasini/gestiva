@@ -20,6 +20,7 @@ public class InventoryValuationPageController {
     private final ItemWebService itemWebService;
     private final InventoryStockValuationListWebService inventoryStockValuationListWebService;
     private final InventoryConsistencyCheckWebService inventoryConsistencyCheckWebService;
+    private final OutboundValuationCsvExportService outboundValuationCsvExportService;
 
     public InventoryValuationPageController(InventoryConsumptionWebService inventoryConsumptionWebService,
                                             TenantContext tenantContext,
@@ -28,7 +29,8 @@ public class InventoryValuationPageController {
                                             CostOfGoodsSoldSummaryWebService costOfGoodsSoldSummaryWebService,
                                             ItemWebService itemWebService,
                                             InventoryStockValuationListWebService inventoryStockValuationListWebService,
-                                            InventoryConsistencyCheckWebService inventoryConsistencyCheckWebService) {
+                                            InventoryConsistencyCheckWebService inventoryConsistencyCheckWebService,
+                                            OutboundValuationCsvExportService outboundValuationCsvExportService) {
 
         this.inventoryConsumptionWebService = inventoryConsumptionWebService;
         this.tenantContext = tenantContext;
@@ -38,6 +40,7 @@ public class InventoryValuationPageController {
         this.itemWebService = itemWebService;
         this.inventoryStockValuationListWebService=inventoryStockValuationListWebService;
         this.inventoryConsistencyCheckWebService=inventoryConsistencyCheckWebService;
+        this.outboundValuationCsvExportService=outboundValuationCsvExportService;
     }
 
     @GetMapping("/movements/{movementId}")
@@ -137,5 +140,26 @@ public class InventoryValuationPageController {
         }
     }
 
+    @GetMapping("/outbound/export.csv")
+    public org.springframework.http.ResponseEntity<byte[]> exportOutboundValuationsCsv(
+            @RequestParam(name = "q", required = false) String q,
+            @RequestParam(name = "causalCode", required = false) String causalCode,
+            @RequestParam(name = "dateFrom", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dateFrom,
+            @RequestParam(name = "dateTo", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dateTo) {
 
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        var rows = outboundValuationListWebService.findAll(tenantId, q, causalCode, dateFrom, dateTo);
+        byte[] content = outboundValuationCsvExportService.export(rows);
+
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=scarichi_valorizzati.csv")
+                .contentType(new org.springframework.http.MediaType("text", "csv"))
+                .body(content);
+    }
 }
