@@ -1,11 +1,14 @@
 package com.gestiva.inventory.valuation.web;
 
+import com.gestiva.common.exception.BusinessException;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.inventory.item.entity.Item;
 import com.gestiva.inventory.item.repository.ItemRepository;
-import com.gestiva.inventory.stock.repository.StockMovementRepository;
+import com.gestiva.inventory.valuation.repository.InventoryMovementRepository;
 import com.gestiva.inventory.valuation.entity.InventoryLayer;
+import com.gestiva.inventory.valuation.repository.InventoryAverageBalanceRepository;
 import com.gestiva.inventory.valuation.repository.InventoryLayerRepository;
+import com.gestiva.security.tenant.repository.TenantRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,19 +24,32 @@ import java.util.Locale;
 public class InventoryConsistencyCheckWebService {
 
     private final ItemRepository itemRepository;
-    private final StockMovementRepository stockMovementRepository;
+    private final InventoryMovementRepository inventoryMovementRepository;
     private final InventoryLayerRepository inventoryLayerRepository;
+    private final TenantRepository tenantRepository;
+    private final InventoryAverageBalanceRepository inventoryAverageBalanceRepository;
 
     public InventoryConsistencyCheckWebService(ItemRepository itemRepository,
-                                               StockMovementRepository stockMovementRepository,
-                                               InventoryLayerRepository inventoryLayerRepository) {
+                                               InventoryMovementRepository inventoryMovementRepository,
+                                               InventoryLayerRepository inventoryLayerRepository,
+                                               TenantRepository tenantRepository,
+                                               InventoryAverageBalanceRepository inventoryAverageBalanceRepository) {
         this.itemRepository = itemRepository;
-        this.stockMovementRepository = stockMovementRepository;
+        this.inventoryMovementRepository = inventoryMovementRepository;
         this.inventoryLayerRepository = inventoryLayerRepository;
+        this.tenantRepository = tenantRepository;
+        this.inventoryAverageBalanceRepository = inventoryAverageBalanceRepository;
     }
 
     public List<InventoryConsistencyCheckItemView> findAll(Long tenantId, String q, Boolean onlyDifferences) {
         String search = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
+
+        var tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new BusinessException("Tenant non trovato."));
+
+        String method = tenant.getInventoryValuationMethod() != null
+                ? String.valueOf(tenant.getInventoryValuationMethod()).trim().toUpperCase(Locale.ROOT)
+                : "FIFO";
 
         List<Item> items = itemRepository.findByTenantIdOrderByCodeAsc(tenantId).stream()
                 .filter(Item::isTrackStock)
@@ -45,16 +61,25 @@ public class InventoryConsistencyCheckWebService {
         List<InventoryConsistencyCheckItemView> result = new ArrayList<>();
 
         for (Item item : items) {
-            BigDecimal ledgerQty = qty(stockMovementRepository.calculateStockBalance(tenantId, item.getId()));
+            BigDecimal ledgerQty = qty(
+                    inventoryMovementRepository.calculateInventoryBalance(tenantId, item.getId())
+            );
 
-            BigDecimal layerQty = inventoryLayerRepository
-                    .findByTenantIdAndItemIdAndClosedFalseOrderByLayerDateAscIdAsc(tenantId, item.getId())
-                    .stream()
-                    .map(InventoryLayer::getRemainingQty)
-                    .map(this::qty)
-                    .reduce(zeroQty(), BigDecimal::add);
+            BigDecimal valuationQty;
+            if ("AVERAGE".equals(method)) {
+                valuationQty = inventoryAverageBalanceRepository.findByTenantIdAndItemId(tenantId, item.getId())
+                        .map(balance -> qty(balance.getCurrentQty()))
+                        .orElse(zeroQty());
+            } else {
+                valuationQty = inventoryLayerRepository
+                        .findByTenantIdAndItemIdAndClosedFalseOrderByLayerDateAscIdAsc(tenantId, item.getId())
+                        .stream()
+                        .map(InventoryLayer::getRemainingQty)
+                        .map(this::qty)
+                        .reduce(zeroQty(), BigDecimal::add);
+            }
 
-            BigDecimal difference = qty(ledgerQty.subtract(layerQty));
+            BigDecimal difference = qty(ledgerQty.subtract(valuationQty));
             boolean aligned = difference.compareTo(zeroQty()) == 0;
 
             if (Boolean.TRUE.equals(onlyDifferences) && aligned) {
@@ -66,7 +91,7 @@ public class InventoryConsistencyCheckWebService {
             row.setItemCode(item.getCode());
             row.setItemName(item.getName());
             row.setFormattedLedgerQty(formatQty(ledgerQty));
-            row.setFormattedLayerQty(formatQty(layerQty));
+            row.setFormattedLayerQty(formatQty(valuationQty));
             row.setFormattedDifferenceQty(formatQty(difference));
             row.setAligned(aligned);
             row.setStatusLabel(aligned ? "OK" : "DA VERIFICARE");
@@ -74,8 +99,10 @@ public class InventoryConsistencyCheckWebService {
             result.add(row);
         }
 
-        result.sort(Comparator.comparing(InventoryConsistencyCheckItemView::getItemCode,
-                Comparator.nullsLast(String::compareTo)));
+        result.sort(Comparator.comparing(
+                InventoryConsistencyCheckItemView::getItemCode,
+                Comparator.nullsLast(String::compareTo)
+        ));
 
         return result;
     }

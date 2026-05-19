@@ -1,5 +1,6 @@
 package com.gestiva.inventory.movement.web;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,19 +54,19 @@ public class ItemInventoryLedgerView {
         this.stockManaged = stockManaged;
     }
 
-    public String getFormattedCurrentStock() {
-        return formattedCurrentStock;
-    }
-
-    public void setFormattedCurrentStock(String formattedCurrentStock) {
-        this.formattedCurrentStock = formattedCurrentStock;
-    }
-
     public List<ItemInventoryLedgerLineView> getLines() {
         return lines;
     }
 
     public void setLines(List<ItemInventoryLedgerLineView> lines) {
         this.lines = lines;
+    }
+
+    public String getFormattedCurrentStock() {
+        return formattedCurrentStock;
+    }
+
+    public void setFormattedCurrentStock(String formattedCurrentStock) {
+        this.formattedCurrentStock = formattedCurrentStock;
     }
 }

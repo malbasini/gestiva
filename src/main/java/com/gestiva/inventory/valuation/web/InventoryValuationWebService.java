@@ -3,6 +3,7 @@ package com.gestiva.inventory.valuation.web;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.inventory.item.repository.ItemRepository;
+import com.gestiva.inventory.valuation.repository.InventoryAverageBalanceRepository;
 import com.gestiva.inventory.valuation.repository.InventoryLayerRepository;
 import com.gestiva.security.tenant.repository.TenantRepository;
 import org.springframework.stereotype.Service;
@@ -18,13 +19,17 @@ public class InventoryValuationWebService {
     private final ItemRepository itemRepository;
     private final TenantRepository tenantRepository;
     private final InventoryLayerRepository inventoryLayerRepository;
+    private final InventoryAverageBalanceRepository inventoryAverageBalanceRepository;
 
     public InventoryValuationWebService(ItemRepository itemRepository,
                                         TenantRepository tenantRepository,
-                                        InventoryLayerRepository inventoryLayerRepository) {
+                                        InventoryLayerRepository inventoryLayerRepository,
+                                        InventoryAverageBalanceRepository inventoryAverageBalanceRepository) {
+
         this.itemRepository = itemRepository;
         this.tenantRepository = tenantRepository;
         this.inventoryLayerRepository = inventoryLayerRepository;
+        this.inventoryAverageBalanceRepository = inventoryAverageBalanceRepository;
     }
 
     public ItemInventoryValuationView getItemValuation(Long tenantId, Long itemId) {
@@ -38,17 +43,38 @@ public class InventoryValuationWebService {
         var tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new BusinessException("Tenant non trovato"));
 
-        var openLayers = inventoryLayerRepository
-                .findByTenantIdAndItemIdAndClosedFalseOrderByLayerDateAscIdAsc(tenantId, itemId);
-
-        BigDecimal totalQty = zeroQty();
-        BigDecimal totalValue = zeroCost();
+        String method = tenant.getInventoryValuationMethod() != null
+                ? String.valueOf(tenant.getInventoryValuationMethod()).trim().toUpperCase()
+                : "FIFO";
 
         ItemInventoryValuationView view = new ItemInventoryValuationView();
         view.setItemId(item.getId());
         view.setItemCode(item.getCode());
         view.setItemName(item.getName());
-        view.setValuationMethod(String.valueOf(tenant.getInventoryValuationMethod()));
+        view.setValuationMethod(method);
+
+        if ("AVERAGE".equals(method)) {
+            var balance = inventoryAverageBalanceRepository.findByTenantIdAndItemId(tenantId, itemId).orElse(null);
+
+            BigDecimal currentQty = balance != null ? qty(balance.getCurrentQty()) : zeroQty();
+            BigDecimal currentTotalValue = balance != null ? cost(balance.getCurrentTotalValue()) : zeroCost();
+            BigDecimal currentAvgUnitCost = balance != null ? cost(balance.getCurrentAvgUnitCost()) : zeroCost();
+
+            view.setAverageMethod(true);
+            view.setAverageMethodNote("Per il metodo AVERAGE la valorizzazione è basata sul saldo medio corrente dell'articolo.");
+            view.setFormattedCurrentQty(formatQty(currentQty));
+            view.setFormattedInventoryValue(formatCost(currentTotalValue));
+            view.setFormattedAverageResidualCost(formatCost(currentAvgUnitCost));
+            view.setLayers(java.util.List.of());
+
+            return view;
+        }
+
+        var openLayers = inventoryLayerRepository
+                .findByTenantIdAndItemIdAndClosedFalseOrderByLayerDateAscIdAsc(tenantId, itemId);
+
+        BigDecimal totalQty = zeroQty();
+        BigDecimal totalValue = zeroCost();
 
         for (var layer : openLayers) {
             BigDecimal remainingQty = qty(layer.getRemainingQty());
@@ -74,21 +100,13 @@ public class InventoryValuationWebService {
                 ? cost(totalValue.divide(totalQty, 4, RoundingMode.HALF_UP))
                 : zeroCost();
 
+        view.setAverageMethod(false);
         view.setFormattedCurrentQty(formatQty(totalQty));
         view.setFormattedInventoryValue(formatCost(totalValue));
         view.setFormattedAverageResidualCost(formatCost(averageResidualCost));
 
         return view;
     }
-
-    private BigDecimal zeroQty() {
-        return BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP);
-    }
-
-    private BigDecimal zeroCost() {
-        return BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP);
-    }
-
     private BigDecimal qty(BigDecimal value) {
         return value == null
                 ? BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP)
@@ -101,10 +119,16 @@ public class InventoryValuationWebService {
                 : value.setScale(4, RoundingMode.HALF_UP);
     }
 
+    private BigDecimal zeroQty() {
+        return BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal zeroCost() {
+        return BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP);
+    }
+
     private String formatQty(BigDecimal value) {
-        return value == null
-                ? "0"
-                : value.setScale(0, RoundingMode.HALF_UP).toPlainString();
+        return PdfFormatUtils.formatDecimal(value == null ? BigDecimal.ZERO : value, 0);
     }
 
     private String formatCost(BigDecimal value) {

@@ -61,7 +61,7 @@
           </div>
         </div>
 
-        <div class="table-wrap" style="margin-top:20px;">
+        <div class="table-wrap" style="margin-top:20px;" th:if="${!valuation.averageMethod}">
           <table class="table">
             <thead>
             <tr>
@@ -83,15 +83,25 @@
               <td th:text="${layer.layerId}">1</td>
               <td th:text="${layer.formattedLayerDate}">16/05/2026</td>
               <td th:text="${layer.sourceMovementId}">100</td>
-              <td class="text-right" th:text="${layer.formattedOriginalQty}">11.000</td>
-              <td class="text-right" th:text="${layer.formattedRemainingQty}">9.000</td>
-              <td class="text-right" th:text="${layer.formattedUnitCost}">9.5000</td>
-              <td class="text-right" th:text="${layer.formattedResidualValue}">85.5000</td>
+              <td class="text-right" th:text="${layer.formattedOriginalQty}">11</td>
+              <td class="text-right" th:text="${layer.formattedRemainingQty}">9</td>
+              <td class="text-right" th:text="${layer.formattedUnitCost}">9,50</td>
+              <td class="text-right" th:text="${layer.formattedResidualValue}">85,50</td>
             </tr>
             </tbody>
           </table>
         </div>
-
+        <div class="notes" style="margin-top:20px;" th:if="${valuation.averageMethod}">
+          <strong>Nota:</strong>
+          <span th:text="${valuation.averageMethodNote}">
+        Per il metodo AVERAGE la valorizzazione è basata sul saldo medio corrente dell'articolo.
+        </span>
+        </div>
+        <div class="notes" style="margin-top:20px;" th:if="${valuation.averageMethod}">
+          <strong>Valorizzazione AVERAGE:</strong>
+          la giacenza residua dell'articolo è valorizzata al costo medio corrente.
+          Non sono presenti layer aperti come nei metodi FIFO/LIFO.
+        </div>
       </div>
     </div>
   </main>

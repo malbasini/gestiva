@@ -13,6 +13,9 @@ public class ItemInventoryValuationView {
     private String formattedInventoryValue;
     private String formattedAverageResidualCost;
     private List<InventoryLayerLineView> layers = new ArrayList<>();
+    private boolean averageMethod;
+    private String averageMethodNote;
+
 
     public Long getItemId() {
         return itemId;
@@ -76,5 +79,21 @@ public class ItemInventoryValuationView {
 
     public void setLayers(List<InventoryLayerLineView> layers) {
         this.layers = layers;
+    }
+
+    public boolean isAverageMethod() {
+        return averageMethod;
+    }
+
+    public void setAverageMethod(boolean averageMethod) {
+        this.averageMethod = averageMethod;
+    }
+
+    public String getAverageMethodNote() {
+        return averageMethodNote;
+    }
+
+    public void setAverageMethodNote(String averageMethodNote) {
+        this.averageMethodNote = averageMethodNote;
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,4 +54,22 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
             @Param("dateFrom") java.time.LocalDate dateFrom,
             @Param("dateTo") java.time.LocalDate dateTo
     );
+    @Query("""
+       select coalesce(
+           sum(
+               case
+                   when upper(m.movementType) in ('IN', 'ADJUSTMENT_IN') then m.quantity
+                   when upper(m.movementType) in ('OUT', 'ADJUSTMENT_OUT') then -m.quantity
+                   else 0
+               end
+           ), 0
+       )
+       from InventoryMovement m
+       where m.tenantId = :tenantId
+         and m.itemId = :itemId
+       """)
+    BigDecimal calculateInventoryBalance(@Param("tenantId") Long tenantId,
+                                         @Param("itemId") Long itemId);
+
+
 }

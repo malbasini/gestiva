@@ -63,8 +63,9 @@
 
         <div class="notes" style="margin-top:20px;">
           <strong>Nota:</strong>
-          la giacenza <strong>ledger</strong> deriva dai movimenti legacy/manuali,
-          mentre la giacenza <strong>layer</strong> deriva dal motore di valorizzazione FIFO/LIFO.
+          la giacenza <strong>ledger</strong> deriva dal nuovo motore movimenti di magazzino,
+          mentre la giacenza <strong>valorizzata</strong> deriva dal motore di valorizzazione attivo:
+          <strong>layer</strong> per FIFO/LIFO, <strong>saldo medio</strong> per AVERAGE.
           Se non coincidono, l'articolo è da verificare.
         </div>
 
@@ -74,7 +75,7 @@
             <tr>
               <th>Articolo</th>
               <th class="text-right">Giacenza ledger</th>
-              <th class="text-right">Giacenza layer</th>
+              <th class="text-right">Giacenza valorizzata</th>
               <th class="text-right">Differenza</th>
               <th>Stato</th>
               <th class="col-actions">Azioni</th>
@@ -91,11 +92,11 @@
               <td class="text-right" th:text="${row.formattedLayerQty}">8</td>
               <td class="text-right" th:text="${row.formattedDifferenceQty}">0</td>
               <td>
-                                <span class="badge"
-                                      th:classappend="${row.aligned} ? ' badge-active' : ' badge-overdue'"
-                                      th:text="${row.statusLabel}">
-                                    OK
-                                </span>
+                <span class="badge"
+                      th:classappend="${row.aligned} ? ' badge-active' : ' badge-overdue'"
+                      th:text="${row.statusLabel}">
+                    OK
+                </span>
               </td>
               <td class="link-actions col-actions">
                 <a th:href="@{/items/{id}/inventory(id=${row.itemId})}">
@@ -111,7 +112,6 @@
             </tbody>
           </table>
         </div>
-
       </div>
     </div>
   </main>

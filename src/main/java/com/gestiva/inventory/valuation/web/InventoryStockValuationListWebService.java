@@ -1,10 +1,13 @@
 package com.gestiva.inventory.valuation.web;
 
+import com.gestiva.common.exception.BusinessException;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.inventory.item.entity.Item;
 import com.gestiva.inventory.item.repository.ItemRepository;
 import com.gestiva.inventory.valuation.entity.InventoryLayer;
+import com.gestiva.inventory.valuation.repository.InventoryAverageBalanceRepository;
 import com.gestiva.inventory.valuation.repository.InventoryLayerRepository;
+import com.gestiva.security.tenant.repository.TenantRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,17 +17,26 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
+
 @Service
 @Transactional(readOnly = true)
 public class InventoryStockValuationListWebService {
 
     private final ItemRepository itemRepository;
     private final InventoryLayerRepository inventoryLayerRepository;
+    private final TenantRepository tenantRepository;
+    private final InventoryAverageBalanceRepository inventoryAverageBalanceRepository;
+
 
     public InventoryStockValuationListWebService(ItemRepository itemRepository,
-                                                 InventoryLayerRepository inventoryLayerRepository) {
+                                                 InventoryLayerRepository inventoryLayerRepository,
+                                                 TenantRepository tenantRepository,
+                                                 InventoryAverageBalanceRepository inventoryAverageBalanceRepository) {
         this.itemRepository = itemRepository;
         this.inventoryLayerRepository = inventoryLayerRepository;
+        this.tenantRepository = tenantRepository;
+        this.inventoryAverageBalanceRepository = inventoryAverageBalanceRepository;
     }
 
     public List<InventoryStockValuationListItemView> findAll(Long tenantId, String q) {
@@ -32,22 +44,64 @@ public class InventoryStockValuationListWebService {
                 .filter(Item::isTrackStock)
                 .toList();
 
+        var tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new BusinessException("Tenant non trovato."));
+
+        String method = tenant.getInventoryValuationMethod() != null
+                ? String.valueOf(tenant.getInventoryValuationMethod()).trim().toUpperCase()
+                : "FIFO";
+
+        String search = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
+
+        List<InventoryStockValuationListItemView> result = new ArrayList<>();
+
+        if ("AVERAGE".equals(method)) {
+            for (Item item : items) {
+                boolean matches = search.isBlank()
+                        || containsIgnoreCase(item.getCode(), search)
+                        || containsIgnoreCase(item.getName(), search);
+
+                if (!matches) {
+                    continue;
+                }
+
+                var balance = inventoryAverageBalanceRepository.findByTenantIdAndItemId(tenantId, item.getId()).orElse(null);
+
+                BigDecimal currentQty = balance != null ? qty(balance.getCurrentQty()) : zeroQty();
+                BigDecimal currentTotalValue = balance != null ? cost(balance.getCurrentTotalValue()) : zeroCost();
+                BigDecimal currentAvgUnitCost = balance != null ? cost(balance.getCurrentAvgUnitCost()) : zeroCost();
+
+                InventoryStockValuationListItemView row = new InventoryStockValuationListItemView();
+                row.setItemId(item.getId());
+                row.setItemCode(item.getCode());
+                row.setItemName(item.getName());
+                row.setFormattedCurrentQty(formatQty(currentQty));
+                row.setFormattedInventoryValue(formatCost(currentTotalValue));
+                row.setFormattedAverageResidualCost(formatCost(currentAvgUnitCost));
+                row.setOpenLayerCount(0);
+
+                result.add(row);
+            }
+
+            result.sort(Comparator.comparing(
+                    InventoryStockValuationListItemView::getItemCode,
+                    Comparator.nullsLast(String::compareTo)
+            ));
+            return result;
+        }
+
         Map<Long, List<InventoryLayer>> layersByItemId = inventoryLayerRepository
                 .findByTenantIdAndClosedFalseOrderByItemIdAscLayerDateAscIdAsc(tenantId)
                 .stream()
                 .collect(Collectors.groupingBy(InventoryLayer::getItemId, LinkedHashMap::new, Collectors.toList()));
 
-        String search = q == null ? null : q.trim().toLowerCase();
-
-        List<InventoryStockValuationListItemView> result = new ArrayList<>();
-
         for (Item item : items) {
-            if (search != null && !search.isBlank()) {
-                boolean matches = (item.getCode() != null && item.getCode().toLowerCase().contains(search))
-                        || (item.getName() != null && item.getName().toLowerCase().contains(search));
-                if (!matches) {
-                    continue;
-                }
+            boolean matches = search.isBlank()
+                    || containsIgnoreCase(item.getCode(), search)
+                    || containsIgnoreCase(item.getName(), search);
+
+            if (!matches) {
+                continue;
             }
 
             List<InventoryLayer> layers = layersByItemId.getOrDefault(item.getId(), List.of());
@@ -80,8 +134,14 @@ public class InventoryStockValuationListWebService {
             result.add(row);
         }
 
-        result.sort(Comparator.comparing(InventoryStockValuationListItemView::getItemCode, Comparator.nullsLast(String::compareTo)));
+        result.sort(Comparator.comparing(
+                InventoryStockValuationListItemView::getItemCode,
+                Comparator.nullsLast(String::compareTo)
+        ));
         return result;
+    }
+    private boolean containsIgnoreCase(String value, String search) {
+        return value != null && value.toLowerCase(Locale.ROOT).contains(search);
     }
 
     private BigDecimal qty(BigDecimal value) {
@@ -105,11 +165,10 @@ public class InventoryStockValuationListWebService {
     }
 
     private String formatQty(BigDecimal value) {
-        return value == null
-                ? "0"
-                : value.setScale(0, RoundingMode.HALF_UP).toPlainString();
+        return PdfFormatUtils.formatDecimal(value == null ? BigDecimal.ZERO : value, 0);
     }
+
     private String formatCost(BigDecimal value) {
-        return PdfFormatUtils.formatDecimal(value, 2);
+        return PdfFormatUtils.formatDecimal(value == null ? BigDecimal.ZERO : value, 2);
     }
 }

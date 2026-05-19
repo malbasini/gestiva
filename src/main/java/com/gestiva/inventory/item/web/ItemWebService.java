@@ -6,6 +6,7 @@ import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.inventory.item.entity.Item;
 import com.gestiva.inventory.item.repository.ItemRepository;
 import com.gestiva.inventory.stock.repository.StockMovementRepository;
+import com.gestiva.inventory.valuation.repository.InventoryMovementRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -14,6 +15,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
 
@@ -23,11 +25,14 @@ public class ItemWebService {
 
     private final ItemRepository itemRepository;
     private final StockMovementRepository stockMovementRepository;
+    private final InventoryMovementRepository inventoryMovementRepository;
 
     public ItemWebService(ItemRepository itemRepository,
-                          StockMovementRepository stockMovementRepository) {
+                          StockMovementRepository stockMovementRepository,
+                          InventoryMovementRepository inventoryMovementRepository) {
         this.itemRepository = itemRepository;
         this.stockMovementRepository = stockMovementRepository;
+        this.inventoryMovementRepository = inventoryMovementRepository;
     }
 
     @Transactional(readOnly = true)
@@ -151,8 +156,10 @@ public class ItemWebService {
         v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatMoney(item.getBasePrice()) : "-");
         v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimalTrimmed(item.getDefaultTaxPct(),2) + "%" : "-");
         if (item.isTrackStock()) {
-            var balance = stockMovementRepository.calculateStockBalance(item.getTenantId(), item.getId());
-            v.setFormattedStockBalance(PdfFormatUtils.formatDecimalTrimmed(balance,2));
+            var currentStock = inventoryMovementRepository.calculateInventoryBalance(item.getTenantId(), item.getId());
+            v.setFormattedStockBalance(
+                    PdfFormatUtils.formatDecimal(currentStock == null ? BigDecimal.ZERO : currentStock, 0)
+            );
         } else {
             v.setFormattedStockBalance("-");
         }
