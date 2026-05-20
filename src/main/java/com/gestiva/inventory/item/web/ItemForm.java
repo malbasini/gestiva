@@ -1,7 +1,7 @@
 package com.gestiva.inventory.item.web;
 
-import jakarta.validation.constraints.*;
-import java.math.BigDecimal;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public class ItemForm {
 
@@ -17,7 +17,7 @@ public class ItemForm {
     private String description;
 
     @NotBlank(message = "Il tipo articolo è obbligatorio")
-    private String itemType; // PRODUCT, SERVICE
+    private String itemType;
 
     @NotBlank(message = "L'unità di misura è obbligatoria")
     @Size(max = 20, message = "L'unità di misura non può superare 20 caratteri")
@@ -27,12 +27,11 @@ public class ItemForm {
 
     private boolean trackStock = true;
 
-    @DecimalMin(value = "0.00", inclusive = true, message = "Il prezzo base non può essere negativo")
-    private BigDecimal basePrice;
+    @NotBlank(message = "Il prezzo base è obbligatorio")
+    private String basePrice;
 
-    @DecimalMin(value = "0.00", inclusive = true, message = "L'IVA non può essere negativa")
-    @DecimalMax(value = "100.00", inclusive = true, message = "L'IVA non può superare 100")
-    private BigDecimal defaultTaxPct;
+    @NotBlank(message = "L'IVA è obbligatoria")
+    private String defaultTaxPct;
 
     public String getCode() {
         return code;
@@ -40,53 +39,69 @@ public class ItemForm {
 
     public void setCode(String code) {
         this.code = code;
-    }    public String getName() {
+    }
+
+    public String getName() {
         return name;
     }
 
     public void setName(String name) {
         this.name = name;
-    }    public String getDescription() {
+    }
+
+    public String getDescription() {
         return description;
     }
 
     public void setDescription(String description) {
         this.description = description;
-    }    public String getItemType() {
+    }
+
+    public String getItemType() {
         return itemType;
     }
 
     public void setItemType(String itemType) {
         this.itemType = itemType;
-    }    public String getUnitOfMeasure() {
+    }
+
+    public String getUnitOfMeasure() {
         return unitOfMeasure;
     }
 
     public void setUnitOfMeasure(String unitOfMeasure) {
         this.unitOfMeasure = unitOfMeasure;
-    }    public boolean isActive() {
+    }
+
+    public boolean isActive() {
         return active;
     }
 
     public void setActive(boolean active) {
         this.active = active;
-    }    public boolean isTrackStock() {
+    }
+
+    public boolean isTrackStock() {
         return trackStock;
     }
 
     public void setTrackStock(boolean trackStock) {
         this.trackStock = trackStock;
-    }    public BigDecimal getBasePrice() {
+    }
+
+    public String getBasePrice() {
         return basePrice;
     }
 
-    public void setBasePrice(BigDecimal basePrice) {
+    public void setBasePrice(String basePrice) {
         this.basePrice = basePrice;
-    }    public BigDecimal getDefaultTaxPct() {
+    }
+
+    public String getDefaultTaxPct() {
         return defaultTaxPct;
     }
 
-    public void setDefaultTaxPct(BigDecimal defaultTaxPct) {
+    public void setDefaultTaxPct(String defaultTaxPct) {
         this.defaultTaxPct = defaultTaxPct;
     }
 }

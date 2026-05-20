@@ -21,6 +21,10 @@ public class InventoryValuationPageController {
     private final InventoryStockValuationListWebService inventoryStockValuationListWebService;
     private final InventoryConsistencyCheckWebService inventoryConsistencyCheckWebService;
     private final OutboundValuationCsvExportService outboundValuationCsvExportService;
+    private final CostOfGoodsSoldSummaryCsvExportService costOfGoodsSoldSummaryCsvExportService;
+    private final InventoryStockValuationCsvExportService inventoryStockValuationCsvExportService;
+    private final InventoryConsistencyCheckCsvExportService inventoryConsistencyCheckCsvExportService;
+
 
     public InventoryValuationPageController(InventoryConsumptionWebService inventoryConsumptionWebService,
                                             TenantContext tenantContext,
@@ -30,7 +34,10 @@ public class InventoryValuationPageController {
                                             ItemWebService itemWebService,
                                             InventoryStockValuationListWebService inventoryStockValuationListWebService,
                                             InventoryConsistencyCheckWebService inventoryConsistencyCheckWebService,
-                                            OutboundValuationCsvExportService outboundValuationCsvExportService) {
+                                            OutboundValuationCsvExportService outboundValuationCsvExportService,
+                                            CostOfGoodsSoldSummaryCsvExportService costOfGoodsSoldSummaryCsvExportService,
+                                            InventoryStockValuationCsvExportService inventoryStockValuationCsvExportService,
+                                            InventoryConsistencyCheckCsvExportService inventoryConsistencyCheckCsvExportService) {
 
         this.inventoryConsumptionWebService = inventoryConsumptionWebService;
         this.tenantContext = tenantContext;
@@ -41,6 +48,9 @@ public class InventoryValuationPageController {
         this.inventoryStockValuationListWebService=inventoryStockValuationListWebService;
         this.inventoryConsistencyCheckWebService=inventoryConsistencyCheckWebService;
         this.outboundValuationCsvExportService=outboundValuationCsvExportService;
+        this.costOfGoodsSoldSummaryCsvExportService=costOfGoodsSoldSummaryCsvExportService;
+        this.inventoryStockValuationCsvExportService=inventoryStockValuationCsvExportService;
+        this.inventoryConsistencyCheckCsvExportService=inventoryConsistencyCheckCsvExportService;
     }
 
     @GetMapping("/movements/{movementId}")
@@ -84,7 +94,42 @@ public class InventoryValuationPageController {
 
         return "warehouse/inventory/inventory-outbound-valuations";
     }
+    @GetMapping("/stock-summary/export.csv")
+    public org.springframework.http.ResponseEntity<byte[]> exportStockSummaryCsv(
+            @RequestParam(name = "q", required = false) String q) {
 
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        var rows = inventoryStockValuationListWebService.findAll(tenantId, q);
+        byte[] content = inventoryStockValuationCsvExportService.export(rows);
+
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=giacenza_valorizzata.csv")
+                .contentType(new org.springframework.http.MediaType("text", "csv"))
+                .body(content);
+    }
+    @GetMapping("/cogs-summary/export.csv")
+    public org.springframework.http.ResponseEntity<byte[]> exportCostOfGoodsSoldSummaryCsv(
+            @RequestParam(name = "itemId", required = false) Long itemId,
+            @RequestParam(name = "dateFrom", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dateFrom,
+            @RequestParam(name = "dateTo", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dateTo) {
+
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        var rows = costOfGoodsSoldSummaryWebService.summarize(tenantId, itemId, dateFrom, dateTo);
+        byte[] content = costOfGoodsSoldSummaryCsvExportService.export(rows);
+
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=riepilogo_costo_del_venduto.csv")
+                .contentType(new org.springframework.http.MediaType("text", "csv"))
+                .body(content);
+    }
     @GetMapping("/cogs-summary")
     public String costOfGoodsSoldSummary(@RequestParam(name = "itemId", required = false) Long itemId,
                                          @RequestParam(name = "dateFrom", required = false)
@@ -139,7 +184,22 @@ public class InventoryValuationPageController {
             return "warehouse/inventory/inventory-consistency-check";
         }
     }
+    @GetMapping("/consistency-check/export.csv")
+    public org.springframework.http.ResponseEntity<byte[]> exportConsistencyCheckCsv(
+            @RequestParam(name = "q", required = false) String q,
+            @RequestParam(name = "onlyDifferences", required = false) Boolean onlyDifferences) {
 
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        var rows = inventoryConsistencyCheckWebService.findAll(tenantId, q, onlyDifferences);
+        byte[] content = inventoryConsistencyCheckCsvExportService.export(rows);
+
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=controllo_coerenza_magazzino.csv")
+                .contentType(new org.springframework.http.MediaType("text", "csv"))
+                .body(content);
+    }
     @GetMapping("/outbound/export.csv")
     public org.springframework.http.ResponseEntity<byte[]> exportOutboundValuationsCsv(
             @RequestParam(name = "q", required = false) String q,

@@ -1,7 +1,6 @@
 package com.gestiva.inventory.item.entity;
 
 import com.gestiva.common.model.TenantAwareEntity;
-import com.gestiva.documents.pdf.PdfFormatUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;

@@ -1,11 +1,10 @@
 package com.gestiva.inventory.movement.web;
 
-import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class InventoryAdjustmentForm {
@@ -13,29 +12,26 @@ public class InventoryAdjustmentForm {
     @NotNull(message = "Seleziona un articolo.")
     private Long itemId;
 
-    @NotNull(message = "Seleziona il tipo rettifica.")
-    private String adjustmentType; // IN, OUT
+    @NotBlank(message = "Seleziona il tipo rettifica.")
+    private String adjustmentType;
 
     @NotNull(message = "Inserisci la data movimento.")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate movementDate;
 
-    @NotNull(message = "Inserisci la quantità.")
-    @DecimalMin(value = "0.001", message = "La quantità deve essere maggiore di zero.")
-    private BigDecimal quantity;
+    @NotBlank(message = "Inserisci la quantità.")
+    private String quantity;
 
     @Size(max = 1000, message = "Le note non possono superare 1000 caratteri.")
     private String notes;
 
-    @NotNull(message = "Inserisci il costo unitario.")
-    @DecimalMin(value = "0.0001", message = "Il costo unitario deve essere maggiore di zero.")
-    private BigDecimal unitCost;
+    private String unitCost;
 
-    public BigDecimal getUnitCost() {
+    public String getUnitCost() {
         return unitCost;
     }
 
-    public void setUnitCost(BigDecimal unitCost) {
+    public void setUnitCost(String unitCost) {
         this.unitCost = unitCost;
     }
 
@@ -63,11 +59,11 @@ public class InventoryAdjustmentForm {
         this.movementDate = movementDate;
     }
 
-    public BigDecimal getQuantity() {
+    public String getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(BigDecimal quantity) {
+    public void setQuantity(String quantity) {
         this.quantity = quantity;
     }
 

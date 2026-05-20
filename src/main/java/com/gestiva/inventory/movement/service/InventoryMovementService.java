@@ -1,5 +1,6 @@
 package com.gestiva.inventory.movement.service;
 
+import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.inventory.item.repository.ItemRepository;
 import com.gestiva.inventory.movement.entity.InventoryMovement;
 import com.gestiva.common.exception.BusinessException;
@@ -59,7 +60,7 @@ public class InventoryMovementService {
         movement.setMovementType(movementType);
         movement.setCausalCode(causalCode);
         movement.setQuantity(qty);
-        movement.setUnitCost(cost);
+        movement.setUnitCost((cost));
         movement.setTotalCost(totalCost);
         movement.setReferenceType(referenceType);
         movement.setReferenceId(referenceId);

@@ -14,12 +14,6 @@
         <div class="page">
             <div class="card">
                 <div th:replace="~{fragments/layout :: flashMessages}"></div>
-                <div class="breadcrumb">
-                    <a th:href="@{/dashboard}">Dashboard</a> /
-                    <a th:href="@{/items}">Articoli</a> /
-                    <span th:text="${formMode == 'create'} ? 'Nuovo articolo' : 'Modifica articolo'">Articolo</span>
-                </div>
-
                 <div class="page-header">
                     <div class="page-header-left">
                         <h1 class="page-title" th:text="${formMode == 'create'} ? 'Nuovo articolo' : 'Modifica articolo'">Articolo</h1>
@@ -42,25 +36,25 @@
                     <div class="form-grid">
                         <div class="form-field">
                             <label for="code">Codice</label>
-                            <input id="code" type="text" th:field="*{code}" placeholder="ART-001"/>
+                            <input id="code" type="text" th:field="*{code}" class="form-control" placeholder="ART-001"/>
                             <div class="field-error" th:if="${#fields.hasErrors('code')}" th:errors="*{code}">Errore</div>
                         </div>
 
                         <div class="form-field">
                             <label for="name">Nome</label>
-                            <input id="name" type="text" th:field="*{name}" placeholder="Modulo CRM"/>
+                            <input id="name" type="text" th:field="*{name}" class="form-control" placeholder="Modulo CRM"/>
                             <div class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Errore</div>
                         </div>
 
                         <div class="form-field full">
                             <label for="description">Descrizione</label>
-                            <textarea id="description" th:field="*{description}" rows="3" placeholder="Descrizione articolo o servizio"></textarea>
+                            <textarea id="description" th:field="*{description}" class="form-control" rows="3" placeholder="Descrizione articolo o servizio"></textarea>
                             <div class="field-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}">Errore</div>
                         </div>
 
                         <div class="form-field">
                             <label for="itemType">Tipo articolo</label>
-                            <select id="itemType" th:field="*{itemType}">
+                            <select id="itemType" class="form-select"  th:field="*{itemType}">
                                 <option value="">Seleziona</option>
                                 <option value="PRODUCT">PRODUCT</option>
                                 <option value="SERVICE">SERVICE</option>
@@ -70,19 +64,23 @@
 
                         <div class="form-field">
                             <label for="unitOfMeasure">Unità di misura</label>
-                            <input id="unitOfMeasure" type="text" th:field="*{unitOfMeasure}" placeholder="pz"/>
+                            <input id="unitOfMeasure" type="text" class="form-control" th:field="*{unitOfMeasure}" placeholder="pz"/>
                             <div class="field-error" th:if="${#fields.hasErrors('unitOfMeasure')}" th:errors="*{unitOfMeasure}">Errore</div>
                         </div>
 
                         <div class="form-field">
                             <label for="basePrice">Prezzo base</label>
-                            <input id="basePrice" type="number" step="1" th:field="*{basePrice}" placeholder="0.00"/>
-                            <div class="field-error" th:if="${#fields.hasErrors('basePrice')}" th:errors="*{basePrice}">Errore</div>
+                            <input id="basePrice" type="text" inputmode="decimal" class="form-control" th:field="*{basePrice}" placeholder="0,00"/>
+                            <div class="field-error"
+                                 th:if="${#fields.hasErrors('basePrice')}"
+                                 th:errors="*{basePrice}">
+                                Errore
+                            </div>
                         </div>
 
                         <div class="form-field">
                             <label for="defaultTaxPct">IVA standard %</label>
-                            <input id="defaultTaxPct" type="number" step="1" th:field="*{defaultTaxPct}" placeholder="22.00"/>
+                            <input id="defaultTaxPct" type="text" inputmode="decimal" class="form-control" th:field="*{defaultTaxPct}" placeholder="22"/>
                             <div class="field-error" th:if="${#fields.hasErrors('defaultTaxPct')}" th:errors="*{defaultTaxPct}">Errore</div>
                         </div>
 

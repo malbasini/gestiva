@@ -64,7 +64,7 @@
                                class="form-control"
                                th:value="${dateTo != null ? #temporals.format(dateTo, 'yyyy-MM-dd') : ''}"/>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-1">
                         <label for="size" class="form-label">Righe</label>
                         <select id="size" name="size" class="form-select">
                             <option value="10" th:selected="${size == 10}">10</option>
@@ -72,7 +72,7 @@
                             <option value="50" th:selected="${size == 50}">50</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <button type="submit" class="btn btn-outline-secondary">
                             <i class="bi bi-search"></i>
                             <span>Cerca</span>
@@ -82,6 +82,13 @@
                             <i class="bi bi-x-circle"></i>
                             <span>Reset</span>
                         </a>
+
+                        <a class="btn btn-outline-success"
+                           th:href="@{/inventory-valuations/cogs-summary/export.csv(itemId=${itemId}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                            <i class="bi bi-download"></i>
+                            <span>Export CSV</span>
+                        </a>
+
                     </div>
                 </form>
 

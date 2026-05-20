@@ -58,6 +58,13 @@
               <i class="bi bi-x-circle"></i>
               <span>Reset</span>
             </a>
+
+            <a class="btn btn-outline-success"
+               th:href="@{/inventory-valuations/consistency-check/export.csv(q=${q}, onlyDifferences=${onlyDifferences})}">
+              <i class="bi bi-download"></i>
+              <span>Export CSV</span>
+            </a>
+
           </div>
         </form>
 

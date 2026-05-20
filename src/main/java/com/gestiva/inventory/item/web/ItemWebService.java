@@ -2,6 +2,7 @@ package com.gestiva.inventory.item.web;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
+import com.gestiva.common.util.NumberInputUtils;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.inventory.item.entity.Item;
 import com.gestiva.inventory.item.repository.ItemRepository;
@@ -64,8 +65,8 @@ public class ItemWebService {
         form.setUnitOfMeasure(item.getUnitOfMeasure());
         form.setActive(item.isActive());
         form.setTrackStock(item.isTrackStock());
-        form.setBasePrice(item.getBasePrice());
-        form.setDefaultTaxPct(item.getDefaultTaxPct());
+        form.setBasePrice(PdfFormatUtils.formatDecimal(item.getBasePrice(),2));
+        form.setDefaultTaxPct(PdfFormatUtils.formatDecimal(item.getDefaultTaxPct(),0));
         return form;
     }
 
@@ -120,8 +121,8 @@ public class ItemWebService {
             item.setTrackStock(form.isTrackStock());
         }
 
-        item.setBasePrice(form.getBasePrice());
-        item.setDefaultTaxPct(form.getDefaultTaxPct());
+        item.setBasePrice(NumberInputUtils.parseDecimal(form.getBasePrice(),"base price"));
+        item.setDefaultTaxPct(NumberInputUtils.parseDecimal(form.getDefaultTaxPct(),"Tax Pct"));
     }
 
     private String normalizeCode(String code) {
@@ -137,8 +138,8 @@ public class ItemWebService {
         v.setUnitOfMeasure(item.getUnitOfMeasure());
         v.setActive(item.isActive());
         v.setTrackStock(item.isTrackStock());
-        v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatMoney(item.getBasePrice()) : "-");
-        v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimalTrimmed(item.getDefaultTaxPct(),2) + "%" : "-");
+        v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatDecimal(item.getBasePrice(),2) : "-");
+        v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimal(item.getDefaultTaxPct(), 0) + "%" : "-");
         return v;
     }
 
@@ -153,8 +154,8 @@ public class ItemWebService {
         v.setActive(item.isActive());
         v.setTrackStock(item.isTrackStock());
         v.setStockManaged(item.isTrackStock());
-        v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatMoney(item.getBasePrice()) : "-");
-        v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimalTrimmed(item.getDefaultTaxPct(),2) + "%" : "-");
+        v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatDecimal(item.getBasePrice(),2) : "-");
+        v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimal(item.getDefaultTaxPct(),0) + "%" : "-");
         if (item.isTrackStock()) {
             var currentStock = inventoryMovementRepository.calculateInventoryBalance(item.getTenantId(), item.getId());
             v.setFormattedStockBalance(
@@ -245,7 +246,7 @@ public class ItemWebService {
         v.setTrackStock(item.isTrackStock());
         v.setActive(item.isActive());
         v.setUnitOfMeasure(item.getUnitOfMeasure());
-        v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatMoney(item.getBasePrice()) : "-");
+        v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatDecimal(item.getBasePrice(),2) : "-");
         v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimalTrimmed(item.getDefaultTaxPct(),2) + "%" : "-");
         return v;
     }

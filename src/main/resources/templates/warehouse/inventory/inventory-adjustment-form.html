@@ -65,14 +65,14 @@
                         </div>
                         <div class="form-field">
                             <label for="unitCost">Costo unitario</label>
-                            <input id="unitCost" type="number" step="1" th:field="*{unitCost}"/>
+                            <input id="unitCost" type="text" inputmode="decimal" th:field="*{unitCost}"/>
                             <div class="field-error" th:if="${#fields.hasErrors('unitCost')}" th:errors="*{unitCost}">
                                 Errore costo unitario
                             </div>
                         </div>
                         <div class="form-field">
                             <label for="quantity">Quantità</label>
-                            <input id="quantity" type="number" step="1" th:field="*{quantity}"/>
+                            <input id="quantity" type="text" inputmode="decimal" th:field="*{quantity}"/>
                             <div class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}">
                                 Errore quantità
                             </div>
