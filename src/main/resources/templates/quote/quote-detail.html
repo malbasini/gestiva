@@ -17,12 +17,6 @@
 
                 <div th:replace="~{fragments/layout :: flashMessages}"></div>
 
-                <div class="breadcrumb">
-                    <a th:href="@{/dashboard(tenantId=${tenantId})}">Dashboard</a> /
-                    <a th:href="@{/quotes(tenantId=${tenantId})}">Preventivi</a> /
-                    <span th:text="${quote.quoteNumber}">PRE-2026-00001</span>
-                </div>
-
                 <div class="page-header">
                     <div class="page-header-left">
                         <h1 class="page-title">Preventivo</h1>

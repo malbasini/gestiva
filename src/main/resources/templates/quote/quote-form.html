@@ -51,7 +51,7 @@
           <div class="form-grid">
             <div class="form-field">
               <label for="customerId">Cliente</label>
-              <select id="customerId" th:field="*{customerId}">
+              <select id="customerId" class="form-select" th:field="*{customerId}">
                 <option value="">Seleziona cliente</option>
                 <option th:each="customer : ${customerOptions}"
                         th:value="${customer.id}"
@@ -64,7 +64,7 @@
 
             <div class="form-field">
               <label for="status">Stato</label>
-              <select id="status" th:field="*{status}">
+              <select id="status" class="form-select" th:field="*{status}">
                 <option value="DRAFT">DRAFT</option>
                 <option value="SENT">SENT</option>
                 <option value="ACCEPTED">ACCEPTED</option>
@@ -75,25 +75,25 @@
 
             <div class="form-field">
               <label for="quoteDate">Data preventivo</label>
-              <input id="quoteDate" type="date" th:field="*{quoteDate}"/>
+              <input id="quoteDate" class="form-control" type="date" th:field="*{quoteDate}"/>
               <div class="field-error" th:if="${#fields.hasErrors('quoteDate')}" th:errors="*{quoteDate}">Errore data</div>
             </div>
 
             <div class="form-field">
               <label for="validUntil">Valido fino al</label>
-              <input id="validUntil" type="date" th:field="*{validUntil}"/>
+              <input id="validUntil" type="date" class="form-control" th:field="*{validUntil}"/>
               <div class="field-error" th:if="${#fields.hasErrors('validUntil')}" th:errors="*{validUntil}">Errore validità</div>
             </div>
 
             <div class="form-field">
               <label for="currencyCode">Valuta</label>
-              <input id="currencyCode" type="text" th:field="*{currencyCode}" placeholder="EUR"/>
+              <input id="currencyCode" class="form-control" type="text" th:field="*{currencyCode}" placeholder="EUR"/>
               <div class="field-error" th:if="${#fields.hasErrors('currencyCode')}" th:errors="*{currencyCode}">Errore valuta</div>
             </div>
 
             <div class="form-field full">
               <label for="notes">Note</label>
-              <textarea id="notes" th:field="*{notes}" rows="4" placeholder="Note del preventivo"></textarea>
+              <textarea id="notes" class="form-control" th:field="*{notes}" rows="4" placeholder="Note del preventivo"></textarea>
               <div class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}">Errore note</div>
             </div>
           </div>
@@ -102,7 +102,7 @@
               <h2 class="section-title">Righe preventivo</h2>
             </div>
             <div class="page-header-right">
-              <button type="submit" name="addLine" value="true" class="btn btn-secondary">
+              <button type="submit" name="addLine" value="true" class="btn btn-outline-secondary">
                 <i class="bi bi-plus-lg"></i>
                 <span>Aggiungi riga</span>
               </button>
@@ -125,29 +125,26 @@
 
               <div class="line-col-description">
                 <input type="text"
-                       class="js-line-description"
+                       class="form-control js-line-description"
                        th:attr="data-row-index=${stat.index}"
                        th:field="*{lines[__${stat.index}__].description}"
                        placeholder="Descrizione riga"/>
               </div>
 
               <div>
-                <input type="number"
-                       step="1"
+                <input type="text" inputmode="decimal" class="form-control"
                        th:field="*{lines[__${stat.index}__].quantity}"/>
               </div>
 
               <div>
-                <input type="number"
-                       step="1"
-                       class="js-line-unit-price"
+                <input type="text" inputmode="decimal"
+                       class="form-control js-line-unit-price"
                        th:attr="data-row-index=${stat.index}"
                        th:field="*{lines[__${stat.index}__].unitPrice}"/>
               </div>
 
               <div>
-                <input type="number"
-                       step="1"
+                <input type="text" inputmode="decimal" class="form-control"
                        th:field="*{lines[__${stat.index}__].discountPct}"/>
               </div>
               <div>
@@ -162,9 +159,8 @@
                 </select>
               </div>
               <div>
-                <input type="number"
-                       step="1"
-                       class="js-line-tax-pct"
+                <input type="text" inputmode="decimal"
+                       class="form-control js-line-tax-pct"
                        th:attr="data-row-index=${stat.index}"
                        th:field="*{lines[__${stat.index}__].taxPct}"/>
               </div>
@@ -187,7 +183,7 @@
               <div class="muted">Calcolo basato sui valori correnti del form</div>
             </div>
             <div class="page-header-right">
-              <button type="submit" name="recalculate" value="true" class="btn btn-secondary">
+              <button type="submit" name="recalculate" value="true" class="btn btn-outline-warning">
                 <i class="bi bi-arrow-clockwise"></i>
                 <span>Ricalcola</span>
               </button>
@@ -218,10 +214,8 @@
       </div>
     </div>
   </main>
-
-  <div th:replace="~{fragments/layout :: appFooter}"></div>
-
 </div>
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const selects = document.querySelectorAll('.js-item-select');

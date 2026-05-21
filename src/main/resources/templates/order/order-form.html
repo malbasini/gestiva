@@ -17,12 +17,6 @@
 
         <div th:replace="~{fragments/layout :: flashMessages}"></div>
 
-        <div class="breadcrumb">
-          <a th:href="@{/dashboard(tenantId=${tenantId})}">Dashboard</a> /
-          <a th:href="@{/orders(tenantId=${tenantId})}">Ordini</a> /
-          <span>Modifica ordine</span>
-        </div>
-
         <div class="page-header">
           <div class="page-header-left">
             <h1 class="page-title">Modifica ordine</h1>
@@ -66,7 +60,7 @@
           <div class="form-grid">
             <div class="form-field">
               <label for="status">Stato</label>
-              <select id="status" th:field="*{status}">
+              <select id="status" class="form-select" th:field="*{status}">
                 <option value="CONFIRMED">CONFIRMED</option>
                 <option value="FULFILLED">FULFILLED</option>
                 <option value="CANCELLED">CANCELLED</option>
@@ -80,7 +74,7 @@
               <h2 class="section-title" style="margin:0;">Righe ordine</h2>
             </div>
             <div class="page-header-right">
-              <button type="submit" name="addLine" value="true" class="btn btn-secondary">
+              <button type="submit" name="addLine" value="true" class="btn btn-outline-secondary">
                 <i class="bi bi-plus-lg"></i>
                 <span>Aggiungi riga</span>
               </button>
@@ -104,7 +98,7 @@
 
               <div class="line-col-description">
                 <input type="text"
-                       class="js-line-description"
+                       class="form-control js-line-description"
                        th:attr="data-row-index=${stat.index}"
                        th:field="*{lines[__${stat.index}__].description}"
                        placeholder="Descrizione riga"/>
@@ -116,8 +110,7 @@
               </div>
 
               <div>
-                <input type="number"
-                       step="1"
+                <input type="text" class="form-control" inputmode="decimal"
                        th:field="*{lines[__${stat.index}__].quantity}"/>
                 <div class="field-error-inline"
                      th:if="${#fields.hasErrors('lines[' + stat.index + '].quantity')}"
@@ -127,8 +120,7 @@
               </div>
 
               <div>
-                <input type="number"
-                       step="1"
+                <input type="text" inputmode="decimal"
                        class="js-line-unit-price"
                        th:attr="data-row-index=${stat.index}"
                        th:field="*{lines[__${stat.index}__].unitPrice}"/>
@@ -140,8 +132,7 @@
               </div>
 
               <div>
-                <input type="number"
-                       step="1"
+                <input type="text" inputmode="decimal" class="form-control"
                        th:field="*{lines[__${stat.index}__].discountPct}"/>
                 <div class="field-error-inline"
                      th:if="${#fields.hasErrors('lines[' + stat.index + '].discountPct')}"
@@ -164,9 +155,8 @@
               </div>
 
               <div>
-                <input type="number"
-                       step="1"
-                       class="js-line-tax-pct"
+                <input type="text" inputmode="decimal"
+                       class="form-control js-line-tax-pct"
                        th:attr="data-row-index=${stat.index}"
                        th:field="*{lines[__${stat.index}__].taxPct}"/>
                 <div class="field-error-inline"
@@ -194,7 +184,7 @@
               <div class="muted">Calcolo basato sui valori correnti del form</div>
             </div>
             <div class="page-header-right">
-              <button type="submit" name="recalculate" value="true" class="btn btn-secondary">
+              <button type="submit" name="recalculate" value="true" class="btn btn-outline-warning">
                 <i class="bi bi-arrow-clockwise"></i>
                 <span>Ricalcola</span>
               </button>
@@ -216,7 +206,7 @@
           </table>
 
           <div class="actions" style="margin-top: 24px;">
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-outline-primary">
               <i class="bi bi-check2"></i>
               <span>Salva modifiche</span>
             </button>

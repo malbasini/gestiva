@@ -2,6 +2,7 @@ package com.gestiva.sales.quote.web;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
+import com.gestiva.common.util.NumberInputUtils;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.sales.order.repository.SalesOrderRepository;
 import com.gestiva.sales.quote.dto.QuoteCreateRequest;
@@ -65,10 +66,10 @@ public class QuoteManageWebService {
         form.setLines(lines.stream().map(line -> {
             QuoteLineForm lf = new QuoteLineForm();
             lf.setDescription(line.getDescription());
-            lf.setQuantity(line.getQuantity());
-            lf.setUnitPrice(line.getUnitPrice());
-            lf.setDiscountPct(line.getDiscountPct());
-            lf.setTaxPct(line.getTaxPct());
+            lf.setQuantity(PdfFormatUtils.formatDecimal(line.getQuantity(),0));
+            lf.setUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
+            lf.setDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct(),0));
+            lf.setTaxPct(PdfFormatUtils.formatDecimal(line.getTaxPct(),0));
             lf.setItemId(line.getItemId());
             return lf;
         }).toList());
@@ -135,10 +136,10 @@ public class QuoteManageWebService {
         return form.getLines().stream().map(line -> {
             QuoteLineRequest req = new QuoteLineRequest();
             req.setDescription(line.getDescription());
-            req.setQuantity(line.getQuantity());
-            req.setUnitPrice(line.getUnitPrice());
-            req.setDiscountPct(defaultZero(line.getDiscountPct()));
-            req.setTaxPct(defaultZero(line.getTaxPct()));
+            req.setQuantity(NumberInputUtils.parseDecimal(line.getQuantity(),"quantity"));
+            req.setUnitPrice(NumberInputUtils.parseDecimal(line.getUnitPrice(),"unitPrice"));
+            req.setDiscountPct(defaultZero(NumberInputUtils.parseDecimal(line.getDiscountPct(),"discountPct")));
+            req.setTaxPct(defaultZero(NumberInputUtils.parseDecimal(line.getTaxPct(),"taxPct")));
             req.setItemId(line.getItemId());
             return req;
         }).toList();
@@ -146,10 +147,10 @@ public class QuoteManageWebService {
 
     private QuoteLineForm defaultLine() {
         QuoteLineForm line = new QuoteLineForm();
-        line.setQuantity(new BigDecimal("1.000"));
-        line.setUnitPrice(BigDecimal.ZERO);
-        line.setDiscountPct(BigDecimal.ZERO);
-        line.setTaxPct(new BigDecimal("22.00"));
+        line.setQuantity(PdfFormatUtils.formatDecimal(new BigDecimal("1"),0));
+        line.setUnitPrice(PdfFormatUtils.formatMoney(BigDecimal.ZERO));
+        line.setDiscountPct(PdfFormatUtils.formatDecimal(BigDecimal.ZERO,0));
+        line.setTaxPct(PdfFormatUtils.formatDecimal(new BigDecimal("22"),0));
         line.setItemId(null);
         return line;
     }
@@ -177,10 +178,10 @@ public class QuoteManageWebService {
                     continue;
                 }
 
-                BigDecimal quantity = defaultZero(line.getQuantity());
-                BigDecimal unitPrice = defaultZero(line.getUnitPrice());
-                BigDecimal discountPct = defaultZero(line.getDiscountPct());
-                BigDecimal taxPct = defaultZero(line.getTaxPct());
+                BigDecimal quantity = defaultZero(NumberInputUtils.parseDecimal(line.getQuantity(),"quantity"));
+                BigDecimal unitPrice = defaultZero(NumberInputUtils.parseDecimal(line.getUnitPrice(),"unitPrice"));
+                BigDecimal discountPct = defaultZero(NumberInputUtils.parseDecimal(line.getDiscountPct(),"discount"));
+                BigDecimal taxPct = defaultZero(NumberInputUtils.parseDecimal(line.getTaxPct(),"tax pct"));
 
                 BigDecimal gross = quantity.multiply(unitPrice);
 

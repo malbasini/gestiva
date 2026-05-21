@@ -14,20 +14,16 @@ public class QuoteLineForm {
     private String description;
 
     @NotNull(message = "La quantità è obbligatoria")
-    @DecimalMin(value = "0.001", message = "La quantità deve essere maggiore di zero")
-    private BigDecimal quantity;
+    private String quantity;
 
     @NotNull(message = "Il prezzo unitario è obbligatorio")
-    @DecimalMin(value = "0.00", inclusive = true, message = "Il prezzo unitario non può essere negativo")
-    private BigDecimal unitPrice;
+    private String unitPrice;
 
     @NotNull(message = "Lo sconto è obbligatorio")
-    @DecimalMin(value = "0.00", inclusive = true, message = "Lo sconto non può essere negativo")
-    private BigDecimal discountPct;
+    private String discountPct;
 
     @NotNull(message = "L'IVA è obbligatoria")
-    @DecimalMin(value = "0.00", inclusive = true, message = "L'IVA non può essere negativa")
-    private BigDecimal taxPct;
+    private String taxPct;
 
     private Long itemId;
 
@@ -47,35 +43,35 @@ public class QuoteLineForm {
         this.description = description;
     }
 
-    public BigDecimal getQuantity() {
+    public String getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(BigDecimal quantity) {
+    public void setQuantity(String quantity) {
         this.quantity = quantity;
     }
 
-    public BigDecimal getUnitPrice() {
+    public String getUnitPrice() {
         return unitPrice;
     }
 
-    public void setUnitPrice(BigDecimal unitPrice) {
+    public void setUnitPrice(String unitPrice) {
         this.unitPrice = unitPrice;
     }
 
-    public BigDecimal getDiscountPct() {
+    public String getDiscountPct() {
         return discountPct;
     }
 
-    public void setDiscountPct(BigDecimal discountPct) {
+    public void setDiscountPct(String discountPct) {
         this.discountPct = discountPct;
     }
 
-    public BigDecimal getTaxPct() {
+    public String getTaxPct() {
         return taxPct;
     }
 
-    public void setTaxPct(BigDecimal taxPct) {
+    public void setTaxPct(String taxPct) {
         this.taxPct = taxPct;
     }
 }

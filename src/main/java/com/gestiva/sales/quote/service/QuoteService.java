@@ -2,6 +2,7 @@ package com.gestiva.sales.quote.service;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
+import com.gestiva.common.util.NumberInputUtils;
 import com.gestiva.crm.contact.repository.CustomerRepository;
 import com.gestiva.sales.quote.dto.QuoteCreateRequest;
 import com.gestiva.sales.quote.dto.QuoteLineRequest;
@@ -12,6 +13,7 @@ import com.gestiva.sales.quote.entity.QuoteLine;
 import com.gestiva.sales.quote.mapper.QuoteMapper;
 import com.gestiva.sales.quote.repository.QuoteLineRepository;
 import com.gestiva.sales.quote.repository.QuoteRepository;
+import com.gestiva.sales.quote.web.QuoteLineForm;
 import com.gestiva.sales.sequence.entity.DocumentSequence;
 import com.gestiva.sales.sequence.repository.DocumentSequenceRepository;
 import org.springframework.stereotype.Service;
@@ -167,7 +169,7 @@ public class QuoteService {
             }
 
             if (line.getUnitPrice() == null || line.getUnitPrice().compareTo(BigDecimal.ZERO) < 0) {
-                throw new BusinessException("Il prezzo unitario della riga " + (i + 1) + " non può essere negativo");
+                throw new BusinessException("Il prezzo unitario della riga " + (i + 1) + " deve essere maggiore di zero");
             }
 
             if (line.getDiscountPct() != null &&
@@ -183,6 +185,53 @@ public class QuoteService {
             }
         }
     }
+    public void validateLinesForm(List<QuoteLineForm> lines) {
+        if (lines == null || lines.isEmpty()) {
+            throw new BusinessException("Il preventivo deve contenere almeno una riga");
+        }
+
+        for (int i = 0; i < lines.size(); i++) {
+            QuoteLineForm line = lines.get(i);
+
+            if (line.getDescription() == null || line.getDescription().isBlank()) {
+                throw new BusinessException("La descrizione della riga " + (i + 1) + " è obbligatoria");
+            }
+
+            if (line.getQuantity() == null || line.getQuantity().compareTo(String.valueOf(BigDecimal.ZERO)) <= 0) {
+                throw new BusinessException("La quantità della riga " + (i + 1) + " deve essere maggiore di zero");
+            }
+
+            if (line.getUnitPrice() == null || line.getUnitPrice().compareTo(String.valueOf(BigDecimal.ZERO)) < 0) {
+                throw new BusinessException("Il prezzo unitario della riga " + (i + 1) + " deve essere maggiore di zero");
+            }
+
+            if (line.getDiscountPct() != null &&
+                    (line.getDiscountPct().compareTo(String.valueOf(BigDecimal.ZERO)) < 0 ||
+                            line.getDiscountPct().compareTo(String.valueOf(new BigDecimal("100"))) > 0)) {
+                throw new BusinessException("Lo sconto % della riga " + (i + 1) + " deve essere tra 0 e 100");
+            }
+
+            if (line.getTaxPct() != null &&
+                    (NumberInputUtils.parseDecimal(line.getTaxPct(),"tax pct").compareTo(BigDecimal.ZERO) < 0 ||
+                            NumberInputUtils.parseDecimal(line.getTaxPct(),"tax pct").compareTo(new BigDecimal("100")) > 0)) {
+                throw new BusinessException("L'aliquota IVA della riga " + (i + 1) + " deve essere tra 0 e 100");
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     private Totals calculateTotals(List<QuoteLineRequest> lines) {
         BigDecimal subtotal = BigDecimal.ZERO;

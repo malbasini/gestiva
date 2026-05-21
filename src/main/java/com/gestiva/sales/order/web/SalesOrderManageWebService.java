@@ -2,6 +2,7 @@ package com.gestiva.sales.order.web;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
+import com.gestiva.common.util.NumberInputUtils;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.sales.order.entity.SalesOrder;
 import com.gestiva.sales.order.entity.SalesOrderLine;
@@ -46,9 +47,9 @@ public class SalesOrderManageWebService {
         form.setLines(lines.stream().map(line -> {
             SalesOrderLineForm lf = new SalesOrderLineForm();
             lf.setDescription(line.getDescription());
-            lf.setQuantity(line.getQuantity());
-            lf.setUnitPrice(line.getUnitPrice());
-            lf.setDiscountPct(defaultZero(line.getDiscountPct()));
+            lf.setQuantity(PdfFormatUtils.formatDecimal(line.getQuantity(),0));
+            lf.setUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
+            lf.setDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct(),0));
             lf.setTaxPct(defaultZero(line.getTaxPct()));
             return lf;
         }).toList());
@@ -83,13 +84,13 @@ public class SalesOrderManageWebService {
             line.setSalesOrderId(orderId);
             line.setLineNo(lineNo++);
             line.setDescription(lineForm.getDescription());
-            line.setQuantity(lineForm.getQuantity());
-            line.setUnitPrice(lineForm.getUnitPrice());
-            line.setDiscountPct(defaultZero(lineForm.getDiscountPct()));
+            line.setQuantity(NumberInputUtils.parseDecimal(lineForm.getQuantity(),"quantity"));
+            line.setUnitPrice(NumberInputUtils.parseDecimal(lineForm.getUnitPrice(),"unitPrice"));
+            line.setDiscountPct(NumberInputUtils.parseDecimal(lineForm.getDiscountPct(),"discountPct"));
             line.setTaxPct(defaultZero(lineForm.getTaxPct()));
 
-            BigDecimal gross = defaultZero(lineForm.getQuantity()).multiply(defaultZero(lineForm.getUnitPrice()));
-            BigDecimal discountAmount = gross.multiply(defaultZero(lineForm.getDiscountPct()))
+            BigDecimal gross = defaultZero(NumberInputUtils.parseDecimal(lineForm.getQuantity(),"quantity").multiply(defaultZero(NumberInputUtils.parseDecimal(lineForm.getUnitPrice(),"unit price"))));
+            BigDecimal discountAmount = gross.multiply(defaultZero(NumberInputUtils.parseDecimal(lineForm.getDiscountPct(),"discountPct")))
                     .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
             BigDecimal taxable = gross.subtract(discountAmount);
             BigDecimal taxAmount = taxable.multiply(defaultZero(lineForm.getTaxPct()))
@@ -142,9 +143,9 @@ public class SalesOrderManageWebService {
                     continue;
                 }
 
-                BigDecimal quantity = defaultZero(line.getQuantity());
-                BigDecimal unitPrice = defaultZero(line.getUnitPrice());
-                BigDecimal discountPct = defaultZero(line.getDiscountPct());
+                BigDecimal quantity = defaultZero(NumberInputUtils.parseDecimal(line.getQuantity(),"quantity"));
+                BigDecimal unitPrice = defaultZero(NumberInputUtils.parseDecimal(line.getUnitPrice(),"unit price"));
+                BigDecimal discountPct = defaultZero(NumberInputUtils.parseDecimal(line.getDiscountPct(),"discountPct"));
                 BigDecimal taxPct = defaultZero(line.getTaxPct());
 
                 BigDecimal gross = quantity.multiply(unitPrice);
@@ -174,10 +175,10 @@ public class SalesOrderManageWebService {
 
     private SalesOrderLineForm defaultLine() {
         SalesOrderLineForm line = new SalesOrderLineForm();
-        line.setQuantity(new BigDecimal("1.000"));
-        line.setUnitPrice(BigDecimal.ZERO);
-        line.setDiscountPct(BigDecimal.ZERO);
-        line.setTaxPct(new BigDecimal("22.00"));
+        line.setQuantity(PdfFormatUtils.formatDecimal(new BigDecimal(1),0));
+        line.setUnitPrice(PdfFormatUtils.formatMoney(BigDecimal.ZERO));
+        line.setDiscountPct(PdfFormatUtils.formatDecimal(BigDecimal.ZERO,0));
+        line.setTaxPct(new BigDecimal("22"));
         return line;
     }
 

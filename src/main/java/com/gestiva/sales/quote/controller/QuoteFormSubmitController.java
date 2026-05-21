@@ -1,6 +1,7 @@
 package com.gestiva.sales.quote.controller;
 
 import com.gestiva.crm.contact.web.CustomerLookupWebService;
+import com.gestiva.sales.quote.service.QuoteService;
 import com.gestiva.security.usercontext.TenantContext;
 import com.gestiva.sales.quote.web.QuoteForm;
 import com.gestiva.sales.quote.web.QuoteManageWebService;
@@ -21,16 +22,19 @@ public class QuoteFormSubmitController {
     private final CustomerLookupWebService customerLookupWebService;
     private final TenantContext tenantContext;
     private final ItemWebService itemWebService;
+    private final QuoteService quoteService;
 
     public QuoteFormSubmitController(QuoteManageWebService quoteManageWebService,
                                      CustomerLookupWebService customerLookupWebService,
                                      TenantContext tenantContext,
-                                     ItemWebService itemWebService
+                                     ItemWebService itemWebService,
+                                     QuoteService quoteService
                                      ) {
         this.quoteManageWebService = quoteManageWebService;
         this.customerLookupWebService = customerLookupWebService;
         this.tenantContext = tenantContext;
         this.itemWebService = itemWebService;
+        this.quoteService = quoteService;
     }
 
     @PostMapping(params = "addLine")
@@ -112,23 +116,35 @@ public class QuoteFormSubmitController {
                          Model model,
                          RedirectAttributes redirectAttributes) {
 
-        Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
-
-        if (bindingResult.hasErrors()) {
-            model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(resolvedTenantId));
+        try {
+            Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
+            if (bindingResult.hasErrors()) {
+                  model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(tenantId));
+                  model.addAttribute("totalsPreview", quoteManageWebService.calculatePreviewTotals(quoteForm));
+                  model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
+                  model.addAttribute("formMode", "create");
+                  model.addAttribute("tenantId", tenantId);
+                  model.addAttribute("activeMenu", "quotes");
+                  model.addAttribute("totalsPreview", quoteManageWebService.calculatePreviewTotals(quoteForm));
+                  quoteService.validateLinesForm(quoteForm.getLines());
+                  return "quote/quote-form";
+            }
+            quoteService.validateLinesForm(quoteForm.getLines());
+            Long quoteId = quoteManageWebService.create(resolvedTenantId, quoteForm);
+            redirectAttributes.addFlashAttribute("successMessage", "Preventivo creato con successo.");
+            return "redirect:/quotes/" + quoteId + "?tenantId=" + resolvedTenantId;
+        }
+        catch (Exception ex) {
+            model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(tenantId));
             model.addAttribute("totalsPreview", quoteManageWebService.calculatePreviewTotals(quoteForm));
             model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
             model.addAttribute("formMode", "create");
-            model.addAttribute("tenantId", resolvedTenantId);
+            model.addAttribute("tenantId", tenantId);
             model.addAttribute("activeMenu", "quotes");
-            model.addAttribute("totalsPreview", quoteManageWebService.calculatePreviewTotals(quoteForm));
+            model.addAttribute("errorMessage", ex.getMessage());
             return "quote/quote-form";
         }
 
-        Long quoteId = quoteManageWebService.create(resolvedTenantId, quoteForm);
-        redirectAttributes.addFlashAttribute("successMessage", "Preventivo creato con successo.");
-
-        return "redirect:/quotes/" + quoteId + "?tenantId=" + resolvedTenantId;
     }
 
     @PostMapping("/{id}")
@@ -139,23 +155,34 @@ public class QuoteFormSubmitController {
                          Model model,
                          RedirectAttributes redirectAttributes) {
 
-        Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
-
-        if (bindingResult.hasErrors()) {
-            model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(resolvedTenantId));
-            model.addAttribute("totalsPreview", quoteManageWebService.calculatePreviewTotals(quoteForm));
-            model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
-            model.addAttribute("formMode", "edit");
-            model.addAttribute("quoteId", id);
-            model.addAttribute("tenantId", resolvedTenantId);
-            model.addAttribute("activeMenu", "quotes");
-            return "quote/quote-form";
+        try {
+            Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
+            if (bindingResult.hasErrors()) {
+                model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(resolvedTenantId));
+                model.addAttribute("totalsPreview", quoteManageWebService.calculatePreviewTotals(quoteForm));
+                model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
+                model.addAttribute("formMode", "edit");
+                model.addAttribute("quoteId", id);
+                model.addAttribute("tenantId", resolvedTenantId);
+                model.addAttribute("activeMenu", "quotes");
+                quoteService.validateLinesForm(quoteForm.getLines());
+                return "quote/quote-form";
+            }
+            quoteService.validateLinesForm(quoteForm.getLines());
+            Long quoteId = quoteManageWebService.update(resolvedTenantId, id, quoteForm);
+            redirectAttributes.addFlashAttribute("successMessage", "Preventivo aggiornato con successo.");
+            return "redirect:/quotes/" + quoteId + "?tenantId=" + resolvedTenantId;
+        } catch (Exception e) {
+             model.addAttribute("customerOptions", customerLookupWebService.findActiveOptions(tenantId));
+             model.addAttribute("totalsPreview", quoteManageWebService.calculatePreviewTotals(quoteForm));
+             model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
+             model.addAttribute("formMode", "edit");
+             model.addAttribute("quoteId", id);
+             model.addAttribute("tenantId", tenantId);
+             model.addAttribute("activeMenu", "quotes");
+             model.addAttribute("errorMessage", e.getMessage());
+             return "quote/quote-form";
         }
-
-        Long quoteId = quoteManageWebService.update(resolvedTenantId, id, quoteForm);
-        redirectAttributes.addFlashAttribute("successMessage", "Preventivo aggiornato con successo.");
-
-        return "redirect:/quotes/" + quoteId + "?tenantId=" + resolvedTenantId;
     }
 
     @PostMapping(params = "recalculate")

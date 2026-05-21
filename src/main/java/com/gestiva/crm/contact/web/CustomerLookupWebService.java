@@ -1,5 +1,6 @@
 package com.gestiva.crm.contact.web;
 
+import com.gestiva.crm.contact.entity.Customer;
 import com.gestiva.crm.contact.repository.CustomerRepository;
 import com.gestiva.crm.contact.repository.CustomerSpecifications;
 import org.springframework.data.domain.Sort;

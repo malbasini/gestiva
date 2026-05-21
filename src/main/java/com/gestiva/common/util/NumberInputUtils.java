@@ -11,7 +11,7 @@ public final class NumberInputUtils {
 
     public static BigDecimal parseDecimal(String value, String fieldLabel) {
         if (value == null || value.trim().isEmpty()) {
-            throw new BusinessException("Inserisci " + fieldLabel + ".");
+            return new BigDecimal(0);
         }
 
         String raw = value.trim();
