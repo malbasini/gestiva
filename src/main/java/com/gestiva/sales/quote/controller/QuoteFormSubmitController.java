@@ -126,7 +126,7 @@ public class QuoteFormSubmitController {
                   model.addAttribute("tenantId", tenantId);
                   model.addAttribute("activeMenu", "quotes");
                   model.addAttribute("totalsPreview", quoteManageWebService.calculatePreviewTotals(quoteForm));
-                  quoteService.validateLinesForm(quoteForm.getLines());
+                  model.addAttribute("errorMessage", bindingResult.getAllErrors().getFirst().getDefaultMessage());
                   return "quote/quote-form";
             }
             quoteService.validateLinesForm(quoteForm.getLines());
@@ -165,7 +165,7 @@ public class QuoteFormSubmitController {
                 model.addAttribute("quoteId", id);
                 model.addAttribute("tenantId", resolvedTenantId);
                 model.addAttribute("activeMenu", "quotes");
-                quoteService.validateLinesForm(quoteForm.getLines());
+                model.addAttribute("errorMessage", bindingResult.getAllErrors().getFirst().getDefaultMessage());
                 return "quote/quote-form";
             }
             quoteService.validateLinesForm(quoteForm.getLines());
