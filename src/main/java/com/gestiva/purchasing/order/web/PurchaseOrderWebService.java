@@ -198,28 +198,6 @@ public class PurchaseOrderWebService {
             }
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     public Long create(Long tenantId, PurchaseOrderForm form) {
         validateHeader(tenantId, form);
 
@@ -345,12 +323,11 @@ public class PurchaseOrderWebService {
 
     private PurchaseOrderLineForm defaultLine() {
         PurchaseOrderLineForm line = new PurchaseOrderLineForm();
-        line.setItemId(null);
-        line.setDescription("");
-        line.setQuantity(PdfFormatUtils.formatDecimal(BigDecimal.ONE));
-        line.setUnitPrice(PdfFormatUtils.formatMoney(BigDecimal.ZERO.setScale(0, RoundingMode.HALF_UP)));
-        line.setDiscountPct(PdfFormatUtils.formatDecimal(BigDecimal.ZERO.setScale(0, RoundingMode.HALF_UP)));
+        line.setQuantity(PdfFormatUtils.formatDecimal(new BigDecimal("1"),0));
+        line.setUnitPrice(PdfFormatUtils.formatMoney(BigDecimal.ZERO));
+        line.setDiscountPct(PdfFormatUtils.formatDecimal(BigDecimal.ZERO,0));
         line.setTaxPct(PdfFormatUtils.formatDecimal(new BigDecimal("22"),0));
+        line.setItemId(null);
         return line;
     }
 
