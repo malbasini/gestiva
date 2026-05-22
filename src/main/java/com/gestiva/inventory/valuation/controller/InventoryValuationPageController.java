@@ -24,6 +24,11 @@ public class InventoryValuationPageController {
     private final CostOfGoodsSoldSummaryCsvExportService costOfGoodsSoldSummaryCsvExportService;
     private final InventoryStockValuationCsvExportService inventoryStockValuationCsvExportService;
     private final InventoryConsistencyCheckCsvExportService inventoryConsistencyCheckCsvExportService;
+    private final OutboundValuationXlsxExportService outboundValuationXlsxExportService;
+    private final CostOfGoodsSoldSummaryXlsxExportService costOfGoodsSoldSummaryXlsxExportService;
+    private final InventoryStockValuationXlsxExportService inventoryStockValuationXlsxExportService;
+    private final InventoryConsistencyCheckXlsxExportService inventoryConsistencyCheckXlsxExportService;
+
 
 
     public InventoryValuationPageController(InventoryConsumptionWebService inventoryConsumptionWebService,
@@ -37,7 +42,11 @@ public class InventoryValuationPageController {
                                             OutboundValuationCsvExportService outboundValuationCsvExportService,
                                             CostOfGoodsSoldSummaryCsvExportService costOfGoodsSoldSummaryCsvExportService,
                                             InventoryStockValuationCsvExportService inventoryStockValuationCsvExportService,
-                                            InventoryConsistencyCheckCsvExportService inventoryConsistencyCheckCsvExportService) {
+                                            InventoryConsistencyCheckCsvExportService inventoryConsistencyCheckCsvExportService,
+                                            OutboundValuationXlsxExportService outboundValuationXlsxExportService,
+                                            CostOfGoodsSoldSummaryXlsxExportService costOfGoodsSoldSummaryXlsxExportService,
+                                            InventoryStockValuationXlsxExportService inventoryStockValuationXlsxExportService,
+                                            InventoryConsistencyCheckXlsxExportService inventoryConsistencyCheckXlsxExportService) {
 
         this.inventoryConsumptionWebService = inventoryConsumptionWebService;
         this.tenantContext = tenantContext;
@@ -51,6 +60,10 @@ public class InventoryValuationPageController {
         this.costOfGoodsSoldSummaryCsvExportService=costOfGoodsSoldSummaryCsvExportService;
         this.inventoryStockValuationCsvExportService=inventoryStockValuationCsvExportService;
         this.inventoryConsistencyCheckCsvExportService=inventoryConsistencyCheckCsvExportService;
+        this.outboundValuationXlsxExportService=outboundValuationXlsxExportService;
+        this.costOfGoodsSoldSummaryXlsxExportService=costOfGoodsSoldSummaryXlsxExportService;
+        this.inventoryStockValuationXlsxExportService=inventoryStockValuationXlsxExportService;
+        this.inventoryConsistencyCheckXlsxExportService=inventoryConsistencyCheckXlsxExportService;
     }
 
     @GetMapping("/movements/{movementId}")
@@ -64,6 +77,39 @@ public class InventoryValuationPageController {
         return "warehouse/inventory/inventory-outbound-valuation-detail";
     }
 
+    @GetMapping("/consistency-check/export.xlsx")
+    public org.springframework.http.ResponseEntity<byte[]> exportConsistencyCheckXlsx(
+            @RequestParam(name = "q", required = false) String q,
+            @RequestParam(name = "onlyDifferences", required = false) Boolean onlyDifferences) {
+
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        var rows = inventoryConsistencyCheckWebService.findAll(tenantId, q, onlyDifferences);
+        byte[] content = inventoryConsistencyCheckXlsxExportService.export(rows);
+
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=controllo_coerenza_magazzino.xlsx")
+                .contentType(org.springframework.http.MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(content);
+    }
+    @GetMapping("/stock-summary/export.xlsx")
+    public org.springframework.http.ResponseEntity<byte[]> exportStockSummaryXlsx(
+            @RequestParam(name = "q", required = false) String q) {
+
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        var rows = inventoryStockValuationListWebService.findAll(tenantId, q);
+        byte[] content = inventoryStockValuationXlsxExportService.export(rows);
+
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=giacenza_valorizzata.xlsx")
+                .contentType(org.springframework.http.MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(content);
+    }
     @GetMapping("/outbound")
     public String outboundValuations(@RequestParam(name = "page", defaultValue = "0") int page,
                                      @RequestParam(name = "size", defaultValue = "10") int size,
@@ -93,6 +139,51 @@ public class InventoryValuationPageController {
         model.addAttribute("activeMenu", "items");
 
         return "warehouse/inventory/inventory-outbound-valuations";
+    }
+    @GetMapping("/cogs-summary/export.xlsx")
+    public org.springframework.http.ResponseEntity<byte[]> exportCostOfGoodsSoldSummaryXlsx(
+            @RequestParam(name = "itemId", required = false) Long itemId,
+            @RequestParam(name = "dateFrom", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dateFrom,
+            @RequestParam(name = "dateTo", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dateTo) {
+
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        var rows = costOfGoodsSoldSummaryWebService.summarize(tenantId, itemId, dateFrom, dateTo);
+        byte[] content = costOfGoodsSoldSummaryXlsxExportService.export(rows);
+
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=riepilogo_costo_del_venduto.xlsx")
+                .contentType(org.springframework.http.MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(content);
+    }
+    @GetMapping("/outbound/export.xlsx")
+    public org.springframework.http.ResponseEntity<byte[]> exportOutboundValuationsXlsx(
+            @RequestParam(name = "q", required = false) String q,
+            @RequestParam(name = "causalCode", required = false) String causalCode,
+            @RequestParam(name = "dateFrom", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dateFrom,
+            @RequestParam(name = "dateTo", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dateTo) {
+
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        var rows = outboundValuationListWebService.findAll(tenantId, q, causalCode, dateFrom, dateTo);
+        byte[] content = outboundValuationXlsxExportService.export(rows);
+
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=scarichi_valorizzati.xlsx")
+                .contentType(org.springframework.http.MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(content);
     }
     @GetMapping("/stock-summary/export.csv")
     public org.springframework.http.ResponseEntity<byte[]> exportStockSummaryCsv(

@@ -29,6 +29,17 @@
               <i class="bi bi-bar-chart"></i>
               <span>Riepilogo costo del venduto</span>
             </a>
+            <a class="btn btn-outline-success"
+               th:href="@{/inventory-valuations/outbound/export.csv(q=${q}, causalCode=${causalCode}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+              <i class="bi bi-download"></i>
+              <span>Export CSV</span>
+            </a>
+
+            <a class="btn btn-outline-info"
+               th:href="@{/inventory-valuations/outbound/export.xlsx(q=${q}, causalCode=${causalCode}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+              <i class="bi bi-file-earmark-excel"></i>
+              <span>Export XLSX</span>
+            </a>
           </div>
         </div>
 
@@ -87,12 +98,6 @@
                 <a class="btn btn-outline-secondary" th:href="@{/inventory-valuations/outbound}">
                   <i class="bi bi-x-circle"></i>
                   <span>Reset</span>
-                </a>
-
-                <a class="btn btn-outline-success"
-                   th:href="@{/inventory-valuations/outbound/export.csv(q=${q}, causalCode=${causalCode}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
-                  <i class="bi bi-download"></i>
-                  <span>Export CSV</span>
                 </a>
           </div>
         </form>
