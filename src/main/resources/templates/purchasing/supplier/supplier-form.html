@@ -14,11 +14,6 @@
     <div class="page">
       <div class="card">
         <div th:replace="~{fragments/layout :: flashMessages}"></div>
-        <div class="breadcrumb">
-          <a th:href="@{/dashboard}">Dashboard</a> /
-          <a th:href="@{/suppliers}">Fornitori</a> /
-          <span th:text="${formMode == 'create'} ? 'Nuovo fornitore' : 'Modifica fornitore'">Fornitore</span>
-        </div>
 
         <div class="page-header">
           <div class="page-header-left">
@@ -42,73 +37,73 @@
           <div class="form-grid">
             <div class="form-field">
               <label for="code">Codice</label>
-              <input id="code" type="text" th:field="*{code}" placeholder="SUP-001"/>
+              <input id="code" type="text" class="form-control" th:field="*{code}" placeholder="SUP-001"/>
               <div class="field-error" th:if="${#fields.hasErrors('code')}" th:errors="*{code}">Errore</div>
             </div>
 
             <div class="form-field">
               <label for="name">Nome</label>
-              <input id="name" type="text" th:field="*{name}" placeholder="Fornitore Demo Srl"/>
+              <input id="name" type="text" class="form-control" th:field="*{name}" placeholder="Fornitore Demo Srl"/>
               <div class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Errore</div>
             </div>
 
             <div class="form-field">
               <label for="vatNumber">Partita IVA</label>
-              <input id="vatNumber" type="text" th:field="*{vatNumber}" placeholder="IT12345678901"/>
+              <input id="vatNumber" type="text" class="form-control" th:field="*{vatNumber}" placeholder="IT12345678901"/>
               <div class="field-error" th:if="${#fields.hasErrors('vatNumber')}" th:errors="*{vatNumber}">Errore</div>
             </div>
 
             <div class="form-field">
               <label for="taxCode">Codice fiscale</label>
-              <input id="taxCode" type="text" th:field="*{taxCode}" placeholder="RSSMRA80A01H501Z"/>
+              <input id="taxCode" type="text" class="form-control" th:field="*{taxCode}" placeholder="RSSMRA80A01H501Z"/>
               <div class="field-error" th:if="${#fields.hasErrors('taxCode')}" th:errors="*{taxCode}">Errore</div>
             </div>
 
             <div class="form-field">
               <label for="email">Email</label>
-              <input id="email" type="email" th:field="*{email}" placeholder="fornitore@example.com"/>
+              <input id="email" type="email" class="form-control" th:field="*{email}" placeholder="fornitore@example.com"/>
               <div class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Errore</div>
             </div>
 
             <div class="form-field">
               <label for="phone">Telefono</label>
-              <input id="phone" type="text" th:field="*{phone}" placeholder="+39 0123456789"/>
+              <input id="phone" type="text" class="form-control" th:field="*{phone}" placeholder="+39 0123456789"/>
               <div class="field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}">Errore</div>
             </div>
 
             <div class="form-field full">
               <label for="addressLine">Indirizzo</label>
-              <input id="addressLine" type="text" th:field="*{addressLine}" placeholder="Via Roma 1"/>
+              <input id="addressLine" type="text" class="form-control" th:field="*{addressLine}" placeholder="Via Roma 1"/>
               <div class="field-error" th:if="${#fields.hasErrors('addressLine')}" th:errors="*{addressLine}">Errore</div>
             </div>
 
             <div class="form-field">
               <label for="city">Città</label>
-              <input id="city" type="text" th:field="*{city}" placeholder="Roma"/>
+              <input id="city" type="text" class="form-control" th:field="*{city}" placeholder="Roma"/>
               <div class="field-error" th:if="${#fields.hasErrors('city')}" th:errors="*{city}">Errore</div>
             </div>
 
             <div class="form-field">
               <label for="postalCode">CAP</label>
-              <input id="postalCode" type="text" th:field="*{postalCode}" placeholder="00100"/>
+              <input id="postalCode" type="text" class="form-control" th:field="*{postalCode}" placeholder="00100"/>
               <div class="field-error" th:if="${#fields.hasErrors('postalCode')}" th:errors="*{postalCode}">Errore</div>
             </div>
 
             <div class="form-field">
               <label for="province">Provincia</label>
-              <input id="province" type="text" th:field="*{province}" placeholder="RM"/>
+              <input id="province" type="text"class="form-control"  th:field="*{province}" placeholder="RM"/>
               <div class="field-error" th:if="${#fields.hasErrors('province')}" th:errors="*{province}">Errore</div>
             </div>
 
             <div class="form-field">
               <label for="countryCode">Paese</label>
-              <input id="countryCode" type="text" th:field="*{countryCode}" placeholder="IT"/>
+              <input id="countryCode" type="text" class="form-control" th:field="*{countryCode}" placeholder="IT"/>
               <div class="field-error" th:if="${#fields.hasErrors('countryCode')}" th:errors="*{countryCode}">Errore</div>
             </div>
 
             <div class="form-field full">
               <label for="notes">Note</label>
-              <textarea id="notes" th:field="*{notes}" rows="4" placeholder="Note fornitore"></textarea>
+              <textarea id="notes" th:field="*{notes}"class="form-control"   rows="4" placeholder="Note fornitore"></textarea>
               <div class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}">Errore</div>
             </div>
 

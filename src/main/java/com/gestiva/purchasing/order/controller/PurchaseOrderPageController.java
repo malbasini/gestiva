@@ -57,18 +57,29 @@ public class PurchaseOrderPageController {
                          Model model,
                          RedirectAttributes redirectAttributes) {
         Long tenantId = tenantContext.getCurrentTenantId();
-
-        if (bindingResult.hasErrors()) {
+        try {
+            if (bindingResult.hasErrors()) {
+                model.addAttribute("supplierOptions", supplierWebService.findOptions(tenantId));
+                model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
+                model.addAttribute("formMode", "create");
+                model.addAttribute("activeMenu", "purchaseOrders");
+                model.addAttribute("errorMessage", bindingResult.getAllErrors().getFirst().getDefaultMessage());
+                return "purchasing/order/purchase-order-form";
+            }
+            Long id = purchaseOrderWebService.create(tenantId, form);
+            purchaseOrderWebService.validateLines(form.getLines());
+            redirectAttributes.addFlashAttribute("successMessage", "Ordine fornitore creato con successo.");
+            return "redirect:/purchase-orders/" + id;
+        }
+        catch(Exception ex)
+        {
             model.addAttribute("supplierOptions", supplierWebService.findOptions(tenantId));
             model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
             model.addAttribute("formMode", "create");
             model.addAttribute("activeMenu", "purchaseOrders");
+            model.addAttribute("errorMessage", ex.getMessage());
             return "purchasing/order/purchase-order-form";
         }
-
-        Long id = purchaseOrderWebService.create(tenantId, form);
-        redirectAttributes.addFlashAttribute("successMessage", "Ordine fornitore creato con successo.");
-        return "redirect:/purchase-orders/" + id;
     }
 
     @GetMapping("/{id}/edit")
@@ -90,24 +101,30 @@ public class PurchaseOrderPageController {
                          Model model,
                          RedirectAttributes redirectAttributes) {
         Long tenantId = tenantContext.getCurrentTenantId();
-
         if (bindingResult.hasErrors()) {
             model.addAttribute("supplierOptions", supplierWebService.findOptions(tenantId));
             model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
             model.addAttribute("purchaseOrderId", id);
             model.addAttribute("formMode", "edit");
             model.addAttribute("activeMenu", "purchaseOrders");
+            model.addAttribute("errorMessage", bindingResult.getAllErrors().getFirst().getDefaultMessage());
             return "purchasing/order/purchase-order-form";
         }
 
         try {
+            purchaseOrderWebService.validateLines(form.getLines());
             purchaseOrderWebService.update(tenantId, id, form);
             redirectAttributes.addFlashAttribute("successMessage", "Ordine fornitore aggiornato con successo.");
         }
-        catch(BusinessException ex)
+        catch(Exception ex)
         {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-            return "redirect:/purchase-orders/" + id;
+            model.addAttribute("supplierOptions", supplierWebService.findOptions(tenantId));
+            model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
+            model.addAttribute("purchaseOrderId", id);
+            model.addAttribute("formMode", "edit");
+            model.addAttribute("activeMenu", "purchaseOrders");
+            model.addAttribute("errorMessage", ex.getMessage());
+            return "purchasing/order/purchase-order-form";
         }
         return "redirect:/purchase-orders/" + id;
     }

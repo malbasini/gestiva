@@ -2,6 +2,7 @@ package com.gestiva.purchasing.order.web;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
+import com.gestiva.common.util.NumberInputUtils;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.purchasing.order.entity.PurchaseOrder;
 import com.gestiva.purchasing.order.entity.PurchaseOrderLine;
@@ -10,6 +11,7 @@ import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
 import com.gestiva.purchasing.supplier.repository.SupplierRepository;
 import com.gestiva.inventory.item.repository.ItemRepository;
+import com.gestiva.sales.quote.web.QuoteLineForm;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.domain.Page;
@@ -149,10 +151,10 @@ public class PurchaseOrderWebService {
             PurchaseOrderLineForm lf = new PurchaseOrderLineForm();
             lf.setItemId(line.getItemId());
             lf.setDescription(line.getDescription());
-            lf.setQuantity(line.getQuantity());
-            lf.setUnitPrice(line.getUnitPrice());
-            lf.setDiscountPct(line.getDiscountPct());
-            lf.setTaxPct(line.getTaxPct());
+            lf.setQuantity(PdfFormatUtils.formatDecimal(line.getQuantity(),2));
+            lf.setUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
+            lf.setDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct(),0));
+            lf.setTaxPct(PdfFormatUtils.formatDecimal(line.getTaxPct(),0));
             form.getLines().add(lf);
         }
 
@@ -162,6 +164,61 @@ public class PurchaseOrderWebService {
 
         return form;
     }
+
+    public void validateLines(List<PurchaseOrderLineForm> lines) {
+        if (lines == null || lines.isEmpty()) {
+            throw new BusinessException("L'ordine deve contenere almeno una riga");
+        }
+
+        for (int i = 0; i < lines.size(); i++) {
+            PurchaseOrderLineForm line = lines.get(i);
+
+            if (line.getDescription() == null || line.getDescription().isBlank()) {
+                throw new BusinessException("La descrizione della riga " + (i + 1) + " è obbligatoria");
+            }
+
+            if (line.getQuantity() == null || line.getQuantity().compareTo(String.valueOf(BigDecimal.ZERO)) <= 0) {
+                throw new BusinessException("La quantità della riga " + (i + 1) + " deve essere maggiore di zero");
+            }
+
+            if (line.getUnitPrice() == null || line.getUnitPrice().compareTo(String.valueOf(BigDecimal.ZERO)) < 0) {
+                throw new BusinessException("Il prezzo unitario della riga " + (i + 1) + " deve essere maggiore di zero");
+            }
+
+            if (line.getDiscountPct() != null &&
+                    (line.getDiscountPct().compareTo(String.valueOf(BigDecimal.ZERO)) < 0 ||
+                            line.getDiscountPct().compareTo(String.valueOf(new BigDecimal("100"))) > 0)) {
+                throw new BusinessException("Lo sconto % della riga " + (i + 1) + " deve essere tra 0 e 100");
+            }
+
+            if (line.getTaxPct() != null &&
+                    (NumberInputUtils.parseDecimal(line.getTaxPct(),"tax pct").compareTo(BigDecimal.ZERO) < 0 ||
+                            NumberInputUtils.parseDecimal(line.getTaxPct(),"tax pct").compareTo(new BigDecimal("100")) > 0)) {
+                throw new BusinessException("L'aliquota IVA della riga " + (i + 1) + " deve essere tra 0 e 100");
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     public Long create(Long tenantId, PurchaseOrderForm form) {
         validateHeader(tenantId, form);
@@ -237,10 +294,10 @@ public class PurchaseOrderWebService {
             line.setLineNo(lineNo++);
             line.setItemId(lineForm.getItemId());
             line.setDescription(lineForm.getDescription().trim());
-            line.setQuantity(scale(lineForm.getQuantity(), 3));
-            line.setUnitPrice(scale(lineForm.getUnitPrice(), 2));
-            line.setDiscountPct(scale(lineForm.getDiscountPct(), 2));
-            line.setTaxPct(scale(lineForm.getTaxPct(), 2));
+            line.setQuantity(scale(NumberInputUtils.parseDecimal(lineForm.getQuantity(), "quantity"),1));
+            line.setUnitPrice(scale(NumberInputUtils.parseDecimal(lineForm.getUnitPrice(), "unit price"),2));
+            line.setDiscountPct(scale(NumberInputUtils.parseDecimal(lineForm.getDiscountPct(),"discount"), 2));
+            line.setTaxPct(scale(NumberInputUtils.parseDecimal(lineForm.getTaxPct(), "tax pct"),0));
 
             LineTotals lt = calculateLineTotals(lineForm);
             line.setLineSubtotal(lt.subtotal());
@@ -267,11 +324,11 @@ public class PurchaseOrderWebService {
     }
 
     private LineTotals calculateLineTotals(PurchaseOrderLineForm line) {
-        BigDecimal qty = scale(line.getQuantity(), 3);
-        BigDecimal unitPrice = scale(line.getUnitPrice(), 2);
-        BigDecimal discountPct = scale(line.getDiscountPct(), 2);
-        BigDecimal taxPct = scale(line.getTaxPct(), 2);
 
+        BigDecimal qty = scale(NumberInputUtils.parseDecimal(line.getQuantity(), "quantity"),1);
+        BigDecimal unitPrice = scale(NumberInputUtils.parseDecimal(line.getUnitPrice(), "unit price"),2);
+        BigDecimal discountPct = scale(NumberInputUtils.parseDecimal(line.getDiscountPct(),"discount"), 2);
+        BigDecimal taxPct = scale(NumberInputUtils.parseDecimal(line.getTaxPct(),"tax pct" ),0);
         BigDecimal gross = qty.multiply(unitPrice);
         BigDecimal discountAmount = gross.multiply(discountPct).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
         BigDecimal subtotal = gross.subtract(discountAmount).setScale(2, RoundingMode.HALF_UP);
@@ -290,10 +347,10 @@ public class PurchaseOrderWebService {
         PurchaseOrderLineForm line = new PurchaseOrderLineForm();
         line.setItemId(null);
         line.setDescription("");
-        line.setQuantity(BigDecimal.ONE);
-        line.setUnitPrice(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
-        line.setDiscountPct(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
-        line.setTaxPct(new BigDecimal("22.00"));
+        line.setQuantity(PdfFormatUtils.formatDecimal(BigDecimal.ONE));
+        line.setUnitPrice(PdfFormatUtils.formatMoney(BigDecimal.ZERO.setScale(0, RoundingMode.HALF_UP)));
+        line.setDiscountPct(PdfFormatUtils.formatDecimal(BigDecimal.ZERO.setScale(0, RoundingMode.HALF_UP)));
+        line.setTaxPct(PdfFormatUtils.formatDecimal(new BigDecimal("22"),0));
         return line;
     }
 
@@ -313,10 +370,10 @@ public class PurchaseOrderWebService {
         PurchaseOrderLineForm line = new PurchaseOrderLineForm();
         line.setItemId(null);
         line.setDescription("");
-        line.setQuantity(java.math.BigDecimal.ONE);
-        line.setUnitPrice(java.math.BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP));
-        line.setDiscountPct(java.math.BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP));
-        line.setTaxPct(new java.math.BigDecimal("22.00"));
+        line.setQuantity(PdfFormatUtils.formatDecimalTrimmed(java.math.BigDecimal.ONE,0));
+        line.setUnitPrice(PdfFormatUtils.formatMoney(java.math.BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP)));
+        line.setDiscountPct(PdfFormatUtils.formatDecimal(java.math.BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP)));
+        line.setTaxPct(PdfFormatUtils.formatDecimal(new java.math.BigDecimal("22"),0));
         return line;
     }
 

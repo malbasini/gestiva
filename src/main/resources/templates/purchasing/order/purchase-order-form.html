@@ -15,12 +15,6 @@
       <div class="card">
         <div th:replace="~{fragments/layout :: flashMessages}"></div>
 
-        <div class="breadcrumb">
-          <a th:href="@{/dashboard}">Dashboard</a> /
-          <a th:href="@{/purchase-orders}">Ordini fornitore</a> /
-          <span th:text="${formMode == 'create'} ? 'Nuovo ordine' : 'Modifica ordine'">Ordine</span>
-        </div>
-
         <div class="page-header">
           <div class="page-header-left">
             <h1 class="page-title" th:text="${formMode == 'create'} ? 'Nuovo ordine fornitore' : 'Modifica ordine fornitore'">Ordine</h1>
@@ -43,7 +37,7 @@
           <div class="form-grid">
             <div class="form-field">
               <label for="supplierId">Fornitore</label>
-              <select id="supplierId" th:field="*{supplierId}">
+              <select id="supplierId" class="form-select" th:field="*{supplierId}">
                 <option value="">Seleziona</option>
                 <option th:each="opt : ${supplierOptions}"
                         th:value="${opt.id}"
@@ -55,17 +49,17 @@
 
             <div class="form-field">
               <label for="orderDate">Data ordine</label>
-              <input id="orderDate" type="date" th:field="*{orderDate}"/>
+              <input id="orderDate" class="form-control" type="date" th:field="*{orderDate}"/>
             </div>
 
             <div class="form-field">
               <label for="expectedDeliveryDate">Consegna prevista</label>
-              <input id="expectedDeliveryDate" type="date" th:field="*{expectedDeliveryDate}"/>
+              <input id="expectedDeliveryDate" class="form-control" type="date" th:field="*{expectedDeliveryDate}"/>
             </div>
 
             <div class="form-field">
               <label for="status">Stato</label>
-              <select id="status" th:field="*{status}">
+              <select id="status" class="form-select" th:field="*{status}">
                 <option value="DRAFT">DRAFT</option>
                 <option value="SENT">SENT</option>
                 <option value="CONFIRMED">CONFIRMED</option>
@@ -75,12 +69,12 @@
 
             <div class="form-field">
               <label for="currencyCode">Valuta</label>
-              <input id="currencyCode" type="text" th:field="*{currencyCode}" placeholder="EUR"/>
+              <input id="currencyCode" class="form-control" type="text" th:field="*{currencyCode}" placeholder="EUR"/>
             </div>
 
             <div class="form-field full">
               <label for="notes">Note</label>
-              <textarea id="notes" th:field="*{notes}" rows="3" placeholder="Note ordine fornitore"></textarea>
+              <textarea id="notes" class="form-control" th:field="*{notes}" rows="3" placeholder="Note ordine fornitore"></textarea>
             </div>
           </div>
 
@@ -89,7 +83,7 @@
               <h2 class="section-title" style="margin:0;">Righe ordine</h2>
             </div>
             <div class="page-header-right">
-              <button type="submit" name="addLine" value="true" class="btn btn-secondary">
+              <button type="submit" name="addLine" value="true" class="btn btn-outline-secondary">
                 <i class="bi bi-plus-lg"></i>
                 <span>Aggiungi riga</span>
               </button>
@@ -113,7 +107,7 @@
 
               <div class="line-col-description">
                 <input type="text"
-                       class="js-line-description"
+                       class="form-control js-line-description"
                        th:attr="data-row-index=${stat.index}"
                        th:field="*{lines[__${stat.index}__].description}"
                        placeholder="Descrizione riga"/>
@@ -125,8 +119,7 @@
               </div>
 
               <div>
-                <input type="number"
-                       step="1"
+                <input type="text" inputmode="decimal" class="form-control"
                        th:field="*{lines[__${stat.index}__].quantity}"/>
                 <div class="field-error-inline"
                      th:if="${#fields.hasErrors('lines[' + stat.index + '].quantity')}"
@@ -136,9 +129,8 @@
               </div>
 
               <div>
-                <input type="number"
-                       step="1"
-                       class="js-line-unit-price"
+                <input type="text" inputmode="decimal"
+                       class=" form-control js-line-unit-price"
                        th:attr="data-row-index=${stat.index}"
                        th:field="*{lines[__${stat.index}__].unitPrice}"/>
                 <div class="field-error-inline"
@@ -149,8 +141,7 @@
               </div>
 
               <div>
-                <input type="number"
-                       step="1"
+                <input type="text" inputmode="decimal" class="form-control"
                        th:field="*{lines[__${stat.index}__].discountPct}"/>
                 <div class="field-error-inline"
                      th:if="${#fields.hasErrors('lines[' + stat.index + '].discountPct')}"
@@ -173,9 +164,8 @@
               </div>
 
               <div>
-                <input type="number"
-                       step="1"
-                       class="js-line-tax-pct"
+                <input type="text" inputmode="decimal"
+                       class=" form-control js-line-tax-pct"
                        th:attr="data-row-index=${stat.index}"
                        th:field="*{lines[__${stat.index}__].taxPct}"/>
                 <div class="field-error-inline"

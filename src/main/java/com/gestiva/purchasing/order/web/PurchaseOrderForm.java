@@ -27,8 +27,7 @@ public class PurchaseOrderForm {
     private String currencyCode;
 
     private String notes;
-
-    @Valid
+    
     private List<PurchaseOrderLineForm> lines = new ArrayList<>();
 
     public Long getSupplierId() {
