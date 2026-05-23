@@ -13,10 +13,6 @@
     <div class="page">
       <div th:replace="~{fragments/layout :: flashMessages}"></div>
       <div class="card">
-        <div class="breadcrumb">
-          <a th:href="@{/dashboard}">Dashboard</a> /
-          <span>Scritture contabili V2</span>
-        </div>
 
         <div class="page-header">
           <div class="page-header-left">
@@ -141,7 +137,7 @@
             <ul class="pagination pagination-sm mb-0">
               <li class="page-item" th:classappend="${page.first} ? ' disabled'">
                 <a class="page-link"
-                   th:href="${page.first} ? '#' : @{/accounting-entries(page=${page.number - 1}, size=${size}, q=${q}, causalCode=${causalCode}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                   th:href="${page.first} ? '#' : @{/v2/journal-entries(page=${page.number - 1}, size=${size}, q=${q}, causalCode=${causalCode}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
                   Precedente
                 </a>
               </li>
@@ -150,13 +146,13 @@
                   th:classappend="${i == page.number} ? ' active'">
                 <a class="page-link"
                    th:text="${i + 1}"
-                   th:href="@{/accounting-entries(page=${i}, size=${size}, q=${q}, causalCode=${causalCode}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                   th:href="@{/v2/journal-entries(page=${i}, size=${size}, q=${q}, causalCode=${causalCode}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
                   1
                 </a>
               </li>
               <li class="page-item" th:classappend="${page.last} ? ' disabled'">
                 <a class="page-link"
-                   th:href="${page.last} ? '#' : @{/accounting-entries(page=${page.number + 1}, size=${size}, q=${q}, causalCode=${causalCode}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                   th:href="${page.last} ? '#' : @{/v2/journal-entries(page=${page.number + 1}, size=${size}, q=${q}, causalCode=${causalCode}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
                   Successiva
                 </a>
               </li>
