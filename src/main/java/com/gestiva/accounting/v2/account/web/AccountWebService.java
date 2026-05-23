@@ -68,6 +68,25 @@ public class AccountWebService {
         return "— ".repeat(levelNo - 1);
     }
 
+    public List<AccountOptionView> findFinancialAccountOptions(Long tenantId) {
+        return accountRepository.findByTenantIdOrderByCodeAsc(tenantId).stream()
+                .filter(Account::isActive)
+                .filter(Account::isLeafAccount)
+                .map(account -> new AccountOptionView(
+                        account.getId(),
+                        account.getCode() + " - " + account.getName()
+                ))
+                .toList();
+    }
+    private boolean isFinancialAccount(com.gestiva.accounting.v2.account.entity.Account account) {
+        if (account.getAccountType() == null) {
+            return false;
+        }
+        String type = account.getAccountType().trim().toUpperCase();
+        return "BANK".equals(type)
+                || "CASH".equals(type)
+                || "FINANCIAL".equals(type);
+    }
     public java.util.List<AccountOptionView> findLeafOptions(Long tenantId) {
         return accountRepository.findByTenantIdAndLeafAccountTrueAndActiveTrueOrderByCodeAsc(tenantId)
                 .stream()

@@ -7,25 +7,36 @@ public class AccountOptionView {
     private String name;
     private String label;
 
+    public AccountOptionView(Long id, String code) {
+       this.id = id;
+       this.code = code;
+    }
+
+    public AccountOptionView() {
+    }
+
     public Long getId() {
         return id;
     }
 
     public void setId(Long id) {
         this.id = id;
-    }    public String getCode() {
+    }
+    public String getCode() {
         return code;
     }
 
     public void setCode(String code) {
         this.code = code;
-    }    public String getName() {
+    }
+    public String getName() {
         return name;
     }
 
     public void setName(String name) {
         this.name = name;
-    }    public String getLabel() {
+    }
+    public String getLabel() {
         return label;
     }
 

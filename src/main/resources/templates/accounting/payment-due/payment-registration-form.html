@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Registra incasso/pagamento</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+  <main class="app-main">
+    <div class="page" style="max-width: 900px;">
+      <div class="card">
+        <div th:replace="~{fragments/layout :: flashMessages}"></div>
+
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title">Registra incasso / pagamento</h1>
+            <div class="muted">Registrazione operazione finanziaria sulla scadenza</div>
+          </div>
+          <div class="page-header-right">
+            <a class="btn btn-outline-secondary" th:href="@{/payment-dues}">
+              <i class="bi bi-arrow-left"></i>
+              <span>Torna allo scadenzario</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="info-grid three-cols">
+          <div class="info-box">
+            <div class="label">Scadenza</div>
+            <div class="value" th:text="${due.id}">1</div>
+          </div>
+          <div class="info-box">
+              <div class="label">Documento</div>
+              <div class="value" th:text="${due.documentNumber}">FT-001</div>
+          </div>
+          <div class="info-box">
+              <div class="label">Importo totale</div>
+              <div class="value" th:text="${grossAmount}">100,00</div>
+          </div>
+        </div>
+        <div class="info-grid three-cols">
+            <div class="info-box">
+              <div class="label">Stato</div>
+              <div class="value" th:text="${due.status}">OPEN</div>
+            </div>
+            <div class="info-box">
+              <div class="label">Incassato / pagato</div>
+              <div class="value" th:text="${paidAmount}">0,00</div>
+            </div>
+            <div class="info-box">
+              <div class="label">Residuo aperto</div>
+              <div class="value" th:text="${openAmount}">100,00</div>
+            </div>
+        </div>
+        <div class="info-grid three-cols">
+            <div class="info-box">
+              <div class="label">Scadenza</div>
+              <div class="value" th:text="${#temporals.format(due.dueDate, 'dd/MM/yyyy')}">20/05/2026</div>
+            </div>
+        </div>
+
+        <form th:action="@{/payment-dues/{id}/register-payment(id=${due.id})}"
+              th:object="${paymentRegistrationForm}"
+              method="post">
+
+          <input type="hidden" th:field="*{paymentDueId}"/>
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="paymentDate">Data operazione</label>
+              <input id="paymentDate" class="form-control" type="date" th:field="*{paymentDate}"/>
+              <div class="field-error" th:if="${#fields.hasErrors('paymentDate')}" th:errors="*{paymentDate}">
+                Errore data
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="financialAccountId">Conto finanziario</label>
+              <select id="financialAccountId" class="form-select" th:field="*{financialAccountId}">
+                <option value="">-- seleziona conto --</option>
+                <option th:each="opt : ${financialAccountOptions}"
+                        th:value="${opt.id}"
+                        th:text="${opt.code}">
+                  BANCA C/C
+                </option>
+              </select>
+              <div class="field-error"
+                   th:if="${#fields.hasErrors('financialAccountId')}"
+                   th:errors="*{financialAccountId}">
+                Errore conto finanziario
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="amount">Importo</label>
+              <input id="amount" class="form-control" type="text" inputmode="decimal" th:field="*{amount}" placeholder="0,00"/>
+              <div class="field-error" th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}">
+                Errore importo
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="paymentMethod">Metodo pagamento</label>
+              <input id="paymentMethod" class="form-control" type="text" th:field="*{paymentMethod}" placeholder="Bonifico"/>
+            </div>
+
+            <div class="form-field">
+              <label for="reference">Riferimento</label>
+              <input id="reference" class="form-control" type="text" th:field="*{reference}" placeholder="CRO / TRN / assegno"/>
+            </div>
+
+            <div class="form-field full">
+              <label for="notes">Note</label>
+              <textarea id="notes" class="form-control" rows="4" th:field="*{notes}"></textarea>
+            </div>
+          </div>
+
+          <div class="actions" style="margin-top:24px;">
+            <button type="submit" class="btn btn-outline-primary">
+              <i class="bi bi-check2-circle"></i>
+              <span>Conferma</span>
+            </button>
+
+            <a class="btn btn-outline-secondary" th:href="@{/payment-dues}">
+              <i class="bi bi-x-circle"></i>
+              <span>Annulla</span>
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
+</div>
+</body>
+</html>

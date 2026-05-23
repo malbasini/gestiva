@@ -30,8 +30,21 @@ public class JournalEntryService {
         this.journalEntryLineRepository = journalEntryLineRepository;
         this.accountRepository = accountRepository;
     }
-
     public Long createManualEntry(Long tenantId, JournalEntryForm form) {
+        return createEntryInternal(tenantId, form, null, null);
+    }
+
+    public Long createEntry(Long tenantId,
+                            JournalEntryForm form,
+                            String referenceType,
+                            Long referenceId) {
+        return createEntryInternal(tenantId, form, referenceType, referenceId);
+    }
+
+    private Long createEntryInternal(Long tenantId,
+                                     JournalEntryForm form,
+                                     String referenceType,
+                                     Long referenceId) {
         List<JournalEntryLine> preparedLines = new ArrayList<>();
 
         BigDecimal totalDebit = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
@@ -100,8 +113,8 @@ public class JournalEntryService {
         entry.setEntryDate(form.getEntryDate());
         entry.setCausalCode(form.getCausalCode());
         entry.setDescription(form.getDescription());
-        entry.setReferenceType(null);
-        entry.setReferenceId(null);
+        entry.setReferenceType(referenceType);
+        entry.setReferenceId(referenceId);
         entry.setCurrencyCode(form.getCurrencyCode());
         entry.setTotalDebit(totalDebit);
         entry.setTotalCredit(totalCredit);
@@ -117,6 +130,17 @@ public class JournalEntryService {
 
         return saved.getId();
     }
+
+
+
+
+
+
+
+
+
+
+
 
     private String nextEntryNumber(Long tenantId) {
         long next = journalEntryRepository.count() + 1;
