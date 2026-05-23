@@ -7,9 +7,11 @@ public class AccountOptionView {
     private String name;
     private String label;
 
-    public AccountOptionView(Long id, String code) {
+    public AccountOptionView(Long id, String code, String name, String label) {
        this.id = id;
        this.code = code;
+       this.name = name;
+       this.label = label;
     }
 
     public AccountOptionView() {

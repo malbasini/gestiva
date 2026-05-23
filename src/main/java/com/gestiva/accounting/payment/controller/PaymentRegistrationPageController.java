@@ -86,13 +86,16 @@ public class PaymentRegistrationPageController {
 
         try {
             form.setPaymentDueId(id);
-            paymentRegistrationService.register(tenantId, form, 63L, 67L);
+            paymentRegistrationService.register(tenantId, form, form.getFinancialAccountId(), form.getFinancialAccountId());
             redirectAttributes.addFlashAttribute("successMessage", "Operazione registrata con successo.");
             return "redirect:/payment-dues";
         } catch (BusinessException ex) {
             model.addAttribute("due", due);
             model.addAttribute("errorMessage", ex.getMessage());
             model.addAttribute("financialAccountOptions", accountWebService.findFinancialAccountOptions(tenantId));
+            model.addAttribute("grossAmount", grossAmount);
+            model.addAttribute("paidAmount", paidAmount);
+            model.addAttribute("openAmount", openAmount);
             model.addAttribute("activeMenu", "accounting");
             return "accounting/payment-due/payment-registration-form";
         }

@@ -82,8 +82,8 @@
               <select id="financialAccountId" class="form-select" th:field="*{financialAccountId}">
                 <option value="">-- seleziona conto --</option>
                 <option th:each="opt : ${financialAccountOptions}"
-                        th:value="${opt.id}"
-                        th:text="${opt.code}">
+                        th:value="${opt.getCode()}"
+                        th:text="${opt.getLabel()}">
                   BANCA C/C
                 </option>
               </select>

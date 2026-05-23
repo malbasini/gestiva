@@ -4,7 +4,6 @@ import com.gestiva.accounting.due.entity.PaymentDue;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -58,6 +57,5 @@ public interface PaymentDueRepository extends JpaRepository<PaymentDue, Long>, J
          and p.dueDate < :today
        """)
     java.math.BigDecimal sumOverdueOpenAmount(Long tenantId, java.util.List<String> statuses, java.time.LocalDate today);
-
 
 }

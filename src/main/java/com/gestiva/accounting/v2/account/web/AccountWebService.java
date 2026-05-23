@@ -74,6 +74,8 @@ public class AccountWebService {
                 .filter(Account::isLeafAccount)
                 .map(account -> new AccountOptionView(
                         account.getId(),
+                        account.getCode(),
+                        account.getName(),
                         account.getCode() + " - " + account.getName()
                 ))
                 .toList();
