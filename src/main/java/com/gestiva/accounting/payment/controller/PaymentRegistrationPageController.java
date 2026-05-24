@@ -46,15 +46,8 @@ public class PaymentRegistrationPageController {
         PaymentRegistrationForm form = new PaymentRegistrationForm();
         form.setPaymentDueId(due.getId());
         form.setPaymentDate(java.time.LocalDate.now());
-
         model.addAttribute("paymentRegistrationForm", form);
-        model.addAttribute("financialAccountOptions", accountWebService.findFinancialAccountOptions(tenantId));
-        model.addAttribute("due", due);
-        model.addAttribute("grossAmount", grossAmount);
-        model.addAttribute("paidAmount", paidAmount);
-        model.addAttribute("openAmount", openAmount);
-        model.addAttribute("activeMenu", "accounting");
-
+        this.enrichFormModel(model,due,grossAmount,paidAmount,openAmount,tenantId);
         return "accounting/payment-due/payment-registration-form";
     }
 
@@ -74,12 +67,7 @@ public class PaymentRegistrationPageController {
         String openAmount = PdfFormatUtils.formatMoney(due.getOpenAmount());
         model.addAttribute("financialAccountOptions", accountWebService.findFinancialAccountOptions(tenantId));
         if (bindingResult.hasErrors()) {
-            model.addAttribute("due", due);
-            model.addAttribute("grossAmount", grossAmount);
-            model.addAttribute("financialAccountOptions", accountWebService.findFinancialAccountOptions(tenantId));
-            model.addAttribute("paidAmount", paidAmount);
-            model.addAttribute("openAmount", openAmount);
-            model.addAttribute("activeMenu", "accounting");
+            this.enrichFormModel(model,due,grossAmount,paidAmount,openAmount,tenantId);
             model.addAttribute("errorMessage", bindingResult.getAllErrors().getFirst().getDefaultMessage());
             return "accounting/payment-due/payment-registration-form";
         }
@@ -88,16 +76,20 @@ public class PaymentRegistrationPageController {
             form.setPaymentDueId(id);
             paymentRegistrationService.register(tenantId, form);
             redirectAttributes.addFlashAttribute("successMessage", "Operazione registrata con successo.");
-            return "redirect:/payment-dues";
+            return "redirect:/payments";
         } catch (BusinessException ex) {
-            model.addAttribute("due", due);
-            model.addAttribute("financialAccountOptions", accountWebService.findFinancialAccountOptions(tenantId));
-            model.addAttribute("grossAmount", grossAmount);
-            model.addAttribute("paidAmount", paidAmount);
-            model.addAttribute("openAmount", openAmount);
-            model.addAttribute("activeMenu", "accounting");
+            this.enrichFormModel(model,due,grossAmount,paidAmount,openAmount,tenantId);
             model.addAttribute("errorMessage", ex.getMessage());
             return "accounting/payment-due/payment-registration-form";
         }
+    }
+
+    private void enrichFormModel(Model model, Object due, String grossAmount, String paidAmount, String openAmount, Long tenantId) {
+        model.addAttribute("due", due);
+        model.addAttribute("grossAmount", grossAmount);
+        model.addAttribute("paidAmount", paidAmount);
+        model.addAttribute("openAmount", openAmount);
+        model.addAttribute("financialAccountOptions", accountWebService.findFinancialAccountOptions(tenantId));
+        model.addAttribute("activeMenu", "accounting");
     }
 }

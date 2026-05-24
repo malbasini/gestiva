@@ -7,4 +7,6 @@ import java.util.List;
 public interface SupplierInvoiceLineRepository extends JpaRepository<SupplierInvoiceLine, Long> {
 
     List<SupplierInvoiceLine> findByTenantIdAndSupplierInvoiceIdOrderByLineNoAsc(Long tenantId, Long supplierInvoiceId);
+
+
 }

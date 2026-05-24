@@ -93,9 +93,12 @@
               <td class="text-right" th:text="${row.formattedAmount}">100,00</td>
               <td th:text="${row.paymentMethod}">Bonifico</td>
               <td th:text="${row.reference}">TRN123</td>
-              <td th:text="${row.dueStatus}">PAID</td>
+              <td th:if="${row.dueStatus == 'PAID'}"><span>SALDATA</span></td>
+              <td th:if="${row.dueStatus == 'PARTIALLY_PAID'}"><span>PARZIALMENTE SALDATA</span></td>
+              <td th:if="${row.dueStatus == 'CANCELLED'}"><span>ANNULLATA</span></td>
+              <td th:if="${row.dueStatus == 'OPEN'}"><span>APERTA</span></td>
               <td class="link-actions col-actions">
-                <a th:if="${row.dueStatus != 'PAID'}"
+                <a th:if="${row.dueStatus != 'PAID' and row.dueStatus != 'CANCELLED'}"
                    th:href="@{/payment-dues/{id}/register-payment(id=${row.paymentDueId})}">
                   <i class="bi bi-cash-coin"></i>
                   <span>Registra</span>
