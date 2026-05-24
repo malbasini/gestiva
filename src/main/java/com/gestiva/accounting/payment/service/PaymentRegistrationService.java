@@ -1,12 +1,12 @@
 package com.gestiva.accounting.payment.service;
 
+import com.gestiva.accounting.due.entity.PaymentDue;
+import com.gestiva.accounting.due.repository.PaymentDueRepository;
 import com.gestiva.accounting.payment.entity.PaymentTransaction;
 import com.gestiva.accounting.payment.repository.PaymentTransactionRepository;
 import com.gestiva.accounting.payment.web.PaymentRegistrationForm;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.util.NumberInputUtils;
-import com.gestiva.accounting.due.entity.PaymentDue;
-import com.gestiva.accounting.due.repository.PaymentDueRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,11 +29,7 @@ public class PaymentRegistrationService {
         this.paymentAccountingService = paymentAccountingService;
     }
 
-    public Long register(Long tenantId,
-                         PaymentRegistrationForm form,
-                         Long customerReceivableAccountId,
-                         Long supplierPayableAccountId) {
-
+    public Long register(Long tenantId, PaymentRegistrationForm form) {
         PaymentDue due = paymentDueRepository.findByTenantIdAndId(tenantId, form.getPaymentDueId())
                 .orElseThrow(() -> new BusinessException("Scadenza non trovata."));
 
@@ -87,9 +83,7 @@ public class PaymentRegistrationService {
                 amount,
                 form.getFinancialAccountId(),
                 form.getReference(),
-                form.getNotes(),
-                customerReceivableAccountId,
-                supplierPayableAccountId
+                form.getNotes()
         );
 
         saved.setJournalEntryId(journalEntryId);

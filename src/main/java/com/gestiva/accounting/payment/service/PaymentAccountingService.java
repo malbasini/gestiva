@@ -1,13 +1,13 @@
 package com.gestiva.accounting.payment.service;
 
 import com.gestiva.accounting.due.entity.PaymentDue;
+import com.gestiva.accounting.v2.account.repository.AccountRepository;
 import com.gestiva.accounting.v2.journal.service.JournalEntryService;
 import com.gestiva.accounting.v2.journal.web.JournalEntryForm;
 import com.gestiva.accounting.v2.journal.web.JournalEntryLineForm;
 import com.gestiva.common.exception.BusinessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -17,10 +17,16 @@ import java.util.List;
 @Transactional
 public class PaymentAccountingService {
 
-    private final JournalEntryService journalEntryService;
+    private static final String CUSTOMER_RECEIVABLE_ACCOUNT_CODE = "1210";
+    private static final String SUPPLIER_PAYABLE_ACCOUNT_CODE = "2110";
 
-    public PaymentAccountingService(JournalEntryService journalEntryService) {
+    private final JournalEntryService journalEntryService;
+    private final AccountRepository accountRepository;
+
+    public PaymentAccountingService(JournalEntryService journalEntryService,
+                                    AccountRepository accountRepository) {
         this.journalEntryService = journalEntryService;
+        this.accountRepository = accountRepository;
     }
 
     public Long createAccountingEntryForPayment(Long tenantId,
@@ -29,19 +35,13 @@ public class PaymentAccountingService {
                                                 BigDecimal amount,
                                                 Long financialAccountId,
                                                 String reference,
-                                                String notes,
-                                                Long customerReceivableAccountId,
-                                                Long supplierPayableAccountId){
+                                                String notes) {
 
         if (financialAccountId == null) {
-          throw new BusinessException("Seleziona il conto finanziario.");
+            throw new BusinessException("Seleziona il conto finanziario.");
         }
 
-        Long tradeAccountId = resolveTradeAccountId(
-                due,
-                customerReceivableAccountId,
-                supplierPayableAccountId
-        );
+        Long tradeAccountId = resolveTradeAccountId(tenantId, due);
 
         JournalEntryForm form = new JournalEntryForm();
         form.setEntryDate(paymentDate);
@@ -78,24 +78,24 @@ public class PaymentAccountingService {
         );
     }
 
-    private Long resolveTradeAccountId(PaymentDue due,
-                                       Long customerReceivableAccountId,
-                                       Long supplierPayableAccountId) {
-        if ("CUSTOMER".equalsIgnoreCase(due.getPartyType())) {
-            if (customerReceivableAccountId == null) {
-                throw new BusinessException("Configura il conto crediti verso clienti.");
-            }
-            return customerReceivableAccountId;
+    private Long resolveTradeAccountId(Long tenantId, PaymentDue due) {
+        if ("RECEIVABLE".equalsIgnoreCase(due.getDirection())) {
+            return accountRepository.findByTenantIdAndCode(tenantId, CUSTOMER_RECEIVABLE_ACCOUNT_CODE)
+                    .orElseThrow(() -> new BusinessException(
+                            "Conto " + CUSTOMER_RECEIVABLE_ACCOUNT_CODE + " Crediti verso clienti non trovato."
+                    ))
+                    .getId();
         }
 
-        if ("SUPPLIER".equalsIgnoreCase(due.getPartyType())) {
-            if (supplierPayableAccountId == null) {
-                throw new BusinessException("Configura il conto debiti verso fornitori.");
-            }
-            return supplierPayableAccountId;
+        if ("PAYABLE".equalsIgnoreCase(due.getDirection())) {
+            return accountRepository.findByTenantIdAndCode(tenantId, SUPPLIER_PAYABLE_ACCOUNT_CODE)
+                    .orElseThrow(() -> new BusinessException(
+                            "Conto " + SUPPLIER_PAYABLE_ACCOUNT_CODE + " Debiti verso fornitori non trovato."
+                    ))
+                    .getId();
         }
 
-        throw new BusinessException("Tipo soggetto non valido: " + due.getPartyType());
+        throw new BusinessException("Direzione scadenza non valida: " + due.getDirection());
     }
 
     private List<JournalEntryLineForm> buildCustomerReceiptLines(Long financialAccountId,

@@ -66,7 +66,7 @@ public class JournalEntryService {
             if (lineForm.getAccountId() == null) {
                 throw new BusinessException("Ogni riga deve avere un conto.");
             }
-            var account = accountRepository.findByTenantIdAndCode(tenantId, String.valueOf(lineForm.getAccountId()))
+            var account = accountRepository.findByTenantIdAndId(tenantId, lineForm.getAccountId())
                     .orElseThrow(() -> new BusinessException("Conto non trovato."));
 
             if (!account.isLeafAccount()) {

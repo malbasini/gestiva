@@ -147,11 +147,8 @@
                 <i class="bi bi-receipt"></i>
                 <span>Fattura</span>
               </a>
-              <a th:href="@{/payment-dues/{id}(id=${due.id})}">
-                <i class="bi bi-eye"></i>
-                <span>Dettaglio</span>
-              </a>
-              <a th:href="@{/payment-dues/{id}/register-payment(id=${due.id})}">
+              <a th:if="${due.status != 'PAID'}"
+                      th:href="@{/payment-dues/{id}/register-payment(id=${due.id})}">
                 <i class="bi bi-cash-coin"></i>
                 <span>Registra</span>
               </a>

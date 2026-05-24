@@ -25,6 +25,11 @@
               <i class="bi bi-speedometer"></i>
               <span>Dashboard</span>
             </a>
+            <a class="btn btn-outline-info"
+               th:href="@{/v2/journal-entries}">
+              <i class="bi bi-eye"></i>
+              <span>Lista scritture contabili</span>
+            </a>
           </div>
         </div>
 
@@ -90,15 +95,10 @@
               <td th:text="${row.reference}">TRN123</td>
               <td th:text="${row.dueStatus}">PAID</td>
               <td class="link-actions col-actions">
-                <a th:if="${row.paymentDueId != null}"
-                   th:href="@{/payment-dues/{id}(id=${row.paymentDueId})}">
-                  <i class="bi bi-calendar-check"></i>
-                  <span>Scadenza</span>
-                </a>
-                <a th:if="${row.journalEntryId != null}"
-                   th:href="@{/v2/journal-entries/{id}(id=${row.journalEntryId})}">
-                  <i class="bi bi-journal-text"></i>
-                  <span>Scrittura</span>
+                <a th:if="${row.dueStatus != 'PAID'}"
+                   th:href="@{/payment-dues/{id}/register-payment(id=${row.paymentDueId})}">
+                  <i class="bi bi-cash-coin"></i>
+                  <span>Registra</span>
                 </a>
               </td>
             </tr>

@@ -21,9 +21,9 @@
             <div class="muted">Registrazione operazione finanziaria sulla scadenza</div>
           </div>
           <div class="page-header-right">
-            <a class="btn btn-outline-secondary" th:href="@{/payment-dues}">
+            <a class="btn btn-outline-secondary" th:href="@{/payments}">
               <i class="bi bi-arrow-left"></i>
-              <span>Torna allo scadenzario</span>
+              <span>Torna a incassi e pagamenti</span>
             </a>
           </div>
         </div>
@@ -82,7 +82,7 @@
               <select id="financialAccountId" class="form-select" th:field="*{financialAccountId}">
                 <option value="">-- seleziona conto --</option>
                 <option th:each="opt : ${financialAccountOptions}"
-                        th:value="${opt.getCode()}"
+                        th:value="${opt.getId()}"
                         th:text="${opt.getLabel()}">
                   BANCA C/C
                 </option>

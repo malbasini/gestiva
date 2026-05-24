@@ -86,7 +86,7 @@ public class PaymentRegistrationPageController {
 
         try {
             form.setPaymentDueId(id);
-            paymentRegistrationService.register(tenantId, form, form.getFinancialAccountId(), form.getFinancialAccountId());
+            paymentRegistrationService.register(tenantId, form);
             redirectAttributes.addFlashAttribute("successMessage", "Operazione registrata con successo.");
             return "redirect:/payment-dues";
         } catch (BusinessException ex) {

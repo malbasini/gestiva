@@ -72,6 +72,7 @@ public class AccountWebService {
         return accountRepository.findByTenantIdOrderByCodeAsc(tenantId).stream()
                 .filter(Account::isActive)
                 .filter(Account::isLeafAccount)
+                .filter(this::isSelectableFinancialAccount)
                 .map(account -> new AccountOptionView(
                         account.getId(),
                         account.getCode(),
@@ -80,14 +81,43 @@ public class AccountWebService {
                 ))
                 .toList();
     }
-    private boolean isFinancialAccount(com.gestiva.accounting.v2.account.entity.Account account) {
-        if (account.getAccountType() == null) {
+
+    private boolean isSelectableFinancialAccount(Account account) {
+        String accountType = account.getAccountType() != null
+                ? account.getAccountType().trim().toUpperCase()
+                : "";
+
+        String code = account.getCode() != null
+                ? account.getCode().trim()
+                : "";
+
+        String name = account.getName() != null
+                ? account.getName().trim().toUpperCase()
+                : "";
+
+        if (!"ASSET".equals(accountType)) {
             return false;
         }
-        String type = account.getAccountType().trim().toUpperCase();
-        return "BANK".equals(type)
-                || "CASH".equals(type)
-                || "FINANCIAL".equals(type);
+
+        boolean excluded =
+                code.equals("1210")
+                        || code.equals("2110")
+                        || name.contains("CREDITI VERSO CLIENTI")
+                        || name.contains("DEBITI VERSO FORNITORI")
+                        || name.contains("MAGAZZINO")
+                        || name.contains("RIMANENZE")
+                        || name.contains("IMMOBILIZZAZIONI");
+
+        if (excluded) {
+            return false;
+        }
+
+        return name.contains("BANCA")
+                || name.contains("CASSA")
+                || name.contains("CARTA")
+                || name.contains("PAYPAL")
+                || name.contains("CONTO CORRENTE")
+                || name.contains("TESORERIA");
     }
     public java.util.List<AccountOptionView> findLeafOptions(Long tenantId) {
         return accountRepository.findByTenantIdAndLeafAccountTrueAndActiveTrueOrderByCodeAsc(tenantId)
