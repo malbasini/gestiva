@@ -91,12 +91,12 @@ public class PaymentRegistrationPageController {
             return "redirect:/payment-dues";
         } catch (BusinessException ex) {
             model.addAttribute("due", due);
-            model.addAttribute("errorMessage", ex.getMessage());
             model.addAttribute("financialAccountOptions", accountWebService.findFinancialAccountOptions(tenantId));
             model.addAttribute("grossAmount", grossAmount);
             model.addAttribute("paidAmount", paidAmount);
             model.addAttribute("openAmount", openAmount);
             model.addAttribute("activeMenu", "accounting");
+            model.addAttribute("errorMessage", ex.getMessage());
             return "accounting/payment-due/payment-registration-form";
         }
     }
