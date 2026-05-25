@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Bilancino di verifica</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+  <main class="app-main">
+    <div class="page">
+      <div class="card">
+        <div th:replace="~{fragments/layout :: flashMessages}"></div>
+
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title">Bilancino di verifica</h1>
+            <div class="muted">Riepilogo Dare / Avere per conto nel periodo selezionato</div>
+          </div>
+        </div>
+
+        <form method="get" class="row g-3 align-items-end">
+          <div class="col-md-3">
+            <label for="dateFrom" class="form-label">Dal</label>
+            <input id="dateFrom" name="dateFrom" type="date" class="form-control" th:value="${dateFrom}"/>
+          </div>
+
+          <div class="col-md-3">
+            <label for="dateTo" class="form-label">Al</label>
+            <input id="dateTo" name="dateTo" type="date" class="form-control" th:value="${dateTo}"/>
+          </div>
+
+          <div class="col-md-6">
+            <button type="submit" class="btn btn-outline-primary">
+              <i class="bi bi-search"></i>
+              <span>Cerca</span>
+            </button>
+
+            <a class="btn btn-outline-secondary" th:href="@{/accounting/trial-balance}">
+              <i class="bi bi-x-circle"></i>
+              <span>Reset</span>
+            </a>
+          </div>
+        </form>
+
+        <div class="info-grid three-cols" style="margin-top:24px;">
+          <div class="info-box">
+            <div class="label">Dal</div>
+            <div class="value" th:text="${trialBalance.formattedDateFrom}">01/05/2026</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Al</div>
+            <div class="value" th:text="${trialBalance.formattedDateTo}">25/05/2026</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Conti movimentati</div>
+            <div class="value" th:text="${#lists.size(trialBalance.rows)}">0</div>
+          </div>
+        </div>
+
+        <div class="table-wrap" style="margin-top:20px;">
+          <table class="table">
+            <thead>
+            <tr>
+              <th>Codice</th>
+              <th>Conto</th>
+              <th>Tipo</th>
+              <th>Natura</th>
+              <th class="text-right">Dare</th>
+              <th class="text-right">Avere</th>
+              <th class="text-right">Saldo</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${#lists.isEmpty(trialBalance.rows)}">
+              <td colspan="7" class="muted">Nessun movimento contabile nel periodo selezionato.</td>
+            </tr>
+
+            <tr th:each="row : ${trialBalance.rows}">
+              <td th:text="${row.accountCode}">1210</td>
+              <td th:text="${row.accountName}">Crediti verso clienti</td>
+              <td th:text="${row.accountType}">ASSET</td>
+              <td th:text="${row.nature}">DEBIT</td>
+              <td class="text-right" th:text="${row.formattedTotalDebit}">100,00</td>
+              <td class="text-right" th:text="${row.formattedTotalCredit}">0,00</td>
+              <td class="text-right" th:text="${row.formattedBalance}">100,00</td>
+            </tr>
+            </tbody>
+            <tfoot>
+            <tr>
+              <th colspan="4" class="text-right">Totali</th>
+              <th class="text-right" th:text="${trialBalance.formattedGrandTotalDebit}">0,00</th>
+              <th class="text-right" th:text="${trialBalance.formattedGrandTotalCredit}">0,00</th>
+              <th></th>
+            </tr>
+            </tfoot>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
+</div>
+</body>
+</html>

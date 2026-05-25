@@ -25,4 +25,14 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, Long
        """)
     List<String> findDistinctCausalCodesByTenantId(Long tenantId);
 
+
+    List<JournalEntry> findByTenantIdAndEntryDateBetweenOrderByEntryDateAscIdAsc(
+            Long tenantId,
+            java.time.LocalDate dateFrom,
+            java.time.LocalDate dateTo
+    );
+
+
+
+
 }
