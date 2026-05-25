@@ -98,8 +98,8 @@ public class DeliveryNoteService {
             line.setLineTotal(defaultZero(orderLine.getLineTotal()));
             line.setItemId(orderLine.getItemId());
             deliveryNoteLineRepository.save(line);
-            stockMovementIntegrationService.createOutboundMovementsFromDeliveryNote(tenantId, savedNote.getId());
         }
+        stockMovementIntegrationService.createOutboundMovementsFromDeliveryNote(tenantId, savedNote.getId());
         inventoryDocumentPostingService.postSalesDeliveryFromDeliveryNote(tenantId, savedNote);
         return toResponse(savedNote);
     }

@@ -149,10 +149,11 @@
                             <ul class="pagination pagination-sm mb-0">
                                 <li class="page-item" th:classappend="${page.first} ? ' disabled'">
                                     <a class="page-link"
-                                       th:href="${page.first} ? '#' : '@{/quotes(page=${page.number - 1}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                                       th:href="${page.first} ? '#' : @{/quotes(page=${page.number - 1}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
                                         Precedente
                                     </a>
                                 </li>
+
                                 <li class="page-item"
                                     th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
                                     th:classappend="${i == page.number} ? ' active'">
@@ -162,9 +163,10 @@
                                         1
                                     </a>
                                 </li>
+
                                 <li class="page-item" th:classappend="${page.last} ? ' disabled'">
                                     <a class="page-link"
-                                       th:href="${page.last} ? '#' : '@{/quotes(page=${page.number + 1}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                                       th:href="${page.last} ? '#' : @{/quotes(page=${page.number + 1}, size=${size}, q=${q}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
                                         Successiva
                                     </a>
                                 </li>

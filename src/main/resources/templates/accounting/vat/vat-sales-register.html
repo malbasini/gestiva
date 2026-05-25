@@ -23,17 +23,17 @@
         </div>
 
         <form method="get" class="row g-3 align-items-end">
-          <div class="col-md-3">
+          <div class="col-md-2">
             <label for="dateFrom" class="form-label">Dal</label>
             <input id="dateFrom" name="dateFrom" type="date" class="form-control" th:value="${dateFrom}"/>
           </div>
 
-          <div class="col-md-3">
+          <div class="col-md-2">
             <label for="dateTo" class="form-label">Al</label>
             <input id="dateTo" name="dateTo" type="date" class="form-control" th:value="${dateTo}"/>
           </div>
 
-          <div class="col-md-6">
+          <div class="col-md-8">
             <button type="submit" class="btn btn-outline-primary">
               <i class="bi bi-search"></i>
               <span>Cerca</span>
@@ -43,6 +43,19 @@
               <i class="bi bi-x-circle"></i>
               <span>Reset</span>
             </a>
+
+            <a class="btn btn-outline-info"
+               th:href="@{/vat-registers/sales/export.csv(dateFrom=${dateFrom}, dateTo=${dateTo})}">
+              <i class="bi bi-download"></i>
+              <span>Export CSV</span>
+            </a>
+
+            <a class="btn btn-outline-success"
+               th:href="@{/vat-registers/sales/export.xlsx(dateFrom=${dateFrom}, dateTo=${dateTo})}">
+              <i class="bi bi-file-earmark-excel"></i>
+              <span>Export XLSX</span>
+            </a>
+
           </div>
         </form>
 

@@ -2,8 +2,8 @@ package com.gestiva.accounting.vat.web;
 
 public class VatSettlementView {
 
-    private Integer year;
-    private Integer month;
+    private String formattedDateFrom;
+    private String formattedDateTo;
 
     private String formattedSalesTaxableAmount;
     private String formattedSalesTaxAmount;
@@ -12,22 +12,22 @@ public class VatSettlementView {
     private String formattedPurchaseTaxAmount;
 
     private String formattedVatBalance;
-    private String balanceTypeLabel; // A DEBITO / A CREDITO / ZERO
+    private String balanceTypeLabel;
 
-    public Integer getYear() {
-        return year;
+    public String getFormattedDateFrom() {
+        return formattedDateFrom;
     }
 
-    public void setYear(Integer year) {
-        this.year = year;
+    public void setFormattedDateFrom(String formattedDateFrom) {
+        this.formattedDateFrom = formattedDateFrom;
     }
 
-    public Integer getMonth() {
-        return month;
+    public String getFormattedDateTo() {
+        return formattedDateTo;
     }
 
-    public void setMonth(Integer month) {
-        this.month = month;
+    public void setFormattedDateTo(String formattedDateTo) {
+        this.formattedDateTo = formattedDateTo;
     }
 
     public String getFormattedSalesTaxableAmount() {

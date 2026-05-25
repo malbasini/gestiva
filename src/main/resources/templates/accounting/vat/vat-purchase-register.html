@@ -39,10 +39,23 @@
               <span>Cerca</span>
             </button>
 
-            <a class="btn btn-outline-secondary" th:href="@{/vat-registers/purchases}">
+            <a class="btn btn-outline-info" th:href="@{/vat-registers/purchases}">
               <i class="bi bi-x-circle"></i>
               <span>Reset</span>
             </a>
+
+            <a class="btn btn-outline-info"
+               th:href="@{/vat-registers/purchases/export.csv(dateFrom=${dateFrom}, dateTo=${dateTo})}">
+              <i class="bi bi-download"></i>
+              <span>Export CSV</span>
+            </a>
+
+            <a class="btn btn-outline-success"
+               th:href="@{/vat-registers/purchases/export.xlsx(dateFrom=${dateFrom}, dateTo=${dateTo})}">
+              <i class="bi bi-file-earmark-excel"></i>
+              <span>Export XLSX</span>
+            </a>
+
           </div>
         </form>
 

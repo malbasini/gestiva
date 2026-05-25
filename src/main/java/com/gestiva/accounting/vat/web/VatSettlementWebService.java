@@ -11,6 +11,7 @@ import com.gestiva.purchasing.invoice.repository.SupplierInvoiceLineRepository;
 import com.gestiva.purchasing.invoice.repository.SupplierInvoiceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -35,10 +36,7 @@ public class VatSettlementWebService {
         this.supplierInvoiceLineRepository = supplierInvoiceLineRepository;
     }
 
-    public VatSettlementView calculateMonthlySettlement(Long tenantId, int year, int month) {
-        LocalDate dateFrom = LocalDate.of(year, month, 1);
-        LocalDate dateTo = dateFrom.withDayOfMonth(dateFrom.lengthOfMonth());
-
+    public VatSettlementView calculateSettlement(Long tenantId, LocalDate dateFrom, LocalDate dateTo) {
         BigDecimal salesTaxable = zero();
         BigDecimal salesTax = zero();
 
@@ -46,7 +44,8 @@ public class VatSettlementWebService {
                 .findByTenantIdAndInvoiceDateBetweenOrderByInvoiceDateAscInvoiceNumberAsc(tenantId, dateFrom, dateTo);
 
         for (Invoice invoice : salesInvoices) {
-            List<InvoiceLine> lines = invoiceLineRepository.findByTenantIdAndInvoiceIdOrderByLineNoAsc(tenantId, invoice.getId());
+            List<InvoiceLine> lines =
+                    invoiceLineRepository.findByTenantIdAndInvoiceIdOrderByLineNoAsc(tenantId, invoice.getId());
 
             for (InvoiceLine line : lines) {
                 salesTaxable = money(salesTaxable.add(money(line.getLineTotal())));
@@ -73,8 +72,8 @@ public class VatSettlementWebService {
         BigDecimal vatBalance = money(salesTax.subtract(purchaseTax));
 
         VatSettlementView view = new VatSettlementView();
-        view.setYear(year);
-        view.setMonth(month);
+        view.setFormattedDateFrom(PdfFormatUtils.formatDate(dateFrom));
+        view.setFormattedDateTo(PdfFormatUtils.formatDate(dateTo));
         view.setFormattedSalesTaxableAmount(PdfFormatUtils.formatMoney(salesTaxable));
         view.setFormattedSalesTaxAmount(PdfFormatUtils.formatMoney(salesTax));
         view.setFormattedPurchaseTaxableAmount(PdfFormatUtils.formatMoney(purchaseTaxable));
