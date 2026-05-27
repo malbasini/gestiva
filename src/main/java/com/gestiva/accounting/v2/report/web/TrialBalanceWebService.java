@@ -90,8 +90,8 @@ public class TrialBalanceWebService {
             row.setAccountId(account.getId());
             row.setAccountCode(account.getCode());
             row.setAccountName(account.getName());
-            row.setAccountType(account.getAccountType());
-            row.setNature(account.getNature());
+            row.setAccountType(this.toAccountTypeLabel(account.getAccountType()));
+            row.setNature(this.toNatureLabel(account.getNature()));
             row.setFormattedTotalDebit(PdfFormatUtils.formatMoney(bucket.totalDebit));
             row.setFormattedTotalCredit(PdfFormatUtils.formatMoney(bucket.totalCredit));
             row.setFormattedBalance(PdfFormatUtils.formatMoney(balance));
@@ -108,6 +108,26 @@ public class TrialBalanceWebService {
         return view;
     }
 
+    private String toAccountTypeLabel(String value) {
+        if (value == null) return "";
+        return switch (value.trim().toUpperCase()) {
+            case "ASSET" -> "Attività";
+            case "LIABILITY" -> "Passività";
+            case "EQUITY" -> "Patrimonio netto";
+            case "REVENUE" -> "Ricavi";
+            case "COST" -> "Costi";
+            default -> value;
+        };
+    }
+
+    private String toNatureLabel(String value) {
+        if (value == null) return "";
+        return switch (value.trim().toUpperCase()) {
+            case "DEBIT" -> "Dare";
+            case "CREDIT" -> "Avere";
+            default -> value;
+        };
+    }
     private BigDecimal zero() {
         return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
     }

@@ -4,6 +4,7 @@ import com.gestiva.accounting.v2.account.service.AccountChartBootstrapService;
 import com.gestiva.accounting.v2.account.web.AccountWebService;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryRepository;
 import com.gestiva.accounting.v2.journal.service.JournalEntryService;
+import com.gestiva.accounting.v2.journal.web.CausalOptionView;
 import com.gestiva.accounting.v2.journal.web.JournalEntryForm;
 import com.gestiva.accounting.v2.journal.web.JournalEntryLineForm;
 import com.gestiva.accounting.v2.journal.web.JournalEntryWebService;
@@ -155,7 +156,7 @@ public class JournalEntryPageController {
         accountChartBootstrapService.initializeDefaultChartOfAccounts(tenantId);
         var resultPage = journalEntryWebService.findPage(tenantId, page, size, causalCode, q, dateFrom, dateTo);
         model.addAttribute("entries", resultPage);
-        model.addAttribute("causalOptions", journalEntryRepository.findDistinctCausalCodesByTenantId(tenantId));
+        model.addAttribute("causalOptions",findCausalOptions(tenantId));
         model.addAttribute("page", resultPage);
         model.addAttribute("q", q);
         model.addAttribute("causalCode", causalCode);
@@ -164,5 +165,23 @@ public class JournalEntryPageController {
         model.addAttribute("size", size);
         model.addAttribute("activeMenu", "v2JournalEntries");
         return "accounting/v2/journal/journal-entry-list";
+    }
+
+    public List<CausalOptionView> findCausalOptions(Long tenantId) {
+        return journalEntryRepository.findDistinctCausalCodesByTenantId(tenantId).stream()
+                .map(code -> new CausalOptionView(code, toLabel(code)))
+                .toList();
+    }
+
+    private String toLabel(String code) {
+        if (code == null) return "";
+        return switch (code) {
+            case "MANUAL_JOURNAL" -> "Scrittura manuale";
+            case "CUSTOMER_RECEIPT" -> "Incasso cliente";
+            case "SUPPLIER_PAYMENT" -> "Pagamento fornitore";
+            case "SALES_INVOICE" -> "Fattura cliente";
+            case "PURCHASE_INVOICE" -> "Fattura fornitore";
+            default -> code;
+        };
     }
 }

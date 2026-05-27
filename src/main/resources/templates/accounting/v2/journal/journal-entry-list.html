@@ -20,9 +20,11 @@
             <div class="muted">Registrazioni in partita doppia</div>
           </div>
           <div class="page-header-right">
-            <a th:href="@{/dashboard}" class="btn btn-outline-secondary" style="margin-right: 10px;">
-              <i class="bi bi-speedometer"></i>
-              <span>Dashboard</span>
+            <a class="btn btn-outline-secondary" th:href="@{/accounting/trial-balance}">
+              <span>Bilancino</span>
+            </a>
+            <a class="btn btn-outline-success" th:href="@{/accounting/financial-summary}">
+              <span>Situazione contabile</span>
             </a>
             <a class="btn btn-outline-primary" th:href="@{/v2/journal-entries/new}">
               <i class="bi bi-plus-lg"></i>
@@ -45,10 +47,9 @@
             <select id="causalCode" name="causalCode" class="form-select">
               <option value="">Tutte</option>
               <option th:each="opt : ${causalOptions}"
-                      th:value="${opt}"
-                      th:text="${opt}"
-                      th:selected="${causalCode == opt}">
-                MANUAL_JOURNAL
+                      th:value="${opt.getCode()}"
+                      th:text="${opt.getLabel()}"
+                      th:selected="${causalCode == opt.getCode()}">
               </option>
             </select>
           </div>
@@ -108,15 +109,16 @@
           <tr th:each="entry : ${entries}">
             <td th:text="${entry.entryNumber}">JE-00001</td>
             <td th:text="${entry.formattedEntryDate}">10/05/2026</td>
-            <td th:text="${entry.causalCode}">MANUAL_JOURNAL</td>
+            <td th:if="${entry.getCausalCode()=='MANUAL_JOURNAL'}"><span>Scrittura manuale</span></td>
+            <td th:if="${entry.getCausalCode()=='CUSTOMER_RECEIPT'}"><span>Incasso cliente</span></td>
+            <td th:if="${entry.getCausalCode()=='SUPPLIER_PAYMENT'}"><span>Pagamento fornitore</span></td>
+            <td th:if="${entry.getCausalCode()=='SALES_INVOICE'}"><span>Fattura cliente</span></td>
+            <td th:if="${entry.getCausalCode()=='PURCHASE_INVOICE'}"><span>Fattura fornitore</span></td>
             <td th:text="${entry.description}">Giroconto iniziale</td>
             <td class="text-right" th:text="${entry.formattedTotalDebit}">100,00 €</td>
             <td class="text-right" th:text="${entry.formattedTotalCredit}">100,00 €</td>
-            <td>
-                            <span class="g-badge"
-                                  th:classappend="${entry.posted} ? ' g-badge-active' : ' g-badge-draft'"
-                                  th:text="${entry.posted} ? 'POSTED' : 'DRAFT'">POSTED</span>
-            </td>
+            <td th:if="${entry.posted eq true}"><span>Registrata</span></td>
+            <td th:if="${entry.posted eq false}"><span>Bozza</span></td>
             <td class="link-actions">
               <a th:href="@{/v2/journal-entries/{id}(id=${entry.id})}">
                 <i class="bi bi-eye"></i>

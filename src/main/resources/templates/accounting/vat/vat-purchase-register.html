@@ -20,6 +20,16 @@
             <h1 class="page-title">Registro IVA acquisti</h1>
             <div class="muted">Riepilogo IVA fatture fornitori per periodo e aliquota</div>
           </div>
+          <div class="page-header-right">
+            <a class="btn btn-outline-secondary" th:href="@{/vat-registers/sales}">
+              <span>Registro IVA vendite</span>
+            </a>
+            <a class="btn btn-outline-primary" th:href="@{/vat-registers/settlement}">
+              <span>Liquidazione IVA</span>
+            </a>
+          </div>
+
+
         </div>
 
         <form method="get" class="row g-3 align-items-end">
@@ -58,6 +68,28 @@
 
           </div>
         </form>
+
+        <div class="info-grid three-cols" style="margin-top:24px;">
+          <div class="info-box">
+            <div class="label">Dal</div>
+            <div class="value" th:text="${#temporals.format(dateFrom, 'dd/MM/yyyy')}">01/05/2026</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Al</div>
+            <div class="value" th:text="${#temporals.format(dateTo, 'dd/MM/yyyy')}">31/05/2026</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Righe registro</div>
+            <div class="value" th:text="${#lists.size(rows)}">0</div>
+          </div>
+        </div>
+
+
+
+
+
+
+
 
         <div class="table-wrap" style="margin-top:20px;">
           <table class="table">

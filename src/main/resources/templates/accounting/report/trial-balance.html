@@ -20,6 +20,14 @@
             <h1 class="page-title">Bilancino di verifica</h1>
             <div class="muted">Riepilogo Dare / Avere per conto nel periodo selezionato</div>
           </div>
+          <div class="page-header-right">
+            <a class="btn btn-outline-secondary" th:href="@{/accounting/financial-summary}">
+              <span>Situazione sintetica</span>
+            </a>
+            <a class="btn btn-outline-primary" th:href="@{/accounting/financial-summary-detail}">
+              <span>Situazione per classi</span>
+            </a>
+          </div>
         </div>
 
         <form method="get" class="row g-3 align-items-end">
@@ -42,6 +50,14 @@
             <a class="btn btn-outline-secondary" th:href="@{/accounting/trial-balance}">
               <i class="bi bi-x-circle"></i>
               <span>Reset</span>
+            </a>
+            <a class="btn btn-outline-info" th:href="@{/accounting/trial-balance/export.csv(dateFrom=${dateFrom}, dateTo=${dateTo})}">
+              <i class="bi bi-download"></i>
+              <span>Export CSV</span>
+            </a>
+            <a class="btn btn-outline-success" th:href="@{/accounting/trial-balance/export.xlsx(dateFrom=${dateFrom}, dateTo=${dateTo})}">
+              <i class="bi bi-file-earmark-excel"></i>
+              <span>Export XLSX</span>
             </a>
           </div>
         </form>

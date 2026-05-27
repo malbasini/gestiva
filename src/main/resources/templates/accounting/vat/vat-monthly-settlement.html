@@ -17,8 +17,16 @@
 
         <div class="page-header">
           <div class="page-header-left">
-            <h1 class="page-title">Liquidazione IVA mensile</h1>
+            <h1 class="page-title">Liquidazione IVA</h1>
             <div class="muted">Riepilogo IVA vendite, acquisti e saldo del periodo</div>
+          </div>
+          <div class="page-header-right">
+            <a class="btn btn-outline-secondary" th:href="@{/vat-registers/sales}">
+              <span>Registro IVA vendite</span>
+            </a>
+            <a class="btn btn-outline-primary" th:href="@{/vat-registers/purchases}">
+              <span>Registro IVA acquisti</span>
+            </a>
           </div>
         </div>
 
@@ -93,9 +101,11 @@
           </div>
         </div>
 
-        <div class="notes" style="margin-top:20px;">
-          <strong>Esito liquidazione:</strong>
-          <span th:text="${settlement.balanceTypeLabel}">A DEBITO</span>
+        <div class="info-grid one-col" style="margin-top:20px;">
+          <div class="info-box">
+            <div class="label">Esito liquidazione</div>
+            <div class="value" th:text="${settlement.balanceTypeLabel}">A DEBITO</div>
+          </div>
         </div>
 
       </div>

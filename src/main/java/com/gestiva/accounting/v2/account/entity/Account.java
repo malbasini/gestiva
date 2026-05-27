@@ -71,7 +71,8 @@ public class Account extends TenantAwareEntity {
 
     public void setAccountType(String accountType) {
         this.accountType = accountType;
-    }    public String getNature() {
+    }
+    public String getNature() {
         return nature;
     }
 
