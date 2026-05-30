@@ -10,4 +10,10 @@ public interface JournalEntryLineRepository extends JpaRepository<JournalEntryLi
     List<JournalEntryLine> findByTenantIdAndAccountIdOrderByJournalEntryIdAscLineNoAsc(Long tenantId, Long accountId);
 
     List<JournalEntryLine> findByTenantIdAndJournalEntryIdIn(Long tenantId, List<Long> journalEntryIds);
+
+    List<JournalEntryLine> findByTenantIdAndAccountIdAndJournalEntryIdInOrderByJournalEntryIdAscLineNoAsc(Long tenantId, Long accountId, List<Long> entryIds);
+
+
+
+
 }

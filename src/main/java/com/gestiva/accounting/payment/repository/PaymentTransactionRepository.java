@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 public interface PaymentTransactionRepository extends JpaRepository<PaymentTransaction, Long> {
 
@@ -29,4 +30,6 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
 
 
     Page<PaymentTransaction> findByTenantId(Long tenantId, Pageable pageable);
+
+    Optional<PaymentTransaction> findByTenantIdAndId(Long tenantId, Long id);
 }

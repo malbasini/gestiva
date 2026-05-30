@@ -1,6 +1,7 @@
 package com.gestiva.accounting.v2.journal.repository;
 
 import com.gestiva.accounting.v2.journal.entity.JournalEntry;
+import com.gestiva.accounting.v2.journal.entity.JournalEntryLine;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -31,8 +32,4 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, Long
             java.time.LocalDate dateFrom,
             java.time.LocalDate dateTo
     );
-
-
-
-
 }

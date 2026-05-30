@@ -109,16 +109,22 @@
           <tr th:each="entry : ${entries}">
             <td th:text="${entry.entryNumber}">JE-00001</td>
             <td th:text="${entry.formattedEntryDate}">10/05/2026</td>
-            <td th:if="${entry.getCausalCode()=='MANUAL_JOURNAL'}"><span>Scrittura manuale</span></td>
-            <td th:if="${entry.getCausalCode()=='CUSTOMER_RECEIPT'}"><span>Incasso cliente</span></td>
-            <td th:if="${entry.getCausalCode()=='SUPPLIER_PAYMENT'}"><span>Pagamento fornitore</span></td>
-            <td th:if="${entry.getCausalCode()=='SALES_INVOICE'}"><span>Fattura cliente</span></td>
-            <td th:if="${entry.getCausalCode()=='PURCHASE_INVOICE'}"><span>Fattura fornitore</span></td>
+            <td>
+                <span th:switch="${entry.causalCode}">
+                  <span th:case="'MANUAL_JOURNAL'">Scrittura manuale</span>
+                  <span th:case="'CUSTOMER_RECEIPT'">Incasso cliente</span>
+                  <span th:case="'SUPPLIER_PAYMENT'">Pagamento fornitore</span>
+                  <span th:case="'SALES_INVOICE'">Fattura cliente</span>
+                  <span th:case="'PURCHASE_INVOICE'">Fattura fornitore</span>
+                  <span th:case="*" th:text="${entry.causalCode}">-</span>
+                </span>
+            </td>
             <td th:text="${entry.description}">Giroconto iniziale</td>
             <td class="text-right" th:text="${entry.formattedTotalDebit}">100,00 €</td>
             <td class="text-right" th:text="${entry.formattedTotalCredit}">100,00 €</td>
-            <td th:if="${entry.posted eq true}"><span>Registrata</span></td>
-            <td th:if="${entry.posted eq false}"><span>Bozza</span></td>
+            <td>
+              <span th:text="${entry.posted} ? 'Registrata' : 'Bozza'">Registrata</span>
+            </td>
             <td class="link-actions">
               <a th:href="@{/v2/journal-entries/{id}(id=${entry.id})}">
                 <i class="bi bi-eye"></i>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Dettaglio incasso / pagamento</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+  <main class="app-main">
+    <div class="page" style="max-width: 1000px;">
+      <div class="card">
+        <div th:replace="~{fragments/layout :: flashMessages}"></div>
+
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title">Dettaglio incasso / pagamento</h1>
+            <div class="muted">Informazioni della registrazione finanziaria</div>
+          </div>
+          <div class="page-header-right">
+            <a class="btn btn-outline-secondary" th:href="@{/payments}">
+              <i class="bi bi-arrow-left"></i>
+              <span>Torna alla lista</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="info-grid three-cols">
+          <div class="info-box">
+            <div class="label">Data operazione</div>
+            <div class="value" th:text="${payment.formattedPaymentDate}">25/05/2026</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Tipo</div>
+            <div class="value" th:text="${payment.directionLabel}">Incasso</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Stato scadenza</div>
+            <div class="value" th:text="${payment.dueStatusLabel}">SALDATA</div>
+          </div>
+        </div>
+
+        <div class="info-grid three-cols" style="margin-top:20px;">
+          <div class="info-box">
+            <div class="label">Soggetto</div>
+            <div class="value" th:text="${payment.partyLabel}">Bianchi Srl</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Documento</div>
+            <div class="value" th:text="${payment.documentLabel}">CUSTOMER_INVOICE - INV-2026-00008</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Importo</div>
+            <div class="value" th:text="${payment.formattedAmount}">122,00</div>
+          </div>
+        </div>
+
+        <div class="info-grid three-cols" style="margin-top:20px;">
+          <div class="info-box">
+            <div class="label">Metodo pagamento</div>
+            <div class="value" th:text="${payment.paymentMethod != null and !#strings.isEmpty(payment.paymentMethod) ? payment.paymentMethod : '-'}">Bonifico</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Riferimento</div>
+            <div class="value" th:text="${payment.reference != null and !#strings.isEmpty(payment.reference) ? payment.reference : '-'}">TRN123</div>
+          </div>
+          <div class="info-box">
+            <div class="label">ID registrazione</div>
+            <div class="value" th:text="${payment.id}">1</div>
+          </div>
+        </div>
+
+        <div class="info-grid one-col" style="margin-top:20px;">
+          <div class="info-box">
+            <div class="label">Note</div>
+            <div class="value" th:text="${payment.notes != null and !#strings.isEmpty(payment.notes) ? payment.notes : '-'}">-</div>
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top:24px;">
+          <a class="btn btn-outline-secondary"
+             th:if="${payment.paymentDueId != null}"
+             th:href="@{/payment-dues/id/{id}(id=${payment.paymentDueId})}">
+            <i class="bi bi-calendar-check"></i>
+            <span>Vai allo scadenzario</span>
+          </a>
+
+          <a class="btn btn-outline-primary"
+             th:if="${payment.journalEntryId != null}"
+             th:href="@{/v2/journal-entries/{id}(id=${payment.journalEntryId})}">
+            <i class="bi bi-journal-text"></i>
+            <span>Vedi scrittura contabile</span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <div th:replace="~{fragments/layout :: appFooter}"></div>
+</div>
+</body>
+</html>

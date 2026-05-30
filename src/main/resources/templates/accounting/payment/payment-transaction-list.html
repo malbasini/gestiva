@@ -34,7 +34,7 @@
         </div>
 
         <form method="get" class="row g-3 align-items-end">
-          <div class="col-md-5">
+          <div class="col-md-4">
             <label for="direction" class="form-label">Tipo</label>
             <select id="direction" class="form-select" name="direction">
               <option value="">Tutti</option>
@@ -52,7 +52,7 @@
             </select>
           </div>
 
-          <div class="col-md-5">
+          <div class="col-md-6">
             <button type="submit" class="btn btn-outline-primary">
               <i class="bi bi-search"></i>
               <span>Cerca</span>
@@ -62,6 +62,18 @@
               <i class="bi bi-x-circle"></i>
               <span>Reset</span>
             </a>
+            <a class="btn btn-outline-info"
+               th:href="@{/payments/export.csv(page=${page.number}, size=${size}, direction=${direction})}">
+              <i class="bi bi-download"></i>
+              <span>Export CSV</span>
+            </a>
+
+            <a class="btn btn-outline-success"
+               th:href="@{/payments/export.xlsx(page=${page.number}, size=${size}, direction=${direction})}">
+              <i class="bi bi-file-earmark-excel"></i>
+              <span>Export XLSX</span>
+            </a>
+
           </div>
         </form>
 
@@ -93,15 +105,32 @@
               <td class="text-right" th:text="${row.formattedAmount}">100,00</td>
               <td th:text="${row.paymentMethod}">Bonifico</td>
               <td th:text="${row.reference}">TRN123</td>
-              <td th:if="${row.dueStatus == 'PAID'}"><span>SALDATA</span></td>
-              <td th:if="${row.dueStatus == 'PARTIALLY_PAID'}"><span>PARZIALMENTE SALDATA</span></td>
-              <td th:if="${row.dueStatus == 'CANCELLED'}"><span>ANNULLATA</span></td>
-              <td th:if="${row.dueStatus == 'OPEN'}"><span>APERTA</span></td>
+              <td>
+                    <span th:switch="${row.dueStatus}">
+                      <span th:case="'PAID'">SALDATA</span>
+                      <span th:case="'PARTIALLY_PAID'">PARZIALMENTE SALDATA</span>
+                      <span th:case="'CANCELLED'">ANNULLATA</span>
+                      <span th:case="'OPEN'">APERTA</span>
+                      <span th:case="*"
+                            th:text="${row.dueStatus}">-</span>
+                    </span>
+              </td>
               <td class="link-actions col-actions">
                 <a th:if="${row.dueStatus != 'PAID' and row.dueStatus != 'CANCELLED'}"
                    th:href="@{/payment-dues/{id}/register-payment(id=${row.paymentDueId})}">
                   <i class="bi bi-cash-coin"></i>
                   <span>Registra</span>
+                </a>
+                <a th:if="${row.paymentDueId != null}"
+                   th:href="@{/payment-dues/{id}(id=${row.paymentDueId})}">
+                  <i class="bi bi-calendar-check"></i>
+                  <span>Scadenzario</span>
+                </a>
+                <a
+                   th:if="${row.journalEntryId != null}"
+                   th:href="@{/v2/journal-entries/{id}(id=${row.journalEntryId})}">
+                  <i class="bi bi-journal-text"></i>
+                  <span>Scrittura contabile</span>
                 </a>
               </td>
             </tr>

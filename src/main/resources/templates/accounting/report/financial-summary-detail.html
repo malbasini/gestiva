@@ -103,7 +103,12 @@
               <tbody>
               <tr th:each="detail : ${section.details}">
                 <td th:text="${detail.accountCode}">1210</td>
-                <td th:text="${detail.accountName}">Crediti verso clienti</td>
+                <td>
+                  <a th:href="@{/accounting/account-ledger(accountId=${detail.accountId}, dateFrom=${dateFrom}, dateTo=${dateTo})}"
+                     th:text="${detail.accountName}">
+                    Crediti verso clienti
+                  </a>
+                </td>
                 <td class="text-right" th:text="${detail.formattedAmount}">0,00</td>
               </tr>
               </tbody>

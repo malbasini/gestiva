@@ -4,6 +4,7 @@ import com.gestiva.accounting.due.entity.PaymentDue;
 import com.gestiva.accounting.due.repository.PaymentDueRepository;
 import com.gestiva.accounting.payment.entity.PaymentTransaction;
 import com.gestiva.accounting.payment.repository.PaymentTransactionRepository;
+import com.gestiva.common.exception.BusinessException;
 import com.gestiva.crm.contact.entity.Customer;
 import com.gestiva.crm.contact.repository.CustomerRepository;
 import com.gestiva.documents.pdf.PdfFormatUtils;
@@ -185,4 +186,62 @@ public class PaymentTransactionListWebService {
     private String buildSupplierLabel(Supplier supplier) {
         return supplier.getName();
     }
+
+    public PaymentTransactionDetailView findDetail(Long tenantId, Long id) {
+        PaymentTransaction tx = paymentTransactionRepository.findByTenantIdAndId(tenantId, id)
+                .orElseThrow(() -> new BusinessException("Registrazione incasso/pagamento non trovata."));
+
+        PaymentDue due = null;
+        if (tx.getPaymentDueId() != null) {
+            due = paymentDueRepository.findByTenantIdAndId(tenantId, tx.getPaymentDueId()).orElse(null);
+        }
+
+        java.util.Map<Long, String> customerNamesById = new java.util.HashMap<>();
+        java.util.Map<Long, String> supplierNamesById = new java.util.HashMap<>();
+
+        if (due != null && due.getPartyId() != null && due.getPartyType() != null) {
+            if ("CUSTOMER".equalsIgnoreCase(due.getPartyType())) {
+                customerRepository.findByTenantIdAndId(tenantId, due.getPartyId())
+                        .ifPresent(c -> customerNamesById.put(c.getId(), buildCustomerLabel(c)));
+            } else if ("SUPPLIER".equalsIgnoreCase(due.getPartyType())) {
+                supplierRepository.findByTenantIdAndId(tenantId, due.getPartyId())
+                        .ifPresent(s -> supplierNamesById.put(s.getId(), buildSupplierLabel(s)));
+            }
+        }
+
+        PaymentTransactionDetailView v = new PaymentTransactionDetailView();
+        v.setId(tx.getId());
+        v.setPaymentDueId(tx.getPaymentDueId());
+        v.setJournalEntryId(tx.getJournalEntryId());
+        v.setFormattedPaymentDate(PdfFormatUtils.formatDate(tx.getPaymentDate()));
+        v.setDirectionLabel(resolveDirectionLabel(tx.getDirection()));
+        v.setPartyLabel(buildPartyLabel(tx, due, customerNamesById, supplierNamesById));
+        v.setDocumentLabel(buildDocumentLabel(due));
+        v.setFormattedAmount(PdfFormatUtils.formatMoney(tx.getAmount()));
+        v.setPaymentMethod(tx.getPaymentMethod());
+        v.setReference(tx.getReference());
+        v.setNotes(tx.getNotes());
+        v.setDueStatusLabel(resolveDueStatusLabel(due != null ? due.getStatus() : null));
+
+        return v;
+    }
+
+    private String resolveDueStatusLabel(String status) {
+        if (status == null) return "-";
+        return switch (status.toUpperCase()) {
+            case "PAID" -> "SALDATA";
+            case "PARTIALLY_PAID" -> "PARZIALMENTE SALDATA";
+            case "CANCELLED" -> "ANNULLATA";
+            case "OPEN" -> "APERTA";
+            default -> status;
+        };
+    }
+
+
+
+
+
+
+
+
 }
