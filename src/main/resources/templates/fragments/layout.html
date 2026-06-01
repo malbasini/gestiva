@@ -120,14 +120,10 @@
                             <li><a class="dropdown-item" th:href="@{/accounting/financial-summary}">Situazione contabile sintetica</a></li>
                             <li><a class="dropdown-item" th:href="@{/accounting/financial-summary-detail}">Situazione contabile per classi</a></li>
                             <li><a class="dropdown-item" th:href="@{/accounting/income-statement}">Conto economico</a></li>
+                            <li><a class="dropdown-item" th:href="@{/accounting/balance-sheet}">Stato patrimoniale</a></li>
                         </ul>
                     </li>
                 </ul>
-
-
-
-
-
                 <div class="ms-auto d-flex align-items-center text-white small">
                 <span class="me-3" th:if="${currentUser != null}">
                      Tenant: &nbsp;<span th:text="${currentUser.tenantName != null ? currentUser.tenantName : 'Tenant'}">Verdi Spa</span>
