@@ -1,6 +1,9 @@
 package com.gestiva.accounting.v2.report.controller;
 
+import com.gestiva.accounting.v2.report.web.IncomeStatementCsvExportService;
+import com.gestiva.accounting.v2.report.web.IncomeStatementView;
 import com.gestiva.accounting.v2.report.web.IncomeStatementWebService;
+import com.gestiva.accounting.v2.report.web.IncomeStatementXlsxExportService;
 import com.gestiva.security.usercontext.TenantContext;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
@@ -17,13 +20,65 @@ public class IncomeStatementPageController {
 
     private final TenantContext tenantContext;
     private final IncomeStatementWebService incomeStatementWebService;
+    private final IncomeStatementCsvExportService incomeStatementCsvExportService;
+    private final IncomeStatementXlsxExportService incomeStatementXlsxExportService;
 
     public IncomeStatementPageController(TenantContext tenantContext,
-                                         IncomeStatementWebService incomeStatementWebService) {
+                                         IncomeStatementWebService incomeStatementWebService,
+                                         IncomeStatementCsvExportService incomeStatementCsvExportService,
+                                         IncomeStatementXlsxExportService incomeStatementXlsxExportService) {
+
         this.tenantContext = tenantContext;
         this.incomeStatementWebService = incomeStatementWebService;
+        this.incomeStatementCsvExportService = incomeStatementCsvExportService;
+        this.incomeStatementXlsxExportService = incomeStatementXlsxExportService;
     }
 
+    @GetMapping("/income-statement/export.csv")
+    public org.springframework.http.ResponseEntity<byte[]> exportCsv(
+            @RequestParam(name = "dateFrom", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dateFrom,
+            @RequestParam(name = "dateTo", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dateTo) {
+
+        Long tenantId = tenantContext.getCurrentTenantId();
+        java.time.LocalDate from = dateFrom != null ? dateFrom : java.time.LocalDate.now().withDayOfMonth(1);
+        java.time.LocalDate to = dateTo != null ? dateTo : java.time.LocalDate.now();
+
+        IncomeStatementView view = incomeStatementWebService.build(tenantId, from, to);
+        byte[] content = incomeStatementCsvExportService.export(view);
+
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=conto_economico.csv")
+                .contentType(new org.springframework.http.MediaType("text", "csv"))
+                .body(content);
+    }
+    @GetMapping("/income-statement/export.xlsx")
+    public org.springframework.http.ResponseEntity<byte[]> exportXlsx(
+            @RequestParam(name = "dateFrom", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dateFrom,
+            @RequestParam(name = "dateTo", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dateTo) {
+
+        Long tenantId = tenantContext.getCurrentTenantId();
+        java.time.LocalDate from = dateFrom != null ? dateFrom : java.time.LocalDate.now().withDayOfMonth(1);
+        java.time.LocalDate to = dateTo != null ? dateTo : java.time.LocalDate.now();
+
+        IncomeStatementView view = incomeStatementWebService.build(tenantId, from, to);
+        byte[] content = incomeStatementXlsxExportService.export(view);
+
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=conto_economico.xlsx")
+                .contentType(org.springframework.http.MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(content);
+    }
     @GetMapping("/income-statement")
     public String page(
             @RequestParam(name = "dateFrom", required = false)

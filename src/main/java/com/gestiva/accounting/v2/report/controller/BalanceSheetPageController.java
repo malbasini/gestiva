@@ -1,6 +1,9 @@
 package com.gestiva.accounting.v2.report.controller;
 
+import com.gestiva.accounting.v2.report.web.BalanceSheetCsvExportService;
+import com.gestiva.accounting.v2.report.web.BalanceSheetView;
 import com.gestiva.accounting.v2.report.web.BalanceSheetWebService;
+import com.gestiva.accounting.v2.report.web.BalanceSheetXlsxExportService;
 import com.gestiva.security.usercontext.TenantContext;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
@@ -17,13 +20,67 @@ public class BalanceSheetPageController {
 
     private final TenantContext tenantContext;
     private final BalanceSheetWebService balanceSheetWebService;
+    private final BalanceSheetCsvExportService balanceSheetCsvExportService;
+    private final BalanceSheetXlsxExportService balanceSheetXlsxExportService;
+
+
+
 
     public BalanceSheetPageController(TenantContext tenantContext,
-                                      BalanceSheetWebService balanceSheetWebService) {
+                                      BalanceSheetWebService balanceSheetWebService,
+                                      BalanceSheetCsvExportService balanceSheetCsvExportService,
+                                      BalanceSheetXlsxExportService balanceSheetXlsxExportService) {
+
         this.tenantContext = tenantContext;
         this.balanceSheetWebService = balanceSheetWebService;
+        this.balanceSheetCsvExportService = balanceSheetCsvExportService;
+        this.balanceSheetXlsxExportService = balanceSheetXlsxExportService;
     }
+    @GetMapping("/balance-sheet/export.csv")
+    public org.springframework.http.ResponseEntity<byte[]> exportCsv(
+            @RequestParam(name = "dateFrom", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dateFrom,
+            @RequestParam(name = "dateTo", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dateTo) {
 
+        Long tenantId = tenantContext.getCurrentTenantId();
+        java.time.LocalDate from = dateFrom != null ? dateFrom : java.time.LocalDate.now().withDayOfMonth(1);
+        java.time.LocalDate to = dateTo != null ? dateTo : java.time.LocalDate.now();
+
+        BalanceSheetView view = balanceSheetWebService.build(tenantId, from, to);
+        byte[] content = balanceSheetCsvExportService.export(view);
+
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=stato_patrimoniale.csv")
+                .contentType(new org.springframework.http.MediaType("text", "csv"))
+                .body(content);
+    }
+    @GetMapping("/balance-sheet/export.xlsx")
+    public org.springframework.http.ResponseEntity<byte[]> exportXlsx(
+            @RequestParam(name = "dateFrom", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dateFrom,
+            @RequestParam(name = "dateTo", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate dateTo) {
+
+        Long tenantId = tenantContext.getCurrentTenantId();
+        java.time.LocalDate from = dateFrom != null ? dateFrom : java.time.LocalDate.now().withDayOfMonth(1);
+        java.time.LocalDate to = dateTo != null ? dateTo : java.time.LocalDate.now();
+
+        BalanceSheetView view = balanceSheetWebService.build(tenantId, from, to);
+        byte[] content = balanceSheetXlsxExportService.export(view);
+
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=stato_patrimoniale.xlsx")
+                .contentType(org.springframework.http.MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(content);
+    }
     @GetMapping("/balance-sheet")
     public String page(
             @RequestParam(name = "dateFrom", required = false)
