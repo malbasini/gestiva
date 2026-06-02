@@ -14,8 +14,8 @@ import com.gestiva.sales.quote.mapper.QuoteMapper;
 import com.gestiva.sales.quote.repository.QuoteLineRepository;
 import com.gestiva.sales.quote.repository.QuoteRepository;
 import com.gestiva.sales.quote.web.QuoteLineForm;
-import com.gestiva.sales.sequence.entity.DocumentSequence;
-import com.gestiva.sales.sequence.repository.DocumentSequenceRepository;
+import com.gestiva.settings.sequence.repository.DocumentSequenceRepository;
+import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,17 +41,19 @@ public class QuoteService {
     private final CustomerRepository customerRepository;
     private final DocumentSequenceRepository documentSequenceRepository;
     private final QuoteMapper quoteMapper;
+    private final DocumentSequenceService documentSequenceService;
 
     public QuoteService(QuoteRepository quoteRepository,
                         QuoteLineRepository quoteLineRepository,
                         CustomerRepository customerRepository,
                         DocumentSequenceRepository documentSequenceRepository,
-                        QuoteMapper quoteMapper) {
+                        QuoteMapper quoteMapper, DocumentSequenceService documentSequenceService) {
         this.quoteRepository = quoteRepository;
         this.quoteLineRepository = quoteLineRepository;
         this.customerRepository = customerRepository;
         this.documentSequenceRepository = documentSequenceRepository;
         this.quoteMapper = quoteMapper;
+        this.documentSequenceService = documentSequenceService;
     }
 
     @Transactional(readOnly = true)
@@ -80,7 +82,7 @@ public class QuoteService {
         validateCustomerExists(tenantId, request.getCustomerId());
         validateLines(request.getLines());
 
-        String quoteNumber = nextQuoteNumber(tenantId, request.getQuoteDate());
+        String quoteNumber = nextQuoteNumber(tenantId);
         Totals totals = calculateTotals(request.getLines());
 
         Quote quote = new Quote();
@@ -296,28 +298,8 @@ public class QuoteService {
         return quoteLineRepository.saveAll(entities);
     }
 
-    private String nextQuoteNumber(Long tenantId, LocalDate quoteDate) {
-        int year = quoteDate.getYear();
-
-        DocumentSequence sequence = documentSequenceRepository
-                .findByTenantIdAndSequenceCodeAndYearValue(tenantId, SEQUENCE_CODE, year)
-                .orElseGet(() -> {
-                    DocumentSequence seq = new DocumentSequence();
-                    seq.setTenantId(tenantId);
-                    seq.setSequenceCode(SEQUENCE_CODE);
-                    seq.setYearValue(year);
-                    seq.setNextNumber(1);
-                    seq.setPrefix("PRE");
-                    return seq;
-                });
-
-        int progressive = sequence.getNextNumber();
-        String prefix = defaultIfBlank(sequence.getPrefix(), "PRE");
-
-        sequence.setNextNumber(progressive + 1);
-        documentSequenceRepository.save(sequence);
-
-        return prefix + "-" + year + "-" + String.format("%05d", progressive);
+    private String nextQuoteNumber(Long tenantId) {
+        return documentSequenceService.nextQuoteNumber(tenantId);
     }
 
     private String defaultIfBlank(String value, String defaultValue) {

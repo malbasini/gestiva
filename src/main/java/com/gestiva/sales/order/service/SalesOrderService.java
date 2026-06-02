@@ -12,8 +12,9 @@ import com.gestiva.sales.quote.entity.Quote;
 import com.gestiva.sales.quote.entity.QuoteLine;
 import com.gestiva.sales.quote.repository.QuoteLineRepository;
 import com.gestiva.sales.quote.repository.QuoteRepository;
-import com.gestiva.sales.sequence.entity.DocumentSequence;
-import com.gestiva.sales.sequence.repository.DocumentSequenceRepository;
+import com.gestiva.settings.sequence.entity.DocumentSequence;
+import com.gestiva.settings.sequence.repository.DocumentSequenceRepository;
+import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,19 +40,26 @@ public class SalesOrderService {
     private final QuoteLineRepository quoteLineRepository;
     private final DocumentSequenceRepository documentSequenceRepository;
     private final SalesOrderMapper salesOrderMapper;
+    private final DocumentSequenceService documentSequenceService;
+
+
+
 
     public SalesOrderService(SalesOrderRepository salesOrderRepository,
                              SalesOrderLineRepository salesOrderLineRepository,
                              QuoteRepository quoteRepository,
                              QuoteLineRepository quoteLineRepository,
                              DocumentSequenceRepository documentSequenceRepository,
-                             SalesOrderMapper salesOrderMapper) {
+                             SalesOrderMapper salesOrderMapper,
+                             DocumentSequenceService documentSequenceService) {
+
         this.salesOrderRepository = salesOrderRepository;
         this.salesOrderLineRepository = salesOrderLineRepository;
         this.quoteRepository = quoteRepository;
         this.quoteLineRepository = quoteLineRepository;
         this.documentSequenceRepository = documentSequenceRepository;
         this.salesOrderMapper = salesOrderMapper;
+        this.documentSequenceService = documentSequenceService;
     }
 
     public SalesOrderResponse convertFromQuote(Long tenantId, Long quoteId) {
@@ -65,7 +73,7 @@ public class SalesOrderService {
             throw new BusinessException("Il preventivo non contiene righe convertibili");
         }
 
-        String orderNumber = nextOrderNumber(tenantId, LocalDate.now());
+        String orderNumber = nextOrderNumber(tenantId);
 
         SalesOrder order = new SalesOrder();
         order.setTenantId(tenantId);
@@ -159,30 +167,8 @@ public class SalesOrderService {
         return salesOrderLineRepository.saveAll(orderLines);
     }
 
-    private String nextOrderNumber(Long tenantId, LocalDate orderDate) {
-        int year = orderDate.getYear();
-
-        DocumentSequence sequence = documentSequenceRepository
-                .findByTenantIdAndSequenceCodeAndYearValue(tenantId, ORDER_SEQUENCE_CODE, year)
-                .orElseGet(() -> {
-                    DocumentSequence seq = new DocumentSequence();
-                    seq.setTenantId(tenantId);
-                    seq.setSequenceCode(ORDER_SEQUENCE_CODE);
-                    seq.setYearValue(year);
-                    seq.setNextNumber(1);
-                    seq.setPrefix("ORD");
-                    return seq;
-                });
-
-        int progressive = sequence.getNextNumber();
-        String prefix = (sequence.getPrefix() == null || sequence.getPrefix().isBlank())
-                ? "ORD"
-                : sequence.getPrefix();
-
-        sequence.setNextNumber(progressive + 1);
-        documentSequenceRepository.save(sequence);
-
-        return prefix + "-" + year + "-" + String.format("%05d", progressive);
+    private String nextOrderNumber(Long tenantId) {
+        return documentSequenceService.nextNumber(tenantId, DocumentSequenceService.SALES_ORDER);
     }
 
     @Transactional(readOnly = true)
