@@ -71,4 +71,8 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
    """)
     BigDecimal calculateInventoryBalance(@Param("tenantId") Long tenantId,
                                          @Param("itemId") Long itemId);
+
+
+    List<InventoryMovement> findTop10ByTenantIdAndItemIdOrderByMovementDateDescIdDesc(Long tenantId, Long itemId);
+
 }

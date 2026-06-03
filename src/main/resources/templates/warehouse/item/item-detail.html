@@ -96,7 +96,7 @@
           <thead>
           <tr>
             <th>Data</th>
-            <th>Direzione</th>
+            <th>Movimento</th>
             <th>Causale</th>
             <th>Quantità</th>
             <th>Riferimento</th>
@@ -110,12 +110,15 @@
           <tr th:each="movement : ${recentMovements}">
             <td th:text="${movement.formattedMovementDate}">06/05/2026</td>
             <td>
-            <span class="badge" th:classappend="${movement.direction == 'IN'} ? ' badge-active' : ' badge-cancelled'"
-                  th:text="${movement.direction}">IN</span>
+      <span class="badge"
+            th:classappend="${movement.inbound} ? ' badge-active' : ' badge-cancelled'"
+            th:text="${movement.movementTypeLabel}">
+        Carico
+      </span>
             </td>
-            <td th:text="${movement.reasonCode}">MANUAL_LOAD</td>
+            <td th:text="${movement.causalCodeLabel}">Rettifica inventario in aumento</td>
             <td th:text="${movement.formattedQuantity + ' ' + item.unitOfMeasure}">10,000 pz</td>
-            <td th:text="${movement.referenceType != null ? movement.referenceType : '-'}">MANUAL</td>
+            <td th:text="${movement.referenceType != null and !#strings.isEmpty(movement.referenceType) ? movement.referenceType : '-'}">DDT</td>
             <td th:text="${movement.notes != null and !#strings.isEmpty(movement.notes) ? movement.notes : '-'}">-</td>
           </tr>
           </tbody>

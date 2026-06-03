@@ -1,5 +1,6 @@
 package com.gestiva.inventory.item.controller;
 
+import com.gestiva.inventory.item.web.ItemMovementWebService;
 import com.gestiva.inventory.movement.web.InventoryLedgerWebService;
 import com.gestiva.inventory.valuation.web.InventoryValuationWebService;
 import com.gestiva.security.usercontext.TenantContext;
@@ -20,16 +21,20 @@ public class ItemPageController {
     private final TenantContext tenantContext;
     private final InventoryLedgerWebService inventoryLedgerWebService;
     private final InventoryValuationWebService inventoryValuationWebService;
+    private final ItemMovementWebService itemMovementWebService;
+
 
     public ItemPageController(ItemWebService itemWebService,
                               TenantContext tenantContext,
                               InventoryLedgerWebService inventoryLedgerWebService,
-                              InventoryValuationWebService inventoryValuationWebService) {
+                              InventoryValuationWebService inventoryValuationWebService,
+                              ItemMovementWebService itemMovementWebService) {
 
         this.itemWebService = itemWebService;
         this.tenantContext = tenantContext;
         this.inventoryLedgerWebService = inventoryLedgerWebService;
         this.inventoryValuationWebService = inventoryValuationWebService;
+        this.itemMovementWebService = itemMovementWebService;
     }
 
     @GetMapping
@@ -55,6 +60,7 @@ public class ItemPageController {
         Long tenantId = tenantContext.getCurrentTenantId();
         var item = itemWebService.getDetail(tenantId, id);
         model.addAttribute("item", item);
+        model.addAttribute("recentMovements", itemMovementWebService.findRecentMovements(tenantId, id));
         model.addAttribute("activeMenu", "items");
         return "warehouse/item/item-detail";
     }
