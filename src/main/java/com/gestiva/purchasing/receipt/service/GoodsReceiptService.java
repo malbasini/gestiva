@@ -98,18 +98,6 @@ public class GoodsReceiptService {
             if (item == null || !item.isTrackStock()) {
                 continue;
             }
-
-            InventoryMovement movement = new InventoryMovement();
-            movement.setTenantId(tenantId);
-            movement.setItemId(item.getId());
-            movement.setMovementDate(savedReceipt.getReceiptDate());
-            movement.setMovementType("IN");
-            movement.setCausalCode("PURCHASE_RECEIPT");
-            movement.setQuantity(poLine.getQuantity());
-            movement.setNotes("Carico automatico da ricezione merci " + savedReceipt.getReceiptNumber());
-            movement.setReferenceType("GOODS_RECEIPT");
-            movement.setReferenceId(savedReceipt.getId());
-            inventoryMovementRepository.save(movement);
         }
         inventoryDocumentPostingService.postPurchaseReceiptFromGoodsReceipt(tenantId, savedReceipt);
         return savedReceipt.getId();
