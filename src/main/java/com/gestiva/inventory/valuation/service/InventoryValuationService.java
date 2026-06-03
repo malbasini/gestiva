@@ -1,8 +1,6 @@
 package com.gestiva.inventory.valuation.service;
 
 import com.gestiva.common.exception.BusinessException;
-import com.gestiva.common.util.NumberInputUtils;
-import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.inventory.movement.entity.InventoryMovement;
 import com.gestiva.inventory.valuation.entity.InventoryAverageBalance;
 import com.gestiva.inventory.valuation.entity.InventoryLayer;
@@ -12,7 +10,7 @@ import com.gestiva.inventory.valuation.model.InventoryValuationResult;
 import com.gestiva.inventory.valuation.repository.InventoryAverageBalanceRepository;
 import com.gestiva.inventory.valuation.repository.InventoryLayerConsumptionRepository;
 import com.gestiva.inventory.valuation.repository.InventoryLayerRepository;
-import com.gestiva.inventory.valuation.repository.InventoryMovementRepository;
+import com.gestiva.inventory.movement.repository.InventoryMovementRepository;
 import com.gestiva.security.tenant.entity.Tenant;
 import com.gestiva.security.tenant.repository.TenantRepository;
 import org.springframework.stereotype.Service;

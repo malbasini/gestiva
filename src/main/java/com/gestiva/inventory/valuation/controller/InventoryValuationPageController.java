@@ -1,7 +1,7 @@
 package com.gestiva.inventory.valuation.controller;
 
 import com.gestiva.inventory.item.web.ItemWebService;
-import com.gestiva.inventory.valuation.repository.InventoryMovementRepository;
+import com.gestiva.inventory.movement.repository.InventoryMovementRepository;
 import com.gestiva.inventory.valuation.web.*;
 import com.gestiva.security.usercontext.TenantContext;
 import org.springframework.stereotype.Controller;

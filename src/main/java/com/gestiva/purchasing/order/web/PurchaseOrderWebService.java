@@ -12,6 +12,7 @@ import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
 import com.gestiva.purchasing.supplier.repository.SupplierRepository;
 import com.gestiva.inventory.item.repository.ItemRepository;
 import com.gestiva.sales.quote.web.QuoteLineForm;
+import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.domain.Page;
@@ -36,17 +37,23 @@ public class PurchaseOrderWebService {
     private final SupplierRepository supplierRepository;
     private final ItemRepository itemRepository;
     private final GoodsReceiptRepository goodsReceiptRepository;
+    private final DocumentSequenceService documentSequenceService;
+
+
 
     public PurchaseOrderWebService(PurchaseOrderRepository purchaseOrderRepository,
                                    PurchaseOrderLineRepository purchaseOrderLineRepository,
                                    SupplierRepository supplierRepository,
                                    ItemRepository itemRepository,
-                                   GoodsReceiptRepository goodsReceiptRepository) {
+                                   GoodsReceiptRepository goodsReceiptRepository,
+                                   DocumentSequenceService documentSequenceService) {
+
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.purchaseOrderLineRepository = purchaseOrderLineRepository;
         this.supplierRepository = supplierRepository;
         this.itemRepository = itemRepository;
         this.goodsReceiptRepository = goodsReceiptRepository;
+        this.documentSequenceService = documentSequenceService;
     }
 
     @Transactional(readOnly = true)
@@ -332,14 +339,7 @@ public class PurchaseOrderWebService {
     }
 
     private String nextOrderNumber(Long tenantId) {
-        long next = purchaseOrderRepository.count() + 1;
-        String number = "PO-" + String.format("%05d", next);
-
-        while (purchaseOrderRepository.existsByTenantIdAndOrderNumber(tenantId, number)) {
-            next++;
-            number = "PO-" + String.format("%05d", next);
-        }
-        return number;
+        return documentSequenceService.nextPurchaseOrderNumber(tenantId);
     }
 
     @Transactional(readOnly = true)

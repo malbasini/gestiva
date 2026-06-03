@@ -12,12 +12,10 @@ import com.gestiva.sales.quote.entity.Quote;
 import com.gestiva.sales.quote.entity.QuoteLine;
 import com.gestiva.sales.quote.repository.QuoteLineRepository;
 import com.gestiva.sales.quote.repository.QuoteRepository;
-import com.gestiva.settings.sequence.entity.DocumentSequence;
 import com.gestiva.settings.sequence.repository.DocumentSequenceRepository;
 import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;

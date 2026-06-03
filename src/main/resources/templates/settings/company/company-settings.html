@@ -22,7 +22,7 @@
                     </div>
                 </div>
 
-                <form method="post" th:object="${companySettingsForm}">
+                <form method="post" th:object="${companySettingsForm}" th:action="@{/settings/company}">
                     <h2 class="page-title" style="font-size:1.1rem; margin-top:10px;">Dati azienda</h2>
 
                     <div class="form-grid">

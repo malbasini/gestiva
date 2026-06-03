@@ -1,6 +1,8 @@
 package com.gestiva.purchasing.receipt.service;
 
 import com.gestiva.common.exception.BusinessException;
+import com.gestiva.inventory.movement.entity.InventoryMovement;
+import com.gestiva.inventory.movement.repository.InventoryMovementRepository;
 import com.gestiva.inventory.movement.service.InventoryDocumentPostingService;
 import com.gestiva.purchasing.order.repository.PurchaseOrderLineRepository;
 import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
@@ -9,8 +11,7 @@ import com.gestiva.purchasing.receipt.entity.GoodsReceiptLine;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptLineRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
 import com.gestiva.inventory.item.repository.ItemRepository;
-import com.gestiva.inventory.stock.entity.StockMovement;
-import com.gestiva.inventory.stock.repository.StockMovementRepository;
+import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,16 +26,19 @@ public class GoodsReceiptService {
     private final GoodsReceiptRepository goodsReceiptRepository;
     private final GoodsReceiptLineRepository goodsReceiptLineRepository;
     private final ItemRepository itemRepository;
-    private final StockMovementRepository stockMovementRepository;
     private final InventoryDocumentPostingService inventoryDocumentPostingService;
+    private final InventoryMovementRepository inventoryMovementRepository;
+    private final DocumentSequenceService documentSequenceService;
+
 
     public GoodsReceiptService(PurchaseOrderRepository purchaseOrderRepository,
                                PurchaseOrderLineRepository purchaseOrderLineRepository,
                                GoodsReceiptRepository goodsReceiptRepository,
                                GoodsReceiptLineRepository goodsReceiptLineRepository,
                                ItemRepository itemRepository,
-                               StockMovementRepository stockMovementRepository,
-                               InventoryDocumentPostingService inventoryDocumentPostingService) {
+                               InventoryDocumentPostingService inventoryDocumentPostingService,
+                               InventoryMovementRepository inventoryMovementRepository,
+                               DocumentSequenceService documentSequenceService) {
 
 
         this.purchaseOrderRepository = purchaseOrderRepository;
@@ -42,8 +46,9 @@ public class GoodsReceiptService {
         this.goodsReceiptRepository = goodsReceiptRepository;
         this.goodsReceiptLineRepository = goodsReceiptLineRepository;
         this.itemRepository = itemRepository;
-        this.stockMovementRepository = stockMovementRepository;
         this.inventoryDocumentPostingService = inventoryDocumentPostingService;
+        this.inventoryMovementRepository = inventoryMovementRepository;
+        this.documentSequenceService = documentSequenceService;
     }
 
     public Long createFromPurchaseOrder(Long tenantId, Long purchaseOrderId) {
@@ -94,31 +99,23 @@ public class GoodsReceiptService {
                 continue;
             }
 
-            StockMovement movement = new StockMovement();
+            InventoryMovement movement = new InventoryMovement();
             movement.setTenantId(tenantId);
             movement.setItemId(item.getId());
             movement.setMovementDate(savedReceipt.getReceiptDate());
-            movement.setDirection("IN");
-            movement.setReasonCode("PURCHASE_RECEIPT");
+            movement.setMovementType("IN");
+            movement.setCausalCode("PURCHASE_RECEIPT");
             movement.setQuantity(poLine.getQuantity());
             movement.setNotes("Carico automatico da ricezione merci " + savedReceipt.getReceiptNumber());
             movement.setReferenceType("GOODS_RECEIPT");
             movement.setReferenceId(savedReceipt.getId());
-            stockMovementRepository.save(movement);
+            inventoryMovementRepository.save(movement);
         }
         inventoryDocumentPostingService.postPurchaseReceiptFromGoodsReceipt(tenantId, savedReceipt);
         return savedReceipt.getId();
     }
 
     private String nextReceiptNumber(Long tenantId) {
-        long next = goodsReceiptRepository.count() + 1;
-        String number = "GR-" + String.format("%05d", next);
-
-        while (goodsReceiptRepository.existsByTenantIdAndReceiptNumber(tenantId, number)) {
-            next++;
-            number = "GR-" + String.format("%05d", next);
-        }
-
-        return number;
+        return documentSequenceService.nextGoodsReceiptNumber(tenantId);
     }
 }

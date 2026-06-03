@@ -13,6 +13,7 @@ import com.gestiva.logistics.ddt.entity.DeliveryNote;
 import com.gestiva.logistics.ddt.entity.DeliveryNoteLine;
 import com.gestiva.logistics.ddt.repository.DeliveryNoteLineRepository;
 import com.gestiva.logistics.ddt.repository.DeliveryNoteRepository;
+import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,8 +32,7 @@ public class InvoiceService {
     private final DeliveryNoteLineRepository deliveryNoteLineRepository;
     private final PaymentDueService paymentDueService;
     private final JournalAutoPostingService journalAutoPostingService;
-
-
+    private final DocumentSequenceService documentSequenceService;
 
 
 
@@ -41,7 +41,8 @@ public class InvoiceService {
                           DeliveryNoteRepository deliveryNoteRepository,
                           DeliveryNoteLineRepository deliveryNoteLineRepository,
                           PaymentDueService paymentDueService,
-                          JournalAutoPostingService journalAutoPostingService) {
+                          JournalAutoPostingService journalAutoPostingService,
+                          DocumentSequenceService documentSequenceService) {
 
         this.invoiceRepository = invoiceRepository;
         this.invoiceLineRepository = invoiceLineRepository;
@@ -49,6 +50,7 @@ public class InvoiceService {
         this.deliveryNoteLineRepository = deliveryNoteLineRepository;
         this.paymentDueService = paymentDueService;
         this.journalAutoPostingService = journalAutoPostingService;
+        this.documentSequenceService = documentSequenceService;
     }
 
     public InvoiceResponse createFromDeliveryNote(Long tenantId, Long deliveryNoteId) {
@@ -71,7 +73,7 @@ public class InvoiceService {
         invoice.setDeliveryNoteId(deliveryNote.getId());
         invoice.setSalesOrderId(deliveryNote.getSalesOrderId());
         invoice.setCustomerId(deliveryNote.getCustomerId());
-        invoice.setInvoiceNumber(generateNextInvoiceNumber(tenantId, now.toLocalDate()));
+        invoice.setInvoiceNumber(generateNextInvoiceNumber(tenantId));
         invoice.setInvoiceDate(LocalDate.now());
         invoice.setStatus("ISSUED");
         invoice.setCurrencyCode(deliveryNote.getCurrencyCode());
@@ -136,9 +138,8 @@ public class InvoiceService {
         }
     }
 
-    private String generateNextInvoiceNumber(Long tenantId, LocalDate date) {
-        long count = invoiceRepository.countByTenantId(tenantId) + 1;
-        return "INV-" + date.getYear() + "-" + String.format("%05d", count);
+    private String generateNextInvoiceNumber(Long tenantId) {
+       return documentSequenceService.nextSalesInvoiceNumber(tenantId);
     }
 
     private BigDecimal defaultZero(BigDecimal value) {

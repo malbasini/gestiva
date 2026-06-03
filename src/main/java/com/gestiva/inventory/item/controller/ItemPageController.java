@@ -5,7 +5,6 @@ import com.gestiva.inventory.valuation.web.InventoryValuationWebService;
 import com.gestiva.security.usercontext.TenantContext;
 import com.gestiva.inventory.item.web.ItemForm;
 import com.gestiva.inventory.item.web.ItemWebService;
-import com.gestiva.inventory.stock.web.StockMovementWebService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,19 +18,16 @@ public class ItemPageController {
 
     private final ItemWebService itemWebService;
     private final TenantContext tenantContext;
-    private final StockMovementWebService stockMovementWebService;
     private final InventoryLedgerWebService inventoryLedgerWebService;
     private final InventoryValuationWebService inventoryValuationWebService;
 
     public ItemPageController(ItemWebService itemWebService,
                               TenantContext tenantContext,
-                              StockMovementWebService stockMovementWebService,
                               InventoryLedgerWebService inventoryLedgerWebService,
                               InventoryValuationWebService inventoryValuationWebService) {
 
         this.itemWebService = itemWebService;
         this.tenantContext = tenantContext;
-        this.stockMovementWebService = stockMovementWebService;
         this.inventoryLedgerWebService = inventoryLedgerWebService;
         this.inventoryValuationWebService = inventoryValuationWebService;
     }
@@ -59,11 +55,6 @@ public class ItemPageController {
         Long tenantId = tenantContext.getCurrentTenantId();
         var item = itemWebService.getDetail(tenantId, id);
         model.addAttribute("item", item);
-        if (item.isStockManaged()) {
-            model.addAttribute("recentMovements", stockMovementWebService.getRecentMovements(tenantId, id));
-        } else {
-            model.addAttribute("recentMovements", java.util.Collections.emptyList());
-        }
         model.addAttribute("activeMenu", "items");
         return "warehouse/item/item-detail";
     }

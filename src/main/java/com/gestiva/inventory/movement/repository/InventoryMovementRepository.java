@@ -1,4 +1,4 @@
-package com.gestiva.inventory.valuation.repository;
+package com.gestiva.inventory.movement.repository;
 
 import com.gestiva.inventory.movement.entity.InventoryMovement;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -55,21 +55,20 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
             @Param("dateTo") java.time.LocalDate dateTo
     );
     @Query("""
-       select coalesce(
-           sum(
-               case
-                   when upper(m.movementType) in ('IN', 'ADJUSTMENT_IN') then m.quantity
-                   when upper(m.movementType) in ('OUT', 'ADJUSTMENT_OUT') then -m.quantity
-                   else 0
-               end
-           ), 0
-       )
-       from InventoryMovement m
-       where m.tenantId = :tenantId
-         and m.itemId = :itemId
-       """)
+   select coalesce(
+       sum(
+           case
+               when upper(m.movementType) in ('IN', 'ADJUSTMENT_IN') then m.quantity
+               when upper(m.movementType) in ('OUT', 'ADJUSTMENT_OUT') then -m.quantity
+               else 0
+           end
+       ), 0
+   )
+   from InventoryMovement m
+   where m.tenantId = :tenantId
+     and m.itemId = :itemId
+     and m.reversed = false
+   """)
     BigDecimal calculateInventoryBalance(@Param("tenantId") Long tenantId,
                                          @Param("itemId") Long itemId);
-
-
 }

@@ -4,7 +4,7 @@ import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.inventory.item.entity.Item;
 import com.gestiva.inventory.item.repository.ItemRepository;
 import com.gestiva.inventory.movement.entity.InventoryMovement;
-import com.gestiva.inventory.valuation.repository.InventoryMovementRepository;
+import com.gestiva.inventory.movement.repository.InventoryMovementRepository;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;

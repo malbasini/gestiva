@@ -2,9 +2,7 @@ package com.gestiva.purchasing.receipt.web;
 
 import com.gestiva.common.exception.NotFoundException;
 import com.gestiva.documents.pdf.PdfFormatUtils;
-import com.gestiva.purchasing.invoice.entity.SupplierInvoice;
 import com.gestiva.purchasing.invoice.repository.SupplierInvoiceRepository;
-import com.gestiva.purchasing.invoice.web.SupplierInvoiceListItemView;
 import com.gestiva.purchasing.order.entity.PurchaseOrder;
 import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
 import com.gestiva.purchasing.receipt.entity.GoodsReceipt;

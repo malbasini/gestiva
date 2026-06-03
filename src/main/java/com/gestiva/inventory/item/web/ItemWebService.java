@@ -6,8 +6,7 @@ import com.gestiva.common.util.NumberInputUtils;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.inventory.item.entity.Item;
 import com.gestiva.inventory.item.repository.ItemRepository;
-import com.gestiva.inventory.stock.repository.StockMovementRepository;
-import com.gestiva.inventory.valuation.repository.InventoryMovementRepository;
+import com.gestiva.inventory.movement.repository.InventoryMovementRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,14 +24,11 @@ import java.util.Locale;
 public class ItemWebService {
 
     private final ItemRepository itemRepository;
-    private final StockMovementRepository stockMovementRepository;
     private final InventoryMovementRepository inventoryMovementRepository;
 
     public ItemWebService(ItemRepository itemRepository,
-                          StockMovementRepository stockMovementRepository,
                           InventoryMovementRepository inventoryMovementRepository) {
         this.itemRepository = itemRepository;
-        this.stockMovementRepository = stockMovementRepository;
         this.inventoryMovementRepository = inventoryMovementRepository;
     }
 

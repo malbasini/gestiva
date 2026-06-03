@@ -4,7 +4,7 @@ import com.gestiva.common.exception.BusinessException;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.inventory.item.entity.Item;
 import com.gestiva.inventory.item.repository.ItemRepository;
-import com.gestiva.inventory.valuation.repository.InventoryMovementRepository;
+import com.gestiva.inventory.movement.repository.InventoryMovementRepository;
 import com.gestiva.inventory.valuation.entity.InventoryLayer;
 import com.gestiva.inventory.valuation.repository.InventoryAverageBalanceRepository;
 import com.gestiva.inventory.valuation.repository.InventoryLayerRepository;

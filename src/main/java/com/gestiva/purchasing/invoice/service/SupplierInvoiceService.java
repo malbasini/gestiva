@@ -11,6 +11,7 @@ import com.gestiva.purchasing.order.repository.PurchaseOrderLineRepository;
 import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptLineRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
+import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -28,6 +29,7 @@ public class SupplierInvoiceService {
     private final PurchaseOrderLineRepository purchaseOrderLineRepository;
     private final PaymentDueService paymentDueService;
     private final JournalAutoPostingService journalAutoPostingService;
+    private final DocumentSequenceService documentSequenceService;
 
 
     public SupplierInvoiceService(SupplierInvoiceRepository supplierInvoiceRepository,
@@ -37,7 +39,8 @@ public class SupplierInvoiceService {
                                   PurchaseOrderRepository purchaseOrderRepository,
                                   PurchaseOrderLineRepository purchaseOrderLineRepository,
                                   PaymentDueService paymentDueService,
-                                  JournalAutoPostingService journalAutoPostingService) {
+                                  JournalAutoPostingService journalAutoPostingService,
+                                  DocumentSequenceService documentSequenceService) {
 
 
         this.supplierInvoiceRepository = supplierInvoiceRepository;
@@ -48,6 +51,7 @@ public class SupplierInvoiceService {
         this.purchaseOrderLineRepository = purchaseOrderLineRepository;
         this.paymentDueService = paymentDueService;
         this.journalAutoPostingService = journalAutoPostingService;
+        this.documentSequenceService = documentSequenceService;
     }
 
     public Long createFromGoodsReceipt(Long tenantId, Long goodsReceiptId) {
@@ -149,13 +153,6 @@ public class SupplierInvoiceService {
     }
 
     private String nextInvoiceNumber(Long tenantId) {
-        long next = supplierInvoiceRepository.count() + 1;
-        String number = "SI-" + String.format("%05d", next);
-
-        while (supplierInvoiceRepository.existsByTenantIdAndInvoiceNumber(tenantId, number)) {
-            next++;
-            number = "SI-" + String.format("%05d", next);
-        }
-        return number;
+        return documentSequenceService.nextSupplierInvoiceNumber(tenantId);
     }
 }

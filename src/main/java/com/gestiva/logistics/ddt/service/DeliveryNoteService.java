@@ -2,7 +2,9 @@ package com.gestiva.logistics.ddt.service;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
+import com.gestiva.inventory.movement.repository.InventoryMovementRepository;
 import com.gestiva.inventory.movement.service.InventoryDocumentPostingService;
+import com.gestiva.inventory.movement.service.InventoryMovementService;
 import com.gestiva.logistics.ddt.dto.DeliveryNoteResponse;
 import com.gestiva.logistics.ddt.entity.DeliveryNote;
 import com.gestiva.logistics.ddt.entity.DeliveryNoteLine;
@@ -12,7 +14,7 @@ import com.gestiva.sales.order.entity.SalesOrder;
 import com.gestiva.sales.order.entity.SalesOrderLine;
 import com.gestiva.sales.order.repository.SalesOrderLineRepository;
 import com.gestiva.sales.order.repository.SalesOrderRepository;
-import com.gestiva.inventory.stock.service.StockMovementIntegrationService;
+import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -28,22 +30,31 @@ public class DeliveryNoteService {
     private final DeliveryNoteLineRepository deliveryNoteLineRepository;
     private final SalesOrderRepository salesOrderRepository;
     private final SalesOrderLineRepository salesOrderLineRepository;
-    private final StockMovementIntegrationService stockMovementIntegrationService;
     private final InventoryDocumentPostingService inventoryDocumentPostingService;
+    private final DocumentSequenceService documentSequenceService;
+    private final InventoryMovementRepository inventoryMovementRepository;
+    private final InventoryMovementService inventoryMovementService;
+
+
+
 
     public DeliveryNoteService(DeliveryNoteRepository deliveryNoteRepository,
                                DeliveryNoteLineRepository deliveryNoteLineRepository,
                                SalesOrderRepository salesOrderRepository,
                                SalesOrderLineRepository salesOrderLineRepository,
-                               StockMovementIntegrationService stockMovementIntegrationService,
-                               InventoryDocumentPostingService inventoryDocumentPostingService) {
+                               InventoryDocumentPostingService inventoryDocumentPostingService,
+                               DocumentSequenceService documentSequenceService,
+                               InventoryMovementRepository inventoryMovementRepository,
+                               InventoryMovementService inventoryMovementService) {
 
         this.deliveryNoteRepository = deliveryNoteRepository;
         this.deliveryNoteLineRepository = deliveryNoteLineRepository;
         this.salesOrderRepository = salesOrderRepository;
         this.salesOrderLineRepository = salesOrderLineRepository;
-        this.stockMovementIntegrationService = stockMovementIntegrationService;
         this.inventoryDocumentPostingService = inventoryDocumentPostingService;
+        this.documentSequenceService = documentSequenceService;
+        this.inventoryMovementRepository = inventoryMovementRepository;
+        this.inventoryMovementService = inventoryMovementService;
     }
 
     public DeliveryNoteResponse createFromSalesOrder(Long tenantId, Long salesOrderId) {
@@ -65,7 +76,7 @@ public class DeliveryNoteService {
         note.setTenantId(tenantId);
         note.setSalesOrderId(order.getId());
         note.setCustomerId(order.getCustomerId());
-        note.setDdtNumber(generateNextDdtNumber(tenantId, now.toLocalDate()));
+        note.setDdtNumber(generateNextDdtNumber(tenantId));
         note.setDdtDate(LocalDate.now());
         note.setStatus("ISSUED");
 
@@ -81,9 +92,10 @@ public class DeliveryNoteService {
         note.setCreatedAt(now);
         note.setUpdatedAt(now);
         DeliveryNote savedNote = deliveryNoteRepository.save(note);
+        DeliveryNoteLine line = null;
         int lineNo = 1;
         for (SalesOrderLine orderLine : orderLines) {
-            DeliveryNoteLine line = new DeliveryNoteLine();
+            line = new DeliveryNoteLine();
             line.setTenantId(tenantId);
             line.setDeliveryNoteId(savedNote.getId());
             line.setSalesOrderLineId(orderLine.getId());
@@ -99,7 +111,6 @@ public class DeliveryNoteService {
             line.setItemId(orderLine.getItemId());
             deliveryNoteLineRepository.save(line);
         }
-        stockMovementIntegrationService.createOutboundMovementsFromDeliveryNote(tenantId, savedNote.getId());
         inventoryDocumentPostingService.postSalesDeliveryFromDeliveryNote(tenantId, savedNote);
         return toResponse(savedNote);
     }
@@ -115,9 +126,8 @@ public class DeliveryNoteService {
         }
     }
 
-    private String generateNextDdtNumber(Long tenantId, LocalDate date) {
-        long count = deliveryNoteRepository.countByTenantId(tenantId) + 1;
-        return "DDT-" + date.getYear() + "-" + String.format("%05d", count);
+    private String generateNextDdtNumber(Long tenantId) {
+        return documentSequenceService.nextDeliveryNoteNumber(tenantId);
     }
 
     private BigDecimal defaultZero(BigDecimal value) {

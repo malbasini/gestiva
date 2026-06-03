@@ -2,7 +2,7 @@ package com.gestiva.inventory.movement.service;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.inventory.item.repository.ItemRepository;
-import com.gestiva.inventory.valuation.repository.InventoryMovementRepository;
+import com.gestiva.inventory.movement.repository.InventoryMovementRepository;
 import com.gestiva.inventory.valuation.service.InventoryAvailabilityService;
 import com.gestiva.inventory.valuation.service.InventoryValuationService;
 import com.gestiva.logistics.ddt.repository.DeliveryNoteLineRepository;
