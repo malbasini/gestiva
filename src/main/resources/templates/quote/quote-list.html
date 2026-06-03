@@ -14,22 +14,20 @@
     <main class="app-main">
         <div class="page">
             <div th:replace="~{fragments/layout :: flashMessages}"></div>
-            <div class="card row g-3 align-items-end">
-                <div class="col-md-6"></div>
-                <div class="col-md-6 d-flex justify-content-end gap-2">
-                    <a th:href="@{/dashboard}" class="btn btn-outline-secondary">
-                        <i class="bi bi-speedometer"></i>
-                        <span>Dashboard</span>
-                    </a>
-                    <a class="btn btn-outline-success" th:href="@{/quotes/new(tenantId=${tenantId})}">
-                        <i class="bi bi-plus-lg"></i>
-                        <span>Nuovo</span>
-                    </a>
-                </div>
                     <div class="page-header">
                       <div class="page-header-left">
                         <h1 class="page-title">Preventivi</h1>
                         <div class="muted">Gestione documenti preventivi</div>
+                    </div>
+                    <div class="page-header-right">
+                        <a th:href="@{/dashboard}" class="btn btn-outline-secondary">
+                            <i class="bi bi-speedometer"></i>
+                            <span>Dashboard</span>
+                        </a>
+                        <a class="btn btn-outline-success" th:href="@{/quotes/new(tenantId=${tenantId})}">
+                            <i class="bi bi-plus-lg"></i>
+                            <span>Nuovo preventivo</span>
+                        </a>
                     </div>
                 </div>
                 <form method="get" class="row g-3 align-items-end">

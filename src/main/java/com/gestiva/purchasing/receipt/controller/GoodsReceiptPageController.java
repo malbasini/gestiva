@@ -7,10 +7,7 @@ import com.gestiva.purchasing.receipt.web.GoodsReceiptWebService;
 import com.gestiva.security.usercontext.TenantContext;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -29,11 +26,13 @@ public class GoodsReceiptPageController {
         this.tenantContext = tenantContext;
     }
 
-    @GetMapping("/{id}/receive")
-    public String receive(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    @PostMapping("/{id}/receive")
+    public String receive(@PathVariable Long id, RedirectAttributes redirectAttributes,Model model) {
         try {
             Long tenantId = tenantContext.getCurrentTenantId();
             Long goodsReceiptId = goodsReceiptService.createFromPurchaseOrder(tenantId, id);
+            redirectAttributes.addFlashAttribute("successMessage", "Ricezione merce creata con successo.");
+            model.addAttribute("activeMenu", "goodsReceipts");
             return "redirect:/goods-receipts/" + goodsReceiptId;
         }
         catch (Exception e) {

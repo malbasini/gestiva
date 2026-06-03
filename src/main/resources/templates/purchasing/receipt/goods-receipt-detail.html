@@ -14,13 +14,6 @@
     <div class="page">
       <div class="card">
         <div th:replace="~{fragments/layout :: flashMessages}"></div>
-
-        <div class="breadcrumb">
-          <a th:href="@{/dashboard}">Dashboard</a> /
-          <a th:href="@{/goods-receipts}">Ricezioni merci</a> /
-          <span th:text="${goodsReceipt.receiptNumber}">GR-00001</span>
-        </div>
-
         <div class="page-header">
           <div class="page-header-left">
             <h1 class="page-title" th:text="${goodsReceipt.receiptNumber}">GR-00001</h1>
@@ -35,21 +28,29 @@
               <i class="bi bi-box"></i>
               <span>Ordine</span>
             </a>
-            <a class="btn btn-outline-success"
-               th:if="${goodsReceipt.canCreateSupplierInvoice}"
-               th:href="@{/goods-receipts/{id}/invoice(id=${goodsReceipt.id})}">
-              <i class="bi bi-receipt"></i>
-              <span>Genera fattura fornitore</span>
-            </a>
             <a class="btn btn-outline-secondary"
                th:if="${goodsReceipt.hasSupplierInvoice}"
                th:href="@{/supplier-invoices/{id}(id=${goodsReceipt.supplierInvoiceId})}">
               <i class="bi bi-receipt"></i>
               <span th:text="'Fattura ' + ${goodsReceipt.supplierInvoiceNumber}">Fattura</span>
             </a>
+
+            <th:block th:if="${goodsReceipt.canCreateSupplierInvoice}">
+              <button type="button"
+                      class="btn btn-outline-primary"
+                      onclick="openConfirmModal(this)"
+                      data-confirm-title="Genera fattura fornitore"
+                      data-confirm-textContent="Sei sicuro di voler generare la fattura?"
+                      data-confirm-message="Confermi di voler generare la fattura da questa ricezione?"
+                      data-confirm-submit="Conferma generazione fattura"
+                      data-confirm-submit-class="btn btn-primary"
+                      th:attr="data-confirm-action=@{/goods-receipts/{id}/invoice(id=${goodsReceipt.id})}">
+                <i class="bi bi-check2-circle"></i>
+                <span>Genera fattura</span>
+              </button>
+            </th:block>
           </div>
         </div>
-
         <div class="info-grid">
           <div class="info-box">
             <div class="label">Numero ricezione</div>
@@ -98,5 +99,6 @@
   </main>
   <div th:replace="~{fragments/layout :: appFooter}"></div>
 </div>
+<div th:replace="~{fragments/layout :: modalFragment}"></div>
 </body>
 </html>

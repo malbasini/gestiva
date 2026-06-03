@@ -31,7 +31,7 @@ public class GoodsReceiptViewController {
         model.addAttribute("activeMenu", "goodsReceipts");
         return "purchasing/receipt/goods-receipt-detail";
     }
-    @GetMapping("/{id}/invoice")
+    @PostMapping("/{id}/invoice")
     public String invoice(@PathVariable Long id,Model model,
                           RedirectAttributes redirectAttributes) {
         try {
