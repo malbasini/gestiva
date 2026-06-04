@@ -74,5 +74,6 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
 
 
     List<InventoryMovement> findTop10ByTenantIdAndItemIdOrderByMovementDateDescIdDesc(Long tenantId, Long itemId);
+    java.util.List<InventoryMovement> findTop10ByTenantIdOrderByMovementDateDescIdDesc(Long tenantId);
 
 }

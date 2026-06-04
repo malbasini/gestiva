@@ -17,5 +17,6 @@ public interface ItemRepository extends JpaRepository<Item, Long>, JpaSpecificat
     List<Item> findByTenantIdAndActiveTrueOrderByNameAsc(Long tenantId);
     List<Item> findByTenantIdAndActiveTrueOrderByCodeAsc(Long tenantId);
     List<Item> findByTenantIdOrderByCodeAsc(Long tenantId);
+    long countByTenantIdAndTrackStockTrue(Long tenantId);
 
 }

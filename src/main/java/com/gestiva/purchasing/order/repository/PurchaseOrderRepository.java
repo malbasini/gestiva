@@ -8,6 +8,6 @@ import java.util.Optional;
 public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Long>, JpaSpecificationExecutor<PurchaseOrder> {
 
     Optional<PurchaseOrder> findByTenantIdAndId(Long tenantId, Long id);
-
     boolean existsByTenantIdAndOrderNumber(Long tenantId, String orderNumber);
+    long countByTenantIdAndStatusIn(Long tenantId, java.util.Collection<String> statuses);
 }

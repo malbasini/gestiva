@@ -21,9 +21,5 @@ public interface SupplierInvoiceRepository extends JpaRepository<SupplierInvoice
             java.time.LocalDate dateFrom,
             java.time.LocalDate dateTo
     );
-
-
-
-
-
+    long countByTenantIdAndStatusIn(Long tenantId, java.util.Collection<String> statuses);
 }

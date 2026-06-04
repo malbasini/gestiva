@@ -7,16 +7,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import java.util.Optional;
 
 public interface GoodsReceiptRepository extends JpaRepository<GoodsReceipt, Long>, JpaSpecificationExecutor<GoodsReceipt> {
-
     Optional<GoodsReceipt> findByTenantIdAndId(Long tenantId, Long id);
-
     boolean existsByTenantIdAndReceiptNumber(Long tenantId, String receiptNumber);
-
     boolean existsByTenantIdAndPurchaseOrderId(Long tenantId, Long purchaseOrderId);
-
     java.util.Optional<com.gestiva.purchasing.receipt.entity.GoodsReceipt> findFirstByTenantIdAndPurchaseOrderId(Long tenantId, Long purchaseOrderId);
-
-
-
-
 }

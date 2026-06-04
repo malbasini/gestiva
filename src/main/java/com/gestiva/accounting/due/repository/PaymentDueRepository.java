@@ -57,5 +57,7 @@ public interface PaymentDueRepository extends JpaRepository<PaymentDue, Long>, J
          and p.dueDate < :today
        """)
     java.math.BigDecimal sumOverdueOpenAmount(Long tenantId, java.util.List<String> statuses, java.time.LocalDate today);
+    long countByTenantIdAndDirectionAndStatusIn(Long tenantId, String direction, java.util.Collection<String> statuses);
+
 
 }

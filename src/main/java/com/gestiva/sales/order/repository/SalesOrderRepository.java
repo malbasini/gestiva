@@ -12,4 +12,6 @@ public interface SalesOrderRepository extends JpaRepository<SalesOrder, Long>, J
     boolean existsByTenantIdAndQuoteId(Long tenantId, Long quoteId);
     long countByTenantId(Long tenantId);
     java.util.List<com.gestiva.sales.order.entity.SalesOrder> findTop5ByTenantIdOrderByOrderDateDescIdDesc(Long tenantId);
+    long countByTenantIdAndStatusIn(Long tenantId, java.util.Collection<String> statuses);
+
 }

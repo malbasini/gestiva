@@ -1,40 +1,32 @@
 package com.gestiva.dashboard.controller;
 
-import com.gestiva.common.exception.BusinessException;
 import com.gestiva.dashboard.web.DashboardWebService;
 import com.gestiva.security.usercontext.TenantContext;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
+@RequestMapping("/dashboard")
 public class DashboardPageController {
 
-    private final DashboardWebService dashboardWebService;
     private final TenantContext tenantContext;
+    private final DashboardWebService dashboardWebService;
 
-    public DashboardPageController(DashboardWebService dashboardWebService,
-                                   TenantContext tenantContext) {
-        this.dashboardWebService = dashboardWebService;
+    public DashboardPageController(TenantContext tenantContext,
+                                   DashboardWebService dashboardWebService) {
         this.tenantContext = tenantContext;
+        this.dashboardWebService = dashboardWebService;
     }
 
-    @GetMapping("/dashboard")
-    public String dashboard(@RequestParam(required = false) Long tenantId,
-                            Model model,
-                            RedirectAttributes redirectAttributes) {
-        try {
-            Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
-            model.addAttribute("tenantId", resolvedTenantId);
-            model.addAttribute("dashboard", dashboardWebService.build(resolvedTenantId));
-            model.addAttribute("activeMenu", "dashboard");
-            return "dashboard/dashboard";
-        }
-        catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-            return "redirect:/login";
-        }
+    @GetMapping
+    public String page(Model model) {
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        model.addAttribute("dashboard", dashboardWebService.build(tenantId));
+        model.addAttribute("activeMenu", "dashboard");
+
+        return "dashboard/dashboard";
     }
 }

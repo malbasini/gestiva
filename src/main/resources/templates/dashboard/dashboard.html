@@ -8,148 +8,257 @@
 </head>
 <body>
 <div class="app-shell">
-
   <div th:replace="~{fragments/layout :: appHeader}"></div>
 
   <main class="app-main">
     <div class="page">
-      <div class="card">
-        <div th:replace="~{fragments/layout :: flashMessages}"></div>
+      <div th:replace="~{fragments/layout :: flashMessages}"></div>
 
-        <div class="breadcrumb">
-          <span>Dashboard</span>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1 class="page-title">Dashboard</h1>
+          <div class="muted">Panoramica operativa del gestionale</div>
         </div>
-
-        <div class="page-header">
-          <div class="page-header-left">
-            <h1 class="page-title">Dashboard</h1>
-            <div class="muted">Panoramica generale del gestionale</div>
-          </div>
-
-          <div class="page-header-right">
-            <a class="btn btn-outline-success" th:href="@{/customers/new(tenantId=${tenantId})}">
-              <i class="bi bi-plus-lg"></i>
-              <span>Nuovo cliente</span>
-            </a>
-            <a class="btn btn-outline-primary" th:href="@{/quotes(tenantId=${tenantId})}">
-              <i class="bi bi-receipt"></i>
-              <span>Vai ai preventivi</span>
-            </a>
-            <a class="btn btn-outline-primary" th:href="@{/orders(tenantId=${tenantId})}">
-              <i class="bi bi-box-seam"></i>
-              <span>Vai agli ordini</span>
-            </a>
-          </div>
-        </div>
-
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-label">Clienti</div>
-            <div class="kpi-value" th:text="${dashboard.customersCount}">0</div>
-            <div class="kpi-subtext">Anagrafiche clienti registrate</div>
-          </div>
-
-          <div class="kpi-card">
-            <div class="kpi-label">Preventivi</div>
-            <div class="kpi-value" th:text="${dashboard.quotesCount}">0</div>
-            <div class="kpi-subtext">Documenti commerciali creati</div>
-          </div>
-
-          <div class="kpi-card">
-            <div class="kpi-label">Ordini</div>
-            <div class="kpi-value" th:text="${dashboard.ordersCount}">0</div>
-            <div class="kpi-subtext">Ordini cliente confermati</div>
-          </div>
-
-          <div class="kpi-card">
-            <div class="kpi-label">Tenant</div>
-            <div class="kpi-value" th:text="${tenantId}">1</div>
-            <div class="kpi-subtext">Ambiente attualmente attivo</div>
-          </div>
-        </div>
-
-        <div class="dashboard-columns">
-          <div class="panel">
-            <h2 class="section-title">Ultimi preventivi</h2>
-
-            <table class="table">
-              <thead>
-              <tr>
-                <th>Numero</th>
-                <th>Data</th>
-                <th>Stato</th>
-                <th class="text-right">Totale</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr th:if="${#lists.isEmpty(dashboard.latestQuotes)}">
-                <td colspan="4" class="muted">Nessun preventivo.</td>
-              </tr>
-              <tr th:each="quote : ${dashboard.latestQuotes}">
-                <td>
-                  <a th:href="@{/quotes/{id}(id=${quote.id}, tenantId=${tenantId})}"
-                     th:text="${quote.quoteNumber}">PRE-2026-00001</a>
-                </td>
-                <td th:text="${quote.formattedQuoteDate}">29/04/2026</td>
-                <td>
-                                    <span class="badge"
-                                          th:classappend="${quote.status == 'DRAFT'} ? ' badge-draft' :
-                                                          (${quote.status == 'SENT'} ? ' badge-sent' :
-                                                          (${quote.status == 'ACCEPTED'} ? ' badge-accepted' : ' badge-rejected'))"
-                                          th:text="${quote.status}">
-                                        SENT
-                                    </span>
-                </td>
-                <td class="text-right" th:text="${quote.formattedTotalAmount}">610,00 €</td>
-              </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="panel">
-            <h2 class="section-title">Ultimi ordini</h2>
-
-            <table class="table">
-              <thead>
-              <tr>
-                <th>Numero</th>
-                <th>Data</th>
-                <th>Stato</th>
-                <th class="text-right">Totale</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr th:if="${#lists.isEmpty(dashboard.latestOrders)}">
-                <td colspan="4" class="muted">Nessun ordine.</td>
-              </tr>
-              <tr th:each="order : ${dashboard.latestOrders}">
-                <td>
-                  <a th:href="@{/orders/{id}(id=${order.id}, tenantId=${tenantId})}"
-                     th:text="${order.orderNumber}">ORD-2026-00001</a>
-                </td>
-                <td th:text="${order.formattedOrderDate}">29/04/2026</td>
-                <td>
-                                    <span class="badge"
-                                          th:classappend="${order.status == 'CONFIRMED'} ? ' badge-confirmed' :
-                                                          (${order.status == 'FULFILLED'} ? ' badge-fulfilled' :
-                                                          (${order.status == 'CANCELLED'} ? ' badge-cancelled' : ' badge-draft'))"
-                                          th:text="${order.status}">
-                                        CONFIRMED
-                                    </span>
-                </td>
-                <td class="text-right" th:text="${order.formattedTotalAmount}">610,00 €</td>
-              </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
       </div>
+
+      <!-- KPI -->
+      <div class="row g-3">
+        <div class="col-md-3">
+          <div class="card p-3">
+            <div class="muted">Preventivi aperti</div>
+            <div class="h3 mb-0" th:text="${dashboard.openQuotesCount}">0</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card p-3">
+            <div class="muted">Ordini clienti aperti</div>
+            <div class="h3 mb-0" th:text="${dashboard.openSalesOrdersCount}">0</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card p-3">
+            <div class="muted">Scadenze da incassare</div>
+            <div class="h3 mb-0" th:text="${dashboard.receivablesDueCount}">0</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card p-3">
+            <div class="muted">Scadenze da pagare</div>
+            <div class="h3 mb-0" th:text="${dashboard.payablesDueCount}">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ciclo attivo / passivo -->
+      <div class="row g-3 mt-1">
+        <div class="col-lg-6">
+          <div class="card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h2 class="h5 mb-0">Ciclo attivo</h2>
+              <a class="btn btn-sm btn-outline-secondary" th:href="@{/quotes}">Apri</a>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-6">
+                <div class="border rounded p-2">
+                  <div class="muted">DDT da fatturare</div>
+                  <strong th:text="${dashboard.deliveryNotesToInvoiceCount}">0</strong>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="border rounded p-2">
+                  <div class="muted">Fatture clienti aperte</div>
+                  <strong th:text="${dashboard.openSalesInvoicesCount}">0</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="muted mb-2">Ultimi documenti</div>
+            <div class="table-wrap">
+              <table class="table table-sm">
+                <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Tipo</th>
+                  <th>Numero</th>
+                  <th>Soggetto</th>
+                  <th>Importo</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(dashboard.recentSalesDocuments)}">
+                  <td colspan="5" class="muted">Nessun documento recente.</td>
+                </tr>
+                <tr th:each="doc : ${dashboard.recentSalesDocuments}">
+                  <td th:text="${doc.date}">01/06/2026</td>
+                  <td th:text="${doc.typeLabel}">Fattura cliente</td>
+                  <td>
+                    <a th:if="${doc.detailUrl != null and !#strings.isEmpty(doc.detailUrl)}"
+                       th:href="${doc.detailUrl}"
+                       th:text="${doc.number}">
+                      INV-00001
+                    </a>
+                    <span th:if="${doc.detailUrl == null or #strings.isEmpty(doc.detailUrl)}"
+                          th:text="${doc.number}">
+                      INV-00001
+                    </span>
+                  </td>
+                  <td th:text="${doc.counterparty}">Cliente Demo</td>
+                  <td th:text="${doc.amount}">100,00</td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h2 class="h5 mb-0">Ciclo passivo</h2>
+              <a class="btn btn-sm btn-outline-secondary" th:href="@{/purchase-orders}">Apri</a>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-4">
+                <div class="border rounded p-2">
+                  <div class="muted">Ordini fornitori aperti</div>
+                  <strong th:text="${dashboard.openPurchaseOrdersCount}">0</strong>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="border rounded p-2">
+                  <div class="muted">Ricezioni da fatturare</div>
+                  <strong th:text="${dashboard.goodsReceiptsToInvoiceCount}">0</strong>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="border rounded p-2">
+                  <div class="muted">Fatture fornitori aperte</div>
+                  <strong th:text="${dashboard.openSupplierInvoicesCount}">0</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contabilità / IVA -->
+      <div class="row g-3 mt-1">
+        <div class="col-lg-8">
+          <div class="card p-3">
+            <h2 class="h5 mb-3">Contabilità</h2>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <div class="border rounded p-3">
+                  <div class="muted">Ricavi del periodo</div>
+                  <div class="h5 mb-0" th:text="${dashboard.formattedPeriodRevenue}">0,00</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="border rounded p-3">
+                  <div class="muted">Costi del periodo</div>
+                  <div class="h5 mb-0" th:text="${dashboard.formattedPeriodCost}">0,00</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="border rounded p-3">
+                  <div class="muted">Risultato del periodo</div>
+                  <div class="h5 mb-0" th:text="${dashboard.formattedPeriodResult}">0,00</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="card p-3">
+            <h2 class="h5 mb-3">IVA</h2>
+            <div class="border rounded p-2 mb-2">
+              <div class="muted">IVA vendite</div>
+              <strong th:text="${dashboard.formattedVatSales}">0,00</strong>
+            </div>
+            <div class="border rounded p-2 mb-2">
+              <div class="muted">IVA acquisti</div>
+              <strong th:text="${dashboard.formattedVatPurchases}">0,00</strong>
+            </div>
+            <div class="border rounded p-2">
+              <div class="muted">Saldo IVA</div>
+              <strong th:text="${dashboard.formattedVatBalance}">0,00</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Magazzino / Azioni rapide -->
+      <div class="row g-3 mt-1">
+        <div class="col-lg-6">
+          <div class="card p-3">
+            <h2 class="h5 mb-3">Magazzino</h2>
+
+            <div class="row g-3 mb-3">
+              <div class="col-6">
+                <div class="border rounded p-2">
+                  <div class="muted">Articoli sotto scorta</div>
+                  <strong th:text="${dashboard.lowStockItemsCount}">0</strong>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="border rounded p-2">
+                  <div class="muted">Articoli gestiti</div>
+                  <strong th:text="${dashboard.stockManagedItemsCount}">0</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="muted mb-2">Ultimi movimenti</div>
+            <div class="table-wrap">
+              <table class="table table-sm">
+                <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Articolo</th>
+                  <th>Movimento</th>
+                  <th>Quantità</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(dashboard.recentInventoryMovements)}">
+                  <td colspan="4" class="muted">Nessun movimento recente.</td>
+                </tr>
+                <tr th:each="m : ${dashboard.recentInventoryMovements}">
+                  <td th:text="${m.date}">01/06/2026</td>
+                  <td th:text="${m.itemCode + ' - ' + m.itemName}">ART-001 - Articolo Demo</td>
+                  <td th:text="${m.movementTypeLabel}">Scarico</td>
+                  <td th:text="${m.quantity}">1,000</td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="card p-3">
+            <h2 class="h5 mb-3">Azioni rapide</h2>
+            <div class="d-grid gap-2 d-md-flex flex-wrap">
+              <a class="btn btn-outline-primary" th:href="@{/quotes/new}">Nuovo preventivo</a>
+              <a class="btn btn-outline-primary" th:href="@{/orders}">Lista ordini cliente</a>
+              <a class="btn btn-outline-primary" th:href="@{/delivery-notes}">Lista DDT</a>
+              <a class="btn btn-outline-primary" th:href="@{/invoices}">Lista fatture cliente</a>
+              <a class="btn btn-outline-secondary" th:href="@{/goods-receipts}">Ricezione merci</a>
+              <a class="btn btn-outline-secondary" th:href="@{/supplier-invoices}">Fatture passive</a>
+              <a class="btn btn-outline-secondary" th:href="@{/purchase-orders/new}">Nuovo ordine fornitore</a>
+              <a class="btn btn-outline-success" th:href="@{/payments}">Incassi / pagamenti</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </main>
 
   <div th:replace="~{fragments/layout :: appFooter}"></div>
-
 </div>
 </body>
 </html>

@@ -1,72 +1,192 @@
 package com.gestiva.dashboard.web;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class DashboardView {
 
-    private long customersCount;
-    private long quotesCount;
-    private long ordersCount;
+    // KPI principali
+    private long openQuotesCount;
+    private long openSalesOrdersCount;
+    private long receivablesDueCount;
+    private long payablesDueCount;
 
-    private String formattedQuotesTotal;
-    private String formattedOrdersTotal;
+    // Ciclo attivo
+    private long deliveryNotesToInvoiceCount;
+    private long openSalesInvoicesCount;
 
-    private List<DashboardQuoteItemView> latestQuotes;
-    private List<DashboardOrderItemView> latestOrders;
+    // Ciclo passivo
+    private long openPurchaseOrdersCount;
+    private long goodsReceiptsToInvoiceCount;
+    private long openSupplierInvoicesCount;
 
-    public long getCustomersCount() {
-        return customersCount;
+    // Contabilità
+    private String formattedPeriodRevenue;
+    private String formattedPeriodCost;
+    private String formattedPeriodResult;
+
+    // IVA
+    private String formattedVatSales;
+    private String formattedVatPurchases;
+    private String formattedVatBalance;
+
+    // Magazzino
+    private long lowStockItemsCount;
+    private long stockManagedItemsCount;
+
+    // Liste recenti
+    private List<DashboardRecentDocumentView> recentSalesDocuments = new ArrayList<>();
+    private List<DashboardRecentInventoryMovementView> recentInventoryMovements = new ArrayList<>();
+
+    public long getOpenQuotesCount() {
+        return openQuotesCount;
     }
 
-    public void setCustomersCount(long customersCount) {
-        this.customersCount = customersCount;
+    public void setOpenQuotesCount(long openQuotesCount) {
+        this.openQuotesCount = openQuotesCount;
     }
 
-    public long getQuotesCount() {
-        return quotesCount;
+    public long getOpenSalesOrdersCount() {
+        return openSalesOrdersCount;
     }
 
-    public void setQuotesCount(long quotesCount) {
-        this.quotesCount = quotesCount;
+    public void setOpenSalesOrdersCount(long openSalesOrdersCount) {
+        this.openSalesOrdersCount = openSalesOrdersCount;
     }
 
-    public long getOrdersCount() {
-        return ordersCount;
+    public long getReceivablesDueCount() {
+        return receivablesDueCount;
     }
 
-    public void setOrdersCount(long ordersCount) {
-        this.ordersCount = ordersCount;
+    public void setReceivablesDueCount(long receivablesDueCount) {
+        this.receivablesDueCount = receivablesDueCount;
     }
 
-    public String getFormattedQuotesTotal() {
-        return formattedQuotesTotal;
+    public long getPayablesDueCount() {
+        return payablesDueCount;
     }
 
-    public void setFormattedQuotesTotal(String formattedQuotesTotal) {
-        this.formattedQuotesTotal = formattedQuotesTotal;
+    public void setPayablesDueCount(long payablesDueCount) {
+        this.payablesDueCount = payablesDueCount;
     }
 
-    public String getFormattedOrdersTotal() {
-        return formattedOrdersTotal;
+    public long getDeliveryNotesToInvoiceCount() {
+        return deliveryNotesToInvoiceCount;
     }
 
-    public void setFormattedOrdersTotal(String formattedOrdersTotal) {
-        this.formattedOrdersTotal = formattedOrdersTotal;
+    public void setDeliveryNotesToInvoiceCount(long deliveryNotesToInvoiceCount) {
+        this.deliveryNotesToInvoiceCount = deliveryNotesToInvoiceCount;
     }
 
-    public List<DashboardQuoteItemView> getLatestQuotes() {
-        return latestQuotes;
+    public long getOpenSalesInvoicesCount() {
+        return openSalesInvoicesCount;
     }
 
-    public void setLatestQuotes(List<DashboardQuoteItemView> latestQuotes) {
-        this.latestQuotes = latestQuotes;
+    public void setOpenSalesInvoicesCount(long openSalesInvoicesCount) {
+        this.openSalesInvoicesCount = openSalesInvoicesCount;
     }
 
-    public List<DashboardOrderItemView> getLatestOrders() {
-        return latestOrders;
+    public long getOpenPurchaseOrdersCount() {
+        return openPurchaseOrdersCount;
     }
 
-    public void setLatestOrders(List<DashboardOrderItemView> latestOrders) {
-        this.latestOrders = latestOrders;
+    public void setOpenPurchaseOrdersCount(long openPurchaseOrdersCount) {
+        this.openPurchaseOrdersCount = openPurchaseOrdersCount;
+    }
+
+    public long getGoodsReceiptsToInvoiceCount() {
+        return goodsReceiptsToInvoiceCount;
+    }
+
+    public void setGoodsReceiptsToInvoiceCount(long goodsReceiptsToInvoiceCount) {
+        this.goodsReceiptsToInvoiceCount = goodsReceiptsToInvoiceCount;
+    }
+
+    public long getOpenSupplierInvoicesCount() {
+        return openSupplierInvoicesCount;
+    }
+
+    public void setOpenSupplierInvoicesCount(long openSupplierInvoicesCount) {
+        this.openSupplierInvoicesCount = openSupplierInvoicesCount;
+    }
+
+    public String getFormattedPeriodRevenue() {
+        return formattedPeriodRevenue;
+    }
+
+    public void setFormattedPeriodRevenue(String formattedPeriodRevenue) {
+        this.formattedPeriodRevenue = formattedPeriodRevenue;
+    }
+
+    public String getFormattedPeriodCost() {
+        return formattedPeriodCost;
+    }
+
+    public void setFormattedPeriodCost(String formattedPeriodCost) {
+        this.formattedPeriodCost = formattedPeriodCost;
+    }
+
+    public String getFormattedPeriodResult() {
+        return formattedPeriodResult;
+    }
+
+    public void setFormattedPeriodResult(String formattedPeriodResult) {
+        this.formattedPeriodResult = formattedPeriodResult;
+    }
+
+    public String getFormattedVatSales() {
+        return formattedVatSales;
+    }
+
+    public void setFormattedVatSales(String formattedVatSales) {
+        this.formattedVatSales = formattedVatSales;
+    }
+
+    public String getFormattedVatPurchases() {
+        return formattedVatPurchases;
+    }
+
+    public void setFormattedVatPurchases(String formattedVatPurchases) {
+        this.formattedVatPurchases = formattedVatPurchases;
+    }
+
+    public String getFormattedVatBalance() {
+        return formattedVatBalance;
+    }
+
+    public void setFormattedVatBalance(String formattedVatBalance) {
+        this.formattedVatBalance = formattedVatBalance;
+    }
+
+    public long getLowStockItemsCount() {
+        return lowStockItemsCount;
+    }
+
+    public void setLowStockItemsCount(long lowStockItemsCount) {
+        this.lowStockItemsCount = lowStockItemsCount;
+    }
+
+    public long getStockManagedItemsCount() {
+        return stockManagedItemsCount;
+    }
+
+    public void setStockManagedItemsCount(long stockManagedItemsCount) {
+        this.stockManagedItemsCount = stockManagedItemsCount;
+    }
+
+    public List<DashboardRecentDocumentView> getRecentSalesDocuments() {
+        return recentSalesDocuments;
+    }
+
+    public void setRecentSalesDocuments(List<DashboardRecentDocumentView> recentSalesDocuments) {
+        this.recentSalesDocuments = recentSalesDocuments;
+    }
+
+    public List<DashboardRecentInventoryMovementView> getRecentInventoryMovements() {
+        return recentInventoryMovements;
+    }
+
+    public void setRecentInventoryMovements(List<DashboardRecentInventoryMovementView> recentInventoryMovements) {
+        this.recentInventoryMovements = recentInventoryMovements;
     }
 }

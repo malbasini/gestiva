@@ -12,4 +12,5 @@ public interface QuoteRepository extends JpaRepository<Quote, Long>, JpaSpecific
     Optional<Quote> findByTenantIdAndId(Long tenantId, Long id);
     long countByTenantId(Long tenantId);
     java.util.List<com.gestiva.sales.quote.entity.Quote> findTop5ByTenantIdOrderByQuoteDateDescIdDesc(Long tenantId);
+    long countByTenantIdAndStatusIn(Long tenantId, java.util.Collection<String> statuses);
 }
