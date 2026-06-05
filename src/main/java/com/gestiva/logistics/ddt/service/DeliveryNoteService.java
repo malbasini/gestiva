@@ -35,9 +35,6 @@ public class DeliveryNoteService {
     private final InventoryMovementRepository inventoryMovementRepository;
     private final InventoryMovementService inventoryMovementService;
 
-
-
-
     public DeliveryNoteService(DeliveryNoteRepository deliveryNoteRepository,
                                DeliveryNoteLineRepository deliveryNoteLineRepository,
                                SalesOrderRepository salesOrderRepository,

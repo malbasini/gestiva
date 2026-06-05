@@ -1,5 +1,7 @@
 package com.gestiva.dashboard.web;
 
+import com.gestiva.accounting.due.entity.PaymentDue;
+import com.gestiva.accounting.due.repository.PaymentDueRepository;
 import com.gestiva.accounting.v2.report.web.IncomeStatementView;
 import com.gestiva.accounting.v2.report.web.IncomeStatementWebService;
 import com.gestiva.accounting.vat.web.VatSettlementView;
@@ -11,12 +13,12 @@ import com.gestiva.inventory.movement.entity.InventoryMovement;
 import com.gestiva.inventory.movement.repository.InventoryMovementRepository;
 import com.gestiva.purchasing.invoice.repository.SupplierInvoiceRepository;
 import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
+import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
 import com.gestiva.sales.order.repository.SalesOrderRepository;
 import com.gestiva.sales.quote.repository.QuoteRepository;
 import com.gestiva.logistics.ddt.repository.DeliveryNoteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -36,6 +38,10 @@ public class DashboardWebService {
     private final InventoryMovementRepository inventoryMovementRepository;
     private final IncomeStatementWebService incomeStatementWebService;
     private final VatSettlementWebService vatSettlementWebService;
+    private final PaymentDueRepository paymentDueRepository;
+    private final GoodsReceiptRepository goodsReceiptRepository;
+
+
 
     public DashboardWebService(QuoteRepository quoteRepository,
                                SalesOrderRepository salesOrderRepository,
@@ -46,7 +52,10 @@ public class DashboardWebService {
                                ItemRepository itemRepository,
                                InventoryMovementRepository inventoryMovementRepository,
                                IncomeStatementWebService incomeStatementWebService,
-                               VatSettlementWebService vatSettlementWebService) {
+                               VatSettlementWebService vatSettlementWebService,
+                               PaymentDueRepository paymentDueRepository,
+                               GoodsReceiptRepository goodsReceiptRepository) {
+
         this.quoteRepository = quoteRepository;
         this.salesOrderRepository = salesOrderRepository;
         this.deliveryNoteRepository = deliveryNoteRepository;
@@ -57,7 +66,11 @@ public class DashboardWebService {
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.incomeStatementWebService = incomeStatementWebService;
         this.vatSettlementWebService = vatSettlementWebService;
+        this.paymentDueRepository = paymentDueRepository;
+        this.goodsReceiptRepository = goodsReceiptRepository;
     }
+
+    private static final List<String> OPEN_DUE_STATUSES = List.of("OPEN", "PARTIALLY_PAID");
 
     public DashboardView build(Long tenantId) {
         DashboardView view = new DashboardView();
@@ -70,11 +83,16 @@ public class DashboardWebService {
         // =========================================================
         view.setOpenQuotesCount(readOpenQuotesCount(tenantId));
         view.setOpenSalesOrdersCount(readOpenSalesOrdersCount(tenantId));
-
-        // TODO: agganciare PaymentDueRepository
-        view.setReceivablesDueCount(0L);
-        view.setPayablesDueCount(0L);
-
+        view.setReceivablesDueCount(
+                paymentDueRepository.countByTenantIdAndDirectionAndStatusIn(
+                        tenantId, "RECEIVABLE", OPEN_DUE_STATUSES
+                )
+        );
+        view.setPayablesDueCount(
+                paymentDueRepository.countByTenantIdAndDirectionAndStatusIn(
+                        tenantId, "PAYABLE", OPEN_DUE_STATUSES
+                )
+        );
         // =========================================================
         // CICLO ATTIVO
         // =========================================================
@@ -86,10 +104,7 @@ public class DashboardWebService {
         // CICLO PASSIVO
         // =========================================================
         view.setOpenPurchaseOrdersCount(readOpenPurchaseOrdersCount(tenantId));
-
-        // TODO: agganciare GoodsReceiptRepository / logica reale
-        view.setGoodsReceiptsToInvoiceCount(0L);
-
+        view.setGoodsReceiptsToInvoiceCount(goodsReceiptRepository.countToInvoiceByTenantId(tenantId));
         view.setOpenSupplierInvoicesCount(readOpenSupplierInvoicesCount(tenantId));
 
         // =========================================================
@@ -152,14 +167,14 @@ public class DashboardWebService {
     private long readOpenPurchaseOrdersCount(Long tenantId) {
         return purchaseOrderRepository.countByTenantIdAndStatusIn(
                 tenantId,
-                List.of("DRAFT", "CONFIRMED")
+                List.of("DRAFT")
         );
     }
 
     private long readOpenSupplierInvoicesCount(Long tenantId) {
         return supplierInvoiceRepository.countByTenantIdAndStatusIn(
                 tenantId,
-                List.of("REGISTERED")
+                List.of("DRAFT", "SENT", "CONFIRMED")
         );
     }
 

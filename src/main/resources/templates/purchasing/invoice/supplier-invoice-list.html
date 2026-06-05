@@ -14,11 +14,6 @@
       <div class="card">
         <div th:replace="~{fragments/layout :: flashMessages}"></div>
 
-        <div class="breadcrumb">
-          <a th:href="@{/dashboard}">Dashboard</a> /
-          <span>Fatture passive</span>
-        </div>
-
         <div class="page-header">
           <div class="page-header-left">
             <h1 class="page-title">Fatture passive</h1>
@@ -82,12 +77,12 @@
           </div>
 
           <div class="col-md-2 d-flex gap-2">
-            <button type="submit" class="btn btn-secondary">
+            <button type="submit" class="btn btn-outline-success">
               <i class="bi bi-search"></i>
               <span>Cerca</span>
             </button>
 
-            <a class="btn btn-secondary" th:href="@{/supplier-invoices}">
+            <a class="btn btn-outline-info" th:href="@{/supplier-invoices}">
               <i class="bi bi-x-circle"></i>
               <span>Reset</span>
             </a>

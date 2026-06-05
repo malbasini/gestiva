@@ -46,7 +46,12 @@ public class InventoryMovementService {
             throw new BusinessException("La quantità deve essere maggiore di zero.");
         }
 
-        BigDecimal cost = unitCost == null ? null : scaleCost(unitCost);
+        boolean outbound = isOutbound(movementType);
+
+        BigDecimal cost = outbound
+                ? null
+                : (unitCost == null ? null : scaleCost(unitCost));
+
         BigDecimal totalCost = cost != null
                 ? scaleCost(cost.multiply(qty))
                 : null;
@@ -58,7 +63,7 @@ public class InventoryMovementService {
         movement.setMovementType(movementType);
         movement.setCausalCode(causalCode);
         movement.setQuantity(qty);
-        movement.setUnitCost((cost));
+        movement.setUnitCost(cost);
         movement.setTotalCost(totalCost);
         movement.setReferenceType(referenceType);
         movement.setReferenceId(referenceId);
@@ -69,6 +74,11 @@ public class InventoryMovementService {
         return inventoryMovementRepository.save(movement).getId();
     }
 
+    private boolean isOutbound(String movementType) {
+        return "OUT".equalsIgnoreCase(movementType)
+                || "ADJUSTMENT_OUT".equalsIgnoreCase(movementType);
+    }
+    
     public Long reverseMovement(Long tenantId, Long movementId, LocalDate reversalDate, String notes) {
         var original = inventoryMovementRepository.findByTenantIdAndId(tenantId, movementId)
                 .orElseThrow(() -> new BusinessException("Movimento di magazzino non trovato"));
