@@ -17,12 +17,6 @@
 
         <div th:replace="~{fragments/layout :: flashMessages}"></div>
 
-        <div class="breadcrumb">
-          <a th:href="@{/dashboard(tenantId=${tenantId})}">Dashboard</a> /
-          <a th:href="@{/orders(tenantId=${tenantId})}">Ordini</a> /
-          <span th:text="${deliveryNote.ddtNumber}">DDT-2026-00001</span>
-        </div>
-
         <div class="page-header">
           <div class="page-header-left">
             <h1 class="page-title">Documento di trasporto</h1>
@@ -54,7 +48,7 @@
               <i class="bi bi-receipt"></i>
               <span th:text="${deliveryNote.invoiceNumber != null ? 'Apri ' + deliveryNote.invoiceNumber : 'Apri fattura'}">Apri fattura</span>
             </a>
-            <a class="btn btn-primary"
+            <a class="btn btn-primary" target="_blank"
                th:href="@{/delivery-notes/{id}/preview(id=${deliveryNote.id}, tenantId=${tenantId})}">
               <i class="bi bi-eye"></i>
               <span>Preview</span>

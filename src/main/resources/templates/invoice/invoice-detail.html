@@ -37,13 +37,11 @@
               <i class="bi bi-arrow-left"></i>
               <span>Torna al DDT</span>
             </a>
-            <a class="btn btn-outline-primary"
-               th:href="@{/api/invoices/{id}/preview(id=${invoice.id}, tenantId=${tenantId})}">
+            <a class="btn btn-outline-primary" th:href="@{/invoices/{id}/preview(id=${invoice.id}, tenantId=${tenantId})}">
               <i class="bi bi-eye"></i>
               <span>Preview</span>
             </a>
-            <a class="btn btn-outline-primary"
-               th:href="@{/api/invoices/{id}/pdf(id=${invoice.id}, tenantId=${tenantId})}">
+            <a class="btn btn-outline-info"   th:href="@{/api/invoices/{id}/pdf(id=${invoice.id}, tenantId=${tenantId})}">
               <i class="bi bi-file-earmark-pdf"></i>
               <span>PDF</span>
             </a>

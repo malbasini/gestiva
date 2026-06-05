@@ -36,7 +36,7 @@ public class DocumentSequenceService {
         DocumentSequence sequence = documentSequenceRepository
                 .findByTenantIdAndDocumentType(tenantId, documentType.trim())
                 .orElseThrow(() -> new BusinessException(
-                        "Numeratore non configurato per il tipo documento: " + documentType
+                        "Numeratore non configurato per il tipo documento: " + documentType + " Settings->Impostazioni azienda."
                 ));
 
         long currentNumber = sequence.getNextNumber() != null ? sequence.getNextNumber() : 1L;

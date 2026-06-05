@@ -142,12 +142,12 @@
         <a class="btn btn-secondary"
            th:href="@{/api/quotes/{id}/pdf/preview(id=${quoteId}, tenantId=${tenantId})}"
            target="_blank">
-            Apri PDF
+            <i class="bi bi-file-earmark-pdf"></i>Apri PDF
         </a>
 
         <a class="btn btn-primary"
            th:href="@{/api/quotes/{id}/pdf(id=${quoteId}, tenantId=${tenantId})}">
-            Scarica PDF
+            Scarica PDF <i class="bi bi-file-earmark-pdf"></i>
         </a>
     </div>
 
