@@ -14,19 +14,13 @@
         <div class="page">
             <div th:replace="~{fragments/layout :: flashMessages}"></div>
             <div class="card">
-                <div class="breadcrumb">
-                    <a th:href="@{/dashboard}">Dashboard</a> /
-                    <a th:href="@{/v2/accounts}">Piano dei conti</a> /
-                    <span th:text="${ledger.code}">1110</span>
-                </div>
-
                 <div class="page-header">
                     <div class="page-header-left">
                         <h1 class="page-title" th:text="${ledger.code + ' - ' + ledger.name}">1110 - Cassa</h1>
                         <div class="muted">Scheda conto / mastrino</div>
                     </div>
                     <div class="page-header-right">
-                        <a class="btn btn-secondary" th:href="@{/v2/accounts}">
+                        <a class="btn btn-outline-secondary" th:href="@{/v2/accounts}">
                             <i class="bi bi-arrow-left"></i>
                             <span>Torna al piano dei conti</span>
                         </a>

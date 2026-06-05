@@ -14,12 +14,6 @@
   <main class="app-main">
     <div class="page">
       <div class="card">
-
-        <div class="breadcrumb">
-          <a th:href="@{/dashboard(tenantId=${tenantId})}">Dashboard</a> /
-          <span>Clienti</span>
-        </div>
-
         <div class="page-header">
           <div class="page-header-left">
             <h1 class="page-title">Clienti</h1>
@@ -27,7 +21,7 @@
           </div>
 
           <div class="page-header-right">
-            <a class="btn btn-primary" th:href="@{/customers/new(tenantId=${tenantId})}">
+            <a class="btn btn-outline-primary" th:href="@{/customers/new(tenantId=${tenantId})}">
               <i class="bi bi-plus-lg"></i>
               <span>Nuovo cliente</span>
             </a>
@@ -63,11 +57,11 @@
           </div>
 
           <div class="toolbar-field toolbar-actions">
-            <button type="submit" class="btn btn-secondary">
+            <button type="submit" class="btn btn-outline-primary">
               <i class="bi bi-search"></i>
               <span>Cerca</span>
             </button>
-            <a class="btn btn-secondary" th:href="@{/customers}">
+            <a class="btn btn-outline-secondary" th:href="@{/customers}">
               <i class="bi bi-x-circle"></i>
               <span>Reset</span>
             </a>

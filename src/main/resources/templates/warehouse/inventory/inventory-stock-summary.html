@@ -14,12 +14,6 @@
         <div class="page">
             <div class="card">
                 <div th:replace="~{fragments/layout :: flashMessages}"></div>
-
-                <div class="breadcrumb">
-                    <a th:href="@{/dashboard}">Dashboard</a> /
-                    <span>Giacenza valorizzata</span>
-                </div>
-
                 <div class="page-header">
                     <div class="page-header-left">
                         <h1 class="page-title">Giacenza valorizzata di magazzino</h1>
@@ -45,12 +39,12 @@
                     </div>
 
                     <div class="col-md-6">
-                        <button type="submit" class="btn btn-outline-secondary">
+                        <button type="submit" class="btn btn-outline-primary">
                             <i class="bi bi-search"></i>
                             <span>Cerca</span>
                         </button>
 
-                        <a class="btn btn-outline-primary" th:href="@{/inventory-valuations/stock-summary}">
+                        <a class="btn btn-outline-secondary" th:href="@{/inventory-valuations/stock-summary}">
                             <i class="bi bi-x-circle"></i>
                             <span>Reset</span>
                         </a>

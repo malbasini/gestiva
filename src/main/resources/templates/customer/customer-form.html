@@ -57,25 +57,24 @@
   <main class="app-main">
     <div class="page">
       <div class="card">
-
         <div th:replace="~{fragments/layout :: flashMessages}"></div>
-
-        <div class="actions">
-          <a class="btn btn-secondary" th:href="@{/customers(tenantId=${tenantId})}">
-            <i class="bi bi-arrow-left"></i>
-            <span>Torna alla lista</span>
-          </a>
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title" th:text="${formMode == 'create'} ? 'Nuovo cliente' : 'Modifica cliente'">Cliente</h1>
+            <div class="muted" th:text="${formMode == 'create'} ? 'Inserisci i dati del cliente' : 'Aggiorna i dati del cliente'">
+              Inserisci i dati del cliente
+            </div>
+          </div>
+          <div class="page-header-right">
+            <a class="btn btn-outline-secondary" th:href="@{/customers(tenantId=${tenantId})}">
+              <i class="bi bi-arrow-left"></i>
+              <span>Torna alla lista</span>
+            </a>
+          </div>
         </div>
-
-        <h1 class="page-title" th:text="${formMode == 'create'} ? 'Nuovo cliente' : 'Modifica cliente'">Cliente</h1>
-        <div class="muted" th:text="${formMode == 'create'} ? 'Inserisci i dati del cliente' : 'Aggiorna i dati del cliente'">
-          Inserisci i dati del cliente
-        </div>
-
         <form th:action="${formMode == 'create'} ? @{/customers} : @{/customers/{id}(id=${customerId})}"
               th:object="${customerForm}"
               method="post">
-
           <input type="hidden" name="tenantId" th:value="${tenantId}"/>
           <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
@@ -150,7 +149,7 @@
           </div>
 
           <div class="actions" style="margin-top: 24px;">
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-outline-primary">
               <i class="bi bi-check2"></i>
               <span th:text="${formMode == 'create'} ? 'Crea cliente' : 'Salva modifiche'">Salva</span>
             </button>

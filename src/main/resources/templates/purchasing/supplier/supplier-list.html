@@ -13,14 +13,7 @@
   <main class="app-main">
     <div class="page">
       <div class="card">
-
         <div th:replace="~{fragments/layout :: flashMessages}"></div>
-
-        <div class="breadcrumb">
-          <a th:href="@{/dashboard}">Dashboard</a> /
-          <span>Fornitori</span>
-        </div>
-
         <div class="page-header">
           <div class="page-header-left">
             <h1 class="page-title">Fornitori</h1>
@@ -64,11 +57,11 @@
             </select>
           </div>
           <div class="toolbar-field toolbar-actions">
-            <button type="submit" class="btn btn-secondary">
+            <button type="submit" class="btn btn-outline-primary">
               <i class="bi bi-search"></i>
               <span>Cerca</span>
             </button>
-            <a class="btn btn-secondary" th:href="@{/suppliers}">
+            <a class="btn btn-outline-secondary" th:href="@{/suppliers}">
               <i class="bi bi-x-circle"></i>
               <span>Reset</span>
             </a>

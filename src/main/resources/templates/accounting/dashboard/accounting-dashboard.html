@@ -13,11 +13,6 @@
     <main class="app-main">
         <div class="page">
             <div class="card">
-                <div class="breadcrumb">
-                    <a th:href="@{/dashboard}">Dashboard</a> /
-                    <span>Dashboard contabile</span>
-                </div>
-
                 <div class="page-header">
                     <div class="page-header-left">
                         <h1 class="page-title">Dashboard contabile</h1>
@@ -101,11 +96,11 @@
                 </div>
 
                 <div class="actions" style="margin-top:24px;">
-                    <a class="btn btn-secondary" th:href="@{/payment-dues}">
+                    <a class="btn btn-outline-primary" th:href="@{/payment-dues}">
                         <i class="bi bi-calendar-check"></i>
                         <span>Apri scadenzario</span>
                     </a>
-                    <a class="btn btn-secondary" th:href="@{/accounting-entries}">
+                    <a class="btn btn-outline-success" th:href="@{/accounting-entries}">
                         <i class="bi bi-journal-text"></i>
                         <span>Apri prima nota</span>
                     </a>

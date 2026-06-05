@@ -13,15 +13,7 @@
   <main class="app-main">
     <div class="page">
       <div class="card">
-
         <div th:replace="~{fragments/layout :: flashMessages}"></div>
-
-        <div class="breadcrumb">
-          <a th:href="@{/dashboard}">Dashboard</a> /
-          <a th:href="@{/suppliers}">Fornitori</a> /
-          <span th:text="${supplier.code}">SUP-001</span>
-        </div>
-
         <div class="page-header">
           <div class="page-header-left">
             <h1 class="page-title" th:text="${supplier.name}">Fornitore</h1>
@@ -32,7 +24,7 @@
               <i class="bi bi-arrow-left"></i>
               <span>Torna alla lista</span>
             </a>
-            <a class="btn btn-outine-warning" th:href="@{/suppliers/{id}/edit(id=${supplier.id})}">
+            <a class="btn btn-outline-primary" th:href="@{/suppliers/{id}/edit(id=${supplier.id})}">
               <i class="bi bi-pencil-square"></i>
               <span>Modifica</span>
             </a>
