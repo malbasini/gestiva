@@ -139,10 +139,44 @@
                 </div>
               </div>
             </div>
-          </div>
+            <div class="muted mb-2">Ultimi documenti</div>
+            <div class="table-wrap">
+              <table class="table table-sm">
+                <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Tipo</th>
+                  <th>Numero</th>
+                  <th>Soggetto</th>
+                  <th>Importo</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(dashboard.recentSupplierDocuments)}">
+                  <td colspan="5" class="muted">Nessun documento recente.</td>
+                </tr>
+                <tr th:each="doc : ${dashboard.recentSupplierDocuments}">
+                  <td th:text="${doc.date}">01/06/2026</td>
+                  <td th:text="${doc.typeLabel}">Fattura cliente</td>
+                  <td>
+                    <a th:if="${doc.detailUrl != null and !#strings.isEmpty(doc.detailUrl)}"
+                       th:href="${doc.detailUrl}"
+                       th:text="${doc.number}">
+                      INV-00001
+                    </a>
+                    <span th:if="${doc.detailUrl == null or #strings.isEmpty(doc.detailUrl)}"
+                          th:text="${doc.number}">
+                      INV-00001
+                    </span>
+                  </td>
+                  <td th:text="${doc.counterparty}">-</td>
+                  <td th:text="${doc.amount}">100,00</td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
         </div>
-      </div>
-
+     </div>
       <!-- Contabilità / IVA -->
       <div class="row g-3 mt-1">
         <div class="col-lg-8">

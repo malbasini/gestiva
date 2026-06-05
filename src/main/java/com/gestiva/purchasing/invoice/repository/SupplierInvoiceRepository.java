@@ -3,6 +3,8 @@ package com.gestiva.purchasing.invoice.repository;
 import com.gestiva.purchasing.invoice.entity.SupplierInvoice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+import java.util.List;
 import java.util.Optional;
 
 public interface SupplierInvoiceRepository extends JpaRepository<SupplierInvoice, Long>, JpaSpecificationExecutor<SupplierInvoice> {
@@ -22,4 +24,6 @@ public interface SupplierInvoiceRepository extends JpaRepository<SupplierInvoice
             java.time.LocalDate dateTo
     );
     long countByTenantIdAndStatusIn(Long tenantId, java.util.Collection<String> statuses);
+
+    List<SupplierInvoice> findTop5ByTenantIdOrderByInvoiceDateDescIdDesc(Long tenantId);
 }

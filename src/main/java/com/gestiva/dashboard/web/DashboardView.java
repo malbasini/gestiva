@@ -37,6 +37,7 @@ public class DashboardView {
     // Liste recenti
     private List<DashboardRecentDocumentView> recentSalesDocuments = new ArrayList<>();
     private List<DashboardRecentInventoryMovementView> recentInventoryMovements = new ArrayList<>();
+    private List<DashboardRecentDocumentView> recentSupplierDocuments = new ArrayList<>();
 
     public long getOpenQuotesCount() {
         return openQuotesCount;
@@ -188,5 +189,13 @@ public class DashboardView {
 
     public void setRecentInventoryMovements(List<DashboardRecentInventoryMovementView> recentInventoryMovements) {
         this.recentInventoryMovements = recentInventoryMovements;
+    }
+
+    public List<DashboardRecentDocumentView> getRecentSupplierDocuments() {
+        return recentSupplierDocuments;
+    }
+
+    public void setRecentSupplierDocuments(List<DashboardRecentDocumentView> recentSupplierDocuments) {
+        this.recentSupplierDocuments = recentSupplierDocuments;
     }
 }

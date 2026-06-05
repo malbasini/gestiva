@@ -11,6 +11,7 @@ import com.gestiva.billing.invoice.repository.InvoiceRepository;
 import com.gestiva.inventory.item.repository.ItemRepository;
 import com.gestiva.inventory.movement.entity.InventoryMovement;
 import com.gestiva.inventory.movement.repository.InventoryMovementRepository;
+import com.gestiva.purchasing.invoice.entity.SupplierInvoice;
 import com.gestiva.purchasing.invoice.repository.SupplierInvoiceRepository;
 import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
@@ -106,6 +107,9 @@ public class DashboardWebService {
         view.setOpenPurchaseOrdersCount(readOpenPurchaseOrdersCount(tenantId));
         view.setGoodsReceiptsToInvoiceCount(goodsReceiptRepository.countToInvoiceByTenantId(tenantId));
         view.setOpenSupplierInvoicesCount(readOpenSupplierInvoicesCount(tenantId));
+        mapRecentSupplierInvoicesDocuments(view, tenantId);
+
+
 
         // =========================================================
         // CONTABILITÀ
@@ -184,7 +188,6 @@ public class DashboardWebService {
 
     private void mapRecentSalesDocuments(DashboardView view, Long tenantId) {
         List<Invoice> recentInvoices = invoiceRepository.findTop5ByTenantIdOrderByInvoiceDateDescIdDesc(tenantId);
-
         List<DashboardRecentDocumentView> docs = recentInvoices.stream().map(inv -> {
             DashboardRecentDocumentView d = new DashboardRecentDocumentView();
             d.setDate(formatDate(inv.getInvoiceDate()));
@@ -198,7 +201,20 @@ public class DashboardWebService {
 
         view.setRecentSalesDocuments(docs);
     }
+    private void mapRecentSupplierInvoicesDocuments(DashboardView view, Long tenantId) {
+        List<SupplierInvoice> recentInvoices = supplierInvoiceRepository.findTop5ByTenantIdOrderByInvoiceDateDescIdDesc(tenantId);
+        List<DashboardRecentDocumentView> docs = recentInvoices.stream().map(inv -> {
+            DashboardRecentDocumentView d = new DashboardRecentDocumentView();
+            d.setDate(formatDate(inv.getInvoiceDate()));
+            d.setTypeLabel("Fattura fornitore");
+            d.setNumber(inv.getInvoiceNumber());
+            d.setAmount(formatMoney(inv.getTotalAmount()));
+            d.setDetailUrl("/supplier-invoices/" + inv.getId());
+            return d;
+        }).toList();
 
+        view.setRecentSupplierDocuments(docs);
+    }
     private void mapRecentInventoryMovements(DashboardView view, Long tenantId) {
         List<InventoryMovement> recent = inventoryMovementRepository
                 .findTop10ByTenantIdOrderByMovementDateDescIdDesc(tenantId);
@@ -215,7 +231,6 @@ public class DashboardWebService {
 
         view.setRecentInventoryMovements(rows);
     }
-
     private String resolveInvoiceCounterparty(Invoice invoice) {
         // Adatta questo metodo in base alla tua entity Invoice.
         // Se hai invoice.getCustomerName() usa quello direttamente.
