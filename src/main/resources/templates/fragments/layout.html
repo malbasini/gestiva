@@ -27,14 +27,16 @@
             <div class="collapse navbar-collapse" id="mainNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
 
-                    <li class="nav-item">
+                    <li class="nav-item"
+                        sec:authorize="hasAnyRole('ADMIN','SALES','PURCHASING','WAREHOUSE','ACCOUNTING')">
                         <a class="nav-link"
                            th:classappend="${activeMenu == 'dashboard'} ? ' active' : ''"
                            th:href="@{/dashboard}">
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </a>
                     </li>
-                    <li class="nav-item dropdown">
+                    <li class="nav-item dropdown"
+                        sec:authorize="hasRole('ADMIN')">
                         <a class="nav-link dropdown-toggle"
                            href="#"
                            role="button"
@@ -43,13 +45,12 @@
                             Settings
                         </a>
                         <ul class="dropdown-menu">
-                            <th:block sec:authorize="hasAnyRole('ADMIN')">
-                                <li><a class="dropdown-item" th:href="@{/settings/company}">Impostazioni azienda</a></li>
-                                <li><a class="dropdown-item" th:href="@{/admin/users}">Utenti e ruoli</a></li>
-                            </th:block>
+                            <li><a class="dropdown-item" th:href="@{/settings/company}">Impostazioni azienda</a></li>
+                            <li><a class="dropdown-item" th:href="@{/admin/users}">Utenti e ruoli</a></li>
                         </ul>
                     </li>
-                    <li class="nav-item dropdown">
+                    <li class="nav-item dropdown"
+                        sec:authorize="hasAnyRole('ADMIN','SALES','WAREHOUSE','ACCOUNTING')">
                         <a class="nav-link dropdown-toggle"
                            href="#"
                            role="button"
@@ -58,23 +59,26 @@
                             Ciclo attivo
                         </a>
                         <ul class="dropdown-menu">
-                            <th:block sec:authorize="hasAnyRole('ADMIN','SALES','ACCOUNTING')">
-                                <li><a class="dropdown-item" th:href="@{/customers}">Clienti</a></li>
-                            </th:block>
-                            <th:block sec:authorize="hasAnyRole('ADMIN','SALES')">
-                                <li><a class="dropdown-item" th:href="@{/quotes}">Preventivi</a></li>
-                                <li><a class="dropdown-item" th:href="@{/orders}">Ordini</a></li>
-                            </th:block>
-                            <th:block sec:authorize="hasAnyRole('ADMIN','SALES','WAREHOUSE')">
-                                <li><a class="dropdown-item" th:href="@{/delivery-notes}">DDT</a></li>
-                            </th:block>
-                            <th:block sec:authorize="hasAnyRole('ADMIN','SALES','ACCOUNTING')">
-                                <li><a class="dropdown-item" th:href="@{/invoices}">Fatture</a></li>
-                            </th:block>
+                            <li sec:authorize="hasAnyRole('ADMIN','SALES','ACCOUNTING')">
+                                <a class="dropdown-item" th:href="@{/customers}">Clienti</a>
+                            </li>
+                            <li sec:authorize="hasAnyRole('ADMIN','SALES')">
+                                <a class="dropdown-item" th:href="@{/quotes}">Preventivi</a>
+                            </li>
+                            <li sec:authorize="hasAnyRole('ADMIN','SALES')">
+                                <a class="dropdown-item" th:href="@{/orders}">Ordini</a>
+                            </li>
+                            <li sec:authorize="hasAnyRole('ADMIN','SALES','WAREHOUSE')">
+                                <a class="dropdown-item" th:href="@{/delivery-notes}">DDT</a>
+                            </li>
+                            <li sec:authorize="hasAnyRole('ADMIN','SALES','ACCOUNTING')">
+                                <a class="dropdown-item" th:href="@{/invoices}">Fatture</a>
+                            </li>
                         </ul>
                     </li>
 
-                    <li class="nav-item dropdown" th:classappend="${activeMenu == 'customers' or activeMenu == 'quotes' or activeMenu == 'orders' or activeMenu == 'deliveryNotes' or activeMenu == 'invoices'} ? ' active' : ''">
+                    <li class="nav-item dropdown"
+                        sec:authorize="hasAnyRole('ADMIN','PURCHASING','WAREHOUSE','ACCOUNTING')">
                         <a class="nav-link dropdown-toggle"
                            href="#"
                            role="button"
@@ -83,30 +87,31 @@
                             Ciclo passivo
                         </a>
                         <ul class="dropdown-menu">
-                            <th:block sec:authorize="hasAnyRole('ADMIN','PURCHASING','ACCOUNTING')">
-                                 <li><a class="dropdown-item" th:href="@{/suppliers}">Fornitori</a></li>
-                            </th:block>
-                            <th:block sec:authorize="hasAnyRole('ADMIN','PURCHASING')">
-                                 <li><a class="dropdown-item" th:href="@{/purchase-orders}">Ordini acquisto</a></li>
-                            </th:block>
-                            <th:block sec:authorize="hasAnyRole('ADMIN','PURCHASING','WAREHOUSE')">
-                                <li><a class="dropdown-item" th:href="@{/goods-receipts}">Ricezioni merci</a></li>
-                            </th:block>
-                            <th:block sec:authorize="hasAnyRole('ADMIN','PURCHASING','ACCOUNTING')">
-                                <li><a class="dropdown-item" th:href="@{/supplier-invoices}">Fatture fornitore</a></li>
-                            </th:block>
+                            <li sec:authorize="hasAnyRole('ADMIN','PURCHASING','ACCOUNTING')">
+                                <a class="dropdown-item" th:href="@{/suppliers}">Fornitori</a>
+                            </li>
+                            <li sec:authorize="hasAnyRole('ADMIN','PURCHASING')">
+                                <a class="dropdown-item" th:href="@{/purchase-orders}">Ordini acquisto</a>
+                            </li>
+                            <li sec:authorize="hasAnyRole('ADMIN','PURCHASING','WAREHOUSE')">
+                                <a class="dropdown-item" th:href="@{/goods-receipts}">Ricezioni merci</a>
+                            </li>
+                            <li sec:authorize="hasAnyRole('ADMIN','PURCHASING','ACCOUNTING')">
+                                <a class="dropdown-item" th:href="@{/supplier-invoices}">Fatture fornitore</a>
+                            </li>
                         </ul>
                     </li>
 
                     <li class="nav-item dropdown"
+                        sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')"
                         th:classappend="${activeMenu == 'items'
-                     or activeMenu == 'stockMovements'
-                     or activeMenu == 'inventoryAdjustments'
-                     or activeMenu == 'inventoryStockSummary'
-                     or activeMenu == 'inventoryOutboundValuations'
-                     or activeMenu == 'inventoryCogsSummary'
-                     or activeMenu == 'inventoryConsistencyCheck'
-                     or activeMenu == 'inventoryValuationSettings'} ? ' active' : ''">
+                 or activeMenu == 'stockMovements'
+                 or activeMenu == 'inventoryAdjustments'
+                 or activeMenu == 'inventoryStockSummary'
+                 or activeMenu == 'inventoryOutboundValuations'
+                 or activeMenu == 'inventoryCogsSummary'
+                 or activeMenu == 'inventoryConsistencyCheck'
+                 or activeMenu == 'inventoryValuationSettings'} ? ' active' : ''">
                         <a class="nav-link dropdown-toggle"
                            href="#"
                            role="button"
@@ -115,25 +120,31 @@
                             Magazzino
                         </a>
                         <ul class="dropdown-menu">
-                            <th:block sec:authorize="hasAnyRole('ADMIN','ROLE_WAREHOUSE')">
-                                    <li><a class="dropdown-item" th:href="@{/items}">Articoli</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/inventory-adjustments/new}">Rettifiche inventario</a></li>
-                            </th:block>
-                                <li><hr class="dropdown-divider"></li>
-                            <th:block sec:authorize="hasAnyRole('ADMIN','ROLE_WAREHOUSE')">
-                                    <li><a class="dropdown-item" th:href="@{/inventory-valuations/stock-summary}">Giacenza valorizzata</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/inventory-valuations/outbound}">Scarichi valorizzati</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/inventory-valuations/cogs-summary}">Costo del venduto</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/inventory-valuations/consistency-check}">Controllo coerenza</a></li>
-                            </th:block>
-                                <li><hr class="dropdown-divider"></li>
-                            <th:block sec:authorize="hasAnyRole('ADMIN','ROLE_WAREHOUSE')">
-                                    <li><a class="dropdown-item" th:href="@{/tenant-settings/inventory-valuation}">Metodo valorizzazione</a></li>
-                            </th:block>
+                            <li sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
+                                <a class="dropdown-item" th:href="@{/items}">Articoli</a>
+                            </li>
+                            <li sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
+                                <a class="dropdown-item" th:href="@{/inventory-adjustments/new}">Rettifiche inventario</a>
+                            </li>
+                            <li sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')">
+                                <a class="dropdown-item" th:href="@{/inventory-valuations/stock-summary}">Giacenza valorizzata</a>
+                            </li>
+                            <li sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')">
+                                <a class="dropdown-item" th:href="@{/inventory-valuations/outbound}">Scarichi valorizzati</a>
+                            </li>
+                            <li sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')">
+                                <a class="dropdown-item" th:href="@{/inventory-valuations/cogs-summary}">Costo del venduto</a>
+                            </li>
+                            <li sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')">
+                                <a class="dropdown-item" th:href="@{/inventory-valuations/consistency-check}">Controllo coerenza</a>
+                            </li>
+                            <li sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
+                                <a class="dropdown-item" th:href="@{/tenant-settings/inventory-valuation}">Metodo valorizzazione</a>
+                            </li>
                         </ul>
                     </li>
-
-                    <li class="nav-item dropdown" th:classappend="${activeMenu == 'customers' or activeMenu == 'quotes' or activeMenu == 'orders' or activeMenu == 'deliveryNotes' or activeMenu == 'invoices'} ? ' active' : ''">
+                    <li class="nav-item dropdown"
+                        sec:authorize="hasAnyRole('ADMIN','ACCOUNTING')">
                         <a class="nav-link dropdown-toggle"
                            href="#"
                            role="button"
@@ -142,22 +153,20 @@
                             Contabilità
                         </a>
                         <ul class="dropdown-menu">
-                            <th:block sec:authorize="hasAnyRole('ADMIN','ACCOUNTING')">
-                                    <li><a class="dropdown-item" th:href="@{/payment-dues}">Scadenzario</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/accounting-entries}">Prima nota</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/accounting-dashboard}">Dashboard contabile</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/v2/accounts}">Piano dei conti</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/v2/journal-entries}">Scritture V2</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/payments}">Incassi e pagamenti</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/vat-registers/sales}">Registro IVA vendite</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/vat-registers/purchases}">Registro IVA acquisti</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/vat-registers/settlement}">Liquidazione IVA</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/accounting/trial-balance}">Bilancino di verifica</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/accounting/financial-summary}">Situazione contabile sintetica</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/accounting/financial-summary-detail}">Situazione contabile per classi</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/accounting/income-statement}">Conto economico</a></li>
-                                    <li><a class="dropdown-item" th:href="@{/accounting/balance-sheet}">Stato patrimoniale</a></li>
-                            </th:block>
+                            <li><a class="dropdown-item" th:href="@{/payment-dues}">Scadenzario</a></li>
+                            <li><a class="dropdown-item" th:href="@{/accounting-entries}">Prima nota</a></li>
+                            <li><a class="dropdown-item" th:href="@{/accounting-dashboard}">Dashboard contabile</a></li>
+                            <li><a class="dropdown-item" th:href="@{/v2/accounts}">Piano dei conti</a></li>
+                            <li><a class="dropdown-item" th:href="@{/v2/journal-entries}">Scritture V2</a></li>
+                            <li><a class="dropdown-item" th:href="@{/payments}">Incassi e pagamenti</a></li>
+                            <li><a class="dropdown-item" th:href="@{/vat-registers/sales}">Registro IVA vendite</a></li>
+                            <li><a class="dropdown-item" th:href="@{/vat-registers/purchases}">Registro IVA acquisti</a></li>
+                            <li><a class="dropdown-item" th:href="@{/vat-registers/settlement}">Liquidazione IVA</a></li>
+                            <li><a class="dropdown-item" th:href="@{/accounting/trial-balance}">Bilancino di verifica</a></li>
+                            <li><a class="dropdown-item" th:href="@{/accounting/financial-summary}">Situazione contabile sintetica</a></li>
+                            <li><a class="dropdown-item" th:href="@{/accounting/financial-summary-detail}">Situazione contabile per classi</a></li>
+                            <li><a class="dropdown-item" th:href="@{/accounting/income-statement}">Conto economico</a></li>
+                            <li><a class="dropdown-item" th:href="@{/accounting/balance-sheet}">Stato patrimoniale</a></li>
                         </ul>
                     </li>
                 </ul>

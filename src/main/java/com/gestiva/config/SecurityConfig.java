@@ -71,73 +71,92 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/dashboard/**").permitAll()
-                        // risorse pubbliche
-                        .requestMatchers(
-                                "/css/**",
-                                "/js/**",
-                                "/images/**",
-                                "/webjars/**",
-                                "/login",
-                                "/register",
-                                "/error"
-                        ).permitAll()
-                        // dashboard
-                        .requestMatchers("/dashboard/**")
-                        .hasAnyRole("ADMIN", "SALES", "PURCHASING", "WAREHOUSE", "ACCOUNTING")
-                        // amministrazione sistema
-                        .requestMatchers("/settings/**")
-                        .hasRole("ADMIN")
-                        .requestMatchers("/admin/users/**")
-                        .hasRole("ADMIN")
-                        .requestMatchers("/admin/roles/**")
-                        .hasRole("ADMIN")
-                        // anagrafiche
-                        .requestMatchers("/customers/**")
-                        .hasAnyRole("ADMIN", "SALES", "ACCOUNTING")
-                        .requestMatchers("/suppliers/**")
-                        .hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
-                        .requestMatchers("/items/**")
-                        .hasAnyRole("ADMIN", "SALES", "PURCHASING", "WAREHOUSE", "ACCOUNTING")
-                        // ciclo attivo
-                        .requestMatchers("/quotes/**")
-                        .hasAnyRole("ADMIN", "SALES")
-                        .requestMatchers("/sales-orders/**")
-                        .hasAnyRole("ADMIN", "SALES")
-                        .requestMatchers("/delivery-notes/**")
-                        .hasAnyRole("ADMIN", "SALES", "WAREHOUSE")
-                        .requestMatchers("/invoices/**")
-                        .hasAnyRole("ADMIN", "SALES", "ACCOUNTING")
-                        // ciclo passivo
-                        .requestMatchers("/purchase-orders/**")
-                        .hasAnyRole("ADMIN", "PURCHASING")
-                        .requestMatchers("/goods-receipts/**")
-                        .hasAnyRole("ADMIN", "PURCHASING", "WAREHOUSE")
-                        .requestMatchers("/supplier-invoices/**")
-                        .hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
-                        // magazzino
-                        .requestMatchers("/inventory/**")
-                        .hasAnyRole("ADMIN", "WAREHOUSE")
-                        .requestMatchers("/inventory-movements/**")
-                        .hasAnyRole("ADMIN", "WAREHOUSE")
-                        .requestMatchers("/inventory-valuation/**")
-                        .hasAnyRole("ADMIN", "WAREHOUSE", "ACCOUNTING")
-                        // amministrazione / contabilità
-                        .requestMatchers("/payments/**")
-                        .hasAnyRole("ADMIN", "ACCOUNTING")
-                        .requestMatchers("/payment-dues/**")
-                        .hasAnyRole("ADMIN", "ACCOUNTING")
-                        .requestMatchers("/v2/journal-entries/**")
-                        .hasAnyRole("ADMIN", "ACCOUNTING")
-                        .requestMatchers("/accounting/**")
-                        .hasAnyRole("ADMIN", "ACCOUNTING")
-                        .requestMatchers("/vat-registers/**")
-                        .hasAnyRole("ADMIN", "ACCOUNTING")
-                        // pagina accesso negato
-                        .requestMatchers("/403")
-                        .authenticated()
-                        // tutto il resto richiede login
-                        .anyRequest().authenticated()
-                )
+                                // risorse pubbliche
+                                .requestMatchers(
+                                        "/css/**",
+                                        "/js/**",
+                                        "/images/**",
+                                        "/webjars/**",
+                                        "/login",
+                                        "/register",
+                                        "/error"
+                                ).permitAll()
+
+                                // dashboard
+                                .requestMatchers("/dashboard/**")
+                                .hasAnyRole("ADMIN", "SALES", "PURCHASING", "WAREHOUSE", "ACCOUNTING")
+
+                                // settings / amministrazione sistema
+                                .requestMatchers("/settings/**")
+                                .hasRole("ADMIN")
+                                .requestMatchers("/admin/users/**")
+                                .hasRole("ADMIN")
+                                .requestMatchers("/admin/roles/**")
+                                .hasRole("ADMIN")
+
+                                // ciclo attivo
+                                .requestMatchers("/customers/**")
+                                .hasAnyRole("ADMIN", "SALES", "ACCOUNTING")
+                                .requestMatchers("/quotes/**")
+                                .hasAnyRole("ADMIN", "SALES")
+                                .requestMatchers("/orders/**")
+                                .hasAnyRole("ADMIN", "SALES")
+                                .requestMatchers("/sales-orders/**")
+                                .hasAnyRole("ADMIN", "SALES")
+                                .requestMatchers("/delivery-notes/**")
+                                .hasAnyRole("ADMIN", "SALES", "WAREHOUSE")
+                                .requestMatchers("/invoices/**")
+                                .hasAnyRole("ADMIN", "SALES", "ACCOUNTING")
+
+                                // ciclo passivo
+                                .requestMatchers("/suppliers/**")
+                                .hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
+                                .requestMatchers("/purchase-orders/**")
+                                .hasAnyRole("ADMIN", "PURCHASING")
+                                .requestMatchers("/goods-receipts/**")
+                                .hasAnyRole("ADMIN", "PURCHASING", "WAREHOUSE")
+                                .requestMatchers("/supplier-invoices/**")
+                                .hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
+
+                                // magazzino
+                                .requestMatchers("/items/**")
+                                .hasAnyRole("ADMIN", "SALES", "PURCHASING", "WAREHOUSE", "ACCOUNTING")
+                                .requestMatchers("/inventory/**")
+                                .hasAnyRole("ADMIN", "WAREHOUSE")
+                                .requestMatchers("/inventory-adjustments/**")
+                                .hasAnyRole("ADMIN", "WAREHOUSE")
+                                .requestMatchers("/inventory-movements/**")
+                                .hasAnyRole("ADMIN", "WAREHOUSE")
+                                .requestMatchers("/inventory-valuations/**")
+                                .hasAnyRole("ADMIN", "WAREHOUSE", "ACCOUNTING")
+                                .requestMatchers("/tenant-settings/inventory-valuation/**")
+                                .hasAnyRole("ADMIN", "WAREHOUSE")
+
+                                // contabilità
+                                .requestMatchers("/payments/**")
+                                .hasAnyRole("ADMIN", "ACCOUNTING")
+                                .requestMatchers("/payment-dues/**")
+                                .hasAnyRole("ADMIN", "ACCOUNTING")
+                                .requestMatchers("/accounting-entries/**")
+                                .hasAnyRole("ADMIN", "ACCOUNTING")
+                                .requestMatchers("/accounting-dashboard/**")
+                                .hasAnyRole("ADMIN", "ACCOUNTING")
+                                .requestMatchers("/v2/accounts/**")
+                                .hasAnyRole("ADMIN", "ACCOUNTING")
+                                .requestMatchers("/v2/journal-entries/**")
+                                .hasAnyRole("ADMIN", "ACCOUNTING")
+                                .requestMatchers("/accounting/**")
+                                .hasAnyRole("ADMIN", "ACCOUNTING")
+                                .requestMatchers("/vat-registers/**")
+                                .hasAnyRole("ADMIN", "ACCOUNTING")
+
+                                // pagina 403
+                                .requestMatchers("/403")
+                                .authenticated()
+
+                                // tutto il resto
+                                .anyRequest().authenticated()
+                        )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)
                 )
