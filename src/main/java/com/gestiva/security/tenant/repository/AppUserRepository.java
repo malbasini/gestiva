@@ -9,4 +9,7 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     Optional<AppUser> findByTenantIdAndEmail(Long tenantId, String email);
     List<AppUser> findByTenantId(Long tenantId);
     boolean existsByTenantIdAndEmail(Long tenantId, String email);
+    List<AppUser> findByTenantIdOrderByLastNameAscFirstNameAsc(Long tenantId);
+    Optional<AppUser> findByTenantIdAndId(Long tenantId, Long id);
+
 }
