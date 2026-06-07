@@ -22,13 +22,11 @@ import java.util.stream.Collectors;
 public class AdminUserService {
 
     public static final List<String> AVAILABLE_ROLES = List.of(
-            "ROLE_ADMIN",
             "ROLE_SALES",
             "ROLE_PURCHASING",
             "ROLE_WAREHOUSE",
             "ROLE_ACCOUNTING"
     );
-
     private final AppUserRepository appUserRepository;
     private final UserRoleRepository userRoleRepository;
     private final RoleRepository roleRepository;
@@ -73,6 +71,8 @@ public class AdminUserService {
                     .toList();
 
             row.setRoles(roleNames);
+            if(roleNames.contains("Amministratore"))
+                row.setAdmin(true);
             return row;
         }).toList();
 
@@ -122,6 +122,10 @@ public class AdminUserService {
 
         appUserRepository.save(user);
 
+        List<UserRole> roleNames = userRoleRepository.findByTenantIdAndUserId(tenantId,user.getId());
+        for(UserRole ur:roleNames){
+            userRoleRepository.deleteByTenantIdAndUserId(tenantId, ur.getUserId());
+        }
         userRoleRepository.deleteByTenantIdAndUserId(tenantId, user.getId());
         saveUserRoles(tenantId, user.getId(), form.getRoles(), form.isAdmin());
     }

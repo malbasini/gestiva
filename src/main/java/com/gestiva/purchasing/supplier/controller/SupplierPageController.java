@@ -72,9 +72,11 @@ public class SupplierPageController {
         try {
             Long tenantId = tenantContext.getCurrentTenantId();
             id = supplierWebService.create(tenantId, form);
+            model.addAttribute("activeMenu", "suppliers");
             redirectAttributes.addFlashAttribute("successMessage", "Fornitore creato con successo.");
         }
         catch(BusinessException ex) {
+            model.addAttribute("activeMenu", "suppliers");
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }
         return "redirect:/suppliers/" + id;
