@@ -1,10 +1,7 @@
 package com.gestiva.logistics.ddt.controller;
 
-import com.gestiva.logistics.ddt.dto.DeliveryNoteSearchRequest;
 import com.gestiva.logistics.ddt.web.DeliveryNoteWebService;
 import com.gestiva.security.usercontext.TenantContext;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;

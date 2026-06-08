@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gestiva - Prezzi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --brand-dark: #0f172a;
+            --brand-primary: #1d4ed8;
+            --brand-soft: #eff6ff;
+            --brand-border: #dbeafe;
+            --text-soft: #64748b;
+        }
+
+        body {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        .app-header {
+            z-index: 1030;
+            box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+        }
+
+        .app-navbar-inner {
+            min-height: 68px;
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            color: #fff;
+            padding: 72px 0;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.15);
+            font-size: 0.95rem;
+        }
+
+        .section-title {
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .pricing-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+            height: 100%;
+            background: #fff;
+        }
+
+        .pricing-card.featured {
+            border: 2px solid var(--brand-primary);
+            box-shadow: 0 18px 42px rgba(29, 78, 216, 0.18);
+            position: relative;
+        }
+
+        .featured-badge {
+            position: absolute;
+            top: -14px;
+            right: 24px;
+            background: var(--brand-primary);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .price-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .price-period {
+            color: var(--text-soft);
+            font-size: 0.95rem;
+        }
+
+        .feature-list li {
+            margin-bottom: 12px;
+            color: #334155;
+        }
+
+        .feature-list i {
+            color: #16a34a;
+            margin-right: 8px;
+        }
+
+        .soft-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            background: #fff;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+        }
+
+        .module-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--brand-border);
+            background: var(--brand-soft);
+            color: #1e3a8a;
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin: 0 8px 10px 0;
+        }
+
+        .faq-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            background: #fff;
+        }
+
+        .cta-section {
+            background: #0f172a;
+            color: #fff;
+            border-radius: 28px;
+            padding: 40px;
+        }
+
+        .muted-text {
+            color: var(--text-soft);
+        }
+
+        .app-footer {
+            box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.04);
+        }
+    </style>
+</head>
+<body>
+<header class="app-header border-bottom bg-white sticky-top">
+    <nav class="navbar navbar-expand-lg bg-white">
+        <div class="container-fluid app-navbar-inner px-4">
+            <a class="navbar-brand fw-bold d-flex align-items-center gap-2" th:href="@{/dashboard}">
+                <span style="font-size:1.1rem;">▣</span>
+                <span>Gestiva</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#pricingNavbar" aria-controls="pricingNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="pricingNavbar">
+                <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+                    <li class="nav-item"><a class="nav-link" href="#piani">Piani</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#paypal">PayPal</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
+                    <li class="nav-item ms-lg-2"><a class="btn btn-outline-primary btn-sm" href="#contatti">Contatti</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <div class="hero-badge mb-3">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span>Gestiva V1 · gestionale modulare per PMI e professionisti</span>
+                </div>
+                <h1 class="display-5 fw-bold mb-3">Prezzi semplici per partire subito</h1>
+                <p class="lead mb-4" style="max-width: 760px;">
+                    Gestiva unisce ciclo attivo, ciclo passivo, magazzino e contabilità in un unico ambiente cloud.
+                    Per la prima release abbiamo scelto una struttura prezzi chiara, sostenibile e adatta a chi vuole iniziare senza costi pesanti.
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="#piani" class="btn btn-light btn-lg">Vedi i piani</a>
+                    <a href="#faq" class="btn btn-outline-light btn-lg">Domande frequenti</a>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="soft-card p-4">
+                    <h2 class="h5 mb-3 text-dark">Cosa include Gestiva</h2>
+                    <div>
+                        <span class="module-pill"><i class="bi bi-receipt"></i> Preventivi e ordini</span>
+                        <span class="module-pill"><i class="bi bi-truck"></i> DDT e ricezioni</span>
+                        <span class="module-pill"><i class="bi bi-file-earmark-text"></i> Fatture attive e passive</span>
+                        <span class="module-pill"><i class="bi bi-box-seam"></i> Magazzino</span>
+                        <span class="module-pill"><i class="bi bi-journal-text"></i> Contabilità</span>
+                        <span class="module-pill"><i class="bi bi-bar-chart"></i> Dashboard e report</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="piani" class="py-5">
+    <div class="container py-4">
+        <div class="text-center mb-5">
+            <h2 class="section-title display-6">Scegli il piano più adatto</h2>
+            <p class="muted-text mb-0">Una struttura semplice per partire. I prezzi potranno evolvere con la crescita del prodotto.</p>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            <div class="col-lg-4">
+                <div class="pricing-card p-4">
+                    <div class="mb-3">
+                        <h3 class="h4 mb-1">Starter</h3>
+                        <p class="muted-text mb-0">Per freelance, studi e microimprese.</p>
+                    </div>
+                    <div class="mb-4">
+                        <div class="price-value">€19</div>
+                        <div class="price-period">al mese + IVA</div>
+                    </div>
+                    <ul class="list-unstyled feature-list mb-4">
+                        <li><i class="bi bi-check-circle-fill"></i>Ciclo attivo completo</li>
+                        <li><i class="bi bi-check-circle-fill"></i>Ciclo passivo base</li>
+                        <li><i class="bi bi-check-circle-fill"></i>Dashboard operativa</li>
+                        <li><i class="bi bi-check-circle-fill"></i>1 utente incluso</li>
+                        <li><i class="bi bi-check-circle-fill"></i>Supporto email</li>
+                    </ul>
+                    <a href="#paypal" class="btn btn-warning w-100">
+                        <i class="bi bi-paypal"></i> Acquista con PayPal
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="pricing-card featured p-4">
+                    <div class="featured-badge">Consigliato</div>
+                    <div class="mb-3">
+                        <h3 class="h4 mb-1">Professional</h3>
+                        <p class="muted-text mb-0">Per aziende che vogliono usare Gestiva ogni giorno.</p>
+                    </div>
+                    <div class="mb-4">
+                        <div class="price-value">€39</div>
+                        <div class="price-period">al mese + IVA</div>
+                    </div>
+                    <ul class="list-unstyled feature-list mb-4">
+                        <li><i class="bi bi-check-circle-fill"></i>Ciclo attivo e passivo completi</li>
+                        <li><i class="bi bi-check-circle-fill"></i>Magazzino con valorizzazione</li>
+                        <li><i class="bi bi-check-circle-fill"></i>Contabilità e registri IVA</li>
+                        <li><i class="bi bi-check-circle-fill"></i>Fino a 3 utenti</li>
+                        <li><i class="bi bi-check-circle-fill"></i>Supporto prioritario</li>
+                    </ul>
+                    <a href="#paypal" class="btn btn-warning w-100">
+                        <i class="bi bi-paypal"></i> Acquista con PayPal
+                    </a>
+                </div>
+            </div>
+
+
+        </div>
+</section>
+
+<section class="py-5">
+    <div class="container py-2">
+        <div class="row g-4 align-items-stretch">
+            <div class="col-lg-6">
+                <div class="soft-card p-4 h-100">
+                    <h2 class="h4 mb-3">Perché partire ora</h2>
+                    <p class="muted-text mx-auto" style="max-width: 640px;">
+                        Gestiva è in una fase iniziale ma già operativa. La prima release punta a offrire un flusso semplice,
+                        coerente e sostenibile per chi vuole gestire documenti, magazzino e contabilità in modo ordinato.
+                    </p>
+                    <ul class="list-unstyled feature-list mb-0">
+                        <li><i class="bi bi-check-circle-fill"></i>Interfaccia uniforme tra ciclo attivo e passivo</li>
+                        <li><i class="bi bi-check-circle-fill"></i>Dashboard leggibile e orientata all’operatività</li>
+                        <li><i class="bi bi-check-circle-fill"></i>Gestione ruoli e autorizzazioni già presente</li>
+                        <li><i class="bi bi-check-circle-fill"></i>Distribuzione cloud sicura su HTTPS</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="soft-card p-4 h-100">
+                    <h2 class="h4 mb-3">Cosa è incluso nei piani</h2>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="border rounded-4 p-3 h-100">
+                                <h3 class="h6">Documenti</h3>
+                                <p class="muted-text mb-0">Preventivi, ordini, DDT, fatture cliente e fornitore.</p>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="border rounded-4 p-3 h-100">
+                                <h3 class="h6">Magazzino</h3>
+                                <p class="muted-text mb-0">Rettifiche, valorizzazioni, costo del venduto e controlli di coerenza.</p>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="border rounded-4 p-3 h-100">
+                                <h3 class="h6">Contabilità</h3>
+                                <p class="muted-text mb-0">Scritture, scadenzario, registri IVA e report principali.</p>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="border rounded-4 p-3 h-100">
+                                <h3 class="h6">Supporto</h3>
+                                <p class="muted-text mb-0">Assistenza iniziale e aggiornamenti evolutivi del prodotto.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="paypal" class="py-5">
+    <div class="container py-2">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-7">
+                <div class="soft-card p-4 h-100 text-center">
+                    <h2 class="h4 mb-3">Attivazione e pagamento con PayPal</h2>
+                    <p class="muted-text">
+                        Per la prima release abbiamo scelto PayPal come metodo di pagamento principale, così da mantenere semplice l’attivazione e contenere i costi operativi iniziali.
+                    </p>
+                    <ul class="list-unstyled feature-list mb-0">
+                        <li><i class="bi bi-check-circle-fill"></i>Pagamento rapido e riconoscibile per il cliente</li>
+                        <li><i class="bi bi-check-circle-fill"></i>Attivazione del piano dopo conferma del pagamento</li>
+                        <li><i class="bi bi-check-circle-fill"></i>Struttura iniziale prudente e facilmente gestibile</li>
+                        <li><i class="bi bi-check-circle-fill"></i>Possibilità di evolvere il flusso pagamenti nelle versioni successive</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    </div>
+</section>
+
+<section id="faq" class="py-5">
+    <div class="container py-2">
+        <div class="text-center mb-4">
+            <h2 class="section-title">Domande frequenti</h2>
+            <p class="muted-text mb-0">Le risposte essenziali per chi sta valutando Gestiva.</p>
+        </div>
+
+        <div class="accordion" id="faqAccordion">
+            <div class="accordion-item faq-item mb-3">
+                <h2 class="accordion-header">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                        Gestiva è già utilizzabile in produzione?
+                    </button>
+                </h2>
+                <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body text-secondary">
+                        Sì, la prima release è pensata per un utilizzo reale, con una struttura prudente e in continua evoluzione.
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item faq-item mb-3">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                        Posso partire con pochi utenti?
+                    </button>
+                </h2>
+                <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body text-secondary">
+                        Sì. La struttura prezzi iniziale è pensata proprio per partire in piccolo e crescere in seguito.
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item faq-item mb-3">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                        I prezzi resteranno sempre questi?
+                    </button>
+                </h2>
+                <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body text-secondary">
+                        No, la pricing iniziale è volutamente prudente. Potrà evolvere con la crescita del prodotto e dei moduli disponibili.
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item faq-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                        È previsto un assistente o una guida in-app?
+                    </button>
+                </h2>
+                <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body text-secondary">
+                        Sì, l’idea è integrare progressivamente una guida intelligente per accompagnare l’utente nell’utilizzo del prodotto.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="contatti" class="py-5">
+    <div class="container py-2">
+        <div class="cta-section text-center">
+            <h2 class="h2 mb-3">Vuoi provare Gestiva o ricevere una proposta?</h2>
+            <p class="mb-4 text-white-50">
+                Contattaci per attivare il piano più adatto alla tua realtà o per chiedere una demo introduttiva.
+            </p>
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                <a href="mailto:info@gestiva.it" class="btn btn-light btn-lg">
+                    <i class="bi bi-envelope"></i> Contattaci
+                </a>
+                <a href="#piani" class="btn btn-outline-light btn-lg">
+                    <i class="bi bi-arrow-up-right-circle"></i> Torna ai piani
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer class="py-4 border-top bg-white">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+        <div class="text-secondary small">© Gestiva · gestionale modulare in evoluzione</div>
+        <div class="d-flex gap-3 small">
+            <a href="#piani" class="text-decoration-none text-secondary">Prezzi</a>
+            <a href="#faq" class="text-decoration-none text-secondary">FAQ</a>
+            <a href="#contatti" class="text-decoration-none text-secondary">Contatti</a>
+        </div>
+    </div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

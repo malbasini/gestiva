@@ -169,6 +169,14 @@
                             <li><a class="dropdown-item" th:href="@{/accounting/balance-sheet}">Stato patrimoniale</a></li>
                         </ul>
                     </li>
+                    <li class="nav-item"
+                        sec:authorize="hasAnyRole('ADMIN','SALES','PURCHASING','WAREHOUSE','ACCOUNTING')">
+                        <a class="nav-link"
+                           th:classappend="${activeMenu == 'price'} ? ' active' : ''"
+                           th:href="@{/gestiva/price}">
+                             Prezzi
+                        </a>
+                    </li>
                 </ul>
                 <div class="ms-auto d-flex align-items-center text-white small">
                 <span class="me-3" th:if="${currentUser != null}">
