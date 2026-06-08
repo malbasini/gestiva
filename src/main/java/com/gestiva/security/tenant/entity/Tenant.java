@@ -30,6 +30,15 @@ public class Tenant extends BaseEntity {
     @Column(name = "inventory_valuation_method", nullable = false, length = 20)
     private InventoryValuationMethod inventoryValuationMethod = InventoryValuationMethod.LIFO;
 
+    @Column(name = "subscription_active", nullable = false)
+    private boolean subscriptionActive;
+
+    @Column(name = "subscription_status", length = 30)
+    private String subscriptionStatus; // PENDING, ACTIVE, SUSPENDED, CANCELLED
+
+    @Column(name = "subscription_plan", length = 50)
+    private String subscriptionPlan; // STARTER, PROFESSIONAL
+
     public String getName() {
         return name;
     }
@@ -84,5 +93,29 @@ public class Tenant extends BaseEntity {
 
     public void setInventoryValuationMethod(InventoryValuationMethod inventoryValuationMethod) {
         this.inventoryValuationMethod = inventoryValuationMethod;
+    }
+
+    public boolean isSubscriptionActive() {
+        return subscriptionActive;
+    }
+
+    public void setSubscriptionActive(boolean subscriptionActive) {
+        this.subscriptionActive = subscriptionActive;
+    }
+
+    public String getSubscriptionStatus() {
+        return subscriptionStatus;
+    }
+
+    public void setSubscriptionStatus(String subscriptionStatus) {
+        this.subscriptionStatus = subscriptionStatus;
+    }
+
+    public String getSubscriptionPlan() {
+        return subscriptionPlan;
+    }
+
+    public void setSubscriptionPlan(String subscriptionPlan) {
+        this.subscriptionPlan = subscriptionPlan;
     }
 }

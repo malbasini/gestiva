@@ -1809,18 +1809,23 @@ UNLOCK TABLES;
 DROP TABLE IF EXISTS `tenant`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `tenant` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `name` varchar(120) NOT NULL,
-  `slug` varchar(120) NOT NULL,
-  `email` varchar(180) NOT NULL,
-  `status` varchar(30) NOT NULL,
-  `default_locale` varchar(10) NOT NULL DEFAULT 'it',
-  `default_currency` varchar(3) NOT NULL DEFAULT 'EUR',
-  `created_at` datetime NOT NULL,
-  `updated_at` datetime NOT NULL,
-  `inventory_valuation_method` varchar(20) NOT NULL DEFAULT 'FIFO',
-  PRIMARY KEY (`id`),
+create table tenant
+(
+    id                         bigint auto_increment
+        primary key,
+    name                       varchar(120)                       not null,
+    slug                       varchar(120)                       not null,
+    email                      varchar(180)                       not null,
+    status                     varchar(30)                        not null,
+    default_locale             varchar(10) default 'it'           not null,
+    default_currency           varchar(3)  default 'EUR'          not null,
+    created_at                 datetime                           not null,
+    updated_at                 datetime                           not null,
+    inventory_valuation_method varchar(20) default 'FIFO'         not null,
+    subscription_active        tinyint(1)  default 0              not null,
+    subscription_status        varchar(30) default 'PENDING'      null,
+    subscription_plan          varchar(50) default 'PROFESSIONAL' null,
+PRIMARY KEY (`id`),
   UNIQUE KEY `slug` (`slug`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `uc_tenant_email` (`email`),

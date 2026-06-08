@@ -27,7 +27,7 @@
             <div class="collapse navbar-collapse" id="mainNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
 
-                    <li class="nav-item"
+                    <li class="nav-item" th:if="${tenantSubscriptionActive}"
                         sec:authorize="hasAnyRole('ADMIN','SALES','PURCHASING','WAREHOUSE','ACCOUNTING')">
                         <a class="nav-link"
                            th:classappend="${activeMenu == 'dashboard'} ? ' active' : ''"
@@ -35,7 +35,7 @@
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </a>
                     </li>
-                    <li class="nav-item dropdown"
+                    <li class="nav-item dropdown" th:if="${tenantSubscriptionActive}"
                         sec:authorize="hasRole('ADMIN')">
                         <a class="nav-link dropdown-toggle"
                            href="#"
@@ -49,7 +49,7 @@
                             <li><a class="dropdown-item" th:href="@{/admin/users}">Utenti e ruoli</a></li>
                         </ul>
                     </li>
-                    <li class="nav-item dropdown"
+                    <li class="nav-item dropdown" th:if="${tenantSubscriptionActive}"
                         sec:authorize="hasAnyRole('ADMIN','SALES','WAREHOUSE','ACCOUNTING')">
                         <a class="nav-link dropdown-toggle"
                            href="#"
@@ -77,7 +77,7 @@
                         </ul>
                     </li>
 
-                    <li class="nav-item dropdown"
+                    <li class="nav-item dropdown" th:if="${tenantSubscriptionActive}"
                         sec:authorize="hasAnyRole('ADMIN','PURCHASING','WAREHOUSE','ACCOUNTING')">
                         <a class="nav-link dropdown-toggle"
                            href="#"
@@ -102,7 +102,7 @@
                         </ul>
                     </li>
 
-                    <li class="nav-item dropdown"
+                    <li class="nav-item dropdown" th:if="${tenantSubscriptionActive}"
                         sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')"
                         th:classappend="${activeMenu == 'items'
                  or activeMenu == 'stockMovements'
@@ -143,7 +143,7 @@
                             </li>
                         </ul>
                     </li>
-                    <li class="nav-item dropdown"
+                    <li class="nav-item dropdown" th:if="${tenantSubscriptionActive}"
                         sec:authorize="hasAnyRole('ADMIN','ACCOUNTING')">
                         <a class="nav-link dropdown-toggle"
                            href="#"
@@ -169,12 +169,10 @@
                             <li><a class="dropdown-item" th:href="@{/accounting/balance-sheet}">Stato patrimoniale</a></li>
                         </ul>
                     </li>
-                    <li class="nav-item"
-                        sec:authorize="hasAnyRole('ADMIN','SALES','PURCHASING','WAREHOUSE','ACCOUNTING')">
+                    <li class="nav-item" th:if="${!tenantSubscriptionActive}">
                         <a class="nav-link"
-                           th:classappend="${activeMenu == 'price'} ? ' active' : ''"
-                           th:href="@{/gestiva/price}">
-                             Prezzi
+                           th:href="@{/pricing}">
+                            <i class="bi bi-credit-card"></i> Attiva Gestiva
                         </a>
                     </li>
                 </ul>

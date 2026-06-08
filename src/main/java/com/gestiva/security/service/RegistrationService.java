@@ -69,9 +69,10 @@ public class RegistrationService {
         tenant.setDefaultCurrency("EUR");
         tenant.setCreatedAt(now.toLocalDateTime());
         tenant.setUpdatedAt(now.toLocalDateTime());
-
+        tenant.setSubscriptionActive(false);
+        tenant.setSubscriptionStatus("PENDING");
+        tenant.setSubscriptionPlan(null);
         Tenant savedTenant = tenantRepository.save(tenant);
-
         AppUser user = new AppUser();
         user.setTenantId(savedTenant.getId());
         user.setFirstName(form.getFirstName().trim());
