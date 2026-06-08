@@ -1892,15 +1892,48 @@ CREATE TABLE `user_role` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `user_role`
---
-
 LOCK TABLES `user_role` WRITE;
 /*!40000 ALTER TABLE `user_role` DISABLE KEYS */;
 truncate table `user_role`;
 /*!40000 ALTER TABLE `user_role` ENABLE KEYS */;
 UNLOCK TABLES;
+
+
+DROP TABLE IF EXISTS `billing_order`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE billing_order (
+                               id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                               tenant_id BIGINT NOT NULL,
+                               plan_code VARCHAR(50) NOT NULL,
+                               provider VARCHAR(30) NOT NULL,
+                               provider_order_id VARCHAR(120) NULL,
+                               status VARCHAR(30) NOT NULL,
+                               amount DECIMAL(15,2) NOT NULL,
+                               currency_code VARCHAR(10) NOT NULL,
+                               approval_url VARCHAR(1000) NULL,
+                               provider_payer_id VARCHAR(120) NULL,
+                               created_at DATETIME NOT NULL,
+                               updated_at DATETIME NOT NULL,
+                               completed_at DATETIME NULL,
+                               raw_payload LONGTEXT NULL,
+                               INDEX idx_billing_order_tenant (tenant_id),
+                               INDEX idx_billing_order_provider_order (provider_order_id),
+                               INDEX idx_billing_order_status (status)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+LOCK TABLES `billing_order` WRITE;
+/*!40000 ALTER TABLE `billing_order` DISABLE KEYS */;
+truncate table `billing_order`;
+/*!40000 ALTER TABLE `billing_order` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping data for table `user_role`
+--
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

@@ -224,9 +224,9 @@
                         <li><i class="bi bi-check-circle-fill"></i>1 utente incluso</li>
                         <li><i class="bi bi-check-circle-fill"></i>Supporto email</li>
                     </ul>
-                    <a href="#paypal" class="btn btn-warning w-100">
+                    <button class="btn btn-warning w-100" onclick="startPaypalCheckout('STARTER')">
                         <i class="bi bi-paypal"></i> Acquista con PayPal
-                    </a>
+                    </button>
                 </div>
             </div>
 
@@ -248,9 +248,9 @@
                         <li><i class="bi bi-check-circle-fill"></i>Fino a 3 utenti</li>
                         <li><i class="bi bi-check-circle-fill"></i>Supporto prioritario</li>
                     </ul>
-                    <a href="#paypal" class="btn btn-warning w-100">
+                    <button class="btn btn-warning w-100" onclick="startPaypalCheckout('PROFESSIONAL')">
                         <i class="bi bi-paypal"></i> Acquista con PayPal
-                    </a>
+                    </button>
                 </div>
             </div>
 
@@ -427,5 +427,25 @@
     </div>
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    async function startPaypalCheckout(plan) {
+        const response = await fetch(`/billing/paypal/create-order?plan=${plan}`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        if (!response.ok) {
+            alert('Impossibile avviare il pagamento.');
+            return;
+        }
+
+        const data = await response.json();
+        if (data.approvalUrl) {
+            window.location.href = data.approvalUrl;
+        }
+    }
+</script>
 </body>
 </html>
