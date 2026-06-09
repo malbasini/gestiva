@@ -12,10 +12,9 @@ import com.gestiva.security.tenant.entity.Tenant;
 import com.gestiva.security.tenant.repository.TenantRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
+
 
 @Service
 @Transactional
@@ -37,11 +36,54 @@ public class BillingService {
         this.tenantRepository = tenantRepository;
     }
 
+    public void captureAndActivate(String providerOrderId, String rawPayload) {
+        BillingOrder order = billingOrderRepository.findByProviderOrderId(providerOrderId)
+                .orElseThrow(() -> new BusinessException("Ordine PayPal non trovato."));
+
+        String captureStatus = paypalClient.captureOrder(providerOrderId);
+
+        if (!"COMPLETED".equalsIgnoreCase(captureStatus)) {
+            throw new BusinessException("Pagamento PayPal non completato.");
+        }
+
+        order.setStatus(BillingOrderStatus.COMPLETED.name());
+        order.setCompletedAt(LocalDateTime.now());
+        order.setUpdatedAt(LocalDateTime.now());
+        order.setRawPayload(rawPayload);
+        billingOrderRepository.save(order);
+
+        Tenant tenant = tenantRepository.findById(order.getTenantId())
+                .orElseThrow(() -> new BusinessException("Tenant non trovato."));
+
+        tenant.setSubscriptionActive(true);
+        tenant.setSubscriptionStatus("ACTIVE");
+        tenant.setSubscriptionPlan(order.getPlanCode());
+        tenantRepository.save(tenant);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     public CreatePaypalOrderResponse createPaypalOrder(Long tenantId, String planCode) {
         SubscriptionPlan plan = billingPlanService.parsePlan(planCode);
         BigDecimal amount = billingPlanService.resolvePrice(plan);
         String currency = billingPlanService.resolveCurrencyCode();
-
+        //CALCOLO L'IVA
+        java.math.BigDecimal taxAmount = amount
+                .multiply(BigDecimal.valueOf(22.0))
+                .divide(new java.math.BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
+        amount = amount.add(taxAmount);
         BillingOrder order = new BillingOrder();
         order.setTenantId(tenantId);
         order.setPlanCode(plan.name());
@@ -59,8 +101,8 @@ public class BillingService {
                 plan.name(),
                 amount,
                 currency,
-                "https://gestiva.it/billing/paypal/success",
-                "https://gestiva.it/billing/paypal/cancel"
+                "https://deviously-renounceable-beverlee.ngrok-free.dev/billing/paypal/success",
+                "https://deviously-renounceable-beverlee.ngrok-free.dev/billing/paypal/cancel"
         );
 
         order.setProviderOrderId(paypalOrder.getOrderId());

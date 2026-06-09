@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <title>Gestiva - Prezzi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
@@ -429,23 +431,29 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     async function startPaypalCheckout(plan) {
-        const response = await fetch(`/billing/paypal/create-order?plan=${plan}`, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+            alert('Avviando il pagamento PayPal...plan = ' + plan + '');
+            const csrfToken = document.querySelector('meta[name=\"_csrf\"]')?.content;
+            const csrfHeader = document.querySelector('meta[name=\"_csrf_header\"]')?.content;
+            const response = await fetch(`/billing/paypal/create-order?plan=${encodeURIComponent(plan)}`, {
+                method: 'POST',
+                headers: {
+                    [csrfHeader]: csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            if (!response.ok) {
+                const text = await response.text();
+                console.error('Errore create-order:', response.status, text);
+                alert('Impossibile avviare il pagamento PayPal.');
+                return;
             }
-        });
-
-        if (!response.ok) {
-            alert('Impossibile avviare il pagamento.');
-            return;
+            const data = await response.json();
+            if (data.approvalUrl) {
+                window.location.href = data.approvalUrl;
+            } else {
+                alert('PayPal non ha restituito un URL di approvazione.');
+            }
         }
-
-        const data = await response.json();
-        if (data.approvalUrl) {
-            window.location.href = data.approvalUrl;
-        }
-    }
 </script>
 </body>
 </html>
