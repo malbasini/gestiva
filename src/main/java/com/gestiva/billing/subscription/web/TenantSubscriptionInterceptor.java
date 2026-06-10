@@ -1,5 +1,6 @@
 package com.gestiva.billing.subscription.web;
 
+import com.gestiva.security.tenant.entity.Tenant;
 import com.gestiva.security.tenant.repository.TenantRepository;
 import com.gestiva.security.usercontext.TenantContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,7 +30,6 @@ public class TenantSubscriptionInterceptor implements HandlerInterceptor {
         if (isPublicOrAlwaysAllowed(uri)) {
             return true;
         }
-
         Long tenantId = tenantContext.getCurrentTenantId();
         if (tenantId == null) {
             return true;
@@ -43,10 +43,26 @@ public class TenantSubscriptionInterceptor implements HandlerInterceptor {
             response.sendRedirect("/pricing");
             return false;
         }
-
+        Tenant t = tenantRepository.findById(tenantId).orElse(null);
+        if ("STARTER".equalsIgnoreCase(t.getSubscriptionPlan())) {
+            if (uri.startsWith("/inventory")
+                    || uri.startsWith("/inventory-adjustments")
+                    || uri.startsWith("/inventory-valuations")
+                    || uri.startsWith("/tenant-settings/inventory-valuation")
+                    || uri.startsWith("/payments")
+                    || uri.startsWith("/payment-dues")
+                    || uri.startsWith("/accounting")
+                    || uri.startsWith("/accounting-entries")
+                    || uri.startsWith("/accounting-dashboard")
+                    || uri.startsWith("/vat-registers")
+                    || uri.startsWith("/v2/accounts")
+                    || uri.startsWith("/v2/journal-entries")) {
+                response.sendRedirect("/pricing");
+            }
+            return false;
+        }
         return true;
     }
-
     private boolean isPublicOrAlwaysAllowed(String uri) {
         return uri.equals("/login")
                 || uri.equals("/logout")

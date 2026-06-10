@@ -79,7 +79,9 @@ public class SecurityConfig {
                                         "/webjars/**",
                                         "/login",
                                         "/register",
-                                        "/error"
+                                        "/error",
+                                        "/actuator/health",
+                                        "/actuator/info"
                                 ).permitAll()
 
                                 // dashboard
