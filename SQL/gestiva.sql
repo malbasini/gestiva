@@ -1811,8 +1811,7 @@ DROP TABLE IF EXISTS `tenant`;
 /*!50503 SET character_set_client = utf8mb4 */;
 create table tenant
 (
-    id                         bigint auto_increment
-        primary key,
+    id                         bigint auto_increment primary key,
     name                       varchar(120)                       not null,
     slug                       varchar(120)                       not null,
     email                      varchar(180)                       not null,
@@ -1825,7 +1824,6 @@ create table tenant
     subscription_active        tinyint(1)  default 0              not null,
     subscription_status        varchar(30) default 'PENDING'      null,
     subscription_plan          varchar(50) default 'PROFESSIONAL' null,
-PRIMARY KEY (`id`),
   UNIQUE KEY `slug` (`slug`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `uc_tenant_email` (`email`),

@@ -101,8 +101,8 @@ public class BillingService {
                 plan.name(),
                 amount,
                 currency,
-                "https://deviously-renounceable-beverlee.ngrok-free.dev/billing/paypal/success",
-                "https://deviously-renounceable-beverlee.ngrok-free.dev/billing/paypal/cancel"
+                "https://gestiva.org/billing/paypal/success",
+                "https://gestiva.org/billing/paypal/cancel"
         );
 
         order.setProviderOrderId(paypalOrder.getOrderId());
