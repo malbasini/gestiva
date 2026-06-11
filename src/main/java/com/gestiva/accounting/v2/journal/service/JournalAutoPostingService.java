@@ -7,6 +7,7 @@ import com.gestiva.accounting.v2.journal.entity.JournalEntryLine;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryLineRepository;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryRepository;
 import com.gestiva.common.exception.BusinessException;
+import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,13 +22,15 @@ public class JournalAutoPostingService {
     private final JournalEntryRepository journalEntryRepository;
     private final JournalEntryLineRepository journalEntryLineRepository;
     private final AccountRepository accountRepository;
+    private final DocumentSequenceService documentSequenceService;
 
     public JournalAutoPostingService(JournalEntryRepository journalEntryRepository,
                                      JournalEntryLineRepository journalEntryLineRepository,
-                                     AccountRepository accountRepository) {
+                                     AccountRepository accountRepository, DocumentSequenceService documentSequenceService) {
         this.journalEntryRepository = journalEntryRepository;
         this.journalEntryLineRepository = journalEntryLineRepository;
         this.accountRepository = accountRepository;
+        this.documentSequenceService = documentSequenceService;
     }
 
     public Long postCustomerReceipt(Long tenantId,
@@ -142,14 +145,7 @@ public class JournalAutoPostingService {
     }
 
     private String nextEntryNumber(Long tenantId) {
-        long next = journalEntryRepository.count() + 1;
-        String number = "JE-" + String.format("%05d", next);
-
-        while (journalEntryRepository.existsByTenantIdAndEntryNumber(tenantId, number)) {
-            next++;
-            number = "JE-" + String.format("%05d", next);
-        }
-        return number;
+        return documentSequenceService.nextJournalEntryNumber(tenantId);
     }
 
     private BigDecimal scale(BigDecimal value) {
