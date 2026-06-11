@@ -58,8 +58,8 @@ public class TenantSubscriptionInterceptor implements HandlerInterceptor {
                     || uri.startsWith("/v2/accounts")
                     || uri.startsWith("/v2/journal-entries")) {
                 response.sendRedirect("/pricing");
+                return false;
             }
-            return false;
         }
         return true;
     }
