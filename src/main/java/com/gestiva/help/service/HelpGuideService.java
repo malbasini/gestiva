@@ -5,11 +5,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class HelpGuideService {
 
-    public String askGuide(Long tenantId,
-                           String subscriptionPlan,
-                           String roleCode,
+    public String askGuide(String subscriptionPlan,
                            boolean tenantActive,
-                           String currentPage,
                            String userMessage) {
 
         String question = userMessage == null ? "" : userMessage.trim().toLowerCase();
