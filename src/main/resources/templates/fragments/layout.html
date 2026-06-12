@@ -5,6 +5,8 @@
 <head>
     <meta charset="UTF-8"/>
     <title>Gestiva</title>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
 </head>
 <body>
 <header th:fragment="appHeader" class="app-header">
@@ -35,7 +37,7 @@
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </a>
                     </li>
-                    <li class="nav-item dropdown" th:if="${tenantSubscriptionActive and tenantSubscriptionPlan == 'PROFESSIONAL'}"
+                    <li class="nav-item dropdown" th:if="${tenantSubscriptionActive}"
                         sec:authorize="hasRole('ADMIN')">
                         <a class="nav-link dropdown-toggle"
                            href="#"
@@ -102,7 +104,7 @@
                         </ul>
                     </li>
 
-                    <li class="nav-item dropdown" th:if="${tenantSubscriptionActive and tenantSubscriptionPlan == 'PROFESSIONAL'}"
+                    <li class="nav-item dropdown" th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL' || tenantSubscriptionPlan == 'STARTER')}"
                         sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')"
                         th:classappend="${activeMenu == 'items'
                  or activeMenu == 'stockMovements'
@@ -169,10 +171,10 @@
                             <li><a class="dropdown-item" th:href="@{/accounting/balance-sheet}">Stato patrimoniale</a></li>
                         </ul>
                     </li>
-                    <li class="nav-item" th:if="${!tenantSubscriptionActive}">
+                    <li class="nav-item">
                         <a class="nav-link"
                            th:href="@{/pricing}">
-                            <i class="bi bi-credit-card"></i> Attiva Gestiva
+                            <i class="bi bi-credit-card"></i>&nbsp;Prezzi
                         </a>
                     </li>
                 </ul>
@@ -242,6 +244,197 @@
         </div>
     </div>
 </div>
+    <div th:fragment="helpAssistantScript">
+        <script th:inline="javascript">
+            window.helpGuideCurrentPage = /*[[${activeMenu}]]*/ '';
+        </script>
+
+        <script>
+            window.openHelpAssistant = function () {
+                const panel = document.getElementById('helpAssistantPanel');
+                const launcher = document.getElementById('helpAssistantLauncher');
+                const input = document.getElementById('helpAssistantInput');
+
+                if (!panel || !launcher) {
+                    console.error('Help assistant elements not found');
+                    return;
+                }
+
+                panel.style.display = 'block';
+                launcher.style.display = 'none';
+
+                setTimeout(function () {
+                    if (input) input.focus();
+                }, 100);
+            };
+
+            window.closeHelpAssistant = function () {
+                const panel = document.getElementById('helpAssistantPanel');
+                const launcher = document.getElementById('helpAssistantLauncher');
+
+                if (!panel || !launcher) {
+                    console.error('Help assistant elements not found');
+                    return;
+                }
+
+                panel.style.display = 'none';
+                launcher.style.display = 'block';
+            };
+
+            window.minimizeHelpAssistant = function () {
+                const panel = document.getElementById('helpAssistantPanel');
+                if (!panel) return;
+                panel.classList.toggle('minimized');
+            };
+
+            window.escapeHelpAssistantHtml = function (value) {
+                return String(value || '')
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#039;');
+            };
+
+            window.appendHelpAssistantMessage = function (role, message) {
+                const messages = document.getElementById('helpAssistantMessages');
+                if (!messages) return;
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'help-assistant-message ' + role;
+
+                const label = role === 'user' ? 'Tu' : 'Guida Gestiva';
+
+                wrapper.innerHTML =
+                    '<div class="help-assistant-message-label">' + label + '</div>' +
+                    '<div class="help-assistant-bubble">' + window.escapeHelpAssistantHtml(message) + '</div>';
+
+                messages.appendChild(wrapper);
+                messages.scrollTop = messages.scrollHeight;
+            };
+                window.sendHelpAssistantMessage = async function (prefilledMessage) {
+                const input = document.getElementById('helpAssistantInput');
+                const errorBox = document.getElementById('helpAssistantError');
+                const loading = document.getElementById('helpAssistantLoading');
+                const sendButton = document.getElementById('helpAssistantSendButton');
+                const quickActions = document.getElementById('helpAssistantQuickActions');
+
+                const rawMessage = prefilledMessage || (input ? input.value : '');
+                const message = String(rawMessage || '').trim();
+
+                if (!message) {
+                if (input) input.focus();
+                return;
+            }
+
+                if (errorBox) errorBox.style.display = 'none';
+                if (loading) loading.style.display = 'block';
+                if (sendButton) sendButton.disabled = true;
+
+                window.appendHelpAssistantMessage('user', message);
+
+                if (!prefilledMessage && input) {
+                input.value = '';
+                input.style.height = 'auto';
+            }
+
+                if (quickActions) {
+                quickActions.style.display = 'none';
+            }
+
+                const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+                try {
+                const response = await fetch('/help/chat', {
+                method: 'POST',
+                headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                ...(csrfToken && csrfHeader ? { [csrfHeader]: csrfToken } : {})
+            },
+                body: JSON.stringify({
+                message: message,
+                currentPage: window.helpGuideCurrentPage || ''
+            })
+            });
+
+                if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Help assistant HTTP error:', response.status, errorText);
+                if (errorBox) errorBox.style.display = 'block';
+                return;
+            }
+
+                const contentType = response.headers.get('content-type') || '';
+                let answer = '';
+
+                if (contentType.includes('application/json')) {
+                const data = await response.json();
+                answer = data && data.answer ? data.answer : '';
+            } else {
+                answer = await response.text();
+            }
+
+                if (!answer || !answer.trim()) {
+                answer = 'Non è stata generata alcuna risposta.';
+            }
+
+                window.appendHelpAssistantMessage('assistant', answer);
+
+            } catch (error) {
+                console.error('Help assistant JS exception:', error);
+                if (errorBox) errorBox.style.display = 'block';
+            } finally {
+                if (loading) loading.style.display = 'none';
+                if (sendButton) sendButton.disabled = false;
+            }
+            };
+            document.addEventListener('DOMContentLoaded', function () {
+                const input = document.getElementById('helpAssistantInput');
+                const sendButton = document.getElementById('helpAssistantSendButton');
+
+                if (input) {
+                    input.addEventListener('input', function () {
+                        input.style.height = 'auto';
+                        input.style.height = Math.min(input.scrollHeight, 96) + 'px';
+
+                        if (sendButton) {
+                            sendButton.disabled = !input.value.trim();
+                        }
+                    });
+
+                    input.addEventListener('keydown', function (event) {
+                        if (event.key === 'Enter' && !event.shiftKey) {
+                            event.preventDefault();
+                            window.sendHelpAssistantMessage();
+                        }
+                    });
+                }
+
+                console.log('Help assistant script loaded');
+            });
+        </script>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </body>
 <footer th:fragment="appFooter" class="app-footer">
     <div class="app-footer-inner" style="text-align: center">
@@ -256,5 +449,383 @@
     <div th:if="${errorMessage}" class="alert alert-danger">
         <span th:text="${errorMessage}">Si è verificato un errore.</span>
     </div>
+</div>
+<div th:fragment="helpAssistantWidget">
+    <div id="helpAssistantLauncher" class="help-assistant-launcher">
+        <button type="button"
+                class="btn btn-primary rounded-circle shadow help-assistant-launcher-btn"
+                onclick="window.openHelpAssistant()"
+                title="Guida Gestiva">
+            <i class="bi bi-chat-dots-fill"></i>
+        </button>
+    </div>
+
+    <div id="helpAssistantPanel" class="help-assistant-panel" style="display: none;">
+        <div class="help-assistant-card">
+            <div class="help-assistant-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="help-assistant-icon">
+                        <i class="bi bi-stars"></i>
+                    </span>
+                    <span class="help-assistant-title">Guida Gestiva</span>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button"
+                            class="help-assistant-header-btn"
+                            onclick="window.minimizeHelpAssistant()"
+                            title="Riduci">
+                        <i class="bi bi-dash-lg"></i>
+                    </button>
+
+                    <button type="button"
+                            class="help-assistant-header-btn"
+                            onclick="window.closeHelpAssistant()"
+                            title="Chiudi">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="helpAssistantBody" class="help-assistant-body">
+                <div class="help-assistant-intro">
+                    <p class="help-assistant-intro-text">
+                        Per cosa hai bisogno di aiuto? Seleziona un argomento rapido oppure scrivi la tua domanda.
+                    </p>
+                </div>
+
+                <div id="helpAssistantQuickActions" class="help-assistant-quick-actions">
+                    <button type="button" class="help-assistant-chip"
+                            onclick="window.sendHelpAssistantMessage('Come creo un cliente?')">
+                        Come creo un cliente?
+                    </button>
+
+                    <button type="button" class="help-assistant-chip"
+                            onclick="window.sendHelpAssistantMessage('Come genero un ordine?')">
+                        Come genero un ordine?
+                    </button>
+
+                    <button type="button" class="help-assistant-chip"
+                            onclick="window.sendHelpAssistantMessage('Come genero un DDT da un ordine?')">
+                        Come genero un DDT da un ordine?
+                    </button>
+
+                    <button type="button" class="help-assistant-chip"
+                            onclick="window.sendHelpAssistantMessage('Come registro un incasso?')">
+                        Come registro un incasso?
+                    </button>
+
+                    <button type="button" class="help-assistant-chip"
+                            onclick="window.sendHelpAssistantMessage('Perché non vedo un menù?')">
+                        Perché non vedo un menù?
+                    </button>
+
+                    <button type="button" class="help-assistant-chip"
+                            onclick="window.sendHelpAssistantMessage('Quali funzioni sono incluse nel mio piano?')">
+                        Quali funzioni sono incluse nel mio piano?
+                    </button>
+                </div>
+
+                <div id="helpAssistantMessages" class="help-assistant-messages"></div>
+            </div>
+
+            <div class="help-assistant-footer">
+                <div id="helpAssistantError" class="help-assistant-error" style="display: none;">
+                    Si è verificato un errore durante la richiesta.
+                </div>
+
+                <div class="help-assistant-input-wrap">
+                    <textarea id="helpAssistantInput"
+                              class="help-assistant-input"
+                              rows="1"
+                              maxlength="1000"
+                              placeholder="Fai una domanda"></textarea>
+
+                    <button type="button"
+                            id="helpAssistantSendButton"
+                            class="help-assistant-send-btn"
+                            onclick="window.sendHelpAssistantMessage()"
+                            title="Invia">
+                        <i class="bi bi-arrow-up"></i>
+                    </button>
+                </div>
+
+                <div id="helpAssistantLoading" class="help-assistant-loading" style="display: none;">
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Elaborazione in corso...
+                </div>
+
+                <div class="help-assistant-note">
+                    La guida può commettere errori. Verifica le informazioni importanti.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .help-assistant-launcher {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 1100;
+        }
+
+        .help-assistant-launcher-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 999px;
+            font-size: 1.2rem;
+        }
+
+        .help-assistant-panel {
+            position: fixed;
+            right: 24px;
+            bottom: 96px;
+            width: 370px;
+            max-width: calc(100vw - 24px);
+            height: min(680px, calc(100vh - 120px));
+            z-index: 1090;
+        }
+
+        .help-assistant-card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 28px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+            overflow: hidden;
+        }
+
+        .help-assistant-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #ffffff;
+            flex-shrink: 0;
+        }
+
+        .help-assistant-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #4f46e5;
+            font-size: 1.1rem;
+        }
+
+        .help-assistant-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .help-assistant-header-btn {
+            border: 0;
+            background: transparent;
+            color: #6b7280;
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+        }
+
+        .help-assistant-header-btn:hover {
+            background: #f3f4f6;
+            color: #111827;
+        }
+
+        .help-assistant-body {
+            flex: 1;
+            min-height: 0;
+            padding: 18px;
+            overflow-y: auto;
+            background:
+                    radial-gradient(circle at top left, rgba(99, 102, 241, 0.04), transparent 35%),
+                    linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
+        }
+
+        .help-assistant-intro {
+            margin-bottom: 16px;
+        }
+
+        .help-assistant-intro-text {
+            margin: 0;
+            font-size: 0.98rem;
+            line-height: 1.45;
+            color: #374151;
+        }
+
+        .help-assistant-quick-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .help-assistant-chip {
+            align-self: flex-end;
+            max-width: 92%;
+            border: 2px solid #60a5fa;
+            background: #ffffff;
+            color: #1f2937;
+            border-radius: 999px;
+            padding: 11px 16px;
+            font-size: 0.96rem;
+            line-height: 1.25;
+            text-align: left;
+            transition: all 0.15s ease;
+        }
+
+        .help-assistant-chip:hover {
+            background: #eff6ff;
+            border-color: #4f46e5;
+        }
+
+        .help-assistant-messages {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .help-assistant-message {
+            display: flex;
+            flex-direction: column;
+            max-width: 88%;
+        }
+
+        .help-assistant-message.user {
+            align-self: flex-end;
+            text-align: right;
+        }
+
+        .help-assistant-message.assistant {
+            align-self: flex-start;
+        }
+
+        .help-assistant-message-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .help-assistant-bubble {
+            border-radius: 20px;
+            padding: 12px 14px;
+            font-size: 0.94rem;
+            line-height: 1.45;
+            white-space: pre-wrap;
+        }
+
+        .help-assistant-message.user .help-assistant-bubble {
+            background: #2563eb;
+            color: #ffffff;
+        }
+
+        .help-assistant-message.assistant .help-assistant-bubble {
+            background: #ffffff;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+        }
+
+        .help-assistant-footer {
+            padding: 14px 18px 16px 18px;
+            border-top: 1px solid #e5e7eb;
+            background: #ffffff;
+            flex-shrink: 0;
+        }
+
+        .help-assistant-error {
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            border-radius: 14px;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+        }
+
+        .help-assistant-input-wrap {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            border: 2px solid #6366f1;
+            border-radius: 999px;
+            padding: 8px 10px 8px 16px;
+            background: #ffffff;
+        }
+
+        .help-assistant-input {
+            flex: 1;
+            border: 0;
+            outline: none;
+            resize: none;
+            max-height: 96px;
+            overflow-y: auto;
+            font-size: 0.98rem;
+            color: #111827;
+            background: transparent;
+            line-height: 1.35;
+        }
+
+        .help-assistant-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .help-assistant-send-btn {
+            width: 42px;
+            height: 42px;
+            border: 0;
+            border-radius: 999px;
+            background: #2563eb;
+            color: #ffffff;
+            flex-shrink: 0;
+        }
+
+        .help-assistant-send-btn:disabled {
+            background: #e5e7eb;
+            color: #9ca3af;
+        }
+
+        .help-assistant-loading {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        .help-assistant-note {
+            margin-top: 12px;
+            font-size: 0.84rem;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+
+        .help-assistant-panel.minimized #helpAssistantBody,
+        .help-assistant-panel.minimized .help-assistant-footer {
+            display: none;
+        }
+
+        .help-assistant-panel.minimized .help-assistant-card {
+            height: auto;
+        }
+
+        @media (max-width: 576px) {
+            .help-assistant-panel {
+                right: 12px;
+                left: 12px;
+                bottom: 84px;
+                width: auto;
+                max-width: none;
+                height: min(620px, calc(100vh - 100px));
+            }
+
+            .help-assistant-launcher {
+                right: 16px;
+                bottom: 16px;
+            }
+        }
+    </style>
 </div>
 </html>

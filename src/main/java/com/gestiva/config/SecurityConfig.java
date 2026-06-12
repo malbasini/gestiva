@@ -67,7 +67,8 @@ public class SecurityConfig {
                                             AuthenticationProvider authenticationProvider
     ) throws Exception {
         http
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/billing/paypal/webhook"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/billing/paypal/webhook",
+                                "/help/chat"))
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/dashboard/**").permitAll()
@@ -81,7 +82,8 @@ public class SecurityConfig {
                                         "/register",
                                         "/error",
                                         "/actuator/health",
-                                        "/actuator/info"
+                                        "/actuator/info",
+                                        "/help/chat/"
                                 ).permitAll()
 
                                 // dashboard
@@ -158,6 +160,7 @@ public class SecurityConfig {
 
                                 // tutto il resto
                                 .anyRequest().authenticated()
+
                         )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)
