@@ -39,11 +39,8 @@ public class HelpChatController {
                 .orElse("ROLE_USER");
 
         String answer = helpGuideService.askGuide(
-                user.getTenantId(),
                 tenant.getSubscriptionPlan(),
-                roleCode,
                 tenant.isSubscriptionActive(),
-                request.getCurrentPage(),
                 request.getMessage()
         );
 
