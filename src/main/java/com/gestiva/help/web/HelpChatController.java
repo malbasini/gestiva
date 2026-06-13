@@ -1,6 +1,8 @@
 package com.gestiva.help.web;
 
+import com.gestiva.help.service.HelpGuideResult;
 import com.gestiva.help.service.HelpGuideService;
+import com.gestiva.help.service.OpenAiHelpService;
 import com.gestiva.security.auth.AuthenticatedUser;
 import com.gestiva.security.tenant.entity.Tenant;
 import com.gestiva.security.tenant.repository.TenantRepository;
@@ -13,11 +15,14 @@ import org.springframework.web.bind.annotation.*;
 public class HelpChatController {
 
     private final HelpGuideService helpGuideService;
+    private final OpenAiHelpService openAiHelpService;
     private final TenantRepository tenantRepository;
 
     public HelpChatController(HelpGuideService helpGuideService,
+                              OpenAiHelpService openAiHelpService,
                               TenantRepository tenantRepository) {
         this.helpGuideService = helpGuideService;
+        this.openAiHelpService = openAiHelpService;
         this.tenantRepository = tenantRepository;
     }
 
@@ -38,12 +43,27 @@ public class HelpChatController {
                 .findFirst()
                 .orElse("ROLE_USER");
 
-        String answer = helpGuideService.askGuide(
+        HelpGuideResult localResult = helpGuideService.askGuide(
+                user.getTenantId(),
                 tenant.getSubscriptionPlan(),
+                roleCode,
                 tenant.isSubscriptionActive(),
+                request.getCurrentPage(),
                 request.getMessage()
         );
 
-        return ResponseEntity.ok(new HelpChatResponse(answer));
+        if (localResult.isHandled()) {
+            return ResponseEntity.ok(new HelpChatResponse(localResult.getAnswer()));
+        }
+
+        String aiAnswer = openAiHelpService.askAssistant(
+                tenant.getSubscriptionPlan(),
+                roleCode,
+                tenant.isSubscriptionActive(),
+                request.getCurrentPage(),
+                request.getMessage()
+        );
+
+        return ResponseEntity.ok(new HelpChatResponse(aiAnswer));
     }
 }

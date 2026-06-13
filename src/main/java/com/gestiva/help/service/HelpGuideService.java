@@ -5,36 +5,98 @@ import org.springframework.stereotype.Service;
 @Service
 public class HelpGuideService {
 
-    public String askGuide(String subscriptionPlan,
-                           boolean tenantActive,
-                           String userMessage) {
+    public HelpGuideResult askGuide(Long tenantId,
+                                    String subscriptionPlan,
+                                    String roleCode,
+                                    boolean tenantActive,
+                                    String currentPage,
+                                    String userMessage) {
 
-        String question = userMessage == null ? "" : userMessage.trim().toLowerCase();
+        String question = normalize(userMessage);
+
         if (!tenantActive) {
-            return "Il tenant non risulta ancora attivo. In questa fase puoi consultare la pagina prezzi e completare l’attivazione del piano.";
+            return HelpGuideResult.handled(
+                    "Il tenant non risulta ancora attivo. In questa fase puoi consultare la pagina prezzi e completare l’attivazione del piano."
+            );
         }
-        if (question.contains("contabilità") && "STARTER".equalsIgnoreCase(subscriptionPlan)) {
-            return "Il modulo Contabilità non è incluso nel piano Starter. Nel piano Starter restano disponibili il ciclo attivo e il ciclo passivo.";
+
+        if (containsAny(question, "magazzino", "fifo", "lifo", "costo medio", "valorizzazione")) {
+            if ("STARTER".equalsIgnoreCase(subscriptionPlan)) {
+                return HelpGuideResult.handled(
+                        "Il modulo Magazzino non è incluso nel piano Starter. Per utilizzare funzioni come rettifiche inventario, giacenza valorizzata e costo del venduto è necessario il piano Professional."
+                );
+            }
+            return HelpGuideResult.notHandled();
         }
-        if (question.contains("ddt")) {
-            return "Per generare un DDT, apri un ordine confermato nel ciclo attivo e utilizza l’azione di creazione DDT, se disponibile per il tuo ruolo.";
+
+        if (containsAny(question, "contabilità", "prima nota", "partita doppia", "liquidazione iva")) {
+            if ("STARTER".equalsIgnoreCase(subscriptionPlan)) {
+                return HelpGuideResult.handled(
+                        "Il modulo Contabilità non è incluso nel piano Starter. Nel piano Starter restano disponibili il ciclo attivo e il ciclo passivo."
+                );
+            }
+            return HelpGuideResult.notHandled();
         }
-        if (question.contains("incasso")) {
-            return "Per registrare un incasso, apri lo scadenzario o il documento collegato e usa l’azione di registrazione del pagamento. Se hai già generato la scrittura contabile, verifica anche l’aggiornamento della prima nota.";
+
+        if (containsAny(question, "cliente", "creare cliente", "nuovo cliente")) {
+            return HelpGuideResult.handled(
+                    "Per creare un cliente, entra nel ciclo attivo e apri la sezione Clienti. Da lì puoi inserire una nuova anagrafica e salvarla."
+            );
         }
-        if (question.contains("cliente")) {
-            return "Per creare un cliente, entra nel ciclo attivo e apri la sezione Clienti. Da lì puoi inserire una nuova anagrafica e salvarla.";
+
+        if (containsAny(question, "fornitore", "creare fornitore", "nuovo fornitore")) {
+            return HelpGuideResult.handled(
+                    "Per creare un fornitore, entra nel ciclo passivo e apri la sezione Fornitori. Da lì puoi inserire una nuova anagrafica e salvarla."
+            );
         }
-        if (question.contains("fornitore")) {
-            return "Per creare un fornitore, entra nel ciclo passivo e apri la sezione Fornitori. Da lì puoi inserire una nuova anagrafica.";
+
+        if (containsAny(question, "ordine", "creare ordine", "generare ordine")) {
+            return HelpGuideResult.handled(
+                    "Per creare un ordine, entra nel ciclo attivo e apri la sezione Ordini. Da lì puoi inserire un nuovo ordine, compilare i dati principali e aggiungere le righe prima del salvataggio."
+            );
         }
-        if (question.contains("menù") || question.contains("incluse")) {
-            return switch (subscriptionPlan) {
-                case "STARTER" -> "Il piano STARTER ha tutti i piani inclusi eccetto il modulo contabilità.";
-                case "PROFESSIONAL" -> "Il piano PROFESSIONAL ha tutti i piani inclusi.";
-                default -> throw new IllegalStateException("Unexpected value: " + subscriptionPlan);
-            };
+
+        if (containsAny(question, "ddt", "documento di trasporto")) {
+            return HelpGuideResult.handled(
+                    "Per generare un DDT, apri un ordine confermato nel ciclo attivo e utilizza l’azione di creazione DDT, se disponibile per il tuo ruolo."
+            );
         }
-        return "Il quesito non ha prodotto risultati";
+
+        if (containsAny(question, "incasso", "registrare incasso", "registrazione incasso")) {
+            return HelpGuideResult.handled(
+                    "Per registrare un incasso, apri lo scadenzario o il documento collegato e usa l’azione di registrazione del pagamento."
+            );
+        }
+
+        if (containsAny(question, "menu", "menù", "non vedo")) {
+            return HelpGuideResult.handled(
+                    "Se non vedi un menù o una funzione, il motivo può dipendere dal tuo ruolo utente oppure dal piano attivo del tenant."
+            );
+        }
+
+        if (containsAny(question, "piano", "starter", "professional", "funzioni incluse")) {
+            return HelpGuideResult.handled(
+                    "Il piano Starter include il ciclo attivo e il ciclo passivo. Il piano Professional include anche Magazzino e Contabilità."
+            );
+        }
+
+        return HelpGuideResult.notHandled();
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toLowerCase();
+    }
+
+    private boolean containsAny(String text, String... tokens) {
+        if (text == null || text.isBlank()) {
+            return false;
+        }
+
+        for (String token : tokens) {
+            if (token != null && !token.isBlank() && text.contains(token.toLowerCase())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
