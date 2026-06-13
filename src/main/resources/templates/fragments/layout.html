@@ -244,7 +244,7 @@
         </div>
     </div>
 </div>
-    <div th:fragment="helpAssistantScript">
+<div th:fragment="helpAssistantScript">
         <script th:inline="javascript">
             window.helpGuideCurrentPage = /*[[${activeMenu}]]*/ '';
         </script>
@@ -356,7 +356,7 @@
                 body: JSON.stringify({
                 message: message,
                 currentPage: window.helpGuideCurrentPage || ''
-            })
+              })
             });
 
                 if (!response.ok) {
@@ -416,25 +416,6 @@
             });
         </script>
     </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 </body>
 <footer th:fragment="appFooter" class="app-footer">
     <div class="app-footer-inner" style="text-align: center">
@@ -561,7 +542,6 @@
             </div>
         </div>
     </div>
-
     <style>
         .help-assistant-launcher {
             position: fixed;
@@ -749,7 +729,7 @@
 
         .help-assistant-input-wrap {
             display: flex;
-            align-items: flex-end;
+            align-items: center;
             gap: 10px;
             border: 2px solid #6366f1;
             border-radius: 999px;
