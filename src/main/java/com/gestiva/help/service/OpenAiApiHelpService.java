@@ -4,10 +4,8 @@ import com.gestiva.help.config.OpenAiProperties;
 import com.openai.client.OpenAIClient;
 import com.openai.models.responses.Response;
 import com.openai.models.responses.ResponseCreateParams;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
-@Profile("dev")
 @Service
 public class OpenAiApiHelpService implements OpenAiHelpService {
 
