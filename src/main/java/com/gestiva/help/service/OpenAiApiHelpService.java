@@ -7,7 +7,7 @@ import com.openai.models.responses.ResponseCreateParams;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
-@Profile("prod")
+@Profile("dev")
 @Service
 public class OpenAiApiHelpService implements OpenAiHelpService {
 
@@ -38,7 +38,7 @@ public class OpenAiApiHelpService implements OpenAiHelpService {
             );
 
             ResponseCreateParams params = ResponseCreateParams.builder()
-                    .model(openAiProperties.getModel())
+                    .model(com.openai.models.ChatModel.GPT_5_2)
                     .input(systemPrompt + "\n\n" + userPrompt)
                     .build();
 

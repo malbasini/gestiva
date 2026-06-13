@@ -4,6 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
+@ConfigurationProperties(prefix = "openai")
 @EnableConfigurationProperties
 @ConfigurationPropertiesScan(basePackages = "com.gestiva.help.config")
 public class OpenAiProperties {
