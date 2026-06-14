@@ -10,28 +10,30 @@ public class ContactService {
 
     private final JavaMailSender mailSender;
 
-    @Value("support@vercert.org")
+    @Value("${app1.contact.to}")
     private String contactTo;
-
-    @Value("support@vercert.org")
-    private String fromAddress;
 
     public ContactService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
 
     public void send(ContactForm form) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromAddress);
-        message.setTo(contactTo);
-        message.setReplyTo(form.getEmail());
-        message.setSubject("[Gestiva] Richiesta contatto - " + form.getSubject());
-        message.setText(
-                "Nome: " + form.getName() + "\n" +
-                        "Email: " + form.getEmail() + "\n\n" +
-                        "Messaggio:\n" + form.getMessage()
-        );
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(form.getEmail());
+            message.setTo(contactTo);
+            message.setReplyTo(form.getEmail());
+            message.setSubject("[Gestiva] Richiesta contatto - " + form.getSubject());
+            message.setText(
+                    "Nome: " + form.getName() + "\n" +
+                            "Email: " + form.getEmail() + "\n\n" +
+                            "Messaggio:\n" + form.getMessage()
+            );
 
-        mailSender.send(message);
+            mailSender.send(message);
+        }
+        catch (Exception ex) {
+            throw new RuntimeException("Errore durante l'invio del messaggio", ex);
+        }
     }
 }

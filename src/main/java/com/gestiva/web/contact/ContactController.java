@@ -32,9 +32,15 @@ public class ContactController {
             return "public/contact";
         }
 
-        contactService.send(form);
-        model.addAttribute("successMessage", "Messaggio inviato correttamente.");
-        model.addAttribute("contactForm", new ContactForm());
-        return "public/contact";
+        try {
+            contactService.send(form);
+            model.addAttribute("successMessage", "Messaggio inviato correttamente.");
+            model.addAttribute("contactForm", new ContactForm());
+            return "public/contact";
+        }
+        catch (Exception ex) {
+            model.addAttribute("errorMessage", "Errore durante l'invio del messaggio. " + ex.getMessage());
+            return "public/contact";
+        }
     }
 }
