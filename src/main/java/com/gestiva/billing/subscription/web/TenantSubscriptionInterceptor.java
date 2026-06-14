@@ -30,7 +30,7 @@ public class TenantSubscriptionInterceptor implements HandlerInterceptor {
         if (isPublicOrAlwaysAllowed(uri)) {
             return true;
         }
-        Long tenantId = tenantContext.getCurrentTenantId();
+        Long tenantId = tenantContext.getCurrentTenantIdOrNull();
         if (tenantId == null) {
             return true;
         }
