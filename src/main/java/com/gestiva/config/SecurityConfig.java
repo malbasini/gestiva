@@ -56,7 +56,7 @@ public class SecurityConfig {
                 new org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler("/login?error")
         );
         filter.setAuthenticationSuccessHandler(
-                new org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler("/dashboard")
+                new org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler("/")
         );
         return filter;
     }
@@ -79,11 +79,13 @@ public class SecurityConfig {
                                         "/images/**",
                                         "/webjars/**",
                                         "/login",
+                                        "/home",
                                         "/register",
                                         "/error",
                                         "/actuator/health",
                                         "/actuator/info",
-                                        "/help/chat/"
+                                        "/help/chat/",
+                                        "/"
                                 ).permitAll()
 
                                 // dashboard
@@ -169,6 +171,7 @@ public class SecurityConfig {
                         .loginPage("/login")
                         .usernameParameter("email")
                         .passwordParameter("password")
+                        .defaultSuccessUrl("/", true)
                 )
                 // Configurazione rememberMe
                 .rememberMe(rememberMe -> rememberMe

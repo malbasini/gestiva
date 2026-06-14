@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Contatti Gestiva</title>
+  <meta name="description" content="Contatta Gestiva per informazioni commerciali, supporto e richieste sul prodotto.">
+  <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container py-5" style="max-width: 760px;">
+  <h1 class="mb-4">Contatti</h1>
+
+  <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+
+  <form th:action="@{/contact}" th:object="${contactForm}" method="post" class="card shadow-sm border-0 rounded-4 p-4">
+    <div class="mb-3">
+      <label class="form-label">Nome</label>
+      <input type="text" th:field="*{name}" class="form-control">
+      <div class="text-danger small" th:errors="*{name}"></div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      <input type="email" th:field="*{email}" class="form-control">
+      <div class="text-danger small" th:errors="*{email}"></div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Oggetto</label>
+      <input type="text" th:field="*{subject}" class="form-control">
+      <div class="text-danger small" th:errors="*{subject}"></div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Messaggio</label>
+      <textarea th:field="*{message}" class="form-control" rows="6"></textarea>
+      <div class="text-danger small" th:errors="*{message}"></div>
+    </div>
+
+    <div>
+      <button type="submit" class="btn btn-primary">Invia richiesta</button>
+    </div>
+  </form>
+</div>
+</body>
+</html>
