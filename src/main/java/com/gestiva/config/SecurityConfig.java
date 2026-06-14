@@ -67,7 +67,7 @@ public class SecurityConfig {
                                             AuthenticationProvider authenticationProvider
     ) throws Exception {
         http
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/billing/paypal/webhook",
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/billing/paypal/webhook","/",
                                 "/help/chat"))
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
