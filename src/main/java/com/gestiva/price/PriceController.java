@@ -21,8 +21,6 @@ public class PriceController {
         Long tenantId = tenantContext.getCurrentTenantId();
         model.addAttribute("activeMenu", "price");
         model.addAttribute("tenantId", tenantId);
-        return "pricing";
+        return "public/pricing";
     }
-
-
 }
