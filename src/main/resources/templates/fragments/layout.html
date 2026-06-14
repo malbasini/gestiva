@@ -122,25 +122,32 @@
                             Magazzino
                         </a>
                         <ul class="dropdown-menu">
-                            <li sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
+                            <li th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL' || tenantSubscriptionPlan == 'STARTER')}"
+                                sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
                                 <a class="dropdown-item" th:href="@{/items}">Articoli</a>
                             </li>
-                            <li sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
+                            <li th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL')}"
+                               sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
                                 <a class="dropdown-item" th:href="@{/inventory-adjustments/new}">Rettifiche inventario</a>
                             </li>
-                            <li sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')">
+                            <li th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL')}"
+                                sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')">
                                 <a class="dropdown-item" th:href="@{/inventory-valuations/stock-summary}">Giacenza valorizzata</a>
                             </li>
-                            <li sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')">
+                            <li th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL')}"
+                                sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')">
                                 <a class="dropdown-item" th:href="@{/inventory-valuations/outbound}">Scarichi valorizzati</a>
                             </li>
-                            <li sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')">
+                            <li th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL')}"
+                                sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')">
                                 <a class="dropdown-item" th:href="@{/inventory-valuations/cogs-summary}">Costo del venduto</a>
                             </li>
-                            <li sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')">
+                            <li th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL')}"
+                                sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')">
                                 <a class="dropdown-item" th:href="@{/inventory-valuations/consistency-check}">Controllo coerenza</a>
                             </li>
-                            <li sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
+                            <li th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL')}"
+                                sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
                                 <a class="dropdown-item" th:href="@{/tenant-settings/inventory-valuation}">Metodo valorizzazione</a>
                             </li>
                         </ul>
@@ -171,10 +178,10 @@
                             <li><a class="dropdown-item" th:href="@{/accounting/balance-sheet}">Stato patrimoniale</a></li>
                         </ul>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item" th:if="${!tenantSubscriptionActive}">
                         <a class="nav-link"
                            th:href="@{/pricing}">
-                            <i class="bi bi-credit-card"></i>&nbsp;Prezzi
+                            <i class="bi bi-credit-card"></i>&nbsp; Attiva Gestiva
                         </a>
                     </li>
                 </ul>
