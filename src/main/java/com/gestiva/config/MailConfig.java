@@ -13,10 +13,10 @@ public class MailConfig {
 
     @Bean
     public JavaMailSender javaMailSender(
-            @Value("mail.privateemail.com") String host,
-            @Value("587") int port,
-            @Value("support@vercert.org") String user,
-            @Value("KHJuial0a300?") String pass
+            @Value("${support.mail.host}") String host,
+            @Value("${support.mail.port}") int port,
+            @Value("${support.mail.username}") String user,
+            @Value("${support.mail.password}") String pass
     ) {
         JavaMailSenderImpl impl = new JavaMailSenderImpl();
         impl.setHost(host);
