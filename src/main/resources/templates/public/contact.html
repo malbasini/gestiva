@@ -22,6 +22,7 @@
   <h1 class="mb-4">Contatti</h1>
 
   <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+  <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
   <form th:action="@{/contact}" th:object="${contactForm}" method="post" class="card shadow-sm border-0 rounded-4 p-4">
     <div class="mb-3">

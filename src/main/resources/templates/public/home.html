@@ -217,12 +217,13 @@
         <div class="d-flex gap-3">
             <a th:href="@{/pricing}" class="text-decoration-none">Prezzi</a>
             <a th:href="@{/contact}" class="text-decoration-none">Contatti</a>
-            <a th:href="@{/login}" class="text-decoration-none">Login</a>
         </div>
     </div>
 </footer>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+<div th:replace="~{fragments/layout :: helpAssistantWidget}"></div>
+<div th:replace="~{fragments/layout :: helpAssistantScript}"></div>
 </body>
 </html>
