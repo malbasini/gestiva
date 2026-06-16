@@ -18,9 +18,12 @@ public class PriceController {
 
     @GetMapping(value = "/pricing")
     public String page(Model model) {
-        Long tenantId = tenantContext.getCurrentTenantId();
-        model.addAttribute("activeMenu", "price");
-        model.addAttribute("tenantId", tenantId);
-        return "public/pricing";
+        Long tenantId = tenantContext.getCurrentTenantIdOrNull();
+        if (tenantId != null) {
+            model.addAttribute("activeMenu", "price");
+            model.addAttribute("tenantId", tenantId);
+            return "public/pricing";
+        }
+        return "redirect:/login";
     }
 }

@@ -10,12 +10,12 @@ public class ContactForm {
     @Size(max = 100)
     private String name;
 
-    @NotBlank(message = "L'email è obbligatoria.")
+    @NotBlank(message = "Email obbligatoria.")
     @Email(message = "Inserisci un indirizzo email valido.")
     @Size(max = 150)
     private String email;
 
-    @NotBlank(message = "L'oggetto è obbligatorio.")
+    @NotBlank(message = "Oggetto obbligatorio.")
     @Size(max = 150)
     private String subject;
 
