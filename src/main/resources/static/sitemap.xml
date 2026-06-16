@@ -10,6 +10,9 @@
         <loc>https://gestiva.org/contact</loc>
     </url>
     <url>
-        <loc>https://gestiva.org/home</loc>
+        <loc></loc>
+        <lastmod></lastmod>
+        <changefreq></changefreq>
+        <priority></priority>
     </url>
 </urlset>

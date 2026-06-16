@@ -67,14 +67,19 @@ public class TenantSubscriptionInterceptor implements HandlerInterceptor {
         return uri.equals("/login")
                 || uri.equals("/logout")
                 || uri.equals("/register")
-                || uri.equals("/pricing")
                 || uri.startsWith("/paypal")
-                || uri.startsWith("/billing")
                 || uri.startsWith("/403")
                 || uri.startsWith("/css/")
                 || uri.startsWith("/js/")
                 || uri.startsWith("/images/")
                 || uri.startsWith("/webjars/")
+                || uri.startsWith("/contact")
+                || uri.startsWith("/pricing")
+                || uri.startsWith("/home")
+                || uri.startsWith("/webjars/")
+                || uri.startsWith("/favicon.svg")
+                || uri.startsWith("/favicon.ico")
+                || uri.startsWith("/")
                 || uri.equals("/error");
     }
 }

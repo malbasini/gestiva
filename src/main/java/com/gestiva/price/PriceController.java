@@ -10,20 +10,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping()
 public class PriceController {
 
-    private final TenantContext tenantContext;
-
-    public PriceController(TenantContext tenantContext) {
-        this.tenantContext = tenantContext;
-    }
-
     @GetMapping(value = "/pricing")
     public String page(Model model) {
-        Long tenantId = tenantContext.getCurrentTenantIdOrNull();
-        if (tenantId != null) {
-            model.addAttribute("activeMenu", "price");
-            model.addAttribute("tenantId", tenantId);
-            return "public/pricing";
-        }
-        return "redirect:/login";
+        model.addAttribute("activeMenu", "price");
+        return "public/pricing";
+
     }
 }
