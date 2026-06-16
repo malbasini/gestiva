@@ -14,47 +14,41 @@ public class SecurityTenantContext implements TenantContext {
 
     @Override
     public Long getCurrentTenantId() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null ||
-                !authentication.isAuthenticated() ||
-                authentication instanceof AnonymousAuthenticationToken) {
+        AuthenticatedUser user = getAuthenticatedUserOrNull();
+
+        if (user == null) {
             throw new IllegalStateException("Utente non autenticato");
-        }
-        Object principal = authentication.getPrincipal();
-        if (!(principal instanceof AuthenticatedUser authenticatedUser)) {
-            throw new IllegalStateException("Principal non valido");
-        }
-        return authenticatedUser.getTenantId();
-    }
-
-    @Override
-    public Long getCurrentTenantIdOrNull() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return null;
-        }
-
-        Object principal = authentication.getPrincipal();
-        if (!(principal instanceof AuthenticatedUser user)) {
-            return null;
         }
 
         return user.getTenantId();
     }
-    public AuthenticatedUser getCurrentUserOrNull() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null || !authentication.isAuthenticated()) {
+    @Override
+    public Long getCurrentTenantIdOrNull() {
+        AuthenticatedUser user = getAuthenticatedUserOrNull();
+        return user != null ? user.getTenantId() : null;
+    }
+
+    public AuthenticatedUser getCurrentUserOrNull() {
+        return getAuthenticatedUserOrNull();
+    }
+
+    private AuthenticatedUser getAuthenticatedUserOrNull() {
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
             return null;
         }
 
         Object principal = authentication.getPrincipal();
-        if (!(principal instanceof AuthenticatedUser user)) {
+
+        if (!(principal instanceof AuthenticatedUser authenticatedUser)) {
             return null;
         }
 
-        return user;
+        return authenticatedUser;
     }
-
 }

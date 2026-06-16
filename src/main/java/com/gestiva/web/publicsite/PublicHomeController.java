@@ -15,7 +15,7 @@ public class PublicHomeController {
 
     @GetMapping("/")
     public String home() {
-        if (tenantContext.getCurrentUserOrNull() != null) {
+        if (tenantContext.getCurrentTenantIdOrNull() != null) {
             return "public/home";
         }
         return "redirect:/login";

@@ -73,21 +73,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/dashboard/**").permitAll()
                                 // risorse pubbliche
-                                .requestMatchers(
-                                        "/css/**",
-                                        "/js/**",
-                                        "/images/**",
-                                        "/webjars/**",
-                                        "/login",
-                                        "/home",
-                                        "/register",
-                                        "/error",
-                                        "/actuator/health",
-                                        "/actuator/info",
-                                        "/help/chat/",
-                                        "/"
-                                ).permitAll()
-
                                 // dashboard
                                 .requestMatchers("/dashboard/**")
                                 .hasAnyRole("ADMIN", "SALES", "PURCHASING", "WAREHOUSE", "ACCOUNTING")
@@ -159,7 +144,30 @@ public class SecurityConfig {
                                 // pagina 403
                                 .requestMatchers("/403")
                                 .authenticated()
-
+                                .requestMatchers(
+                                        "/",
+                                        "/**",
+                                        "/pricing",
+                                        "/pricing/**",
+                                        "/contact",
+                                        "/contact/**",
+                                        "/home",
+                                        "/home/**",
+                                        "/login",
+                                        "/register",
+                                        "/images/**",
+                                        "/favicon.ico",
+                                        "/robots.txt",
+                                        "/sitemap.xml",
+                                        "/google*.html",
+                                        "/css/**",
+                                        "/js/**",
+                                        "/webjars/**",
+                                        "/error",
+                                        "/actuator/health",
+                                        "/actuator/info",
+                                        "/help/chat/"
+                                ).permitAll()
                                 // tutto il resto
                                 .anyRequest().authenticated()
 
