@@ -64,114 +64,84 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
                                             TenantUsernamePasswordAuthenticationFilter tenantUsernamePasswordAuthenticationFilter,
-                                            AuthenticationProvider authenticationProvider
-    ) throws Exception {
+                                            AuthenticationProvider authenticationProvider) throws Exception {
         http
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/billing/paypal/webhook","/",
-                                "/help/chat"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers(
+                        "/billing/paypal/webhook",
+                        "/help/chat"
+                ))
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/dashboard/**").permitAll()
-                                // risorse pubbliche
-                                // dashboard
-                                .requestMatchers("/dashboard/**")
-                                .hasAnyRole("ADMIN", "SALES", "PURCHASING", "WAREHOUSE", "ACCOUNTING")
 
-                                // settings / amministrazione sistema
-                                .requestMatchers("/settings/**")
-                                .hasRole("ADMIN")
-                                .requestMatchers("/admin/users/**")
-                                .hasRole("ADMIN")
-                                .requestMatchers("/admin/roles/**")
-                                .hasRole("ADMIN")
+                        // pagine pubbliche vere
+                        .requestMatchers(
+                                "/",
+                                "/pricing",
+                                "/pricing/**",
+                                "/contact",
+                                "/contact/**",
+                                "/login",
+                                "/register",
+                                "/images/**",
+                                "/favicon.ico",
+                                "/favicon.svg",
+                                "/robots.txt",
+                                "/sitemap.xml",
+                                "/google*.html",
+                                "/css/**",
+                                "/js/**",
+                                "/webjars/**",
+                                "/error",
+                                "/actuator/health",
+                                "/actuator/info",
+                                "/help/chat"
+                        ).permitAll()
 
-                                // ciclo attivo
-                                .requestMatchers("/customers/**")
-                                .hasAnyRole("ADMIN", "SALES", "ACCOUNTING")
-                                .requestMatchers("/quotes/**")
-                                .hasAnyRole("ADMIN", "SALES")
-                                .requestMatchers("/orders/**")
-                                .hasAnyRole("ADMIN", "SALES")
-                                .requestMatchers("/sales-orders/**")
-                                .hasAnyRole("ADMIN", "SALES")
-                                .requestMatchers("/delivery-notes/**")
-                                .hasAnyRole("ADMIN", "SALES", "WAREHOUSE")
-                                .requestMatchers("/invoices/**")
-                                .hasAnyRole("ADMIN", "SALES", "ACCOUNTING")
+                        // dashboard
+                        .requestMatchers("/dashboard/**")
+                        .hasAnyRole("ADMIN", "SALES", "PURCHASING", "WAREHOUSE", "ACCOUNTING")
 
-                                // ciclo passivo
-                                .requestMatchers("/suppliers/**")
-                                .hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
-                                .requestMatchers("/purchase-orders/**")
-                                .hasAnyRole("ADMIN", "PURCHASING")
-                                .requestMatchers("/goods-receipts/**")
-                                .hasAnyRole("ADMIN", "PURCHASING", "WAREHOUSE")
-                                .requestMatchers("/supplier-invoices/**")
-                                .hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
+                        // settings
+                        .requestMatchers("/settings/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/users/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/roles/**").hasRole("ADMIN")
 
-                                // magazzino
-                                .requestMatchers("/items/**")
-                                .hasAnyRole("ADMIN", "SALES", "PURCHASING", "WAREHOUSE", "ACCOUNTING")
-                                .requestMatchers("/inventory/**")
-                                .hasAnyRole("ADMIN", "WAREHOUSE")
-                                .requestMatchers("/inventory-adjustments/**")
-                                .hasAnyRole("ADMIN", "WAREHOUSE")
-                                .requestMatchers("/inventory-movements/**")
-                                .hasAnyRole("ADMIN", "WAREHOUSE")
-                                .requestMatchers("/inventory-valuations/**")
-                                .hasAnyRole("ADMIN", "WAREHOUSE", "ACCOUNTING")
-                                .requestMatchers("/tenant-settings/inventory-valuation/**")
-                                .hasAnyRole("ADMIN", "WAREHOUSE")
+                        // ciclo attivo
+                        .requestMatchers("/customers/**").hasAnyRole("ADMIN", "SALES", "ACCOUNTING")
+                        .requestMatchers("/quotes/**").hasAnyRole("ADMIN", "SALES")
+                        .requestMatchers("/orders/**").hasAnyRole("ADMIN", "SALES")
+                        .requestMatchers("/sales-orders/**").hasAnyRole("ADMIN", "SALES")
+                        .requestMatchers("/delivery-notes/**").hasAnyRole("ADMIN", "SALES", "WAREHOUSE")
+                        .requestMatchers("/invoices/**").hasAnyRole("ADMIN", "SALES", "ACCOUNTING")
 
-                                // contabilità
-                                .requestMatchers("/payments/**")
-                                .hasAnyRole("ADMIN", "ACCOUNTING")
-                                .requestMatchers("/payment-dues/**")
-                                .hasAnyRole("ADMIN", "ACCOUNTING")
-                                .requestMatchers("/accounting-entries/**")
-                                .hasAnyRole("ADMIN", "ACCOUNTING")
-                                .requestMatchers("/accounting-dashboard/**")
-                                .hasAnyRole("ADMIN", "ACCOUNTING")
-                                .requestMatchers("/v2/accounts/**")
-                                .hasAnyRole("ADMIN", "ACCOUNTING")
-                                .requestMatchers("/v2/journal-entries/**")
-                                .hasAnyRole("ADMIN", "ACCOUNTING")
-                                .requestMatchers("/accounting/**")
-                                .hasAnyRole("ADMIN", "ACCOUNTING")
-                                .requestMatchers("/vat-registers/**")
-                                .hasAnyRole("ADMIN", "ACCOUNTING")
+                        // ciclo passivo
+                        .requestMatchers("/suppliers/**").hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
+                        .requestMatchers("/purchase-orders/**").hasAnyRole("ADMIN", "PURCHASING")
+                        .requestMatchers("/goods-receipts/**").hasAnyRole("ADMIN", "PURCHASING", "WAREHOUSE")
+                        .requestMatchers("/supplier-invoices/**").hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
 
-                                // pagina 403
-                                .requestMatchers("/403")
-                                .authenticated()
-                                .requestMatchers(
-                                        "/",
-                                        "/**",
-                                        "/pricing",
-                                        "/pricing/**",
-                                        "/contact",
-                                        "/contact/**",
-                                        "/home",
-                                        "/home/**",
-                                        "/login",
-                                        "/register",
-                                        "/images/**",
-                                        "/favicon.ico",
-                                        "/robots.txt",
-                                        "/sitemap.xml",
-                                        "/google*.html",
-                                        "/css/**",
-                                        "/js/**",
-                                        "/webjars/**",
-                                        "/error",
-                                        "/actuator/health",
-                                        "/actuator/info",
-                                        "/help/chat/"
-                                ).permitAll()
-                                // tutto il resto
-                                .anyRequest().authenticated()
+                        // magazzino
+                        .requestMatchers("/items/**").hasAnyRole("ADMIN", "SALES", "PURCHASING", "WAREHOUSE", "ACCOUNTING")
+                        .requestMatchers("/inventory/**").hasAnyRole("ADMIN", "WAREHOUSE")
+                        .requestMatchers("/inventory-adjustments/**").hasAnyRole("ADMIN", "WAREHOUSE")
+                        .requestMatchers("/inventory-movements/**").hasAnyRole("ADMIN", "WAREHOUSE")
+                        .requestMatchers("/inventory-valuations/**").hasAnyRole("ADMIN", "WAREHOUSE", "ACCOUNTING")
+                        .requestMatchers("/tenant-settings/inventory-valuation/**").hasAnyRole("ADMIN", "WAREHOUSE")
 
-                        )
+                        // contabilità
+                        .requestMatchers("/payments/**").hasAnyRole("ADMIN", "ACCOUNTING")
+                        .requestMatchers("/payment-dues/**").hasAnyRole("ADMIN", "ACCOUNTING")
+                        .requestMatchers("/accounting-entries/**").hasAnyRole("ADMIN", "ACCOUNTING")
+                        .requestMatchers("/accounting-dashboard/**").hasAnyRole("ADMIN", "ACCOUNTING")
+                        .requestMatchers("/v2/accounts/**").hasAnyRole("ADMIN", "ACCOUNTING")
+                        .requestMatchers("/v2/journal-entries/**").hasAnyRole("ADMIN", "ACCOUNTING")
+                        .requestMatchers("/accounting/**").hasAnyRole("ADMIN", "ACCOUNTING")
+                        .requestMatchers("/vat-registers/**").hasAnyRole("ADMIN", "ACCOUNTING")
+
+                        .requestMatchers("/403").authenticated()
+
+                        .anyRequest().authenticated()
+                )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)
                 )
@@ -181,7 +151,6 @@ public class SecurityConfig {
                         .passwordParameter("password")
                         .defaultSuccessUrl("/", true)
                 )
-                // Configurazione rememberMe
                 .rememberMe(rememberMe -> rememberMe
                         .rememberMeParameter("rememberMe")
                         .tokenValiditySeconds(2 * 24 * 60 * 60)
@@ -193,10 +162,12 @@ public class SecurityConfig {
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout")
                 );
+
         http.addFilterAt(
                 tenantUsernamePasswordAuthenticationFilter,
                 org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class
         );
+
         return http.build();
     }
     // 🔑 Provider che usa il tuo CustomUserDetailsService
