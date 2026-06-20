@@ -76,6 +76,8 @@ public class SecurityConfig {
                         // pagine pubbliche vere
                         .requestMatchers(
                                 "/",
+                                "/products",
+                                "/products/**",
                                 "/pricing",
                                 "/pricing/**",
                                 "/contact",
