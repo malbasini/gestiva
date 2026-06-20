@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <title>Prodotti - Gestiva e Vercert</title>
+  <meta name="description" content="Scopri i prodotti digitali: Gestiva per la gestione aziendale e Vercert per la certificazione documentale digitale.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://gestiva.org/products">
+
+  <meta property="og:title" content="Prodotti - Gestiva e Vercert">
+  <meta property="og:description" content="Soluzioni software per gestione aziendale e certificazione documentale digitale.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://gestiva.org/products">
+  <meta property="og:site_name" content="Gestiva">
+
+  <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+
+  <style>
+    body {
+      background: #f8fafc;
+      color: #111827;
+    }
+
+    .navbar-public {
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .hero-section {
+      padding: 88px 0 64px 0;
+      background:
+              radial-gradient(circle at top left, rgba(37, 99, 235, 0.10), transparent 35%),
+              linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-text {
+      font-size: 1.08rem;
+      line-height: 1.7;
+      color: #4b5563;
+      max-width: 760px;
+    }
+
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .section-text {
+      color: #6b7280;
+      max-width: 760px;
+    }
+
+    .product-card {
+      border: 0;
+      border-radius: 28px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+      height: 100%;
+    }
+
+    .product-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eff6ff;
+      color: #2563eb;
+      font-size: 1.35rem;
+    }
+
+    .product-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .product-subtitle {
+      color: #6b7280;
+      font-size: 0.98rem;
+    }
+
+    .cta-section {
+      background: #ffffff;
+      border-radius: 28px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light navbar-public">
+  <div class="container">
+    <a class="navbar-brand fw-bold" th:href="@{/}">
+      <span>⬢</span> Gestiva
+    </a>
+
+    <div class="ms-auto d-flex gap-2">
+      <a class="btn btn-outline-primary" th:href="@{/pricing}">Prezzi Gestiva</a>
+      <a class="btn btn-outline-success" th:href="@{/}">Home Gestiva</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero-section">
+  <div class="container">
+    <h1 class="hero-title mb-4">I nostri prodotti digitali</h1>
+    <p class="hero-text mb-0">
+      Stiamo costruendo soluzioni software pensate per esigenze operative concrete:
+      gestione aziendale, processi documentali e certificazione digitale.
+    </p>
+  </div>
+</section>
+
+<section class="py-5">
+  <div class="container">
+    <h2 class="section-title">Due prodotti, due esigenze diverse</h2>
+    <p class="section-text mb-4">
+      Ogni prodotto nasce per risolvere un problema specifico con un approccio pratico, modulare e orientato all’uso quotidiano.
+    </p>
+
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <div class="card product-card p-4 p-md-5">
+          <div class="product-icon mb-4">
+            <i class="bi bi-grid-1x2-fill"></i>
+          </div>
+
+          <h3 class="product-title mb-2">Gestiva</h3>
+          <div class="product-subtitle mb-4">
+            Gestionale modulare per PMI e professionisti
+          </div>
+
+          <p class="text-secondary">
+            Gestiva è una piattaforma pensata per organizzare i processi aziendali in modo semplice e coerente.
+            Include ciclo attivo, ciclo passivo e, nel piano Professional, anche magazzino e contabilità.
+          </p>
+
+          <ul class="text-secondary ps-3 mb-4">
+            <li>Clienti, preventivi, ordini, DDT e fatture</li>
+            <li>Fornitori, ordini di acquisto e fatture fornitore</li>
+            <li>Magazzino con valorizzazione e controlli</li>
+            <li>Contabilità, scadenzario e prima nota</li>
+            <li>Guida online integrata</li>
+          </ul>
+
+          <div class="d-flex flex-wrap gap-3 mt-auto">
+            <a class="btn btn-primary" th:href="@{/pricing}">Scopri Gestiva</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card product-card p-4 p-md-5">
+          <div class="product-icon mb-4">
+            <i class="bi bi-patch-check-fill"></i>
+          </div>
+
+          <h3 class="product-title mb-2">Vercert</h3>
+          <div class="product-subtitle mb-4">
+            Certificazione documentale digitale
+          </div>
+
+          <p class="text-secondary">
+            Vercert è una piattaforma dedicata alla gestione e verifica di attestati e certificati digitali,
+            con attenzione alla tracciabilità documentale e alla validazione dei contenuti.
+          </p>
+
+          <ul class="text-secondary ps-3 mb-4">
+            <li>Gestione attestati e certificati digitali</li>
+            <li>Verifica documentale</li>
+            <li>Controllo e validazione dei dati</li>
+            <li>Flusso orientato alla tracciabilità</li>
+          </ul>
+
+          <div class="d-flex flex-wrap gap-3 mt-auto">
+            <a class="btn btn-outline-primary" href="https://app.vercert.org" target="_blank" rel="noopener noreferrer">Scopri Vercert</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-5">
+  <div class="container">
+    <div class="cta-section p-4 p-md-5">
+      <h2 class="section-title">Un ecosistema software in evoluzione</h2>
+      <p class="section-text mb-4">
+        Ogni prodotto è progettato per rispondere a bisogni specifici, ma con una visione comune:
+        creare strumenti digitali chiari, affidabili e utili nel lavoro quotidiano.
+      </p>
+
+      <div class="d-flex flex-wrap gap-3">
+        <a class="btn btn-primary" th:href="@{/pricing}">Vai ai prezzi di Gestiva</a>
+        <a class="btn btn-outline-secondary" th:href="@{/contact}">Contattaci</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="py-4 border-top bg-white">
+  <div class="container d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div class="text-secondary">
+      <span>⬢ Gestiva</span>
+      <span>— gestionale modulare in sviluppo</span>
+    </div>
+    <div class="d-flex gap-3">
+      <a th:href="@{/}" class="text-decoration-none">Home</a>
+      <a th:href="@{/pricing}" class="text-decoration-none">Prezzi</a>
+      <a th:href="@{/contact}" class="text-decoration-none">Contatti</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
