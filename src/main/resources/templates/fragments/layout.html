@@ -367,12 +367,37 @@
               })
             });
 
-                if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Help assistant HTTP error:', response.status, errorText);
-                if (errorBox) errorBox.style.display = 'block';
-                return;
-            }
+                    if (response.status === 401) {
+                        window.appendHelpAssistantMessage(
+                            'assistant',
+                            'La sessione è scaduta oppure l’utente non è autenticato. Effettua di nuovo l’accesso.'
+                        );
+
+                        setTimeout(function () {
+                            window.location.href = '/login';
+                        }, 3200);
+
+                        return;
+                    }
+
+                    if (response.status === 403) {
+                        window.appendHelpAssistantMessage(
+                            'assistant',
+                            'La richiesta è stata rifiutata. Aggiorna la pagina e riprova.'
+                        );
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Help assistant HTTP error:', response.status, errorText);
+
+                        if (errorBox) {
+                            errorBox.textContent = 'Si è verificato un errore durante la richiesta.';
+                            errorBox.style.display = 'block';
+                        }
+                        return;
+                    }
 
                 const contentType = response.headers.get('content-type') || '';
                 let answer = '';
