@@ -50,7 +50,7 @@ public class InvoiceDetailWebService {
         view.setFormattedTaxAmount(PdfFormatUtils.formatMoney(invoice.getTaxAmount()));
         view.setFormattedTotalAmount(PdfFormatUtils.formatMoney(invoice.getTotalAmount()));
         view.setNotes(invoice.getNotes());
-        view.setCancelable("ISSUED".equals(invoice.getStatus()));
+        view.setCancelable("DRAFT".equals(invoice.getStatus()));
 
         view.setLines(lines.stream().map(line -> {
             InvoiceDetailLineView l = new InvoiceDetailLineView();
