@@ -15,8 +15,6 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpec
 
     boolean existsByTenantIdAndDeliveryNoteId(Long tenantId, Long deliveryNoteId);
 
-    long countByTenantId(Long tenantId);
-
     java.util.List<Invoice> findByTenantIdAndInvoiceDateBetweenOrderByInvoiceDateAscInvoiceNumberAsc(
             Long tenantId,
             java.time.LocalDate dateFrom,

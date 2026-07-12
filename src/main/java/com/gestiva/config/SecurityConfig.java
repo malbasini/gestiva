@@ -68,7 +68,8 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
                         "/billing/paypal/webhook",
-                        "/help/chat"
+                        "/help/chat",
+                        "/login"
                 ))
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth

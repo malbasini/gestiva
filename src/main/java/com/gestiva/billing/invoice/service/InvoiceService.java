@@ -75,7 +75,7 @@ public class InvoiceService {
         invoice.setCustomerId(deliveryNote.getCustomerId());
         invoice.setInvoiceNumber(generateNextInvoiceNumber(tenantId));
         invoice.setInvoiceDate(LocalDate.now());
-        invoice.setStatus("ISSUED");
+        invoice.setStatus("DRAFT");
         invoice.setCurrencyCode(deliveryNote.getCurrencyCode());
         invoice.setSubtotalAmount(defaultZero(deliveryNote.getSubtotalAmount()));
         invoice.setTaxAmount(defaultZero(deliveryNote.getTaxAmount()));

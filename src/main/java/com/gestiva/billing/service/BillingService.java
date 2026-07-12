@@ -60,21 +60,6 @@ public class BillingService {
         tenant.setSubscriptionPlan(order.getPlanCode());
         tenantRepository.save(tenant);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     public CreatePaypalOrderResponse createPaypalOrder(Long tenantId, String planCode) {
         SubscriptionPlan plan = billingPlanService.parsePlan(planCode);
         BigDecimal amount = billingPlanService.resolvePrice(plan);
