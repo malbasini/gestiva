@@ -2,6 +2,8 @@ package com.gestiva.accounting.due.service;
 
 import com.gestiva.accounting.due.entity.PaymentDue;
 import com.gestiva.accounting.due.repository.PaymentDueRepository;
+import com.gestiva.billing.invoice.entity.Invoice;
+import com.gestiva.billing.invoice.repository.InvoiceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -13,9 +15,12 @@ import java.time.LocalDate;
 public class PaymentDueService {
 
     private final PaymentDueRepository paymentDueRepository;
+    private final InvoiceRepository invoiceRepository;
 
-    public PaymentDueService(PaymentDueRepository paymentDueRepository) {
+    public PaymentDueService(PaymentDueRepository paymentDueRepository,
+                             InvoiceRepository invoiceRepository) {
         this.paymentDueRepository = paymentDueRepository;
+        this.invoiceRepository = invoiceRepository;
     }
 
     public Long createReceivableFromCustomerInvoice(Long tenantId,
@@ -102,6 +107,11 @@ public class PaymentDueService {
         );
         if (existing.isPresent()) {
             return existing.get().getId();
+        }
+        Invoice invoice = invoiceRepository.findByTenantIdAndId(tenantId, referenceId).orElse(null);
+        if (invoice != null) {
+            invoice.setStatus("ISSUED");
+            invoiceRepository.save(invoice);
         }
         return paymentDueRepository.save(due).getId();
     }

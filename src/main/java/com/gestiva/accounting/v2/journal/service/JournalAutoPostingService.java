@@ -6,6 +6,8 @@ import com.gestiva.accounting.v2.journal.entity.JournalEntry;
 import com.gestiva.accounting.v2.journal.entity.JournalEntryLine;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryLineRepository;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryRepository;
+import com.gestiva.billing.invoice.entity.Invoice;
+import com.gestiva.billing.invoice.repository.InvoiceRepository;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import org.springframework.stereotype.Service;
@@ -23,14 +25,22 @@ public class JournalAutoPostingService {
     private final JournalEntryLineRepository journalEntryLineRepository;
     private final AccountRepository accountRepository;
     private final DocumentSequenceService documentSequenceService;
+    private final InvoiceRepository invoiceRepository;
+
+
+
 
     public JournalAutoPostingService(JournalEntryRepository journalEntryRepository,
                                      JournalEntryLineRepository journalEntryLineRepository,
-                                     AccountRepository accountRepository, DocumentSequenceService documentSequenceService) {
+                                     AccountRepository accountRepository,
+                                     DocumentSequenceService documentSequenceService,
+                                     InvoiceRepository invoiceRepository) {
+
         this.journalEntryRepository = journalEntryRepository;
         this.journalEntryLineRepository = journalEntryLineRepository;
         this.accountRepository = accountRepository;
         this.documentSequenceService = documentSequenceService;
+        this.invoiceRepository = invoiceRepository;
     }
 
     public Long postCustomerReceipt(Long tenantId,
@@ -218,7 +228,11 @@ public class JournalAutoPostingService {
         line3.setDescription("IVA a debito");
         line3.setDebitAmount(zero());
         line3.setCreditAmount(iva);
-
+        Invoice invoice = invoiceRepository.findByTenantIdAndId(tenantId, invoiceId).orElse(null);
+        if (invoice != null) {
+            invoice.setStatus("ISSUED");
+            invoiceRepository.save(invoice);
+        }
         journalEntryLineRepository.save(line1);
         journalEntryLineRepository.save(line2);
         journalEntryLineRepository.save(line3);
