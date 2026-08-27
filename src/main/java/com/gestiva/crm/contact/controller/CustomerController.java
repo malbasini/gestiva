@@ -23,8 +23,6 @@ public class CustomerController {
         this.customerService = customerService;
         this.tenantContext = tenantContext;
     }
-
-    // TODO: sostituire con tenant reale preso dal contesto di sicurezza
     private Long getTenantId() {
         return tenantContext.getCurrentTenantId();
     }

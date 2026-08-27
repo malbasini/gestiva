@@ -50,9 +50,14 @@ public class AdminUserPageController {
             return "admin/users/user-list";
         }
 
-        adminUserService.createUser(tenantId, form);
-        redirectAttributes.addFlashAttribute("successMessage", "Utente creato con successo.");
-        return "redirect:/admin/users";
+        try {
+            adminUserService.createUser(tenantId, form);
+            redirectAttributes.addFlashAttribute("successMessage", "Utente creato con successo.");
+            return "redirect:/admin/users";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/admin/users";
+        }
     }
 
     @GetMapping("/{id}/edit")

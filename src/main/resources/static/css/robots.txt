@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://gestiva.org/sitemap.xml
