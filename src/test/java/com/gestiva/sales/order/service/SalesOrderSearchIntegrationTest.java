@@ -43,8 +43,7 @@ class SalesOrderSearchIntegrationTest extends AbstractMySqlIntegrationTest {
     private Long orderAId;
     private Long orderBId;
     private Long quoteAId;
-    private Long quoteBId;
-
+    
     @BeforeEach
     void setUp() {
         Tenant tenant = testDataFactory.createTenant();
@@ -64,7 +63,7 @@ class SalesOrderSearchIntegrationTest extends AbstractMySqlIntegrationTest {
         QuoteResponse otherTenantQuote = createSentQuote(otherTenantId, otherCustomer.getId(), "Servizio Altro Tenant", "500.00");
 
         this.quoteAId = quoteA.getId();
-        this.quoteBId = quoteB.getId();
+        quoteB.getId();
 
         SalesOrderResponse orderA = salesOrderService.convertFromQuote(tenantId, quoteA.getId());
         SalesOrderResponse orderB = salesOrderService.convertFromQuote(tenantId, quoteB.getId());
