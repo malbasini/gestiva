@@ -1,12 +1,12 @@
-package com.gestiva.warehouse.uom.entity;
+package com.gestiva.warehouse.item.entity;
 
 import com.gestiva.common.model.TenantAwareEntity;
-import com.gestiva.warehouse.item.entity.Item;
+import com.gestiva.warehouse.uom.entity.UnitOfMeasure;
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 
 @Entity
+@Access(AccessType.FIELD)
 @Table(
         name = "item_uom",
         uniqueConstraints = {
@@ -14,16 +14,34 @@ import java.math.BigDecimal;
                         name = "uk_item_uom",
                         columnNames = {"tenant_id", "item_id", "uom_id"}
                 )
+        },
+        indexes = {
+                @Index(
+                        name = "idx_item_uom_item",
+                        columnList = "tenant_id, item_id"
+                ),
+                @Index(
+                        name = "idx_item_uom_uom",
+                        columnList = "tenant_id, uom_id"
+                )
         }
 )
 public class ItemUom extends TenantAwareEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "item_id", nullable = false)
+    @JoinColumn(
+            name = "item_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_item_uom_item")
+    )
     private Item item;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "uom_id", nullable = false)
+    @JoinColumn(
+            name = "uom_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_item_uom_uom")
+    )
     private UnitOfMeasure uom;
 
     @Column(
@@ -35,15 +53,15 @@ public class ItemUom extends TenantAwareEntity {
     private BigDecimal conversionFactor;
 
     @Column(name = "purchase_uom", nullable = false)
-    private boolean purchaseUom;
+    private boolean purchaseUom = false;
 
     @Column(name = "sales_uom", nullable = false)
-    private boolean salesUom;
+    private boolean salesUom = false;
 
-    @Column(length = 100)
+    @Column(name = "barcode", length = 100)
     private String barcode;
 
-    @Column(nullable = false)
+    @Column(name = "active", nullable = false)
     private boolean active = true;
 
     public Item getItem() {
