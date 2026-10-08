@@ -1,6 +1,6 @@
 package com.gestiva.dashboard.web;
 
-import com.gestiva.accounting.due.entity.PaymentDue;
+import com.gestiva.warehouse.item.entity.ItemType;
 import com.gestiva.accounting.due.repository.PaymentDueRepository;
 import com.gestiva.accounting.v2.report.web.IncomeStatementView;
 import com.gestiva.accounting.v2.report.web.IncomeStatementWebService;
@@ -18,6 +18,7 @@ import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
 import com.gestiva.sales.order.repository.SalesOrderRepository;
 import com.gestiva.sales.quote.repository.QuoteRepository;
 import com.gestiva.logistics.ddt.repository.DeliveryNoteRepository;
+import com.gestiva.warehouse.item.entity.ItemType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -181,11 +182,6 @@ public class DashboardWebService {
                 List.of("DRAFT", "SENT", "CONFIRMED")
         );
     }
-
-    private long readStockManagedItemsCount(Long tenantId) {
-        return itemRepository.countByTenantIdAndTrackStockTrue(tenantId);
-    }
-
     private void mapRecentSalesDocuments(DashboardView view, Long tenantId) {
         List<Invoice> recentInvoices = invoiceRepository.findTop5ByTenantIdOrderByInvoiceDateDescIdDesc(tenantId);
         List<DashboardRecentDocumentView> docs = recentInvoices.stream().map(inv -> {
@@ -291,4 +287,11 @@ public class DashboardWebService {
     private String defaultString(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
     }
+    private long readStockManagedItemsCount(Long tenantId) {
+        return itemRepository.countByTenantIdAndItemType(
+                tenantId,
+                ItemType.PRODUCT
+        );
+    }
+
 }

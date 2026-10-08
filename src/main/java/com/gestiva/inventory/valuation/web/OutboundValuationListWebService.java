@@ -1,7 +1,7 @@
 package com.gestiva.inventory.valuation.web;
 
 import com.gestiva.documents.pdf.PdfFormatUtils;
-import com.gestiva.inventory.item.entity.Item;
+import com.gestiva.warehouse.item.entity.Item;
 import com.gestiva.inventory.item.repository.ItemRepository;
 import com.gestiva.inventory.movement.entity.InventoryMovement;
 import com.gestiva.inventory.movement.repository.InventoryMovementRepository;
@@ -173,7 +173,7 @@ public class OutboundValuationListWebService {
                 .findByTenantIdOrderByCodeAsc(tenantId)
                 .stream()
                 .collect(Collectors.toMap(
-                        com.gestiva.inventory.item.entity.Item::getId,
+                        com.gestiva.warehouse.item.entity.Item::getId,
                         Function.identity()
                 ));
 

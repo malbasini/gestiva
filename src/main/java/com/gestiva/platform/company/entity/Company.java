@@ -1,25 +1,32 @@
-package com.gestiva.settings.company.entity;
+package com.gestiva.platform.company.entity;
 
 import com.gestiva.common.model.TenantAwareEntity;
-import jakarta.persistence.Access;
-import jakarta.persistence.AccessType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 
 @Entity
 @Access(AccessType.FIELD)
 @Table(
-        name = "company_settings",
+        name = "company",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_company_settings_tenant", columnNames = {"tenant_id"})
+                @UniqueConstraint(
+                        name = "uk_company_tenant_code",
+                        columnNames = {"tenant_id", "code"}
+                )
+        },
+        indexes = {
+                @Index(
+                        name = "idx_company_tenant_active",
+                        columnList = "tenant_id, active"
+                )
         }
 )
-public class CompanySettings extends TenantAwareEntity {
+public class Company extends TenantAwareEntity {
 
-    @Column(name = "company_name", nullable = false, length = 180)
-    private String companyName;
+    @Column(nullable = false, length = 30)
+    private String code;
+
+    @Column(name = "legal_name", nullable = false, length = 180)
+    private String legalName;
 
     @Column(name = "trade_name", length = 180)
     private String tradeName;
@@ -30,13 +37,13 @@ public class CompanySettings extends TenantAwareEntity {
     @Column(name = "tax_code", length = 30)
     private String taxCode;
 
-    @Column(name = "email", length = 180)
+    @Column(length = 180)
     private String email;
 
-    @Column(name = "phone", length = 50)
+    @Column(length = 50)
     private String phone;
 
-    @Column(name = "website", length = 180)
+    @Column(length = 255)
     private String website;
 
     @Column(name = "address_line_1", length = 255)
@@ -45,33 +52,38 @@ public class CompanySettings extends TenantAwareEntity {
     @Column(name = "postal_code", length = 30)
     private String postalCode;
 
-    @Column(name = "city", length = 120)
+    @Column(length = 120)
     private String city;
 
-    @Column(name = "province", length = 10)
+    @Column(length = 10)
     private String province;
 
-    @Column(name = "country_code", length = 10)
+    @Column(name = "country_code", nullable = false, length = 2)
     private String countryCode;
 
-    @Column(name = "default_currency_code", nullable = false, length = 3)
-    private String defaultCurrencyCode;
+    @Column(name = "currency_code", nullable = false, length = 3)
+    private String currencyCode;
 
-    @Column(name = "default_vat_pct", precision = 5, scale = 2)
-    private java.math.BigDecimal defaultVatPct;
+    @Column(name = "locale_code", nullable = false, length = 10)
+    private String localeCode;
 
-    @Column(name = "default_customer_due_days")
-    private Integer defaultCustomerDueDays;
+    @Column(nullable = false)
+    private boolean active = true;
 
-    @Column(name = "default_supplier_due_days")
-    private Integer defaultSupplierDueDays;
-
-    public String getCompanyName() {
-        return companyName;
+    public String getCode() {
+        return code;
     }
 
-    public void setCompanyName(String companyName) {
-        this.companyName = companyName;
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getLegalName() {
+        return legalName;
+    }
+
+    public void setLegalName(String legalName) {
+        this.legalName = legalName;
     }
 
     public String getTradeName() {
@@ -162,35 +174,27 @@ public class CompanySettings extends TenantAwareEntity {
         this.countryCode = countryCode;
     }
 
-    public String getDefaultCurrencyCode() {
-        return defaultCurrencyCode;
+    public String getCurrencyCode() {
+        return currencyCode;
     }
 
-    public void setDefaultCurrencyCode(String defaultCurrencyCode) {
-        this.defaultCurrencyCode = defaultCurrencyCode;
+    public void setCurrencyCode(String currencyCode) {
+        this.currencyCode = currencyCode;
     }
 
-    public java.math.BigDecimal getDefaultVatPct() {
-        return defaultVatPct;
+    public String getLocaleCode() {
+        return localeCode;
     }
 
-    public void setDefaultVatPct(java.math.BigDecimal defaultVatPct) {
-        this.defaultVatPct = defaultVatPct;
+    public void setLocaleCode(String localeCode) {
+        this.localeCode = localeCode;
     }
 
-    public Integer getDefaultCustomerDueDays() {
-        return defaultCustomerDueDays;
+    public boolean isActive() {
+        return active;
     }
 
-    public void setDefaultCustomerDueDays(Integer defaultCustomerDueDays) {
-        this.defaultCustomerDueDays = defaultCustomerDueDays;
-    }
-
-    public Integer getDefaultSupplierDueDays() {
-        return defaultSupplierDueDays;
-    }
-
-    public void setDefaultSupplierDueDays(Integer defaultSupplierDueDays) {
-        this.defaultSupplierDueDays = defaultSupplierDueDays;
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

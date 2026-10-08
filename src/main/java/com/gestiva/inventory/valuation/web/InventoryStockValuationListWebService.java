@@ -2,7 +2,7 @@ package com.gestiva.inventory.valuation.web;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.documents.pdf.PdfFormatUtils;
-import com.gestiva.inventory.item.entity.Item;
+import com.gestiva.warehouse.item.entity.Item;
 import com.gestiva.inventory.item.repository.ItemRepository;
 import com.gestiva.inventory.valuation.entity.InventoryLayer;
 import com.gestiva.inventory.valuation.repository.InventoryAverageBalanceRepository;

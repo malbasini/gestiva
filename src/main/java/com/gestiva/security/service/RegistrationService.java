@@ -16,7 +16,7 @@ import com.gestiva.security.web.RegistrationResult;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.gestiva.warehouse.uom.service.UnitOfMeasureInitializer;
 import java.text.Normalizer;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -34,7 +34,7 @@ public class RegistrationService {
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
     private final AccountRepository accountRepository;
-
+    private final UnitOfMeasureInitializer unitOfMeasureInitializer;
 
 
 
@@ -43,7 +43,8 @@ public class RegistrationService {
                                RoleRepository roleRepository,
                                UserRoleRepository userRoleRepository,
                                PasswordEncoder passwordEncoder,
-                               AccountRepository accountRepository) {
+                               AccountRepository accountRepository,
+                               UnitOfMeasureInitializer unitOfMeasureInitializer) {
 
         this.tenantRepository = tenantRepository;
         this.appUserRepository = appUserRepository;
@@ -51,6 +52,7 @@ public class RegistrationService {
         this.userRoleRepository = userRoleRepository;
         this.passwordEncoder = passwordEncoder;
         this.accountRepository = accountRepository;
+        this.unitOfMeasureInitializer = unitOfMeasureInitializer;
     }
 
     public RegistrationResult register(RegistrationForm form) {
@@ -73,6 +75,7 @@ public class RegistrationService {
         tenant.setSubscriptionStatus("PENDING");
         tenant.setSubscriptionPlan(null);
         Tenant savedTenant = tenantRepository.save(tenant);
+        unitOfMeasureInitializer.initializeForTenant(savedTenant.getId());
         AppUser user = new AppUser();
         user.setTenantId(savedTenant.getId());
         user.setFirstName(form.getFirstName().trim());

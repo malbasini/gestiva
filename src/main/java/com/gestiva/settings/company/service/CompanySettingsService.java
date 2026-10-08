@@ -1,6 +1,7 @@
 package com.gestiva.settings.company.service;
 
-import com.gestiva.settings.company.entity.CompanySettings;
+import com.gestiva.platform.company.entity.Company;
+import com.gestiva.platform.company.repository.CompanyRepository;
 import com.gestiva.settings.company.repository.CompanySettingsRepository;
 import com.gestiva.settings.company.web.CompanySettingsForm;
 import com.gestiva.settings.company.web.DocumentSequenceForm;
@@ -8,7 +9,7 @@ import com.gestiva.settings.sequence.entity.DocumentSequence;
 import com.gestiva.settings.sequence.repository.DocumentSequenceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.gestiva.platform.company.entity.CompanySettings;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,40 +34,47 @@ public class CompanySettingsService {
 
     private final CompanySettingsRepository companySettingsRepository;
     private final DocumentSequenceRepository documentSequenceRepository;
+    private final CompanyRepository companyRepository;
 
     public CompanySettingsService(CompanySettingsRepository companySettingsRepository,
-                                  DocumentSequenceRepository documentSequenceRepository) {
+                                  DocumentSequenceRepository documentSequenceRepository,
+                                  CompanyRepository companyRepository) {
+
         this.companySettingsRepository = companySettingsRepository;
         this.documentSequenceRepository = documentSequenceRepository;
+        this.companyRepository = companyRepository;
     }
 
     @Transactional
     public CompanySettingsForm getOrCreateForm(Long tenantId) {
-        CompanySettings settings = companySettingsRepository.findByTenantId(tenantId)
-                .orElseGet(() -> createDefaultSettings(tenantId));
+        Company company = getMainCompany(tenantId);
+
+        CompanySettings settings =
+                companySettingsRepository
+                        .findByTenantIdAndCompanyId(tenantId, company.getId())
+                        .orElseGet(() -> createDefaultSettings(tenantId, company));
 
         ensureDefaultSequences(tenantId);
 
         List<DocumentSequence> sequences = documentSequenceRepository.findByTenantIdOrderByDocumentTypeAsc(tenantId);
 
         CompanySettingsForm form = new CompanySettingsForm();
-        form.setCompanyName(settings.getCompanyName());
-        form.setTradeName(settings.getTradeName());
-        form.setVatNumber(settings.getVatNumber());
-        form.setTaxCode(settings.getTaxCode());
-        form.setEmail(settings.getEmail());
-        form.setPhone(settings.getPhone());
-        form.setWebsite(settings.getWebsite());
-        form.setAddressLine1(settings.getAddressLine1());
-        form.setPostalCode(settings.getPostalCode());
-        form.setCity(settings.getCity());
-        form.setProvince(settings.getProvince());
-        form.setCountryCode(settings.getCountryCode());
-        form.setDefaultCurrencyCode(settings.getDefaultCurrencyCode());
+        form.setCompanyName(company.getLegalName());
+        form.setTradeName(company.getTradeName());
+        form.setVatNumber(company.getVatNumber());
+        form.setTaxCode(company.getTaxCode());
+        form.setEmail(company.getEmail());
+        form.setPhone(company.getPhone());
+        form.setWebsite(company.getWebsite());
+        form.setAddressLine1(company.getAddressLine1());
+        form.setPostalCode(company.getPostalCode());
+        form.setCity(company.getCity());
+        form.setProvince(company.getProvince());
+        form.setCountryCode(company.getCountryCode());
+        form.setDefaultCurrencyCode(company.getCurrencyCode());
         form.setDefaultVatPct(settings.getDefaultVatPct());
         form.setDefaultCustomerDueDays(settings.getDefaultCustomerDueDays());
         form.setDefaultSupplierDueDays(settings.getDefaultSupplierDueDays());
-
         List<DocumentSequenceForm> sequenceForms = new ArrayList<>();
         for (DocumentSequence seq : sequences) {
             DocumentSequenceForm sf = new DocumentSequenceForm();
@@ -82,25 +90,43 @@ public class CompanySettingsService {
     }
 
     public void save(Long tenantId, CompanySettingsForm form) {
-        CompanySettings settings = companySettingsRepository.findByTenantId(tenantId)
-                .orElseGet(() -> createDefaultSettings(tenantId));
+        Company company = getMainCompany(tenantId);
 
-        settings.setCompanyName(trimToNull(form.getCompanyName()));
-        settings.setTradeName(trimToNull(form.getTradeName()));
-        settings.setVatNumber(trimToNull(form.getVatNumber()));
-        settings.setTaxCode(trimToNull(form.getTaxCode()));
-        settings.setEmail(trimToNull(form.getEmail()));
-        settings.setPhone(trimToNull(form.getPhone()));
-        settings.setWebsite(trimToNull(form.getWebsite()));
-        settings.setAddressLine1(trimToNull(form.getAddressLine1()));
-        settings.setPostalCode(trimToNull(form.getPostalCode()));
-        settings.setCity(trimToNull(form.getCity()));
-        settings.setProvince(trimToNull(form.getProvince()));
-        settings.setCountryCode(trimToNull(form.getCountryCode()));
-        settings.setDefaultCurrencyCode(defaultIfBlank(form.getDefaultCurrencyCode(), "EUR"));
-        settings.setDefaultVatPct(form.getDefaultVatPct() != null ? form.getDefaultVatPct() : BigDecimal.ZERO);
-        settings.setDefaultCustomerDueDays(form.getDefaultCustomerDueDays());
-        settings.setDefaultSupplierDueDays(form.getDefaultSupplierDueDays());
+        com.gestiva.platform.company.entity.CompanySettings settings =
+                companySettingsRepository
+                        .findByTenantIdAndCompanyId(tenantId, company.getId())
+                        .orElseGet(() -> createDefaultSettings(tenantId, company));
+        company.setLegalName(trimToNull(form.getCompanyName()));
+        company.setTradeName(trimToNull(form.getTradeName()));
+        company.setVatNumber(trimToNull(form.getVatNumber()));
+        company.setTaxCode(trimToNull(form.getTaxCode()));
+        company.setEmail(trimToNull(form.getEmail()));
+        company.setPhone(trimToNull(form.getPhone()));
+        company.setWebsite(trimToNull(form.getWebsite()));
+        company.setAddressLine1(trimToNull(form.getAddressLine1()));
+        company.setPostalCode(trimToNull(form.getPostalCode()));
+        company.setCity(trimToNull(form.getCity()));
+        company.setProvince(trimToNull(form.getProvince()));
+        company.setCountryCode(trimToNull(form.getCountryCode()));
+        company.setCurrencyCode(
+                defaultIfBlank(form.getDefaultCurrencyCode(), "EUR")
+        );
+
+        companyRepository.save(company);
+
+        settings.setDefaultVatPct(
+                form.getDefaultVatPct() != null
+                        ? form.getDefaultVatPct()
+                        : BigDecimal.ZERO
+        );
+
+        settings.setDefaultCustomerDueDays(
+                form.getDefaultCustomerDueDays()
+        );
+
+        settings.setDefaultSupplierDueDays(
+                form.getDefaultSupplierDueDays()
+        );
 
         companySettingsRepository.save(settings);
 
@@ -128,14 +154,18 @@ public class CompanySettingsService {
         }
     }
 
-    private CompanySettings createDefaultSettings(Long tenantId) {
+    private com.gestiva.platform.company.entity.CompanySettings createDefaultSettings(
+            Long tenantId,
+            Company company) {
+
         CompanySettings settings = new CompanySettings();
+
         settings.setTenantId(tenantId);
-        settings.setCompanyName("Azienda");
-        settings.setDefaultCurrencyCode("EUR");
+        settings.setCompany(company);
         settings.setDefaultVatPct(BigDecimal.valueOf(22.00));
         settings.setDefaultCustomerDueDays(30);
         settings.setDefaultSupplierDueDays(30);
+
         return companySettingsRepository.save(settings);
     }
 
@@ -183,4 +213,15 @@ public class CompanySettingsService {
     private String defaultIfBlank(String value, String defaultValue) {
         return (value == null || value.trim().isEmpty()) ? defaultValue : value.trim();
     }
+
+    private Company getMainCompany(Long tenantId) {
+        return companyRepository
+                .findByTenantIdAndCode(tenantId, "MAIN")
+                .orElseThrow(() ->
+                        new IllegalStateException(
+                                "Company MAIN non trovata per il tenant " + tenantId
+                        )
+                );
+    }
+
 }
