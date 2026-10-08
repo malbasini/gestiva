@@ -2,9 +2,10 @@ package com.gestiva.inventory.item.web;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
+import com.gestiva.warehouse.item.entity.ItemType;
 import com.gestiva.common.util.NumberInputUtils;
 import com.gestiva.documents.pdf.PdfFormatUtils;
-import com.gestiva.inventory.item.entity.Item;
+import com.gestiva.warehouse.item.entity.Item;
 import com.gestiva.inventory.item.repository.ItemRepository;
 import com.gestiva.inventory.movement.repository.InventoryMovementRepository;
 import org.springframework.data.domain.Page;
@@ -14,7 +15,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.gestiva.warehouse.uom.entity.UnitOfMeasure;
+import com.gestiva.warehouse.uom.repository.UnitOfMeasureRepository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
@@ -25,13 +27,19 @@ public class ItemWebService {
 
     private final ItemRepository itemRepository;
     private final InventoryMovementRepository inventoryMovementRepository;
+    private final UnitOfMeasureRepository unitOfMeasureRepository;
 
-    public ItemWebService(ItemRepository itemRepository,
-                          InventoryMovementRepository inventoryMovementRepository) {
+
+
+    public ItemWebService(
+            ItemRepository itemRepository,
+            InventoryMovementRepository inventoryMovementRepository,
+            UnitOfMeasureRepository unitOfMeasureRepository) {
+
         this.itemRepository = itemRepository;
         this.inventoryMovementRepository = inventoryMovementRepository;
+        this.unitOfMeasureRepository = unitOfMeasureRepository;
     }
-
     @Transactional(readOnly = true)
     public List<ItemListItemView> findAll(Long tenantId) {
         return itemRepository.findAll(
@@ -57,8 +65,8 @@ public class ItemWebService {
         form.setCode(item.getCode());
         form.setName(item.getName());
         form.setDescription(item.getDescription());
-        form.setItemType(item.getItemType());
-        form.setUnitOfMeasure(item.getUnitOfMeasure());
+        form.setItemType(item.getItemType().toString());
+        form.setUnitOfMeasure(item.getBaseUom().getCode());
         form.setActive(item.isActive());
         form.setTrackStock(item.isTrackStock());
         form.setBasePrice(PdfFormatUtils.formatDecimal(item.getBasePrice(),2));
@@ -99,26 +107,65 @@ public class ItemWebService {
     }
 
     private void applyForm(Item item, ItemForm form) {
-        String itemType = form.getItemType() == null ? "" : form.getItemType().trim().toUpperCase(Locale.ROOT);
 
-        if (!"PRODUCT".equals(itemType) && !"SERVICE".equals(itemType)) {
-            throw new BusinessException("Tipo articolo non valido.");
+        String itemType = form.getItemType() == null
+                ? ""
+                : form.getItemType()
+                .trim()
+                .toUpperCase(Locale.ROOT);
+
+        if (!"PRODUCT".equals(itemType)
+                && !"SERVICE".equals(itemType)) {
+            throw new BusinessException(
+                    "Tipo articolo non valido."
+            );
         }
 
         item.setName(form.getName().trim());
         item.setDescription(form.getDescription());
-        item.setItemType(itemType);
-        item.setUnitOfMeasure(form.getUnitOfMeasure().trim());
-        item.setActive(form.isActive());
+        item.setItemType(ItemType.valueOf(itemType));
 
-        if ("SERVICE".equals(itemType)) {
-            item.setTrackStock(false);
-        } else {
-            item.setTrackStock(form.isTrackStock());
+        String uomCode = form.getUnitOfMeasure() == null
+                ? ""
+                : form.getUnitOfMeasure()
+                .trim()
+                .toUpperCase(Locale.ROOT);
+
+        if (uomCode.isEmpty()) {
+            throw new BusinessException(
+                    "Unità di misura obbligatoria."
+            );
         }
 
-        item.setBasePrice(NumberInputUtils.parseDecimal(form.getBasePrice(),"base price"));
-        item.setDefaultTaxPct(NumberInputUtils.parseDecimal(form.getDefaultTaxPct(),"Tax Pct"));
+        UnitOfMeasure baseUom = unitOfMeasureRepository
+                .findByTenantIdAndCode(
+                        item.getTenantId(),
+                        uomCode
+                )
+                .orElseThrow(() ->
+                        new BusinessException(
+                                "Unità di misura non valida: "
+                                        + uomCode
+                        )
+                );
+
+        item.setBaseUom(baseUom);
+
+        item.setActive(form.isActive());
+
+        item.setBasePrice(
+                NumberInputUtils.parseDecimal(
+                        form.getBasePrice(),
+                        "base price"
+                )
+        );
+
+        item.setDefaultTaxPct(
+                NumberInputUtils.parseDecimal(
+                        form.getDefaultTaxPct(),
+                        "Tax Pct"
+                )
+        );
     }
 
     private String normalizeCode(String code) {
@@ -130,8 +177,8 @@ public class ItemWebService {
         v.setId(item.getId());
         v.setCode(item.getCode());
         v.setName(item.getName());
-        v.setItemType(item.getItemType());
-        v.setUnitOfMeasure(item.getUnitOfMeasure());
+        v.setItemType(item.getItemType().toString());
+        v.setUnitOfMeasure(item.getBaseUom().getCode());
         v.setActive(item.isActive());
         v.setTrackStock(item.isTrackStock());
         v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatDecimal(item.getBasePrice(),2) : "-");
@@ -145,8 +192,8 @@ public class ItemWebService {
         v.setCode(item.getCode());
         v.setName(item.getName());
         v.setDescription(item.getDescription());
-        v.setItemType(item.getItemType());
-        v.setUnitOfMeasure(item.getUnitOfMeasure());
+        v.setItemType(item.getItemType().toString());
+        v.setUnitOfMeasure(item.getBaseUom().getCode());
         v.setActive(item.isActive());
         v.setTrackStock(item.isTrackStock());
         v.setStockManaged(item.isTrackStock());
@@ -172,8 +219,8 @@ public class ItemWebService {
                     v.setId(item.getId());
                     v.setCode(item.getCode());
                     v.setName(item.getName());
-                    v.setItemType(item.getItemType());
-                    v.setUnitOfMeasure(item.getUnitOfMeasure());
+                    v.setItemType(item.getItemType().toString());
+                    v.setUnitOfMeasure(item.getBaseUom().getCode());
                     v.setLabel(item.getCode() + " - " + item.getName() + " (" + item.getItemType() + ")");
                     return v;
                 })
@@ -190,8 +237,8 @@ public class ItemWebService {
         view.setCode(item.getCode());
         view.setName(item.getName());
         view.setDescription(item.getDescription());
-        view.setUnitOfMeasure(item.getUnitOfMeasure());
-        view.setItemType(item.getItemType());
+        view.setUnitOfMeasure(item.getBaseUom().getCode());
+        view.setItemType(item.getItemType().toString());
         view.setBasePrice(item.getBasePrice());
         view.setDefaultTaxPct(item.getDefaultTaxPct());
         return view;
@@ -238,10 +285,10 @@ public class ItemWebService {
         v.setId(item.getId());
         v.setCode(item.getCode());
         v.setName(item.getName());
-        v.setItemType(item.getItemType());
+        v.setItemType(item.getItemType().toString());
         v.setTrackStock(item.isTrackStock());
         v.setActive(item.isActive());
-        v.setUnitOfMeasure(item.getUnitOfMeasure());
+        v.setUnitOfMeasure(item.getBaseUom().getCode());
         v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatDecimal(item.getBasePrice(),2) : "-");
         v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimalTrimmed(item.getDefaultTaxPct(),2) + "%" : "-");
         return v;

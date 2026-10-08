@@ -39,7 +39,7 @@ public class InventoryLedgerWebService {
         view.setItemId(item.getId());
         view.setItemCode(item.getCode());
         view.setItemName(item.getName());
-        view.setItemType(item.getItemType());
+        view.setItemType(item.getItemType().toString());
         view.setStockManaged(item.isTrackStock());
 
         for (var movement : movements) {

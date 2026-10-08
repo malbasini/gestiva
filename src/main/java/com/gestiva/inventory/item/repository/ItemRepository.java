@@ -1,11 +1,9 @@
 package com.gestiva.inventory.item.repository;
 
-import com.gestiva.inventory.item.entity.Item;
-import com.gestiva.inventory.movement.entity.InventoryMovement;
+import com.gestiva.warehouse.item.entity.ItemType;
+import com.gestiva.warehouse.item.entity.Item;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +15,5 @@ public interface ItemRepository extends JpaRepository<Item, Long>, JpaSpecificat
     List<Item> findByTenantIdAndActiveTrueOrderByNameAsc(Long tenantId);
     List<Item> findByTenantIdAndActiveTrueOrderByCodeAsc(Long tenantId);
     List<Item> findByTenantIdOrderByCodeAsc(Long tenantId);
-    long countByTenantIdAndTrackStockTrue(Long tenantId);
-
+    long countByTenantIdAndItemType(Long tenantId, ItemType itemType);
 }
