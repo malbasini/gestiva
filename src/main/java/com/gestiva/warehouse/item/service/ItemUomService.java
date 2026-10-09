@@ -1,7 +1,7 @@
 package com.gestiva.warehouse.item.service;
 
 import com.gestiva.common.exception.BusinessException;
-import com.gestiva.inventory.item.repository.ItemRepository;
+import com.gestiva.warehouse.item.repository.ItemRepository;
 import com.gestiva.warehouse.item.entity.Item;
 import com.gestiva.warehouse.item.entity.ItemUom;
 import com.gestiva.warehouse.item.repository.ItemUomRepository;

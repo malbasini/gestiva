@@ -1,4 +1,4 @@
-package com.gestiva.inventory.item.repository;
+package com.gestiva.warehouse.item.repository;
 
 import com.gestiva.warehouse.item.entity.ItemType;
 import com.gestiva.warehouse.item.entity.Item;

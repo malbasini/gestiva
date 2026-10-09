@@ -1,7 +1,6 @@
 package com.gestiva.warehouse.location.entity;
 
 import com.gestiva.common.model.TenantAwareEntity;
-import com.gestiva.warehouse.location.model.WarehouseLocationType;
 import jakarta.persistence.*;
 
 @Entity
@@ -11,7 +10,11 @@ import jakarta.persistence.*;
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_warehouse_location_code",
-                        columnNames = {"tenant_id", "warehouse_id", "code"}
+                        columnNames = {
+                                "tenant_id",
+                                "warehouse_id",
+                                "code"
+                        }
                 )
         },
         indexes = {
@@ -31,32 +34,54 @@ public class WarehouseLocation extends TenantAwareEntity {
     @JoinColumn(
             name = "warehouse_id",
             nullable = false,
-            foreignKey = @ForeignKey(name = "fk_location_warehouse")
+            foreignKey = @ForeignKey(
+                    name = "fk_location_warehouse"
+            )
     )
     private Warehouse warehouse;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "parent_location_id",
-            foreignKey = @ForeignKey(name = "fk_location_parent")
+            foreignKey = @ForeignKey(
+                    name = "fk_location_parent"
+            )
     )
     private WarehouseLocation parentLocation;
 
-    @Column(nullable = false, length = 50)
+    @Column(
+            name = "code",
+            nullable = false,
+            length = 50
+    )
     private String code;
 
-    @Column(nullable = false, length = 180)
+    @Column(
+            name = "name",
+            nullable = false,
+            length = 180
+    )
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "location_type", nullable = false, length = 30)
+    @Column(
+            name = "location_type",
+            nullable = false,
+            length = 30
+    )
     private WarehouseLocationType locationType =
             WarehouseLocationType.STORAGE;
 
-    @Column(length = 100)
+    @Column(
+            name = "barcode",
+            length = 100
+    )
     private String barcode;
 
-    @Column(nullable = false)
+    @Column(
+            name = "active",
+            nullable = false
+    )
     private boolean active = true;
 
     public Warehouse getWarehouse() {

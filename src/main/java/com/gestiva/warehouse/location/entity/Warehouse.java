@@ -2,7 +2,6 @@ package com.gestiva.warehouse.location.entity;
 
 import com.gestiva.common.model.TenantAwareEntity;
 import com.gestiva.platform.company.entity.Company;
-import com.gestiva.warehouse.location.model.WarehouseType;
 import jakarta.persistence.*;
 
 @Entity
@@ -12,7 +11,11 @@ import jakarta.persistence.*;
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_warehouse_company_code",
-                        columnNames = {"tenant_id", "company_id", "code"}
+                        columnNames = {
+                                "tenant_id",
+                                "company_id",
+                                "code"
+                        }
                 )
         },
         indexes = {
@@ -28,27 +31,50 @@ public class Warehouse extends TenantAwareEntity {
     @JoinColumn(
             name = "company_id",
             nullable = false,
-            foreignKey = @ForeignKey(name = "fk_warehouse_company")
+            foreignKey = @ForeignKey(
+                    name = "fk_warehouse_company"
+            )
     )
     private Company company;
 
-    @Column(nullable = false, length = 30)
+    @Column(
+            name = "code",
+            nullable = false,
+            length = 30
+    )
     private String code;
 
-    @Column(nullable = false, length = 180)
+    @Column(
+            name = "name",
+            nullable = false,
+            length = 180
+    )
     private String name;
 
-    @Column(length = 500)
+    @Column(
+            name = "description",
+            length = 500
+    )
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "warehouse_type", nullable = false, length = 30)
+    @Column(
+            name = "warehouse_type",
+            nullable = false,
+            length = 30
+    )
     private WarehouseType warehouseType = WarehouseType.PHYSICAL;
 
-    @Column(name = "allow_negative_stock", nullable = false)
+    @Column(
+            name = "allow_negative_stock",
+            nullable = false
+    )
     private boolean allowNegativeStock = false;
 
-    @Column(nullable = false)
+    @Column(
+            name = "active",
+            nullable = false
+    )
     private boolean active = true;
 
     public Company getCompany() {
