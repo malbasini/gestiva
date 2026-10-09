@@ -1,4 +1,4 @@
-package com.gestiva.warehouse.location.model;
+package com.gestiva.warehouse.location.entity;
 
 public enum WarehouseType {
 

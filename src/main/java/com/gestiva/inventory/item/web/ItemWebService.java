@@ -6,7 +6,7 @@ import com.gestiva.warehouse.item.entity.ItemType;
 import com.gestiva.common.util.NumberInputUtils;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.warehouse.item.entity.Item;
-import com.gestiva.inventory.item.repository.ItemRepository;
+import com.gestiva.warehouse.item.repository.ItemRepository;
 import com.gestiva.inventory.movement.repository.InventoryMovementRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

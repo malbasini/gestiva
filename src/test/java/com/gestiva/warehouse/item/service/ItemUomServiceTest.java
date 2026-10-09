@@ -1,7 +1,7 @@
 package com.gestiva.warehouse.item.service;
 
 import com.gestiva.common.exception.BusinessException;
-import com.gestiva.inventory.item.repository.ItemRepository;
+import com.gestiva.warehouse.item.repository.ItemRepository;
 import com.gestiva.warehouse.item.entity.Item;
 import com.gestiva.warehouse.item.entity.ItemType;
 import com.gestiva.warehouse.item.entity.ItemUom;
@@ -14,7 +14,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
