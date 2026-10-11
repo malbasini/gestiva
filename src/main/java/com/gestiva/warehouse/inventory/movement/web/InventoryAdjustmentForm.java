@@ -12,6 +12,11 @@ public class InventoryAdjustmentForm {
     @NotNull(message = "Seleziona un articolo.")
     private Long itemId;
 
+    @NotNull(message = "Seleziona un magazzino.")
+    private Long warehouseId;
+
+    private Long locationId;
+
     @NotBlank(message = "Seleziona il tipo rettifica.")
     private String adjustmentType;
 
@@ -73,5 +78,21 @@ public class InventoryAdjustmentForm {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public Long getWarehouseId() {
+        return warehouseId;
+    }
+
+    public void setWarehouseId(Long warehouseId) {
+        this.warehouseId = warehouseId;
+    }
+
+    public Long getLocationId() {
+        return locationId;
+    }
+
+    public void setLocationId(Long locationId) {
+        this.locationId = locationId;
     }
 }

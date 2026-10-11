@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -20,16 +21,19 @@ public class InventoryAvailabilityService {
     private final ItemRepository itemRepository;
     private final TenantRepository tenantRepository;
     private final InventoryAverageBalanceRepository inventoryAverageBalanceRepository;
+    private final InventoryMovementRepository inventoryMovementRepository;
 
     public InventoryAvailabilityService(InventoryLayerRepository inventoryLayerRepository,
                                         ItemRepository itemRepository,
                                         TenantRepository tenantRepository,
-                                        InventoryAverageBalanceRepository inventoryAverageBalanceRepository) {
+                                        InventoryAverageBalanceRepository inventoryAverageBalanceRepository,
+                                        InventoryMovementRepository inventoryMovementRepository) {
 
         this.inventoryLayerRepository = inventoryLayerRepository;
         this.itemRepository = itemRepository;
         this.tenantRepository = tenantRepository;
         this.inventoryAverageBalanceRepository = inventoryAverageBalanceRepository;
+        this.inventoryMovementRepository = inventoryMovementRepository;
     }
 
     public BigDecimal getAvailableQty(Long tenantId, Long itemId) {
@@ -79,6 +83,67 @@ public class InventoryAvailabilityService {
                             + PdfFormatUtils.formatDecimal(available, 0)
                             + ", richiesta: "
                             + PdfFormatUtils.formatDecimal(requested, 0)
+                            + "."
+            );
+        }
+    }
+    public BigDecimal getAvailableQtyByWarehouse(
+            Long tenantId,
+            Long warehouseId,
+            Long itemId,
+            Long locationId) {
+
+        if (tenantId == null || warehouseId == null || itemId == null) {
+            throw new BusinessException(
+                    "Tenant, magazzino e articolo sono obbligatori."
+            );
+        }
+
+        BigDecimal balance =
+                inventoryMovementRepository.calculateInventoryBalanceByWarehouse(
+                        tenantId,
+                        warehouseId,
+                        itemId,
+                        locationId
+                );
+
+        return balance == null
+                ? BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP)
+                : balance.setScale(3, RoundingMode.HALF_UP);
+    }
+
+    public void validateAvailabilityByWarehouse(
+            Long tenantId,
+            Long warehouseId,
+            Long itemId,
+            Long locationId,
+            BigDecimal requiredQty) {
+
+        if (requiredQty == null ||
+                requiredQty.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(
+                    "La quantità richiesta deve essere maggiore di zero."
+            );
+        }
+
+        BigDecimal requested =
+                requiredQty.setScale(3, RoundingMode.HALF_UP);
+
+        BigDecimal available =
+                getAvailableQtyByWarehouse(
+                        tenantId,
+                        warehouseId,
+                        itemId,
+                        locationId
+                );
+
+        if (requested.compareTo(available) > 0) {
+            throw new BusinessException(
+                    "Disponibilità insufficiente nel magazzino selezionato. "
+                            + "Disponibile: "
+                            + PdfFormatUtils.formatDecimal(available, 3)
+                            + ", richiesta: "
+                            + PdfFormatUtils.formatDecimal(requested, 3)
                             + "."
             );
         }

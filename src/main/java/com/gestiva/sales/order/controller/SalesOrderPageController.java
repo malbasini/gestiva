@@ -1,10 +1,7 @@
 package com.gestiva.sales.order.controller;
 
-import com.gestiva.sales.order.dto.SalesOrderSearchRequest;
 import com.gestiva.sales.order.web.SalesOrderWebService;
 import com.gestiva.security.usercontext.TenantContext;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -50,15 +47,4 @@ public class SalesOrderPageController {
 
         return "order/order-list";
     }
-
-
-
-
-
-
-
-
-
-
-
 }

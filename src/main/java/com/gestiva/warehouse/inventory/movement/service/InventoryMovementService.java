@@ -90,6 +90,9 @@ public class InventoryMovementService {
         InventoryMovement reversal = new InventoryMovement();
         reversal.setTenantId(tenantId);
         reversal.setItemId(original.getItemId());
+        // Lo storno deve interessare lo stesso magazzino e la stessa ubicazione.
+        reversal.setWarehouseId(original.getWarehouseId());
+        reversal.setLocationId(original.getLocationId());
         reversal.setMovementDate(reversalDate);
         reversal.setMovementType(reverseType(original.getMovementType()));
         reversal.setCausalCode("DOCUMENT_CANCEL_RESTORE");

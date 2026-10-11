@@ -3,7 +3,6 @@ package com.gestiva.sales.quote.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
 import java.time.LocalDate;
 import java.util.List;
 
@@ -11,6 +10,9 @@ public class QuoteCreateRequest {
 
     @NotNull
     private Long customerId;
+
+    @NotNull(message = "Seleziona una società.")
+    private Long companyId;
 
     @NotNull
     private LocalDate quoteDate;
@@ -39,4 +41,12 @@ public class QuoteCreateRequest {
     public void setNotes(String notes) { this.notes = notes; }
     public List<QuoteLineRequest> getLines() { return lines; }
     public void setLines(List<QuoteLineRequest> lines) { this.lines = lines; }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
+    }
 }

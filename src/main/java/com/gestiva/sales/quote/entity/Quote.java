@@ -13,6 +13,9 @@ public class Quote extends TenantAwareEntity {
     @Column(name = "customer_id", nullable = false)
     private Long customerId;
 
+    @Column(name = "company_id")
+    private Long companyId;
+
     @Column(name = "quote_number", nullable = false, length = 50)
     private String quoteNumber;
 
@@ -119,5 +122,13 @@ public class Quote extends TenantAwareEntity {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 }

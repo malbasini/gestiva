@@ -2,7 +2,6 @@ package com.gestiva.logistics.ddt.entity;
 
 import jakarta.persistence.*;
 import lombok.Setter;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -26,6 +25,12 @@ public class DeliveryNote {
 
     @Column(name = "customer_id", nullable = false)
     private Long customerId;
+
+    @Column(name = "warehouse_id")
+    private Long warehouseId;
+
+    @Column(name = "location_id")
+    private Long locationId;
 
     @Column(name = "ddt_number", nullable = false, length = 50)
     private String ddtNumber;
@@ -71,10 +76,6 @@ public class DeliveryNote {
 
     public Long getId() {
         return id;
-    }
-
-    public Long getTenantId() {
-        return tenantId;
     }
 
     public Long getSalesOrderId() {
@@ -203,5 +204,29 @@ public class DeliveryNote {
 
     public void setLines(List<DeliveryNoteLine> lines) {
         this.lines = lines;
+    }
+
+    public Long getWarehouseId() {
+        return warehouseId;
+    }
+
+    public void setWarehouseId(Long warehouseId) {
+        this.warehouseId = warehouseId;
+    }
+
+    public Long getLocationId() {
+        return locationId;
+    }
+
+    public void setLocationId(Long locationId) {
+        this.locationId = locationId;
+    }
+
+    public Long getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
     }
 }

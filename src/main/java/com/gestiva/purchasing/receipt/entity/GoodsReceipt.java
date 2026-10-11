@@ -1,9 +1,7 @@
 package com.gestiva.purchasing.receipt.entity;
 
 import com.gestiva.common.model.TenantAwareEntity;
-import com.gestiva.logistics.ddt.entity.DeliveryNoteLine;
 import jakarta.persistence.*;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +27,12 @@ public class GoodsReceipt extends TenantAwareEntity {
 
     @Column(name = "supplier_id", nullable = false)
     private Long supplierId;
+
+    @Column(name = "warehouse_id")
+    private Long warehouseId;
+
+    @Column(name = "location_id")
+    private Long locationId;
 
     @Column(name = "notes", length = 1000)
     private String notes;
@@ -82,5 +86,21 @@ public class GoodsReceipt extends TenantAwareEntity {
 
     public void setLines(List<GoodsReceiptLine> lines) {
         this.lines = lines;
+    }
+
+    public Long getWarehouseId() {
+        return warehouseId;
+    }
+
+    public void setWarehouseId(Long warehouseId) {
+        this.warehouseId = warehouseId;
+    }
+
+    public Long getLocationId() {
+        return locationId;
+    }
+
+    public void setLocationId(Long locationId) {
+        this.locationId = locationId;
     }
 }
