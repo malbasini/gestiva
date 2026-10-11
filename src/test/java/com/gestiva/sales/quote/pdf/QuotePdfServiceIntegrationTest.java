@@ -35,7 +35,12 @@ class QuotePdfServiceIntegrationTest extends AbstractMySqlIntegrationTest {
     @BeforeEach
     void setUp() {
         Tenant tenant = testDataFactory.createTenant();
-        Customer customer = testDataFactory.createCustomer(tenant.getId(), "Rossi Srl");
+        // Configurazione numeratore preventivi
+        testDataFactory.createDocumentSequence(tenant.getId(), "QUOTE");
+        Customer customer = testDataFactory.createCustomer(
+                tenant.getId(),
+                "Rossi Srl"
+        );
         this.tenantId = tenant.getId();
         this.customerId = customer.getId();
     }

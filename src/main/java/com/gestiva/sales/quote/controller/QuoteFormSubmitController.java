@@ -5,7 +5,7 @@ import com.gestiva.sales.quote.service.QuoteService;
 import com.gestiva.security.usercontext.TenantContext;
 import com.gestiva.sales.quote.web.QuoteForm;
 import com.gestiva.sales.quote.web.QuoteManageWebService;
-import com.gestiva.inventory.item.web.ItemWebService;
+import com.gestiva.warehouse.item.web.ItemWebService;
 import jakarta.validation.Valid;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Controller;

@@ -42,11 +42,17 @@ class SalesOrderPdfServiceIntegrationTest extends AbstractMySqlIntegrationTest {
     @BeforeEach
     void setUp() {
         Tenant tenant = testDataFactory.createTenant();
-        Customer customer = testDataFactory.createCustomer(tenant.getId(), "Rossi Srl");
+        // Numeratore preventivi
+        testDataFactory.createDocumentSequence(tenant.getId(), "QUOTE");
+        // Numeratore ordini di vendita
+        testDataFactory.createDocumentSequence(tenant.getId(), "SALES_ORDER");
+        Customer customer = testDataFactory.createCustomer(
+                tenant.getId(),
+                "Rossi Srl"
+        );
         this.tenantId = tenant.getId();
         this.customerId = customer.getId();
     }
-
     @Test
     void generateSalesOrderPdf_shouldReturnNonEmptyPdf() {
         QuoteResponse quote = createSentQuote();

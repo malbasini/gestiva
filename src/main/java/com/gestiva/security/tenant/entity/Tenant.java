@@ -1,7 +1,7 @@
 package com.gestiva.security.tenant.entity;
 
 import com.gestiva.common.model.BaseEntity;
-import com.gestiva.inventory.valuation.model.InventoryValuationMethod;
+import com.gestiva.warehouse.inventory.valuation.model.InventoryValuationMethod;
 import jakarta.persistence.*;
 
 @Entity

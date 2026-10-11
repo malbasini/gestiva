@@ -3,7 +3,7 @@ package com.gestiva.sales.quote.controller;
 import com.gestiva.crm.contact.web.CustomerLookupWebService;
 import com.gestiva.sales.quote.web.QuoteManageWebService;
 import com.gestiva.security.usercontext.TenantContext;
-import com.gestiva.inventory.item.web.ItemWebService;
+import com.gestiva.warehouse.item.web.ItemWebService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;

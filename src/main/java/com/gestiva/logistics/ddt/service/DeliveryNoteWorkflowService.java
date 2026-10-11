@@ -3,7 +3,7 @@ package com.gestiva.logistics.ddt.service;
 import com.gestiva.billing.invoice.repository.InvoiceRepository;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
-import com.gestiva.inventory.movement.service.InventoryDocumentPostingService;
+import com.gestiva.warehouse.inventory.movement.service.InventoryDocumentPostingService;
 import com.gestiva.logistics.ddt.entity.DeliveryNote;
 import com.gestiva.logistics.ddt.repository.DeliveryNoteRepository;
 import org.springframework.stereotype.Service;

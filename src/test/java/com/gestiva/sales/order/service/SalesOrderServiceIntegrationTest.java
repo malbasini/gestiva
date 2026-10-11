@@ -42,7 +42,14 @@ class SalesOrderServiceIntegrationTest extends AbstractMySqlIntegrationTest {
     void setUp() {
         databaseCleaner.clean();
         Tenant tenant = testDataFactory.createTenant();
-        Customer customer = testDataFactory.createCustomer(tenant.getId(), "Rossi Srl");
+        // Numeratore preventivi
+        testDataFactory.createDocumentSequence(tenant.getId(), "QUOTE");
+        // Numeratore ordini di vendita
+        testDataFactory.createDocumentSequence(tenant.getId(), "SALES_ORDER");
+        Customer customer = testDataFactory.createCustomer(
+                tenant.getId(),
+                "Rossi Srl"
+        );
         this.tenantId = tenant.getId();
         this.customerId = customer.getId();
     }
@@ -59,7 +66,6 @@ class SalesOrderServiceIntegrationTest extends AbstractMySqlIntegrationTest {
         assertEquals("CONFIRMED", order.getStatus());
         assertEquals(quote.getTotalAmount(), order.getTotalAmount());
         assertEquals(2, order.getLines().size());
-        assertNotNull(order.getOrderNumber());
         assertTrue(order.getOrderNumber().startsWith("ORD-2026-"));
     }
 

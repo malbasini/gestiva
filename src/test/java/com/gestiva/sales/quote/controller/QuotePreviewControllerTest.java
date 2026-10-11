@@ -12,12 +12,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.security.test.context.support.WithMockUser;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.gestiva.security.auth.AuthenticatedUser;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+
+
 
     @AutoConfigureMockMvc
     class QuotePreviewControllerTest extends AbstractMySqlIntegrationTest {
@@ -37,7 +44,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         @BeforeEach
         void setUp() {
             Tenant tenant = testDataFactory.createTenant();
-            Customer customer = testDataFactory.createCustomer(tenant.getId(), "Rossi Srl");
+            // Inizializzazione numeratore preventivi
+            testDataFactory.createDocumentSequence(tenant.getId(), "QUOTE");
+            Customer customer = testDataFactory.createCustomer(
+                    tenant.getId(),
+                    "Rossi Srl"
+            );
             this.tenantId = tenant.getId();
             Long customerId = customer.getId();
 
@@ -62,9 +74,27 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         }
 
         @Test
-        @WithMockUser(username = "admin", roles = {"ADMIN"})
         void preview_shouldReturnHtmlPage() throws Exception {
+
+            AuthenticatedUser user = new AuthenticatedUser(
+                    1L,
+                    tenantId,
+                    "tenant-test",
+                    "admin@example.com",
+                    "test-password",
+                    true,
+                    List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+            );
+
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            user,
+                            null,
+                            user.getAuthorities()
+                    );
+
             mockMvc.perform(get("/quotes/{id}/preview", quoteId)
+                            .with(authentication(authentication))
                             .header("X-Tenant-Id", tenantId))
                     .andExpect(status().isOk())
                     .andExpect(view().name("quote/quote-preview"))

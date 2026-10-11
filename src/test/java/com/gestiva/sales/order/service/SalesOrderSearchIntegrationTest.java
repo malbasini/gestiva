@@ -43,32 +43,53 @@ class SalesOrderSearchIntegrationTest extends AbstractMySqlIntegrationTest {
     private Long orderAId;
     private Long orderBId;
     private Long quoteAId;
-    
+
     @BeforeEach
     void setUp() {
         Tenant tenant = testDataFactory.createTenant();
         Tenant otherTenant = testDataFactory.createTenant();
-
-        Customer customerA = testDataFactory.createCustomer(tenant.getId(), "Rossi Srl");
-        Customer customerB = testDataFactory.createCustomer(tenant.getId(), "Bianchi Srl");
-        Customer otherCustomer = testDataFactory.createCustomer(otherTenant.getId(), "Alfa Srl");
-
+        // Numeratori del primo tenant
+        testDataFactory.createDocumentSequence(tenant.getId(), "QUOTE");
+        testDataFactory.createDocumentSequence(tenant.getId(), "SALES_ORDER");
+        // Numeratori del secondo tenant
+        testDataFactory.createDocumentSequence(otherTenant.getId(), "QUOTE");
+        testDataFactory.createDocumentSequence(otherTenant.getId(), "SALES_ORDER");
+        Customer customerA = testDataFactory.createCustomer(
+                tenant.getId(), "Rossi Srl"
+        );
+        Customer customerB = testDataFactory.createCustomer(
+                tenant.getId(), "Bianchi Srl"
+        );
+        Customer otherCustomer = testDataFactory.createCustomer(
+                otherTenant.getId(), "Alfa Srl"
+        );
         this.tenantId = tenant.getId();
         this.otherTenantId = otherTenant.getId();
         this.customerAId = customerA.getId();
         this.customerBId = customerB.getId();
-
-        QuoteResponse quoteA = createSentQuote(tenantId, customerAId, "Modulo CRM", "1000.00");
-        QuoteResponse quoteB = createSentQuote(tenantId, customerBId, "Setup", "200.00");
-        QuoteResponse otherTenantQuote = createSentQuote(otherTenantId, otherCustomer.getId(), "Servizio Altro Tenant", "500.00");
+        QuoteResponse quoteA = createSentQuote(
+                tenantId, customerAId, "Modulo CRM", "1000.00"
+        );
+        QuoteResponse quoteB = createSentQuote(
+                tenantId, customerBId, "Setup", "200.00"
+        );
+        QuoteResponse otherTenantQuote = createSentQuote(
+                otherTenantId,
+                otherCustomer.getId(),
+                "Servizio Altro Tenant",
+                "500.00"
+        );
 
         this.quoteAId = quoteA.getId();
-        quoteB.getId();
-
-        SalesOrderResponse orderA = salesOrderService.convertFromQuote(tenantId, quoteA.getId());
-        SalesOrderResponse orderB = salesOrderService.convertFromQuote(tenantId, quoteB.getId());
-        salesOrderService.convertFromQuote(otherTenantId, otherTenantQuote.getId());
-
+        SalesOrderResponse orderA = salesOrderService.convertFromQuote(
+                tenantId, quoteA.getId()
+        );
+        SalesOrderResponse orderB = salesOrderService.convertFromQuote(
+                tenantId, quoteB.getId()
+        );
+        salesOrderService.convertFromQuote(
+                otherTenantId, otherTenantQuote.getId()
+        );
         this.orderAId = orderA.getId();
         this.orderBId = orderB.getId();
     }

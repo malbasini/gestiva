@@ -2,9 +2,9 @@ package com.gestiva.logistics.ddt.service;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
-import com.gestiva.inventory.movement.repository.InventoryMovementRepository;
-import com.gestiva.inventory.movement.service.InventoryDocumentPostingService;
-import com.gestiva.inventory.movement.service.InventoryMovementService;
+import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
+import com.gestiva.warehouse.inventory.movement.service.InventoryDocumentPostingService;
+import com.gestiva.warehouse.inventory.movement.service.InventoryMovementService;
 import com.gestiva.logistics.ddt.dto.DeliveryNoteResponse;
 import com.gestiva.logistics.ddt.entity.DeliveryNote;
 import com.gestiva.logistics.ddt.entity.DeliveryNoteLine;

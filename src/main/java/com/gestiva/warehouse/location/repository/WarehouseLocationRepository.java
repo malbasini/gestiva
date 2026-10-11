@@ -2,7 +2,6 @@ package com.gestiva.warehouse.location.repository;
 
 import com.gestiva.warehouse.location.entity.WarehouseLocation;
 import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
 import java.util.Optional;
 

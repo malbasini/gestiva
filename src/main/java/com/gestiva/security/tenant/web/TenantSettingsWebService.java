@@ -1,7 +1,7 @@
 package com.gestiva.security.tenant.web;
 
 import com.gestiva.common.exception.BusinessException;
-import com.gestiva.inventory.valuation.model.InventoryValuationMethod;
+import com.gestiva.warehouse.inventory.valuation.model.InventoryValuationMethod;
 import com.gestiva.security.tenant.repository.TenantRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

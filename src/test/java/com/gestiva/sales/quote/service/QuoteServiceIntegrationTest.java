@@ -38,7 +38,11 @@ class QuoteServiceIntegrationTest extends AbstractMySqlIntegrationTest {
     void cleanAndSetUp() {
         databaseCleaner.clean();
         Tenant tenant = testDataFactory.createTenant();
-        Customer customer = testDataFactory.createCustomer(tenant.getId(), "Rossi Srl");
+        testDataFactory.createDocumentSequence(tenant.getId(), "QUOTE");
+        Customer customer = testDataFactory.createCustomer(
+                tenant.getId(),
+                "Rossi Srl"
+        );
         this.tenantId = tenant.getId();
         this.customerId = customer.getId();
     }

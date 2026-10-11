@@ -1,16 +1,15 @@
 package com.gestiva.purchasing.receipt.service;
 
 import com.gestiva.common.exception.BusinessException;
-import com.gestiva.inventory.movement.entity.InventoryMovement;
-import com.gestiva.inventory.movement.repository.InventoryMovementRepository;
-import com.gestiva.inventory.movement.service.InventoryDocumentPostingService;
+import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
+import com.gestiva.warehouse.inventory.movement.service.InventoryDocumentPostingService;
 import com.gestiva.purchasing.order.repository.PurchaseOrderLineRepository;
 import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
 import com.gestiva.purchasing.receipt.entity.GoodsReceipt;
 import com.gestiva.purchasing.receipt.entity.GoodsReceiptLine;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptLineRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
-import com.gestiva.inventory.item.repository.ItemRepository;
+import com.gestiva.warehouse.item.repository.ItemRepository;
 import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

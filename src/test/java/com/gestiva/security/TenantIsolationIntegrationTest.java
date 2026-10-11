@@ -46,10 +46,18 @@ class TenantIsolationIntegrationTest extends AbstractMySqlIntegrationTest {
         databaseCleaner.clean();
         Tenant tenantA = testDataFactory.createTenant();
         Tenant tenantB = testDataFactory.createTenant();
-
-        Customer customerA = testDataFactory.createCustomer(tenantA.getId(), "Rossi Srl");
-        Customer customerB = testDataFactory.createCustomer(tenantB.getId(), "Bianchi Srl");
-
+        // Numeratore preventivi tenant A
+        testDataFactory.createDocumentSequence(tenantA.getId(), "QUOTE");
+        // Numeratore preventivi tenant B
+        testDataFactory.createDocumentSequence(tenantB.getId(), "QUOTE");
+        Customer customerA = testDataFactory.createCustomer(
+                tenantA.getId(),
+                "Rossi Srl"
+        );
+        Customer customerB = testDataFactory.createCustomer(
+                tenantB.getId(),
+                "Bianchi Srl"
+        );
         this.tenantAId = tenantA.getId();
         this.tenantBId = tenantB.getId();
         this.customerAId = customerA.getId();

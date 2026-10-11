@@ -48,8 +48,7 @@ public class BillingOrder extends TenantAwareEntity {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
-    @Lob
-    @Column(name = "raw_payload")
+    @Column(name = "raw_payload", columnDefinition = "LONGTEXT")
     private String rawPayload;
 
     public String getPlanCode() {
