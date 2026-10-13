@@ -7,21 +7,20 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Access(AccessType.FIELD)
 @Table(
         name = "account",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_account_tenant_code", columnNames = {"tenant_id", "code"})
-        },
         indexes = {
                 @Index(name = "idx_account_tenant_type", columnList = "tenant_id,account_type"),
                 @Index(name = "idx_account_tenant_active", columnList = "tenant_id,active")
         }
 )
 public class Account extends TenantAwareEntity {
+
+    @Column(name = "company_id")
+    private Long companyId;
 
     @Column(name = "code", nullable = false, length = 30)
     private String code;
@@ -114,5 +113,13 @@ public class Account extends TenantAwareEntity {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 }

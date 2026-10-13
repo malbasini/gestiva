@@ -15,6 +15,25 @@ public class AccountChartBootstrapService {
         this.accountRepository = accountRepository;
     }
 
+    public void initializeDefaultChartOfAccounts(
+            Long tenantId,
+            Long companyId
+    ) {
+        if (tenantId == null || companyId == null) {
+            throw new IllegalArgumentException(
+                    "Tenant e società sono obbligatori."
+            );
+        }
+
+        if (!accountRepository
+                .findByTenantIdAndCompanyIdOrderByCodeAsc(
+                        tenantId, companyId
+                ).isEmpty()) {
+            return;
+        }
+
+        createDefaultChart(tenantId, companyId);
+    }
     public void initializeDefaultChartOfAccounts(Long tenantId) {
         if (!accountRepository.findByTenantIdOrderByCodeAsc(tenantId).isEmpty()) {
             return;
@@ -80,4 +99,57 @@ public class AccountChartBootstrapService {
 
         accountRepository.save(a);
     }
+
+    private void createDefaultChart(Long tenantId, Long companyId) {
+        String[][] accounts = {
+                {"1000", "Attività", "ASSET", "DEBIT", null, "1", "false"},
+                {"1100", "Disponibilità liquide", "ASSET", "DEBIT", "1000", "2", "false"},
+                {"1110", "Cassa", "ASSET", "DEBIT", "1100", "3", "true"},
+                {"1120", "Banca", "ASSET", "DEBIT", "1100", "3", "true"},
+                {"1200", "Crediti commerciali", "ASSET", "DEBIT", "1000", "2", "false"},
+                {"1210", "Crediti verso clienti", "ASSET", "DEBIT", "1200", "3", "true"},
+                {"2000", "Passività", "LIABILITY", "CREDIT", null, "1", "false"},
+                {"2100", "Debiti commerciali", "LIABILITY", "CREDIT", "2000", "2", "false"},
+                {"2110", "Debiti verso fornitori", "LIABILITY", "CREDIT", "2100", "3", "true"},
+                {"2200", "Debiti tributari", "LIABILITY", "CREDIT", "2000", "2", "false"},
+                {"2210", "IVA a debito", "LIABILITY", "CREDIT", "2200", "3", "true"},
+                {"2220", "IVA a credito", "ASSET", "DEBIT", "1000", "2", "true"},
+                {"3000", "Patrimonio netto", "EQUITY", "CREDIT", null, "1", "true"},
+                {"4000", "Ricavi", "REVENUE", "CREDIT", null, "1", "false"},
+                {"4100", "Ricavi da vendite", "REVENUE", "CREDIT", "4000", "2", "true"},
+                {"5000", "Costi", "COST", "DEBIT", null, "1", "false"},
+                {"5100", "Acquisti merci", "COST", "DEBIT", "5000", "2", "true"},
+                {"5200", "Costi per servizi", "COST", "DEBIT", "5000", "2", "true"},
+                {"5300", "Spese bancarie", "COST", "DEBIT", "5000", "2", "true"}
+        };
+
+        for (String[] row : accounts) {
+            Account account = new Account();
+            account.setTenantId(tenantId);
+            account.setCompanyId(companyId);
+            account.setCode(row[0]);
+            account.setName(row[1]);
+            account.setAccountType(row[2]);
+            account.setNature(row[3]);
+            account.setLevelNo(Integer.parseInt(row[5]));
+            account.setLeafAccount(Boolean.parseBoolean(row[6]));
+            account.setSystemAccount(true);
+            account.setActive(true);
+
+            if (row[4] != null) {
+                Long parentId = accountRepository
+                        .findByTenantIdAndCompanyIdAndCode(
+                                tenantId, companyId, row[4]
+                        )
+                        .map(Account::getId)
+                        .orElseThrow(() -> new IllegalStateException(
+                                "Conto padre non trovato: " + row[4]
+                        ));
+
+                account.setParentId(parentId);
+            }
+            accountRepository.save(account);
+        }
+    }
+
 }

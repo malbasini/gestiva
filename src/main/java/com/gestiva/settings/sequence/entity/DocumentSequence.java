@@ -13,10 +13,16 @@ import jakarta.persistence.UniqueConstraint;
 @Table(
         name = "document_sequence",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_document_sequence_tenant_type", columnNames = {"tenant_id", "document_type"})
+                @UniqueConstraint(
+                        name = "uk_document_sequence_tenant_company_type",
+                        columnNames = {"tenant_id", "company_id", "document_type"}
+                )
         }
 )
 public class DocumentSequence extends TenantAwareEntity {
+
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
 
     @Column(name = "document_type", nullable = false, length = 50)
     private String documentType;
@@ -60,5 +66,13 @@ public class DocumentSequence extends TenantAwareEntity {
 
     public void setPaddingSize(Integer paddingSize) {
         this.paddingSize = paddingSize;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 }

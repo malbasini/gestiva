@@ -24,7 +24,49 @@ public class DocumentSequenceService {
     public DocumentSequenceService(DocumentSequenceRepository documentSequenceRepository) {
         this.documentSequenceRepository = documentSequenceRepository;
     }
+    public String nextNumber(Long tenantId, Long companyId, String documentType) {
 
+        if (tenantId == null) {
+            throw new BusinessException("Tenant non valido.");
+        }
+
+        if (companyId == null) {
+            throw new BusinessException("Società non selezionata.");
+        }
+
+        if (documentType == null || documentType.trim().isEmpty()) {
+            throw new BusinessException("Tipo documento non valido.");
+        }
+
+        String normalizedType = documentType.trim();
+
+        DocumentSequence sequence = documentSequenceRepository
+                .findForUpdate(tenantId, companyId, normalizedType)
+                .orElseThrow(() -> new BusinessException(
+                        "Numeratore non configurato per la società selezionata: "
+                                + normalizedType
+                ));
+
+        long currentNumber = sequence.getNextNumber() != null
+                ? sequence.getNextNumber()
+                : 1L;
+
+        int paddingSize = sequence.getPaddingSize() != null
+                ? sequence.getPaddingSize()
+                : 5;
+
+        String prefix = sequence.getPrefix() != null
+                ? sequence.getPrefix()
+                : "";
+
+        String formattedNumber = prefix + leftPad(currentNumber, paddingSize);
+
+        sequence.setNextNumber(currentNumber + 1);
+
+        documentSequenceRepository.save(sequence);
+
+        return formattedNumber;
+    }
     public String nextNumber(Long tenantId, String documentType) {
         if (tenantId == null) {
             throw new BusinessException("Tenant non valido.");
@@ -81,6 +123,10 @@ public class DocumentSequenceService {
 
     public String nextJournalEntryNumber(Long tenantId) {
         return nextNumber(tenantId, JOURNAL_ENTRY);
+    }
+
+    public String nextJournalEntryNumber(Long tenantId, Long companyId) {
+        return nextNumber(tenantId, companyId, JOURNAL_ENTRY);
     }
 
     private String leftPad(long value, int paddingSize) {

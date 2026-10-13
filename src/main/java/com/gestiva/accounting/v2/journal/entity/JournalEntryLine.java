@@ -15,11 +15,28 @@ import java.math.BigDecimal;
 @Table(
         name = "journal_entry_line",
         indexes = {
-                @Index(name = "idx_journal_entry_line_tenant_entry", columnList = "tenant_id,journal_entry_id"),
-                @Index(name = "idx_journal_entry_line_tenant_account", columnList = "tenant_id,account_id")
+                @Index(
+                        name = "idx_journal_entry_line_tenant_entry",
+                        columnList = "tenant_id,journal_entry_id"
+                ),
+                @Index(
+                        name = "idx_journal_entry_line_tenant_account",
+                        columnList = "tenant_id,account_id"
+                ),
+                @Index(
+                        name = "idx_journal_line_company_entry",
+                        columnList = "tenant_id,company_id,journal_entry_id"
+                ),
+                @Index(
+                        name = "idx_journal_line_company_account",
+                        columnList = "tenant_id,company_id,account_id"
+                )
         }
 )
 public class JournalEntryLine extends TenantAwareEntity {
+
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
 
     @Column(name = "journal_entry_id", nullable = false)
     private Long journalEntryId;
@@ -85,5 +102,13 @@ public class JournalEntryLine extends TenantAwareEntity {
 
     public void setCreditAmount(BigDecimal creditAmount) {
         this.creditAmount = creditAmount;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 }

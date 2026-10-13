@@ -17,15 +17,24 @@ import java.time.LocalDate;
 @Table(
         name = "journal_entry",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_journal_entry_tenant_number", columnNames = {"tenant_id", "entry_number"})
+                @UniqueConstraint(
+                        name = "uk_journal_entry_tenant_company_number",
+                        columnNames = {"tenant_id", "company_id", "entry_number"}
+                )
         },
         indexes = {
                 @Index(name = "idx_journal_entry_tenant_date", columnList = "tenant_id,entry_date"),
                 @Index(name = "idx_journal_entry_tenant_causal", columnList = "tenant_id,causal_code"),
-                @Index(name = "idx_journal_entry_tenant_ref", columnList = "tenant_id,reference_type,reference_id")
+                @Index(name = "idx_journal_entry_tenant_ref", columnList = "tenant_id,reference_type,reference_id"),
+                @Index(name = "idx_journal_entry_company_date", columnList = "tenant_id,company_id,entry_date"),
+                @Index(name = "idx_journal_entry_company_causal", columnList = "tenant_id,company_id,causal_code"),
+                @Index(name = "idx_journal_entry_company_ref", columnList = "tenant_id,company_id,reference_type,reference_id")
         }
 )
 public class JournalEntry extends TenantAwareEntity {
+
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
 
     @Column(name = "entry_number", nullable = false, length = 50)
     private String entryNumber;
@@ -146,5 +155,13 @@ public class JournalEntry extends TenantAwareEntity {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 }
