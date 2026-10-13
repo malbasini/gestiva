@@ -187,10 +187,18 @@
                     </li>
                 </ul>
                 <div class="ms-auto d-flex align-items-center text-white small">
-                <span class="me-3" th:if="${currentUser != null}">
-                     Tenant: &nbsp;<span th:text="${currentUser.tenantName != null ? currentUser.tenantName : 'Tenant'}">Verdi Spa</span>
-                </span>
-                <span class="me-3" th:if="${currentUser != null}">
+                    <!-- Società attiva -->
+                    <a th:href="@{/company/select}"
+                       th:if="${currentUser != null}"
+                       class="text-white text-decoration-none me-3"
+                       title="Visualizza o cambia società">
+                        <i class="bi bi-buildings me-1"></i>
+                        <span th:text="${activeCompanyName != null ? activeCompanyName : 'Seleziona società'}">
+                             Seleziona società
+                        </span>
+                        <i class="bi bi-chevron-down ms-1"></i>
+                    </a>
+                    <span class="me-3" th:if="${currentUser != null}">
                      <i class="bi bi-person-circle me-1"></i><span th:text="${currentUser.fullName != null ? currentUser.fullName : 'Marco Albasini'}"></span>
                  </span>
                 <form th:action="@{/logout}" method="post" class="m-0">

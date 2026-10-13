@@ -12,6 +12,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -98,4 +101,52 @@ public class CompanyAccessService {
 
         return company;
     }
+
+    public List<Company> findAccessibleCompanies() {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken
+                || !(authentication.getPrincipal() instanceof AuthenticatedUser authenticatedUser)) {
+
+            throw new AccessDeniedException("Utente non autenticato");
+        }
+
+        Long tenantId = authenticatedUser.getTenantId();
+        Long userId = authenticatedUser.getUserId();
+
+        if (tenantId == null || userId == null) {
+            throw new AccessDeniedException("Contesto utente non valido");
+        }
+
+        AppUser user = appUserRepository
+                .findByTenantIdAndId(tenantId, userId)
+                .orElseThrow(() ->
+                        new AccessDeniedException("Utente non autorizzato"));
+
+        if (!"ACTIVE".equals(user.getStatus())) {
+            throw new AccessDeniedException("Utente non attivo");
+        }
+
+        List<Company> activeCompanies =
+                companyRepository.findByTenantIdAndActiveTrueOrderByLegalNameAsc(tenantId);
+
+        if (user.isAdmin()) {
+            return activeCompanies;
+        }
+
+        Set<Long> authorizedCompanyIds = userCompanyAccessRepository
+                .findByTenantIdAndUserId(tenantId, userId)
+                .stream()
+                .map(access -> access.getCompanyId())
+                .collect(Collectors.toSet());
+
+        return activeCompanies.stream()
+                .filter(company -> authorizedCompanyIds.contains(company.getId()))
+                .toList();
+    }
+
 }
