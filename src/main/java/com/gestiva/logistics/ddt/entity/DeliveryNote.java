@@ -9,7 +9,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "delivery_note")
+@Table(
+        name = "delivery_note",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_delivery_note_tenant_company_number",
+                        columnNames = {"tenant_id", "company_id", "ddt_number"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_delivery_note_tenant", columnList = "tenant_id"),
+                @Index(name = "idx_delivery_note_sales_order", columnList = "tenant_id, sales_order_id"),
+                @Index(name = "idx_delivery_note_customer", columnList = "tenant_id, customer_id"),
+                @Index(name = "idx_delivery_note_date", columnList = "tenant_id, ddt_date"),
+                @Index(name = "idx_delivery_note_company_date", columnList = "tenant_id, company_id, ddt_date"),
+                @Index(name = "idx_delivery_note_company_sales_order", columnList = "tenant_id, company_id, sales_order_id"),
+                @Index(name = "idx_delivery_note_company_customer", columnList = "tenant_id, company_id, customer_id")
+        }
+)
 public class DeliveryNote {
 
     @Id
@@ -19,6 +36,9 @@ public class DeliveryNote {
     @Setter
     @Column(name = "tenant_id", nullable = false)
     private Long tenantId;
+
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
 
     @Column(name = "sales_order_id", nullable = false)
     private Long salesOrderId;
@@ -228,5 +248,13 @@ public class DeliveryNote {
 
     public void setTenantId(Long tenantId) {
         this.tenantId = tenantId;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 }

@@ -12,10 +12,12 @@ import com.gestiva.common.exception.BusinessException;
 import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import com.gestiva.security.company.context.CompanyContext;
+
+
 
 @Service
 @Transactional
@@ -26,6 +28,7 @@ public class JournalAutoPostingService {
     private final AccountRepository accountRepository;
     private final DocumentSequenceService documentSequenceService;
     private final InvoiceRepository invoiceRepository;
+    private final CompanyContext companyContext;
 
 
 
@@ -34,13 +37,15 @@ public class JournalAutoPostingService {
                                      JournalEntryLineRepository journalEntryLineRepository,
                                      AccountRepository accountRepository,
                                      DocumentSequenceService documentSequenceService,
-                                     InvoiceRepository invoiceRepository) {
+                                     InvoiceRepository invoiceRepository,
+                                     CompanyContext companyContext) {
 
         this.journalEntryRepository = journalEntryRepository;
         this.journalEntryLineRepository = journalEntryLineRepository;
         this.accountRepository = accountRepository;
         this.documentSequenceService = documentSequenceService;
         this.invoiceRepository = invoiceRepository;
+        this.companyContext = companyContext;
     }
 
     public Long postCustomerReceipt(Long tenantId,
@@ -51,14 +56,15 @@ public class JournalAutoPostingService {
                                     Long paymentDueId,
                                     String notes) {
 
+        Long companyId = requireCompanyId();
         BigDecimal value = scale(amount);
-
-        Account bank = requireAccount(tenantId, "1120");
-        Account customerReceivables = requireAccount(tenantId, "1210");
+        Account bank = requireAccount(tenantId, companyId,"1120");
+        Account customerReceivables = requireAccount(tenantId, companyId,"1210");
 
         JournalEntry entry = new JournalEntry();
         entry.setTenantId(tenantId);
-        entry.setEntryNumber(nextEntryNumber(tenantId));
+        entry.setCompanyId(companyId);
+        entry.setEntryNumber(nextEntryNumber(tenantId, companyId));
         entry.setEntryDate(entryDate);
         entry.setCausalCode("CUSTOMER_RECEIPT");
         entry.setDescription("Incasso cliente su scadenza " + documentNumber);
@@ -74,6 +80,7 @@ public class JournalAutoPostingService {
 
         JournalEntryLine line1 = new JournalEntryLine();
         line1.setTenantId(tenantId);
+        line1.setCompanyId(companyId);
         line1.setJournalEntryId(saved.getId());
         line1.setLineNo(1);
         line1.setAccountId(bank.getId());
@@ -83,6 +90,7 @@ public class JournalAutoPostingService {
 
         JournalEntryLine line2 = new JournalEntryLine();
         line2.setTenantId(tenantId);
+        line2.setCompanyId(companyId);
         line2.setJournalEntryId(saved.getId());
         line2.setLineNo(2);
         line2.setAccountId(customerReceivables.getId());
@@ -104,14 +112,16 @@ public class JournalAutoPostingService {
                                     Long paymentDueId,
                                     String notes) {
 
+        Long companyId = requireCompanyId();
         BigDecimal value = scale(amount);
 
-        Account bank = requireAccount(tenantId, "1120");
-        Account supplierPayables = requireAccount(tenantId, "2110");
+        Account bank = requireAccount(tenantId, companyId,"1120");
+        Account supplierPayables = requireAccount(tenantId, companyId,"2110");
 
         JournalEntry entry = new JournalEntry();
         entry.setTenantId(tenantId);
-        entry.setEntryNumber(nextEntryNumber(tenantId));
+        entry.setCompanyId(companyId);
+        entry.setEntryNumber(nextEntryNumber(tenantId, companyId));
         entry.setEntryDate(entryDate);
         entry.setCausalCode("SUPPLIER_PAYMENT");
         entry.setDescription("Pagamento fornitore su scadenza " + documentNumber);
@@ -127,6 +137,7 @@ public class JournalAutoPostingService {
 
         JournalEntryLine line1 = new JournalEntryLine();
         line1.setTenantId(tenantId);
+        line1.setCompanyId(companyId);
         line1.setJournalEntryId(saved.getId());
         line1.setLineNo(1);
         line1.setAccountId(supplierPayables.getId());
@@ -136,6 +147,7 @@ public class JournalAutoPostingService {
 
         JournalEntryLine line2 = new JournalEntryLine();
         line2.setTenantId(tenantId);
+        line2.setCompanyId(companyId);
         line2.setJournalEntryId(saved.getId());
         line2.setLineNo(2);
         line2.setAccountId(bank.getId());
@@ -149,13 +161,29 @@ public class JournalAutoPostingService {
         return saved.getId();
     }
 
-    private Account requireAccount(Long tenantId, String code) {
-        return accountRepository.findByTenantIdAndCode(tenantId, code)
-                .orElseThrow(() -> new BusinessException("Conto contabile V2 non trovato: " + code));
+    private Long requireCompanyId() {
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        return companyId;
     }
 
-    private String nextEntryNumber(Long tenantId) {
-        return documentSequenceService.nextJournalEntryNumber(tenantId);
+    private Account requireAccount(Long tenantId, Long companyId, String code) {
+        return accountRepository
+                .findByTenantIdAndCompanyIdAndCode(tenantId, companyId, code)
+                .orElseThrow(() -> new BusinessException(
+                        "Conto contabile non trovato nella società attiva: " + code
+                ));
+    }
+
+    private String nextEntryNumber(Long tenantId, Long companyId) {
+        return documentSequenceService.nextJournalEntryNumber(
+                tenantId,
+                companyId
+        );
     }
 
     private BigDecimal scale(BigDecimal value) {
@@ -178,17 +206,19 @@ public class JournalAutoPostingService {
                                     Long invoiceId,
                                     String notes) {
 
+        Long companyId = requireCompanyId();
         BigDecimal imponibile = scale(taxableAmount);
         BigDecimal iva = scale(taxAmount);
         BigDecimal totale = scale(totalAmount);
 
-        Account customerReceivables = requireAccount(tenantId, "1210");
-        Account salesRevenue = requireAccount(tenantId, "4100");
-        Account vatOutput = requireAccount(tenantId, "2210");
+        Account customerReceivables = requireAccount(tenantId, companyId,"1210");
+        Account salesRevenue = requireAccount(tenantId, companyId,"4100");
+        Account vatOutput = requireAccount(tenantId, companyId,"2210");
 
         JournalEntry entry = new JournalEntry();
         entry.setTenantId(tenantId);
-        entry.setEntryNumber(nextEntryNumber(tenantId));
+        entry.setCompanyId(companyId);
+        entry.setEntryNumber(nextEntryNumber(tenantId, companyId));
         entry.setEntryDate(entryDate);
         entry.setCausalCode("SALES_INVOICE");
         entry.setDescription("Fattura cliente " + documentNumber);
@@ -204,6 +234,7 @@ public class JournalAutoPostingService {
 
         JournalEntryLine line1 = new JournalEntryLine();
         line1.setTenantId(tenantId);
+        line1.setCompanyId(companyId);
         line1.setJournalEntryId(saved.getId());
         line1.setLineNo(1);
         line1.setAccountId(customerReceivables.getId());
@@ -213,6 +244,7 @@ public class JournalAutoPostingService {
 
         JournalEntryLine line2 = new JournalEntryLine();
         line2.setTenantId(tenantId);
+        line2.setCompanyId(companyId);
         line2.setJournalEntryId(saved.getId());
         line2.setLineNo(2);
         line2.setAccountId(salesRevenue.getId());
@@ -222,13 +254,18 @@ public class JournalAutoPostingService {
 
         JournalEntryLine line3 = new JournalEntryLine();
         line3.setTenantId(tenantId);
+        line3.setCompanyId(companyId);
         line3.setJournalEntryId(saved.getId());
         line3.setLineNo(3);
         line3.setAccountId(vatOutput.getId());
         line3.setDescription("IVA a debito");
         line3.setDebitAmount(zero());
         line3.setCreditAmount(iva);
-        Invoice invoice = invoiceRepository.findByTenantIdAndId(tenantId, invoiceId).orElse(null);
+        Invoice invoice = invoiceRepository
+                .findByTenantIdAndCompanyIdAndId(tenantId, companyId, invoiceId)
+                .orElseThrow(() -> new BusinessException(
+                        "Fattura non trovata nella società attiva."
+                ));
         if (invoice != null) {
             invoice.setStatus("ISSUED");
             invoiceRepository.save(invoice);
@@ -249,17 +286,19 @@ public class JournalAutoPostingService {
                                     Long supplierInvoiceId,
                                     String notes) {
 
+        Long companyId = requireCompanyId();
         BigDecimal imponibile = scale(taxableAmount);
         BigDecimal iva = scale(taxAmount);
         BigDecimal totale = scale(totalAmount);
 
-        Account purchaseCosts = requireAccount(tenantId, "5100");
-        Account vatInput = requireAccount(tenantId, "2220");
-        Account supplierPayables = requireAccount(tenantId, "2110");
+        Account purchaseCosts = requireAccount(tenantId,companyId, "5100");
+        Account vatInput = requireAccount(tenantId, companyId,"2220");
+        Account supplierPayables = requireAccount(tenantId,companyId, "2110");
 
         JournalEntry entry = new JournalEntry();
         entry.setTenantId(tenantId);
-        entry.setEntryNumber(nextEntryNumber(tenantId));
+        entry.setCompanyId(companyId);
+        entry.setEntryNumber(nextEntryNumber(tenantId, companyId));
         entry.setEntryDate(entryDate);
         entry.setCausalCode("PURCHASE_INVOICE");
         entry.setDescription("Fattura fornitore " + documentNumber);
@@ -275,6 +314,7 @@ public class JournalAutoPostingService {
 
         JournalEntryLine line1 = new JournalEntryLine();
         line1.setTenantId(tenantId);
+        line1.setCompanyId(companyId);
         line1.setJournalEntryId(saved.getId());
         line1.setLineNo(1);
         line1.setAccountId(purchaseCosts.getId());
@@ -284,6 +324,7 @@ public class JournalAutoPostingService {
 
         JournalEntryLine line2 = new JournalEntryLine();
         line2.setTenantId(tenantId);
+        line2.setCompanyId(companyId);
         line2.setJournalEntryId(saved.getId());
         line2.setLineNo(2);
         line2.setAccountId(vatInput.getId());
@@ -293,6 +334,7 @@ public class JournalAutoPostingService {
 
         JournalEntryLine line3 = new JournalEntryLine();
         line3.setTenantId(tenantId);
+        line3.setCompanyId(companyId);
         line3.setJournalEntryId(saved.getId());
         line3.setLineNo(3);
         line3.setAccountId(supplierPayables.getId());
@@ -306,15 +348,4 @@ public class JournalAutoPostingService {
 
         return saved.getId();
     }
-
-
-
-
-
-
-
-
-
-
-
 }

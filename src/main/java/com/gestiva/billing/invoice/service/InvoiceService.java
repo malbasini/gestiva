@@ -16,7 +16,7 @@ import com.gestiva.logistics.ddt.repository.DeliveryNoteRepository;
 import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.gestiva.security.company.context.CompanyContext;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -33,7 +33,7 @@ public class InvoiceService {
     private final PaymentDueService paymentDueService;
     private final JournalAutoPostingService journalAutoPostingService;
     private final DocumentSequenceService documentSequenceService;
-
+    private final CompanyContext companyContext;
 
 
     public InvoiceService(InvoiceRepository invoiceRepository,
@@ -42,7 +42,8 @@ public class InvoiceService {
                           DeliveryNoteLineRepository deliveryNoteLineRepository,
                           PaymentDueService paymentDueService,
                           JournalAutoPostingService journalAutoPostingService,
-                          DocumentSequenceService documentSequenceService) {
+                          DocumentSequenceService documentSequenceService,
+                          CompanyContext companyContext) {
 
         this.invoiceRepository = invoiceRepository;
         this.invoiceLineRepository = invoiceLineRepository;
@@ -51,13 +52,28 @@ public class InvoiceService {
         this.paymentDueService = paymentDueService;
         this.journalAutoPostingService = journalAutoPostingService;
         this.documentSequenceService = documentSequenceService;
+        this.companyContext = companyContext;
     }
-
     public InvoiceResponse createFromDeliveryNote(Long tenantId, Long deliveryNoteId) {
-        DeliveryNote deliveryNote = deliveryNoteRepository.findByTenantIdAndId(tenantId, deliveryNoteId)
-                .orElseThrow(() -> new NotFoundException("DDT non trovato"));
-
-        validateDeliveryNoteCanGenerateInvoice(deliveryNote, tenantId, deliveryNoteId);
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException("Nessuna società attiva selezionata.");
+        }
+        DeliveryNote deliveryNote = deliveryNoteRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        deliveryNoteId
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "DDT non trovato nella società attiva."
+                ));
+        validateDeliveryNoteCanGenerateInvoice(
+                deliveryNote,
+                tenantId,
+                companyId,
+                deliveryNoteId
+        );
 
         List<DeliveryNoteLine> deliveryNoteLines = deliveryNoteLineRepository
                 .findByTenantIdAndDeliveryNoteIdOrderByLineNoAsc(tenantId, deliveryNoteId);
@@ -70,10 +86,11 @@ public class InvoiceService {
 
         Invoice invoice = new Invoice();
         invoice.setTenantId(tenantId);
+        invoice.setCompanyId(companyId);
         invoice.setDeliveryNoteId(deliveryNote.getId());
         invoice.setSalesOrderId(deliveryNote.getSalesOrderId());
         invoice.setCustomerId(deliveryNote.getCustomerId());
-        invoice.setInvoiceNumber(generateNextInvoiceNumber(tenantId));
+        invoice.setInvoiceNumber(generateNextInvoiceNumber(tenantId, companyId));
         invoice.setInvoiceDate(LocalDate.now());
         invoice.setStatus("DRAFT");
         invoice.setCurrencyCode(deliveryNote.getCurrencyCode());
@@ -125,21 +142,34 @@ public class InvoiceService {
         return toResponse(savedInvoice);
     }
 
-    private void validateDeliveryNoteCanGenerateInvoice(DeliveryNote deliveryNote,
-                                                        Long tenantId,
-                                                        Long deliveryNoteId) {
+    private void validateDeliveryNoteCanGenerateInvoice(
+            DeliveryNote deliveryNote,
+            Long tenantId,
+            Long companyId,
+            Long deliveryNoteId) {
         if (!"ISSUED".equals(deliveryNote.getStatus())) {
-            throw new BusinessException("La fattura può essere creata solo da un DDT ISSUED.");
+            throw new BusinessException(
+                    "La fattura può essere creata solo da un DDT ISSUED."
+            );
         }
-
-        boolean alreadyExists = invoiceRepository.existsByTenantIdAndDeliveryNoteId(tenantId, deliveryNoteId);
+        boolean alreadyExists = invoiceRepository
+                .existsByTenantIdAndCompanyIdAndDeliveryNoteId(
+                        tenantId,
+                        companyId,
+                        deliveryNoteId
+                );
         if (alreadyExists) {
-            throw new BusinessException("Esiste già una fattura associata a questo DDT.");
+            throw new BusinessException(
+                    "Esiste già una fattura associata a questo DDT."
+            );
         }
     }
-
-    private String generateNextInvoiceNumber(Long tenantId) {
-       return documentSequenceService.nextSalesInvoiceNumber(tenantId);
+    private String generateNextInvoiceNumber(Long tenantId, Long companyId) {
+        return documentSequenceService.nextNumber(
+                tenantId,
+                companyId,
+                DocumentSequenceService.SALES_INVOICE
+        );
     }
 
     private BigDecimal defaultZero(BigDecimal value) {

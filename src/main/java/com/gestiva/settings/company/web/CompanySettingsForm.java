@@ -2,13 +2,17 @@ package com.gestiva.settings.company.web;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import jakarta.validation.Valid;
 
 public class CompanySettingsForm {
+
+    @NotNull(message = "La società di riferimento è obbligatoria.")
+    private Long companyId;
 
     @NotBlank(message = "La ragione sociale è obbligatoria.")
     @Size(max = 180)
@@ -57,6 +61,7 @@ public class CompanySettingsForm {
     private Integer defaultCustomerDueDays;
     private Integer defaultSupplierDueDays;
 
+    @Valid
     private List<DocumentSequenceForm> sequences = new ArrayList<>();
 
     public String getCompanyName() {
@@ -193,5 +198,13 @@ public class CompanySettingsForm {
 
     public void setSequences(List<DocumentSequenceForm> sequences) {
         this.sequences = sequences;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 }

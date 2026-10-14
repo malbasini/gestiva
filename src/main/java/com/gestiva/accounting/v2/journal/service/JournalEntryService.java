@@ -10,7 +10,7 @@ import com.gestiva.common.exception.BusinessException;
 import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.gestiva.security.company.context.CompanyContext;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -24,18 +24,20 @@ public class JournalEntryService {
     private final JournalEntryLineRepository journalEntryLineRepository;
     private final AccountRepository accountRepository;
     private final DocumentSequenceService documentSequenceService;
-
+    private final CompanyContext companyContext;
 
 
     public JournalEntryService(JournalEntryRepository journalEntryRepository,
                                JournalEntryLineRepository journalEntryLineRepository,
                                AccountRepository accountRepository,
-                               DocumentSequenceService documentSequenceService) {
+                               DocumentSequenceService documentSequenceService,
+                               CompanyContext companyContext) {
 
         this.journalEntryRepository = journalEntryRepository;
         this.journalEntryLineRepository = journalEntryLineRepository;
         this.accountRepository = accountRepository;
         this.documentSequenceService = documentSequenceService;
+        this.companyContext = companyContext;
     }
     public Long createManualEntry(Long tenantId, JournalEntryForm form) {
         return createEntryInternal(tenantId, form, null, null);
@@ -52,8 +54,14 @@ public class JournalEntryService {
                                      JournalEntryForm form,
                                      String referenceType,
                                      Long referenceId) {
-        List<JournalEntryLine> preparedLines = new ArrayList<>();
 
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        List<JournalEntryLine> preparedLines = new ArrayList<>();
         BigDecimal totalDebit = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
         BigDecimal totalCredit = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
 
@@ -73,8 +81,15 @@ public class JournalEntryService {
             if (lineForm.getAccountId() == null) {
                 throw new BusinessException("Ogni riga deve avere un conto.");
             }
-            var account = accountRepository.findByTenantIdAndId(tenantId, lineForm.getAccountId())
-                    .orElseThrow(() -> new BusinessException("Conto non trovato."));
+            var account = accountRepository
+                    .findByTenantIdAndCompanyIdAndId(
+                            tenantId,
+                            companyId,
+                            lineForm.getAccountId()
+                    )
+                    .orElseThrow(() -> new BusinessException(
+                            "Conto non trovato nella società attiva."
+                    ));
 
             if (!account.isLeafAccount()) {
                 throw new BusinessException("È possibile registrare movimenti solo su conti foglia.");
@@ -92,6 +107,7 @@ public class JournalEntryService {
 
             JournalEntryLine line = new JournalEntryLine();
             line.setTenantId(tenantId);
+            line.setCompanyId(companyId);
             line.setLineNo(lineNo++);
             line.setAccountId(account.getId());
             line.setDescription(
@@ -115,7 +131,8 @@ public class JournalEntryService {
 
         JournalEntry entry = new JournalEntry();
         entry.setTenantId(tenantId);
-        entry.setEntryNumber(nextEntryNumber(tenantId));
+        entry.setCompanyId(companyId);
+        entry.setEntryNumber(nextEntryNumber(tenantId, companyId));
         entry.setEntryDate(form.getEntryDate());
         entry.setCausalCode(form.getCausalCode());
         entry.setDescription(form.getDescription());
@@ -136,8 +153,11 @@ public class JournalEntryService {
 
         return saved.getId();
     }
-    private String nextEntryNumber(Long tenantId) {
-        return documentSequenceService.nextJournalEntryNumber(tenantId);
+    private String nextEntryNumber(Long tenantId, Long companyId) {
+        return documentSequenceService.nextJournalEntryNumber(
+                tenantId,
+                companyId
+        );
     }
 
     private BigDecimal scale(BigDecimal value) {

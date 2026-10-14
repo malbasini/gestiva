@@ -33,4 +33,57 @@ public interface DeliveryNoteRepository extends JpaRepository<DeliveryNote, Long
                                              @Param("statuses") java.util.Collection<String> statuses);
 
 
+
+    // =====================================================
+    // METODI V2 - MULTI-SOCIETÀ
+    // =====================================================
+
+    Optional<DeliveryNote> findByTenantIdAndCompanyIdAndId(
+            Long tenantId,
+            Long companyId,
+            Long id
+    );
+
+    Optional<DeliveryNote> findByTenantIdAndCompanyIdAndSalesOrderId(
+            Long tenantId,
+            Long companyId,
+            Long salesOrderId
+    );
+
+    boolean existsByTenantIdAndCompanyIdAndSalesOrderId(
+            Long tenantId,
+            Long companyId,
+            Long salesOrderId
+    );
+
+    long countByTenantIdAndCompanyId(
+            Long tenantId,
+            Long companyId
+    );
+
+    long countByTenantIdAndCompanyIdAndStatusIn(
+            Long tenantId,
+            Long companyId,
+            java.util.Collection<String> statuses
+    );
+
+    @Query("""
+    select count(d)
+    from DeliveryNote d
+    where d.tenantId = :tenantId
+      and d.companyId = :companyId
+      and d.status in :statuses
+      and not exists (
+          select 1
+          from Invoice i
+          where i.tenantId = d.tenantId
+            and i.companyId = d.companyId
+            and i.deliveryNoteId = d.id
+      )
+    """)
+    long countToInvoiceByTenantIdAndCompanyIdAndStatusIn(
+            @Param("tenantId") Long tenantId,
+            @Param("companyId") Long companyId,
+            @Param("statuses") java.util.Collection<String> statuses
+    );
 }

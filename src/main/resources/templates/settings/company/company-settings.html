@@ -23,8 +23,9 @@
                 </div>
 
                 <form method="post" th:object="${companySettingsForm}" th:action="@{/settings/company}">
+                    <!-- Identificativo della società per cui è stato caricato il modulo -->
+                    <input type="hidden" th:field="*{companyId}"/>
                     <h2 class="page-title" style="font-size:1.1rem; margin-top:10px;">Dati azienda</h2>
-
                     <div class="form-grid">
                         <div class="form-field">
                             <label for="companyName">Ragione sociale</label>

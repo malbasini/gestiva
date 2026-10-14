@@ -1,13 +1,34 @@
 package com.gestiva.billing.invoice.entity;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "invoice")
+@Table(
+        name = "invoice",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_invoice_tenant_company_number",
+                        columnNames = {"tenant_id", "company_id", "invoice_number"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_invoice_tenant_company_delivery_note",
+                        columnNames = {"tenant_id", "company_id", "delivery_note_id"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_invoice_tenant", columnList = "tenant_id"),
+                @Index(name = "idx_invoice_delivery_note", columnList = "tenant_id, delivery_note_id"),
+                @Index(name = "idx_invoice_sales_order", columnList = "tenant_id, sales_order_id"),
+                @Index(name = "idx_invoice_customer", columnList = "tenant_id, customer_id"),
+                @Index(name = "idx_invoice_date", columnList = "tenant_id, invoice_date"),
+                @Index(name = "idx_invoice_company_date", columnList = "tenant_id, company_id, invoice_date"),
+                @Index(name = "idx_invoice_company_customer", columnList = "tenant_id, company_id, customer_id"),
+                @Index(name = "idx_invoice_company_sales_order", columnList = "tenant_id, company_id, sales_order_id")
+        }
+)
 public class Invoice {
 
     @Id
@@ -16,6 +37,9 @@ public class Invoice {
 
     @Column(name = "tenant_id", nullable = false)
     private Long tenantId;
+
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
 
     @Column(name = "delivery_note_id", nullable = false)
     private Long deliveryNoteId;
@@ -170,5 +194,13 @@ public class Invoice {
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 }

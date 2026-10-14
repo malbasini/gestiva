@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.gestiva.security.company.context.CompanyContext;
+
+
+
 
 @Controller
 @RequestMapping("/settings/company")
@@ -18,16 +22,30 @@ public class CompanySettingsPageController {
 
     private final TenantContext tenantContext;
     private final CompanySettingsService companySettingsService;
+    private final CompanyContext companyContext;
+
+
+
+
 
     public CompanySettingsPageController(TenantContext tenantContext,
-                                         CompanySettingsService companySettingsService) {
+                                         CompanySettingsService companySettingsService,
+                                         CompanyContext companyContext) {
+
         this.tenantContext = tenantContext;
         this.companySettingsService = companySettingsService;
+        this.companyContext=companyContext;
     }
 
     @GetMapping
     public String page(Model model) {
         Long tenantId = tenantContext.getCurrentTenantId();
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+
+        if (companyId == null) {
+            return "redirect:/company/select";
+        }
 
         if (!model.containsAttribute("companySettingsForm")) {
             model.addAttribute("companySettingsForm", companySettingsService.getOrCreateForm(tenantId));
@@ -44,13 +62,35 @@ public class CompanySettingsPageController {
                        RedirectAttributes redirectAttributes) {
         Long tenantId = tenantContext.getCurrentTenantId();
 
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            return "redirect:/company/select";
+        }
+
         if (bindingResult.hasErrors()) {
             model.addAttribute("activeMenu", "settings");
             return "settings/company/company-settings";
         }
 
-        companySettingsService.save(tenantId, companySettingsForm);
-        redirectAttributes.addFlashAttribute("successMessage", "Impostazioni azienda salvate con successo.");
+        try {
+
+            companySettingsService.save(tenantId, companySettingsForm);
+
+        } catch (IllegalStateException ex) {
+
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    ex.getMessage()
+            );
+
+            return "redirect:/settings/company";
+        }
+
+        redirectAttributes.addFlashAttribute(
+                "successMessage",
+                "Impostazioni azienda salvate con successo."
+        );
+
         return "redirect:/settings/company";
     }
 }
