@@ -7,9 +7,27 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "customer",
-        indexes = @Index(name = "idx_customer_tenant_name", columnList = "tenant_id, name"))
+@Table(
+        name = "customer",
+        indexes = {
+                @Index(
+                        name = "idx_customer_tenant_name",
+                        columnList = "tenant_id, name"
+                ),
+                @Index(
+                        name = "idx_customer_company_name",
+                        columnList = "tenant_id, company_id, name"
+                ),
+                @Index(
+                        name = "idx_customer_company_id",
+                        columnList = "tenant_id, company_id, id"
+                )
+        }
+)
 public class Customer extends TenantAwareEntity {
+
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
 
     @Column(nullable = false, length = 180)
     private String name;
@@ -130,5 +148,13 @@ public class Customer extends TenantAwareEntity {
 
     public void setCountryCode(String countryCode) {
         this.countryCode = countryCode;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 }

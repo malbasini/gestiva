@@ -2,6 +2,8 @@ package com.gestiva.crm.contact.web;
 
 import com.gestiva.common.exception.NotFoundException;
 import com.gestiva.crm.contact.repository.CustomerRepository;
+import com.gestiva.security.company.context.CompanyContext;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,16 +12,48 @@ import org.springframework.transaction.annotation.Transactional;
 public class CustomerDetailWebService {
 
     private final CustomerRepository customerRepository;
+    private final CompanyContext companyContext;
 
-    public CustomerDetailWebService(CustomerRepository customerRepository) {
+    public CustomerDetailWebService(
+            CustomerRepository customerRepository,
+            CompanyContext companyContext
+    ) {
         this.customerRepository = customerRepository;
+        this.companyContext = companyContext;
     }
 
-    public CustomerDetailView getDetail(Long tenantId, Long customerId) {
-        var customer = customerRepository.findByTenantIdAndId(tenantId, customerId)
-                .orElseThrow(() -> new NotFoundException("Cliente non trovato"));
+    private Long requireCompanyId() {
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+
+        if (companyId == null) {
+            throw new IllegalStateException(
+                    "Nessuna società attiva selezionata"
+            );
+        }
+
+        return companyId;
+    }
+
+    public CustomerDetailView getDetail(
+            Long tenantId,
+            Long customerId
+    ) {
+
+        Long companyId = requireCompanyId();
+
+        var customer = customerRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        customerId
+                )
+                .orElseThrow(() ->
+                        new NotFoundException("Cliente non trovato")
+                );
 
         CustomerDetailView view = new CustomerDetailView();
+
         view.setId(customer.getId());
         view.setName(customer.getName());
         view.setEmail(customer.getEmail());

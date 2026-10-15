@@ -14,7 +14,7 @@ import com.gestiva.sales.quote.repository.QuoteRepository;
 import com.gestiva.sales.quote.service.QuoteService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.gestiva.security.company.context.CompanyContext;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -28,15 +28,30 @@ public class QuoteManageWebService {
     private final QuoteRepository quoteRepository;
     private final QuoteLineRepository quoteLineRepository;
     private final SalesOrderRepository salesOrderRepository;
+    private final CompanyContext companyContext;
 
-    public QuoteManageWebService(QuoteService quoteService,
-                                 QuoteRepository quoteRepository,
-                                 QuoteLineRepository quoteLineRepository,
-                                 SalesOrderRepository salesOrderRepository) {
+    public QuoteManageWebService(
+            QuoteService quoteService,
+            QuoteRepository quoteRepository,
+            QuoteLineRepository quoteLineRepository,
+            SalesOrderRepository salesOrderRepository,
+            CompanyContext companyContext) {
+
         this.quoteService = quoteService;
         this.quoteRepository = quoteRepository;
         this.quoteLineRepository = quoteLineRepository;
         this.salesOrderRepository = salesOrderRepository;
+        this.companyContext = companyContext;
+    }
+
+    private Long requireCompanyId() {
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        return companyId;
     }
 
     public QuoteForm buildCreateForm() {
@@ -50,11 +65,26 @@ public class QuoteManageWebService {
     }
 
     public QuoteForm buildEditForm(Long tenantId, Long quoteId) {
-        validateEditable(tenantId, quoteId);
-        var quote = quoteRepository.findByTenantIdAndId(tenantId, quoteId)
-                .orElseThrow(() -> new NotFoundException("Preventivo non trovato"));
+        Long companyId = requireCompanyId();
 
-        var lines = quoteLineRepository.findByTenantIdAndQuoteIdOrderByLineNoAsc(tenantId, quoteId);
+        validateEditable(tenantId, quoteId);
+
+        var quote = quoteRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        quoteId
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Preventivo non trovato nella società attiva"
+                ));
+
+        var lines = quoteLineRepository
+                .findByTenantIdAndCompanyIdAndQuoteIdOrderByLineNoAsc(
+                        tenantId,
+                        companyId,
+                        quoteId
+                );
 
         QuoteForm form = new QuoteForm();
         form.setCustomerId(quote.getCustomerId());
@@ -158,16 +188,35 @@ public class QuoteManageWebService {
     private BigDecimal defaultZero(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
     }
-    private void validateEditable(Long tenantId, Long quoteId) {
-        var quote = quoteRepository.findByTenantIdAndId(tenantId, quoteId)
-                .orElseThrow(() -> new NotFoundException("Preventivo non trovato"));
 
-        boolean converted = salesOrderRepository.existsByTenantIdAndQuoteId(tenantId, quoteId);
+    private void validateEditable(Long tenantId, Long quoteId) {
+
+        Long companyId = requireCompanyId();
+
+        var quote = quoteRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        quoteId
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Preventivo non trovato nella società attiva"
+                ));
+
+        boolean converted = salesOrderRepository
+                .existsByTenantIdAndCompanyIdAndQuoteId(
+                        tenantId,
+                        companyId,
+                        quoteId
+                );
 
         if ("ACCEPTED".equals(quote.getStatus()) && converted) {
-            throw new BusinessException("Il preventivo è già stato convertito in ordine e non può più essere modificato.");
+            throw new BusinessException(
+                    "Il preventivo è già stato convertito in ordine e non può più essere modificato."
+            );
         }
     }
+
     public QuoteTotalsPreviewView calculatePreviewTotals(QuoteForm form) {
         BigDecimal subtotal = BigDecimal.ZERO;
         BigDecimal tax = BigDecimal.ZERO;

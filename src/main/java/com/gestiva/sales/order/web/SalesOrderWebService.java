@@ -17,7 +17,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.gestiva.common.exception.BusinessException;
+import com.gestiva.security.company.context.CompanyContext;
 import java.time.LocalDate;
 
 @Service
@@ -26,19 +27,36 @@ public class SalesOrderWebService {
 
     private final SalesOrderRepository salesOrderRepository;
     private final CustomerRepository customerRepository;
+    private final CompanyContext companyContext;
 
-    public SalesOrderWebService(SalesOrderRepository salesOrderRepository,
-                                CustomerRepository customerRepository) {
-
+    public SalesOrderWebService(
+            SalesOrderRepository salesOrderRepository,
+            CustomerRepository customerRepository,
+            CompanyContext companyContext
+    ) {
         this.salesOrderRepository = salesOrderRepository;
         this.customerRepository = customerRepository;
+        this.companyContext = companyContext;
+    }
+
+    private Long requireCompanyId() {
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        return companyId;
     }
 
     public PageResponse<SalesOrderListItemView> search(Long tenantId,
                                                        SalesOrderSearchRequest request,
                                                        Pageable pageable) {
 
+        Long companyId = requireCompanyId();
         var specification = SalesOrderSpecifications.hasTenantId(tenantId)
+                .and(SalesOrderSpecifications.hasCompanyId(companyId))
                 .and(SalesOrderSpecifications.hasStatus(request.getStatus()))
                 .and(SalesOrderSpecifications.hasCustomerId(request.getCustomerId()))
                 .and(SalesOrderSpecifications.hasQuoteId(request.getQuoteId()))
@@ -83,16 +101,27 @@ public class SalesOrderWebService {
                 size,
                 Sort.by(Sort.Order.desc("orderDate"), Sort.Order.desc("id"))
         );
+
+        Long companyId = requireCompanyId();
+
         Specification<SalesOrder> spec = Specification.where(byTenant(tenantId))
+                .and(byCompany(companyId))
                 .and(bySearch(q))
                 .and(byStatus(status))
                 .and(byDateFrom(dateFrom))
                 .and(byDateTo(dateTo));
+
         return salesOrderRepository.findAll(spec, pageable).map(this::toListItemView);
     }
     private Specification<SalesOrder> byTenant(Long tenantId) {
         return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
     }
+
+    private Specification<SalesOrder> byCompany(Long companyId) {
+        return (root, query, cb) ->
+                cb.equal(root.get("companyId"), companyId);
+    }
+
     private Specification<SalesOrder> bySearch(String q) {
         if (q == null || q.trim().isEmpty()) {
             return null;
@@ -126,7 +155,13 @@ public class SalesOrderWebService {
     }
     private SalesOrderListItemView toListItemView(SalesOrder order) {
         SalesOrderListItemView v = new SalesOrderListItemView();
-        Customer customer = customerRepository.findById(order.getCustomerId()).orElse(null);
+        Customer customer = customerRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        order.getTenantId(),
+                        order.getCompanyId(),
+                        order.getCustomerId()
+                )
+                .orElse(null);
         if (customer != null) {
             v.setCustomerName(customer.getName());
         }

@@ -11,4 +11,26 @@ public interface CustomerRepository extends JpaRepository<Customer, Long>, JpaSp
     Optional<Customer> findByTenantIdAndId(Long tenantId, Long id);
     boolean existsByTenantIdAndNameIgnoreCase(Long tenantId, String name);
     long countByTenantId(Long tenantId);
+
+    List<Customer> findByTenantIdAndCompanyIdOrderByNameAsc(
+            Long tenantId,
+            Long companyId
+    );
+
+    Optional<Customer> findByTenantIdAndCompanyIdAndId(
+            Long tenantId,
+            Long companyId,
+            Long id
+    );
+
+    boolean existsByTenantIdAndCompanyIdAndNameIgnoreCase(
+            Long tenantId,
+            Long companyId,
+            String name
+    );
+
+    long countByTenantIdAndCompanyId(
+            Long tenantId,
+            Long companyId
+    );
 }

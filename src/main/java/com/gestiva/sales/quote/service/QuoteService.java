@@ -24,6 +24,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import com.gestiva.security.company.context.CompanyContext;
+
 
 @Service
 @Transactional
@@ -41,72 +43,136 @@ public class QuoteService {
     private final DocumentSequenceRepository documentSequenceRepository;
     private final QuoteMapper quoteMapper;
     private final DocumentSequenceService documentSequenceService;
+    private final CompanyContext companyContext;
 
     public QuoteService(QuoteRepository quoteRepository,
                         QuoteLineRepository quoteLineRepository,
                         CustomerRepository customerRepository,
                         DocumentSequenceRepository documentSequenceRepository,
-                        QuoteMapper quoteMapper, DocumentSequenceService documentSequenceService) {
+                        QuoteMapper quoteMapper,
+                        DocumentSequenceService documentSequenceService,
+                        CompanyContext companyContext) {
+
         this.quoteRepository = quoteRepository;
         this.quoteLineRepository = quoteLineRepository;
         this.customerRepository = customerRepository;
         this.documentSequenceRepository = documentSequenceRepository;
         this.quoteMapper = quoteMapper;
         this.documentSequenceService = documentSequenceService;
+        this.companyContext = companyContext;
+    }
+
+    private Long requireCompanyId() {
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException("Nessuna società attiva selezionata.");
+        }
+        return companyId;
     }
 
     @Transactional(readOnly = true)
     public List<QuoteResponse> findAll(Long tenantId) {
-        List<Quote> quotes = quoteRepository.findByTenantIdOrderByQuoteDateDescIdDesc(tenantId);
-        List<QuoteResponse> responses = new ArrayList<>();
 
+        Long companyId = requireCompanyId();
+        List<Quote> quotes = quoteRepository
+                .findByTenantIdAndCompanyIdOrderByQuoteDateDescIdDesc(
+                        tenantId,
+                        companyId
+                );
+        List<QuoteResponse> responses = new ArrayList<>();
         for (Quote quote : quotes) {
-            List<QuoteLine> lines = quoteLineRepository.findByTenantIdAndQuoteIdOrderByLineNoAsc(tenantId, quote.getId());
+            List<QuoteLine> lines = quoteLineRepository
+                    .findByTenantIdAndCompanyIdAndQuoteIdOrderByLineNoAsc(
+                            tenantId,
+                            companyId,
+                            quote.getId()
+                    );
             responses.add(quoteMapper.toResponse(quote, lines));
         }
-
         return responses;
     }
 
     @Transactional(readOnly = true)
     public QuoteResponse findById(Long tenantId, Long id) {
-        Quote quote = quoteRepository.findByTenantIdAndId(tenantId, id)
-                .orElseThrow(() -> new NotFoundException("Preventivo non trovato"));
 
-        List<QuoteLine> lines = quoteLineRepository.findByTenantIdAndQuoteIdOrderByLineNoAsc(tenantId, id);
+        Long companyId = requireCompanyId();
+        Quote quote = quoteRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        id
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Preventivo non trovato nella società attiva"
+                ));
+        List<QuoteLine> lines = quoteLineRepository
+                .findByTenantIdAndCompanyIdAndQuoteIdOrderByLineNoAsc(
+                        tenantId,
+                        companyId,
+                        id
+                );
         return quoteMapper.toResponse(quote, lines);
     }
 
     public QuoteResponse create(Long tenantId, QuoteCreateRequest request) {
-        validateCustomerExists(tenantId, request.getCustomerId());
+
+        Long companyId = requireCompanyId();
+
+        validateCustomerExists(tenantId, companyId, request.getCustomerId());
         validateLines(request.getLines());
 
-        String quoteNumber = nextQuoteNumber(tenantId);
+        String quoteNumber = documentSequenceService.nextNumber(
+                tenantId,
+                companyId,
+                DocumentSequenceService.QUOTE
+        );
+
         Totals totals = calculateTotals(request.getLines());
 
         Quote quote = new Quote();
+
         quote.setTenantId(tenantId);
+        quote.setCompanyId(companyId);
         quote.setCustomerId(request.getCustomerId());
         quote.setQuoteNumber(quoteNumber);
         quote.setQuoteDate(request.getQuoteDate());
         quote.setValidUntil(request.getValidUntil());
         quote.setStatus(DEFAULT_STATUS);
-        quote.setCurrencyCode(defaultIfBlank(request.getCurrencyCode(), DEFAULT_CURRENCY));
+        quote.setCurrencyCode(
+                defaultIfBlank(request.getCurrencyCode(), DEFAULT_CURRENCY)
+        );
         quote.setSubtotalAmount(totals.subtotal());
         quote.setTaxAmount(totals.tax());
         quote.setTotalAmount(totals.total());
         quote.setNotes(request.getNotes());
+
         Quote savedQuote = quoteRepository.save(quote);
-        List<QuoteLine> savedLines = saveQuoteLines(tenantId, savedQuote.getId(), request.getLines());
+
+        List<QuoteLine> savedLines = saveQuoteLines(
+                tenantId,
+                companyId,
+                savedQuote.getId(),
+                request.getLines()
+        );
 
         return quoteMapper.toResponse(savedQuote, savedLines);
     }
-
     public QuoteResponse update(Long tenantId, Long id, QuoteUpdateRequest request) {
-        Quote quote = quoteRepository.findByTenantIdAndId(tenantId, id)
-                .orElseThrow(() -> new NotFoundException("Preventivo non trovato"));
 
-        validateCustomerExists(tenantId, request.getCustomerId());
+        Long companyId = requireCompanyId();
+
+        Quote quote = quoteRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        id
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Preventivo non trovato nella società attiva"
+                ));
+
+        validateCustomerExists(tenantId, companyId, request.getCustomerId());
         validateLines(request.getLines());
         validateStatus(request.getStatus());
 
@@ -116,7 +182,9 @@ public class QuoteService {
         quote.setQuoteDate(request.getQuoteDate());
         quote.setValidUntil(request.getValidUntil());
         quote.setStatus(defaultIfBlank(request.getStatus(), DEFAULT_STATUS));
-        quote.setCurrencyCode(defaultIfBlank(request.getCurrencyCode(), DEFAULT_CURRENCY));
+        quote.setCurrencyCode(
+                defaultIfBlank(request.getCurrencyCode(), DEFAULT_CURRENCY)
+        );
         quote.setSubtotalAmount(totals.subtotal());
         quote.setTaxAmount(totals.tax());
         quote.setTotalAmount(totals.total());
@@ -124,23 +192,58 @@ public class QuoteService {
 
         Quote savedQuote = quoteRepository.save(quote);
 
-        quoteLineRepository.deleteByTenantIdAndQuoteId(tenantId, savedQuote.getId());
-        List<QuoteLine> savedLines = saveQuoteLines(tenantId, savedQuote.getId(), request.getLines());
+        quoteLineRepository.deleteByTenantIdAndCompanyIdAndQuoteId(
+                tenantId,
+                companyId,
+                savedQuote.getId()
+        );
+
+        List<QuoteLine> savedLines = saveQuoteLines(
+                tenantId,
+                companyId,
+                savedQuote.getId(),
+                request.getLines()
+        );
 
         return quoteMapper.toResponse(savedQuote, savedLines);
     }
 
     public void delete(Long tenantId, Long id) {
-        Quote quote = quoteRepository.findByTenantIdAndId(tenantId, id)
-                .orElseThrow(() -> new NotFoundException("Preventivo non trovato"));
 
-        quoteLineRepository.deleteByTenantIdAndQuoteId(tenantId, quote.getId());
+        Long companyId = requireCompanyId();
+
+        Quote quote = quoteRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        id
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Preventivo non trovato nella società attiva"
+                ));
+
+        quoteLineRepository.deleteByTenantIdAndCompanyIdAndQuoteId(
+                tenantId,
+                companyId,
+                quote.getId()
+        );
+
         quoteRepository.delete(quote);
     }
-
-    private void validateCustomerExists(Long tenantId, Long customerId) {
-        customerRepository.findByTenantIdAndId(tenantId, customerId)
-                .orElseThrow(() -> new BusinessException("Cliente non valido per il tenant corrente"));
+    private void validateCustomerExists(
+            Long tenantId,
+            Long companyId,
+            Long customerId
+    ) {
+        customerRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        customerId
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "Cliente non valido per la società attiva"
+                ));
     }
 
     private void validateStatus(String status) {
@@ -249,9 +352,13 @@ public class QuoteService {
         return new Totals(subtotal, tax, total);
     }
 
-    private List<QuoteLine> saveQuoteLines(Long tenantId, Long quoteId, List<QuoteLineRequest> requests) {
-        List<QuoteLine> entities = new ArrayList<>();
+    private List<QuoteLine> saveQuoteLines(
+            Long tenantId,
+            Long companyId,
+            Long quoteId,
+            List<QuoteLineRequest> requests) {
 
+        List<QuoteLine> entities = new ArrayList<>();
         for (int i = 0; i < requests.size(); i++) {
             QuoteLineRequest request = requests.get(i);
 
@@ -267,6 +374,7 @@ public class QuoteService {
 
             QuoteLine line = new QuoteLine();
             line.setTenantId(tenantId);
+            line.setCompanyId(companyId);
             line.setQuoteId(quoteId);
             line.setLineNo(i + 1);
             line.setDescription(request.getDescription().trim());
@@ -307,23 +415,43 @@ public class QuoteService {
         }
     }
     @Transactional(readOnly = true)
-    public com.gestiva.common.dto.PageResponse<QuoteResponse> search(Long tenantId,
-                                                                     com.gestiva.sales.quote.dto.QuoteSearchRequest request,
-                                                                     org.springframework.data.domain.Pageable pageable) {
+    public com.gestiva.common.dto.PageResponse<QuoteResponse> search(
+            Long tenantId,
+            com.gestiva.sales.quote.dto.QuoteSearchRequest request,
+            org.springframework.data.domain.Pageable pageable) {
 
-        var specification = com.gestiva.sales.quote.repository.QuoteSpecifications.hasTenantId(tenantId)
-                .and(com.gestiva.sales.quote.repository.QuoteSpecifications.hasStatus(request.getStatus()))
-                .and(com.gestiva.sales.quote.repository.QuoteSpecifications.hasCustomerId(request.getCustomerId()))
-                .and(com.gestiva.sales.quote.repository.QuoteSpecifications.matchesSearch(request.getSearch()));
+        Long companyId = requireCompanyId();
+
+        var specification =
+                com.gestiva.sales.quote.repository.QuoteSpecifications
+                        .hasTenantId(tenantId)
+                        .and(com.gestiva.sales.quote.repository.QuoteSpecifications
+                                .hasCompanyId(companyId))
+                        .and(com.gestiva.sales.quote.repository.QuoteSpecifications
+                                .hasStatus(request.getStatus()))
+                        .and(com.gestiva.sales.quote.repository.QuoteSpecifications
+                                .hasCustomerId(request.getCustomerId()))
+                        .and(com.gestiva.sales.quote.repository.QuoteSpecifications
+                                .matchesSearch(request.getSearch()));
 
         var page = quoteRepository.findAll(specification, pageable);
 
         var content = page.getContent().stream().map(quote -> {
-            var lines = quoteLineRepository.findByTenantIdAndQuoteIdOrderByLineNoAsc(tenantId, quote.getId());
+
+            List<QuoteLine> lines = quoteLineRepository
+                    .findByTenantIdAndCompanyIdAndQuoteIdOrderByLineNoAsc(
+                            tenantId,
+                            companyId,
+                            quote.getId()
+                    );
+
             return quoteMapper.toResponse(quote, lines);
+
         }).toList();
 
-        com.gestiva.common.dto.PageResponse<QuoteResponse> response = new com.gestiva.common.dto.PageResponse<>();
+        com.gestiva.common.dto.PageResponse<QuoteResponse> response =
+                new com.gestiva.common.dto.PageResponse<>();
+
         response.setContent(content);
         response.setPage(page.getNumber());
         response.setSize(page.getSize());

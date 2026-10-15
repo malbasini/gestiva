@@ -1,8 +1,6 @@
 package com.gestiva.sales.quote.web;
 
 import com.gestiva.common.dto.PageResponse;
-import com.gestiva.crm.contact.entity.Customer;
-import com.gestiva.crm.contact.repository.CustomerRepository;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.sales.quote.dto.QuoteSearchRequest;
 import com.gestiva.sales.quote.entity.Quote;
@@ -15,7 +13,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.gestiva.common.exception.BusinessException;
+import com.gestiva.security.company.context.CompanyContext;
 import java.time.LocalDate;
 
 @Service
@@ -23,20 +22,34 @@ import java.time.LocalDate;
 public class QuoteWebService {
 
     private final QuoteRepository quoteRepository;
-    private final CustomerRepository customerRepository;
+    private final CompanyContext companyContext;
 
-    public QuoteWebService(QuoteRepository quoteRepository,
-                           CustomerRepository customerRepository) {
-
+    public QuoteWebService(
+            QuoteRepository quoteRepository,
+            CompanyContext companyContext
+    ) {
         this.quoteRepository = quoteRepository;
-        this.customerRepository = customerRepository;
+        this.companyContext = companyContext;
+    }
+
+    private Long requireCompanyId() {
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        return companyId;
     }
 
     public PageResponse<QuoteListItemView> search(Long tenantId,
                                                   QuoteSearchRequest request,
                                                   Pageable pageable) {
 
+        Long companyId = requireCompanyId();
         var specification = QuoteSpecifications.hasTenantId(tenantId)
+                .and(QuoteSpecifications.hasCompanyId(companyId))
                 .and(QuoteSpecifications.hasStatus(request.getStatus()))
                 .and(QuoteSpecifications.hasCustomerId(request.getCustomerId()))
                 .and(QuoteSpecifications.matchesSearch(request.getSearch()));
@@ -80,17 +93,34 @@ public class QuoteWebService {
                                             LocalDate dateFrom,
                                             LocalDate dateTo) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("quoteDate"), Sort.Order.desc("id")));
+        Long companyId = requireCompanyId();
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(
+                        Sort.Order.desc("quoteDate"),
+                        Sort.Order.desc("id")
+                )
+        );
+
         Specification<Quote> spec = Specification.where(byTenant(tenantId))
+                .and(byCompany(companyId))
                 .and(bySearch(q))
                 .and(byStatus(status))
                 .and(byDateFrom(dateFrom))
                 .and(byDateTo(dateTo));
+
         return quoteRepository.findAll(spec, pageable).map(this::toListItemView);
     }
 
     private Specification<Quote> byTenant(Long tenantId) {
         return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
+    }
+
+    private Specification<Quote> byCompany(Long companyId) {
+        return (root, query, cb) ->
+                cb.equal(root.get("companyId"), companyId);
     }
 
     private Specification<Quote> bySearch(String q) {

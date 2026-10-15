@@ -2,7 +2,6 @@ package com.gestiva.platform.company.repository;
 
 import com.gestiva.platform.company.entity.Company;
 import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
 import java.util.Optional;
 

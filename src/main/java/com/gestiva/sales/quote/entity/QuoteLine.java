@@ -8,8 +8,23 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "quote_line")
+@Table(
+        name = "quote_line",
+        indexes = {
+                @jakarta.persistence.Index(
+                        name = "idx_quote_line_company_quote",
+                        columnList = "tenant_id, company_id, quote_id"
+                ),
+                @jakarta.persistence.Index(
+                        name = "idx_quote_line_company_item",
+                        columnList = "tenant_id, company_id, item_id"
+                )
+        }
+)
 public class QuoteLine extends TenantAwareEntity {
+
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
 
     @Column(name = "quote_id", nullable = false)
     private Long quoteId;
@@ -108,5 +123,13 @@ public class QuoteLine extends TenantAwareEntity {
 
     public void setLineTotal(BigDecimal lineTotal) {
         this.lineTotal = lineTotal;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 }

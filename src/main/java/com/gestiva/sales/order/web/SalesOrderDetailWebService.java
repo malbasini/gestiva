@@ -58,8 +58,15 @@ public class SalesOrderDetailWebService {
                 .orElseThrow(() -> new NotFoundException(
                         "Ordine non trovato nella società attiva"));
 
-        var customer = customerRepository.findByTenantIdAndId(tenantId, order.getCustomerId())
-                .orElseThrow(() -> new NotFoundException("Cliente non trovato"));
+        var customer = customerRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        order.getCustomerId()
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Cliente non trovato nella società attiva"
+                ));
 
         var lines = salesOrderLineRepository
                 .findByTenantIdAndCompanyIdAndSalesOrderIdOrderByLineNoAsc(

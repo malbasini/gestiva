@@ -6,8 +6,19 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "company_profile")
+@Table(
+        name = "company_profile",
+        uniqueConstraints = {
+                @jakarta.persistence.UniqueConstraint(
+                        name = "uk_company_profile_tenant_company",
+                        columnNames = {"tenant_id", "company_id"}
+                )
+        }
+)
 public class CompanyProfile extends TenantAwareEntity {
+
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
 
     @Column(nullable = false, length = 180)
     private String legalName;
@@ -106,5 +117,13 @@ public class CompanyProfile extends TenantAwareEntity {
 
     public void setLocaleCode(String localeCode) {
         this.localeCode = localeCode;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 }

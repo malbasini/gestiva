@@ -7,9 +7,50 @@ import java.util.List;
 
 public interface QuoteLineRepository extends JpaRepository<QuoteLine, Long> {
 
-    List<QuoteLine> findByTenantIdAndQuoteIdOrderByLineNoAsc(Long tenantId, Long quoteId);
+    // =====================================================
+    // METODI LEGACY - DA MIGRARE
+    // =====================================================
 
-    void deleteByTenantIdAndQuoteId(Long tenantId, Long quoteId);
+    List<QuoteLine> findByTenantIdAndQuoteIdOrderByLineNoAsc(
+            Long tenantId,
+            Long quoteId
+    );
 
-    boolean existsByTenantIdAndQuoteId(Long tenantId, Long quoteId);
+    void deleteByTenantIdAndQuoteId(
+            Long tenantId,
+            Long quoteId
+    );
+
+    boolean existsByTenantIdAndQuoteId(
+            Long tenantId,
+            Long quoteId
+    );
+
+    // =====================================================
+    // METODI V2 - MULTI-SOCIETÀ
+    // =====================================================
+
+    List<QuoteLine> findByTenantIdAndCompanyIdAndQuoteIdOrderByLineNoAsc(
+            Long tenantId,
+            Long companyId,
+            Long quoteId
+    );
+
+    void deleteByTenantIdAndCompanyIdAndQuoteId(
+            Long tenantId,
+            Long companyId,
+            Long quoteId
+    );
+
+    boolean existsByTenantIdAndCompanyIdAndQuoteId(
+            Long tenantId,
+            Long companyId,
+            Long quoteId
+    );
+
+    List<QuoteLine> findByTenantIdAndCompanyIdAndItemId(
+            Long tenantId,
+            Long companyId,
+            Long itemId
+    );
 }

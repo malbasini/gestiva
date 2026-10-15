@@ -6,16 +6,17 @@ import com.gestiva.crm.contact.repository.CustomerRepository;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.platform.company.entity.CompanyProfile;
 import com.gestiva.platform.company.repository.CompanyProfileRepository;
-import com.gestiva.security.tenant.entity.Tenant;
 import com.gestiva.sales.quote.entity.Quote;
 import com.gestiva.sales.quote.entity.QuoteLine;
 import com.gestiva.sales.quote.repository.QuoteLineRepository;
 import com.gestiva.sales.quote.repository.QuoteRepository;
-import com.gestiva.security.tenant.repository.TenantRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.gestiva.common.exception.BusinessException;
+import com.gestiva.security.company.context.CompanyContext;
 import java.util.List;
+import com.gestiva.platform.company.entity.Company;
+import com.gestiva.platform.company.repository.CompanyRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -25,50 +26,113 @@ public class QuotePdfDataService {
     private final QuoteLineRepository quoteLineRepository;
     private final CustomerRepository customerRepository;
     private final CompanyProfileRepository companyProfileRepository;
-    private final TenantRepository tenantRepository;
+    private final CompanyRepository companyRepository;
+    private final CompanyContext companyContext;
 
-    public QuotePdfDataService(QuoteRepository quoteRepository,
-                               QuoteLineRepository quoteLineRepository,
-                               CustomerRepository customerRepository,
-                               CompanyProfileRepository companyProfileRepository,
-                               TenantRepository tenantRepository) {
+    public QuotePdfDataService(
+            QuoteRepository quoteRepository,
+            QuoteLineRepository quoteLineRepository,
+            CustomerRepository customerRepository,
+            CompanyProfileRepository companyProfileRepository,
+            CompanyRepository companyRepository,
+            CompanyContext companyContext) {
+
         this.quoteRepository = quoteRepository;
         this.quoteLineRepository = quoteLineRepository;
         this.customerRepository = customerRepository;
         this.companyProfileRepository = companyProfileRepository;
-        this.tenantRepository = tenantRepository;
+        this.companyRepository = companyRepository;
+        this.companyContext = companyContext;
+    }
+
+    private Long requireCompanyId() {
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        return companyId;
     }
 
     public QuotePdfView buildView(Long tenantId, Long quoteId) {
-        Quote quote = quoteRepository.findByTenantIdAndId(tenantId, quoteId)
-                .orElseThrow(() -> new NotFoundException("Preventivo non trovato"));
 
-        List<QuoteLine> lines = quoteLineRepository.findByTenantIdAndQuoteIdOrderByLineNoAsc(tenantId, quoteId);
+        Long companyId = requireCompanyId();
+        Company issuingCompany = companyRepository
+                .findByTenantIdAndId(tenantId, companyId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Società emittente non trovata"
+                ));
 
-        Customer customer = customerRepository.findByTenantIdAndId(tenantId, quote.getCustomerId())
-                .orElseThrow(() -> new NotFoundException("Cliente non trovato"));
+        if (!issuingCompany.isActive()) {
+            throw new BusinessException(
+                    "La società emittente non è attiva."
+            );
+        }
+        Quote quote = quoteRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        quoteId
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Preventivo non trovato nella società attiva"
+                ));
 
-        CompanyProfile company = companyProfileRepository.findByTenantId(tenantId).orElse(null);
-        Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
+        List<QuoteLine> lines = quoteLineRepository
+                .findByTenantIdAndCompanyIdAndQuoteIdOrderByLineNoAsc(
+                        tenantId,
+                        companyId,
+                        quoteId
+                );
+
+        Customer customer = customerRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        quote.getCustomerId()
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Cliente non trovato nella società attiva"
+                ));
+
+        CompanyProfile company = companyProfileRepository
+                .findByTenantIdAndCompanyId(
+                        tenantId,
+                        companyId
+                )
+                .orElse(null);
 
         QuotePdfView view = new QuotePdfView();
 
-        if (company != null) {
-            view.setCompanyName(company.getLegalName());
-            view.setCompanyEmail(company.getEmail());
-            view.setCompanyPhone(company.getPhone());
-            view.setCompanyVatNumber(company.getVatNumber());
-        } else if (tenant != null) {
-            view.setCompanyName(tenant.getName());
-            view.setCompanyEmail(tenant.getEmail());
-            view.setCompanyPhone("");
-            view.setCompanyVatNumber("");
-        } else {
-            view.setCompanyName("Azienda Demo");
-            view.setCompanyEmail("");
-            view.setCompanyPhone("");
-            view.setCompanyVatNumber("");
-        }
+        view.setCompanyName(
+                firstNonBlank(
+                        company != null ? company.getLegalName() : null,
+                        issuingCompany.getLegalName()
+                )
+        );
+
+        view.setCompanyEmail(
+                firstNonBlank(
+                        company != null ? company.getEmail() : null,
+                        issuingCompany.getEmail()
+                )
+        );
+
+        view.setCompanyPhone(
+                firstNonBlank(
+                        company != null ? company.getPhone() : null,
+                        issuingCompany.getPhone()
+                )
+        );
+
+        view.setCompanyVatNumber(
+                firstNonBlank(
+                        company != null ? company.getVatNumber() : null,
+                        issuingCompany.getVatNumber()
+                )
+        );
 
         view.setCustomerName(customer.getName());
         view.setCustomerEmail(customer.getEmail());
@@ -113,5 +177,18 @@ public class QuotePdfDataService {
         }).toList());
 
         return view;
+    }
+
+    private String firstNonBlank(String preferred, String fallback) {
+
+        if (preferred != null && !preferred.isBlank()) {
+            return preferred;
+        }
+
+        if (fallback != null && !fallback.isBlank()) {
+            return fallback;
+        }
+
+        return "";
     }
 }

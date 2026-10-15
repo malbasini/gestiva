@@ -8,6 +8,8 @@ import com.gestiva.sales.quote.repository.QuoteLineRepository;
 import com.gestiva.sales.quote.repository.QuoteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.gestiva.common.exception.BusinessException;
+import com.gestiva.security.company.context.CompanyContext;
 
 @Service
 @Transactional(readOnly = true)
@@ -17,25 +19,60 @@ public class QuoteDetailWebService {
     private final QuoteLineRepository quoteLineRepository;
     private final CustomerRepository customerRepository;
     private final SalesOrderRepository salesOrderRepository;
+    private final CompanyContext companyContext;
 
-    public QuoteDetailWebService(QuoteRepository quoteRepository,
-                                 QuoteLineRepository quoteLineRepository,
-                                 CustomerRepository customerRepository,
-                                 SalesOrderRepository salesOrderRepository) {
+    public QuoteDetailWebService(
+            QuoteRepository quoteRepository,
+            QuoteLineRepository quoteLineRepository,
+            CustomerRepository customerRepository,
+            SalesOrderRepository salesOrderRepository,
+            CompanyContext companyContext) {
+
         this.quoteRepository = quoteRepository;
         this.quoteLineRepository = quoteLineRepository;
         this.customerRepository = customerRepository;
         this.salesOrderRepository = salesOrderRepository;
+        this.companyContext = companyContext;
+    }
+
+    private Long requireCompanyId() {
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException("Nessuna società attiva selezionata.");
+        }
+        return companyId;
     }
 
     public QuoteDetailView getDetail(Long tenantId, Long quoteId) {
-        var quote = quoteRepository.findByTenantIdAndId(tenantId, quoteId)
-                .orElseThrow(() -> new NotFoundException("Preventivo non trovato"));
 
-        var customer = customerRepository.findByTenantIdAndId(tenantId, quote.getCustomerId())
-                .orElseThrow(() -> new NotFoundException("Cliente non trovato"));
+        Long companyId = requireCompanyId();
+        var quote = quoteRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        quoteId
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Preventivo non trovato nella società attiva"
+                ));
 
-        var lines = quoteLineRepository.findByTenantIdAndQuoteIdOrderByLineNoAsc(tenantId, quoteId);
+        var customer = customerRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        quote.getCustomerId()
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Cliente non trovato nella società attiva"
+                ));
+
+        var lines = quoteLineRepository
+                .findByTenantIdAndCompanyIdAndQuoteIdOrderByLineNoAsc(
+                        tenantId,
+                        companyId,
+                        quoteId
+                );
 
         QuoteDetailView view = new QuoteDetailView();
         view.setId(quote.getId());
@@ -69,7 +106,12 @@ public class QuoteDetailWebService {
             return l;
         }).toList());
 
-        boolean converted = salesOrderRepository.existsByTenantIdAndQuoteId(tenantId, quoteId);
+        boolean converted = salesOrderRepository
+                .existsByTenantIdAndCompanyIdAndQuoteId(
+                        tenantId,
+                        companyId,
+                        quoteId
+                );
         view.setLocked("ACCEPTED".equals(quote.getStatus()) && converted);
         
         return view;
