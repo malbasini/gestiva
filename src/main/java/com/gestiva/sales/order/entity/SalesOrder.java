@@ -3,14 +3,37 @@ package com.gestiva.sales.order.entity;
 import com.gestiva.common.model.TenantAwareEntity;
 import com.gestiva.crm.contact.entity.Customer;
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "sales_order",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_id", "order_number"}))
+@Table(
+        name = "sales_order",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_sales_order_tenant_company_number",
+                        columnNames = {"tenant_id", "company_id", "order_number"}
+                )
+        },
+        indexes = {
+                @Index(
+                        name = "idx_sales_order_company_date",
+                        columnList = "tenant_id, company_id, order_date"
+                ),
+                @Index(
+                        name = "idx_sales_order_company_customer",
+                        columnList = "tenant_id, company_id, customer_id"
+                ),
+                @Index(
+                        name = "idx_sales_order_company_quote",
+                        columnList = "tenant_id, company_id, quote_id"
+                )
+        }
+)
 public class SalesOrder extends TenantAwareEntity {
+
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
 
     @Column(name = "customer_id", nullable = false)
     private Long customerId;
@@ -121,5 +144,13 @@ public class SalesOrder extends TenantAwareEntity {
 
     public void setCustomer(Customer customer) {
         this.customer = customer;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 }

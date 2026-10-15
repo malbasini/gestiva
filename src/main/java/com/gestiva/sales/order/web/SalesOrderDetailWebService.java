@@ -8,6 +8,8 @@ import com.gestiva.sales.order.repository.SalesOrderLineRepository;
 import com.gestiva.sales.order.repository.SalesOrderRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.gestiva.common.exception.BusinessException;
+import com.gestiva.security.company.context.CompanyContext;
 
 @Service
 @Transactional(readOnly = true)
@@ -17,30 +19,53 @@ public class SalesOrderDetailWebService {
     private final SalesOrderLineRepository salesOrderLineRepository;
     private final CustomerRepository customerRepository;
     private final DeliveryNoteRepository deliveryNoteRepository;
+    private final CompanyContext companyContext;
 
 
 
-
-    public SalesOrderDetailWebService(SalesOrderRepository salesOrderRepository,
-                                      SalesOrderLineRepository salesOrderLineRepository,
-                                      CustomerRepository customerRepository,
-                                      DeliveryNoteRepository deliveryNoteRepository) {
-
+    public SalesOrderDetailWebService(
+            SalesOrderRepository salesOrderRepository,
+            SalesOrderLineRepository salesOrderLineRepository,
+            CustomerRepository customerRepository,
+            DeliveryNoteRepository deliveryNoteRepository,
+            CompanyContext companyContext) {
 
         this.salesOrderRepository = salesOrderRepository;
         this.salesOrderLineRepository = salesOrderLineRepository;
         this.customerRepository = customerRepository;
         this.deliveryNoteRepository = deliveryNoteRepository;
+        this.companyContext = companyContext;
+    }
+
+    private Long requireCompanyId() {
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException(
+                    "Nessuna società attiva selezionata.");
+        }
+        return companyId;
     }
 
     public SalesOrderDetailView getDetail(Long tenantId, Long orderId) {
-        var order = salesOrderRepository.findByTenantIdAndId(tenantId, orderId)
-                .orElseThrow(() -> new NotFoundException("Ordine non trovato"));
+        Long companyId = requireCompanyId();
+
+        var order = salesOrderRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        orderId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Ordine non trovato nella società attiva"));
 
         var customer = customerRepository.findByTenantIdAndId(tenantId, order.getCustomerId())
                 .orElseThrow(() -> new NotFoundException("Cliente non trovato"));
 
-        var lines = salesOrderLineRepository.findByTenantIdAndSalesOrderIdOrderByLineNoAsc(tenantId, orderId);
+        var lines = salesOrderLineRepository
+                .findByTenantIdAndCompanyIdAndSalesOrderIdOrderByLineNoAsc(
+                        tenantId,
+                        companyId,
+                        orderId);
 
         SalesOrderDetailView view = new SalesOrderDetailView();
         view.setId(order.getId());
@@ -72,16 +97,22 @@ public class SalesOrderDetailWebService {
             l.setFormattedLineTotal(PdfFormatUtils.formatMoney(taxable));
             return l;
         }).toList());
-            view.setActionable("CONFIRMED".equals(order.getStatus()));
-            boolean deliveryNoteExists = deliveryNoteRepository.existsByTenantIdAndSalesOrderId(tenantId, orderId);
-            view.setDeliveryNoteExists(deliveryNoteExists);
-            view.setDeliveryNoteCreatable("FULFILLED".equals(order.getStatus()) && !deliveryNoteExists);
-            var deliveryNoteOpt = deliveryNoteRepository.findByTenantIdAndSalesOrderId(tenantId, orderId);
-            view.setDeliveryNoteExists(deliveryNoteOpt.isPresent());
-            view.setDeliveryNoteCreatable("FULFILLED".equals(order.getStatus()) && deliveryNoteOpt.isEmpty());
-            deliveryNoteOpt.ifPresent(ddt -> {
-               view.setDeliveryNoteId(ddt.getId());
-               view.setDeliveryNoteNumber(ddt.getDdtNumber());
+        view.setActionable("CONFIRMED".equals(order.getStatus()));
+        var deliveryNoteOpt = deliveryNoteRepository
+                .findByTenantIdAndCompanyIdAndSalesOrderId(
+                        tenantId,
+                        companyId,
+                        orderId
+                );
+        boolean deliveryNoteExists = deliveryNoteOpt.isPresent();
+        view.setDeliveryNoteExists(deliveryNoteExists);
+        view.setDeliveryNoteCreatable(
+                "FULFILLED".equals(order.getStatus())
+                        && !deliveryNoteExists
+        );
+        deliveryNoteOpt.ifPresent(ddt -> {
+            view.setDeliveryNoteId(ddt.getId());
+            view.setDeliveryNoteNumber(ddt.getDdtNumber());
         });
         return view;
     }

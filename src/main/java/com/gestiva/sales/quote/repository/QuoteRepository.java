@@ -13,4 +13,47 @@ public interface QuoteRepository extends JpaRepository<Quote, Long>, JpaSpecific
     long countByTenantId(Long tenantId);
     java.util.List<com.gestiva.sales.quote.entity.Quote> findTop5ByTenantIdOrderByQuoteDateDescIdDesc(Long tenantId);
     long countByTenantIdAndStatusIn(Long tenantId, java.util.Collection<String> statuses);
+
+    // =====================================================
+    // METODI V2 - MULTI-SOCIETÀ
+    // =====================================================
+
+    List<Quote> findByTenantIdAndCompanyIdOrderByQuoteDateDescIdDesc(
+            Long tenantId,
+            Long companyId
+    );
+
+    Optional<Quote> findByTenantIdAndCompanyIdAndId(
+            Long tenantId,
+            Long companyId,
+            Long id
+    );
+
+    boolean existsByTenantIdAndCompanyIdAndQuoteNumber(
+            Long tenantId,
+            Long companyId,
+            String quoteNumber
+    );
+
+    long countByTenantIdAndCompanyId(
+            Long tenantId,
+            Long companyId
+    );
+
+    List<Quote> findTop5ByTenantIdAndCompanyIdOrderByQuoteDateDescIdDesc(
+            Long tenantId,
+            Long companyId
+    );
+
+    long countByTenantIdAndCompanyIdAndStatusIn(
+            Long tenantId,
+            Long companyId,
+            java.util.Collection<String> statuses
+    );
+
+    List<Quote> findByTenantIdAndCompanyIdAndCustomerIdOrderByQuoteDateDescIdDesc(
+            Long tenantId,
+            Long companyId,
+            Long customerId
+    );
 }

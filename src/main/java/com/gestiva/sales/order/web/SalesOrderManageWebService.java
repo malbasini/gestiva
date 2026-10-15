@@ -10,10 +10,11 @@ import com.gestiva.sales.order.repository.SalesOrderLineRepository;
 import com.gestiva.sales.order.repository.SalesOrderRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import com.gestiva.security.company.context.CompanyContext;
+
 
 @Service
 @Transactional
@@ -21,21 +22,47 @@ public class SalesOrderManageWebService {
 
     private final SalesOrderRepository salesOrderRepository;
     private final SalesOrderLineRepository salesOrderLineRepository;
+    private final CompanyContext companyContext;
 
-    public SalesOrderManageWebService(SalesOrderRepository salesOrderRepository,
-                                      SalesOrderLineRepository salesOrderLineRepository) {
+    public SalesOrderManageWebService(
+            SalesOrderRepository salesOrderRepository,
+            SalesOrderLineRepository salesOrderLineRepository,
+            CompanyContext companyContext) {
+
         this.salesOrderRepository = salesOrderRepository;
         this.salesOrderLineRepository = salesOrderLineRepository;
+        this.companyContext = companyContext;
+    }
+
+    private Long requireCompanyId() {
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException(
+                    "Nessuna società attiva selezionata.");
+        }
+        return companyId;
     }
 
     public SalesOrderForm buildEditForm(Long tenantId, Long orderId) {
-        SalesOrder order = salesOrderRepository.findByTenantIdAndId(tenantId, orderId)
-                .orElseThrow(() -> new NotFoundException("Ordine non trovato"));
+
+        Long companyId = requireCompanyId();
+        SalesOrder order = salesOrderRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        orderId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Ordine non trovato nella società attiva"));
 
         validateEditable(order);
 
         List<SalesOrderLine> lines = salesOrderLineRepository
-                .findByTenantIdAndSalesOrderIdOrderByLineNoAsc(tenantId, orderId);
+                .findByTenantIdAndCompanyIdAndSalesOrderIdOrderByLineNoAsc(
+                        tenantId,
+                        companyId,
+                        orderId
+                );
 
         SalesOrderForm form = new SalesOrderForm();
         form.setCustomerId(order.getCustomerId());
@@ -62,15 +89,26 @@ public class SalesOrderManageWebService {
     }
 
     public Long update(Long tenantId, Long orderId, SalesOrderForm form) {
-        SalesOrder order = salesOrderRepository.findByTenantIdAndId(tenantId, orderId)
-                .orElseThrow(() -> new NotFoundException("Ordine non trovato"));
+
+        Long companyId = requireCompanyId();
+        SalesOrder order = salesOrderRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        orderId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Ordine non trovato nella società attiva"));
 
         validateEditable(order);
 
         order.setStatus(form.getStatus());
 
         List<SalesOrderLine> existingLines = salesOrderLineRepository
-                .findByTenantIdAndSalesOrderIdOrderByLineNoAsc(tenantId, orderId);
+                .findByTenantIdAndCompanyIdAndSalesOrderIdOrderByLineNoAsc(
+                        tenantId,
+                        companyId,
+                        orderId
+                );
 
         salesOrderLineRepository.deleteAll(existingLines);
 
@@ -81,6 +119,7 @@ public class SalesOrderManageWebService {
         for (SalesOrderLineForm lineForm : form.getLines()) {
             SalesOrderLine line = new SalesOrderLine();
             line.setTenantId(tenantId);
+            line.setCompanyId(companyId);
             line.setSalesOrderId(orderId);
             line.setLineNo(lineNo++);
             line.setDescription(lineForm.getDescription());

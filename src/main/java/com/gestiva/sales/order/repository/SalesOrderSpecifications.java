@@ -12,6 +12,11 @@ public final class SalesOrderSpecifications {
         return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
     }
 
+    public static Specification<SalesOrder> hasCompanyId(Long companyId) {
+        return (root, query, cb) ->
+                cb.equal(root.get("companyId"), companyId);
+    }
+
     public static Specification<SalesOrder> hasStatus(String status) {
         return (root, query, cb) ->
                 status == null || status.isBlank()

@@ -22,6 +22,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import com.gestiva.security.company.context.CompanyContext;
+
 
 @Service
 @Transactional
@@ -39,7 +41,7 @@ public class SalesOrderService {
     private final DocumentSequenceRepository documentSequenceRepository;
     private final SalesOrderMapper salesOrderMapper;
     private final DocumentSequenceService documentSequenceService;
-
+    private final CompanyContext companyContext;
 
 
 
@@ -49,7 +51,8 @@ public class SalesOrderService {
                              QuoteLineRepository quoteLineRepository,
                              DocumentSequenceRepository documentSequenceRepository,
                              SalesOrderMapper salesOrderMapper,
-                             DocumentSequenceService documentSequenceService) {
+                             DocumentSequenceService documentSequenceService,
+                             CompanyContext companyContext) {
 
         this.salesOrderRepository = salesOrderRepository;
         this.salesOrderLineRepository = salesOrderLineRepository;
@@ -58,23 +61,45 @@ public class SalesOrderService {
         this.documentSequenceRepository = documentSequenceRepository;
         this.salesOrderMapper = salesOrderMapper;
         this.documentSequenceService = documentSequenceService;
+        this.companyContext = companyContext;
+    }
+
+    private Long requireCompanyId() {
+        Long companyId = companyContext.resolveCurrentCompanyId();
+
+        if (companyId == null) {
+            throw new BusinessException("Nessuna società attiva selezionata.");
+        }
+
+        return companyId;
     }
 
     public SalesOrderResponse convertFromQuote(Long tenantId, Long quoteId) {
-        Quote quote = quoteRepository.findByTenantIdAndId(tenantId, quoteId)
-                .orElseThrow(() -> new NotFoundException("Preventivo non trovato"));
 
-        validateQuoteConvertible(tenantId, quote);
+        Long companyId = requireCompanyId();
 
-        List<QuoteLine> quoteLines = quoteLineRepository.findByTenantIdAndQuoteIdOrderByLineNoAsc(tenantId, quoteId);
+        Quote quote = quoteRepository
+                .findByTenantIdAndCompanyIdAndId(tenantId, companyId, quoteId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Preventivo non trovato nella società attiva"));
+
+        validateQuoteConvertible(tenantId, companyId, quote);
+
+        List<QuoteLine> quoteLines = quoteLineRepository
+                .findByTenantIdAndQuoteIdOrderByLineNoAsc(tenantId, quoteId);
+
         if (quoteLines.isEmpty()) {
-            throw new BusinessException("Il preventivo non contiene righe convertibili");
+            throw new BusinessException(
+                    "Il preventivo non contiene righe convertibili");
         }
 
-        String orderNumber = nextOrderNumber(tenantId);
+        String orderNumber = nextOrderNumber(tenantId, companyId);
 
         SalesOrder order = new SalesOrder();
+
         order.setTenantId(tenantId);
+        order.setCompanyId(companyId);
+
         order.setCustomerId(quote.getCustomerId());
         order.setQuoteId(quote.getId());
         order.setOrderNumber(orderNumber);
@@ -84,9 +109,16 @@ public class SalesOrderService {
         order.setSubtotalAmount(quote.getSubtotalAmount());
         order.setTaxAmount(quote.getTaxAmount());
         order.setTotalAmount(quote.getTotalAmount());
+
         SalesOrder savedOrder = salesOrderRepository.save(order);
 
-        List<SalesOrderLine> savedLines = copyQuoteLinesToOrder(tenantId, savedOrder.getId(), quoteLines);
+        List<SalesOrderLine> savedLines =
+                copyQuoteLinesToOrder(
+                        tenantId,
+                        companyId,
+                        savedOrder.getId(),
+                        quoteLines
+                );
 
         if (!"ACCEPTED".equals(quote.getStatus())) {
             quote.setStatus("ACCEPTED");
@@ -98,48 +130,73 @@ public class SalesOrderService {
 
     @Transactional(readOnly = true)
     public SalesOrderResponse findById(Long tenantId, Long orderId) {
-        SalesOrder order = salesOrderRepository.findByTenantIdAndId(tenantId, orderId)
-                .orElseThrow(() -> new NotFoundException("Ordine non trovato"));
 
-        List<SalesOrderLine> lines =
-                salesOrderLineRepository.findByTenantIdAndSalesOrderIdOrderByLineNoAsc(tenantId, orderId);
+        Long companyId = requireCompanyId();
+
+        SalesOrder order = salesOrderRepository
+                .findByTenantIdAndCompanyIdAndId(tenantId, companyId, orderId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Ordine non trovato nella società attiva"));
+
+        List<SalesOrderLine> lines = salesOrderLineRepository
+                .findByTenantIdAndCompanyIdAndSalesOrderIdOrderByLineNoAsc(
+                        tenantId,
+                        companyId,
+                        orderId
+                );
 
         return salesOrderMapper.toResponse(order, lines);
     }
 
     @Transactional(readOnly = true)
     public List<SalesOrderResponse> findAll(Long tenantId) {
-        List<SalesOrder> orders = salesOrderRepository.findByTenantIdOrderByOrderDateDescIdDesc(tenantId);
+        Long companyId = requireCompanyId();
+        List<SalesOrder> orders = salesOrderRepository
+                .findByTenantIdAndCompanyIdOrderByOrderDateDescIdDesc(
+                        tenantId, companyId);
         List<SalesOrderResponse> responses = new ArrayList<>();
-
         for (SalesOrder order : orders) {
-            List<SalesOrderLine> lines =
-                    salesOrderLineRepository.findByTenantIdAndSalesOrderIdOrderByLineNoAsc(tenantId, order.getId());
+            List<SalesOrderLine> lines = salesOrderLineRepository
+                    .findByTenantIdAndCompanyIdAndSalesOrderIdOrderByLineNoAsc(
+                            tenantId,
+                            companyId,
+                            order.getId()
+                    );
             responses.add(salesOrderMapper.toResponse(order, lines));
         }
-
         return responses;
     }
+    private void validateQuoteConvertible(
+            Long tenantId,
+            Long companyId,
+            Quote quote) {
 
-    private void validateQuoteConvertible(Long tenantId, Quote quote) {
         if (!CONVERTIBLE_QUOTE_STATUSES.contains(quote.getStatus())) {
             throw new BusinessException(
-                    "Il preventivo con stato '" + quote.getStatus() + "' non è convertibile in ordine");
+                    "Il preventivo con stato '" + quote.getStatus()
+                            + "' non è convertibile in ordine");
         }
 
-        if (salesOrderRepository.existsByTenantIdAndQuoteId(tenantId, quote.getId())) {
-            throw new BusinessException("Esiste già un ordine generato da questo preventivo");
+        if (salesOrderRepository.existsByTenantIdAndCompanyIdAndQuoteId(
+                tenantId, companyId, quote.getId())) {
+
+            throw new BusinessException(
+                    "Esiste già un ordine generato da questo preventivo");
         }
     }
 
-    private List<SalesOrderLine> copyQuoteLinesToOrder(Long tenantId,
-                                                       Long salesOrderId,
-                                                       List<QuoteLine> quoteLines) {
+    private List<SalesOrderLine> copyQuoteLinesToOrder(
+            Long tenantId,
+            Long companyId,
+            Long salesOrderId,
+            List<QuoteLine> quoteLines) {
+
         List<SalesOrderLine> orderLines = new ArrayList<>();
 
         for (QuoteLine quoteLine : quoteLines) {
             SalesOrderLine orderLine = new SalesOrderLine();
             orderLine.setTenantId(tenantId);
+            orderLine.setCompanyId(companyId);
             orderLine.setSalesOrderId(salesOrderId);
             orderLine.setLineNo(quoteLine.getLineNo());
             orderLine.setDescription(quoteLine.getDescription());
@@ -165,26 +222,45 @@ public class SalesOrderService {
         return salesOrderLineRepository.saveAll(orderLines);
     }
 
-    private String nextOrderNumber(Long tenantId) {
-        return documentSequenceService.nextNumber(tenantId, DocumentSequenceService.SALES_ORDER);
-    }
+    private String nextOrderNumber(Long tenantId, Long companyId) {
 
+        return documentSequenceService.nextNumber(
+                tenantId,
+                companyId,
+                DocumentSequenceService.SALES_ORDER
+        );
+    }
     @Transactional(readOnly = true)
     public com.gestiva.common.dto.PageResponse<com.gestiva.sales.order.dto.SalesOrderResponse> search(
             Long tenantId,
             com.gestiva.sales.order.dto.SalesOrderSearchRequest request,
             org.springframework.data.domain.Pageable pageable) {
 
-        var specification = com.gestiva.sales.order.repository.SalesOrderSpecifications.hasTenantId(tenantId)
-                .and(com.gestiva.sales.order.repository.SalesOrderSpecifications.hasStatus(request.getStatus()))
-                .and(com.gestiva.sales.order.repository.SalesOrderSpecifications.hasCustomerId(request.getCustomerId()))
-                .and(com.gestiva.sales.order.repository.SalesOrderSpecifications.hasQuoteId(request.getQuoteId()))
-                .and(com.gestiva.sales.order.repository.SalesOrderSpecifications.matchesSearch(request.getSearch()));
+        Long companyId = requireCompanyId();
+
+        var specification =
+                com.gestiva.sales.order.repository.SalesOrderSpecifications
+                        .hasTenantId(tenantId)
+                        .and(com.gestiva.sales.order.repository.SalesOrderSpecifications
+                                .hasCompanyId(companyId))
+                        .and(com.gestiva.sales.order.repository.SalesOrderSpecifications
+                                .hasStatus(request.getStatus()))
+                        .and(com.gestiva.sales.order.repository.SalesOrderSpecifications
+                                .hasCustomerId(request.getCustomerId()))
+                        .and(com.gestiva.sales.order.repository.SalesOrderSpecifications
+                                .hasQuoteId(request.getQuoteId()))
+                        .and(com.gestiva.sales.order.repository.SalesOrderSpecifications
+                                .matchesSearch(request.getSearch()));
 
         var page = salesOrderRepository.findAll(specification, pageable);
 
         var content = page.getContent().stream().map(order -> {
-            var lines = salesOrderLineRepository.findByTenantIdAndSalesOrderIdOrderByLineNoAsc(tenantId, order.getId());
+            var lines = salesOrderLineRepository
+                    .findByTenantIdAndCompanyIdAndSalesOrderIdOrderByLineNoAsc(
+                            tenantId,
+                            companyId,
+                            order.getId()
+                    );
             return salesOrderMapper.toResponse(order, lines);
         }).toList();
 

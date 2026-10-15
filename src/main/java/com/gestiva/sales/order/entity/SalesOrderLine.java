@@ -8,8 +8,23 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "sales_order_line")
+@Table(
+        name = "sales_order_line",
+        indexes = {
+                @jakarta.persistence.Index(
+                        name = "idx_sales_order_line_company_order",
+                        columnList = "tenant_id, company_id, sales_order_id"
+                ),
+                @jakarta.persistence.Index(
+                        name = "idx_sales_order_line_company_item",
+                        columnList = "tenant_id, company_id, item_id"
+                )
+        }
+)
 public class SalesOrderLine extends TenantAwareEntity {
+
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
 
     @Column(name = "sales_order_id", nullable = false)
     private Long salesOrderId;
@@ -119,5 +134,13 @@ public class SalesOrderLine extends TenantAwareEntity {
 
     public void setTaxAmount(BigDecimal taxAmount) {
         this.taxAmount = taxAmount;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 }

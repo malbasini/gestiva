@@ -14,7 +14,8 @@ import com.gestiva.sales.order.repository.SalesOrderRepository;
 import com.gestiva.security.tenant.repository.TenantRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.gestiva.common.exception.BusinessException;
+import com.gestiva.security.company.context.CompanyContext;
 import java.util.List;
 
 @Service
@@ -26,26 +27,54 @@ public class SalesOrderPdfDataService {
     private final CustomerRepository customerRepository;
     private final CompanyProfileRepository companyProfileRepository;
     private final TenantRepository tenantRepository;
+    private final CompanyContext companyContext;
 
-    public SalesOrderPdfDataService(SalesOrderRepository salesOrderRepository,
-                                    SalesOrderLineRepository salesOrderLineRepository,
-                                    CustomerRepository customerRepository,
-                                    CompanyProfileRepository companyProfileRepository,
-                                    TenantRepository tenantRepository) {
+    public SalesOrderPdfDataService(
+            SalesOrderRepository salesOrderRepository,
+            SalesOrderLineRepository salesOrderLineRepository,
+            CustomerRepository customerRepository,
+            CompanyProfileRepository companyProfileRepository,
+            TenantRepository tenantRepository,
+            CompanyContext companyContext) {
+
         this.salesOrderRepository = salesOrderRepository;
         this.salesOrderLineRepository = salesOrderLineRepository;
         this.customerRepository = customerRepository;
         this.companyProfileRepository = companyProfileRepository;
         this.tenantRepository = tenantRepository;
+        this.companyContext = companyContext;
+    }
+
+    private Long requireCompanyId() {
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        return companyId;
     }
 
     public SalesOrderPdfView buildView(Long tenantId, Long orderId) {
-        SalesOrder order = salesOrderRepository.findByTenantIdAndId(tenantId, orderId)
-                .orElseThrow(() -> new NotFoundException("Ordine non trovato"));
+        Long companyId = requireCompanyId();
+        SalesOrder order = salesOrderRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        orderId
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Ordine non trovato nella società attiva"
+                ));
 
         List<SalesOrderLine> lines =
-                salesOrderLineRepository.findByTenantIdAndSalesOrderIdOrderByLineNoAsc(tenantId, orderId);
-
+                salesOrderLineRepository
+                        .findByTenantIdAndCompanyIdAndSalesOrderIdOrderByLineNoAsc(
+                                tenantId,
+                                companyId,
+                                orderId
+                        );
         Customer customer = customerRepository.findByTenantIdAndId(tenantId, order.getCustomerId())
                 .orElseThrow(() -> new NotFoundException("Cliente non trovato"));
 

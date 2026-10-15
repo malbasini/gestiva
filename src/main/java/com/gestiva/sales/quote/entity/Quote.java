@@ -6,14 +6,35 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "quote",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_id", "quote_number"}))
+@Table(
+        name = "quote",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_quote_tenant_company_number",
+                        columnNames = {"tenant_id", "company_id", "quote_number"}
+                )
+        },
+        indexes = {
+                @Index(
+                        name = "idx_quote_company_date",
+                        columnList = "tenant_id, company_id, quote_date"
+                ),
+                @Index(
+                        name = "idx_quote_company_customer",
+                        columnList = "tenant_id, company_id, customer_id"
+                ),
+                @Index(
+                        name = "idx_quote_company_status",
+                        columnList = "tenant_id, company_id, status"
+                )
+        }
+)
 public class Quote extends TenantAwareEntity {
 
     @Column(name = "customer_id", nullable = false)
     private Long customerId;
 
-    @Column(name = "company_id")
+    @Column(name = "company_id", nullable = false)
     private Long companyId;
 
     @Column(name = "quote_number", nullable = false, length = 50)
