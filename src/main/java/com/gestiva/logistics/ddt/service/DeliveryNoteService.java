@@ -21,6 +21,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
+import com.gestiva.security.company.context.CompanyContext;
+
 
 @Service
 @Transactional
@@ -34,15 +36,18 @@ public class DeliveryNoteService {
     private final DocumentSequenceService documentSequenceService;
     private final InventoryMovementRepository inventoryMovementRepository;
     private final InventoryMovementService inventoryMovementService;
+    private final CompanyContext companyContext;
 
-    public DeliveryNoteService(DeliveryNoteRepository deliveryNoteRepository,
-                               DeliveryNoteLineRepository deliveryNoteLineRepository,
-                               SalesOrderRepository salesOrderRepository,
-                               SalesOrderLineRepository salesOrderLineRepository,
-                               InventoryDocumentPostingService inventoryDocumentPostingService,
-                               DocumentSequenceService documentSequenceService,
-                               InventoryMovementRepository inventoryMovementRepository,
-                               InventoryMovementService inventoryMovementService) {
+    public DeliveryNoteService(
+            DeliveryNoteRepository deliveryNoteRepository,
+            DeliveryNoteLineRepository deliveryNoteLineRepository,
+            SalesOrderRepository salesOrderRepository,
+            SalesOrderLineRepository salesOrderLineRepository,
+            InventoryDocumentPostingService inventoryDocumentPostingService,
+            DocumentSequenceService documentSequenceService,
+            InventoryMovementRepository inventoryMovementRepository,
+            InventoryMovementService inventoryMovementService,
+            CompanyContext companyContext) {
 
         this.deliveryNoteRepository = deliveryNoteRepository;
         this.deliveryNoteLineRepository = deliveryNoteLineRepository;
@@ -52,28 +57,57 @@ public class DeliveryNoteService {
         this.documentSequenceService = documentSequenceService;
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.inventoryMovementService = inventoryMovementService;
+        this.companyContext = companyContext;
+    }
+
+    private Long requireCompanyId() {
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        return companyId;
     }
 
     public DeliveryNoteResponse createFromSalesOrder(Long tenantId, Long salesOrderId) {
-        SalesOrder order = salesOrderRepository.findByTenantIdAndId(tenantId, salesOrderId)
-                .orElseThrow(() -> new NotFoundException("Ordine non trovato"));
+        Long companyId = requireCompanyId();
 
-        validateOrderCanGenerateDeliveryNote(order, tenantId, salesOrderId);
+        SalesOrder order = salesOrderRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        salesOrderId
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Ordine non trovato nella società attiva"
+                ));
+
+        validateOrderCanGenerateDeliveryNote(
+                order,
+                tenantId,
+                companyId,
+                salesOrderId
+        );
 
         List<SalesOrderLine> orderLines = salesOrderLineRepository
-                .findByTenantIdAndSalesOrderIdOrderByLineNoAsc(tenantId, salesOrderId);
+                .findByTenantIdAndCompanyIdAndSalesOrderIdOrderByLineNoAsc(
+                        tenantId,
+                        companyId,
+                        salesOrderId
+                );
 
         if (orderLines.isEmpty()) {
             throw new BusinessException("Impossibile creare un DDT da un ordine senza righe.");
         }
 
         OffsetDateTime now = OffsetDateTime.now();
-
         DeliveryNote note = new DeliveryNote();
         note.setTenantId(tenantId);
+        note.setCompanyId(companyId);
         note.setSalesOrderId(order.getId());
         note.setCustomerId(order.getCustomerId());
-        note.setDdtNumber(generateNextDdtNumber(tenantId));
+        note.setDdtNumber(generateNextDdtNumber(tenantId, companyId));
         note.setDdtDate(LocalDate.now());
         note.setStatus("ISSUED");
 
@@ -94,6 +128,7 @@ public class DeliveryNoteService {
         for (SalesOrderLine orderLine : orderLines) {
             line = new DeliveryNoteLine();
             line.setTenantId(tenantId);
+            line.setCompanyId(companyId);
             line.setDeliveryNoteId(savedNote.getId());
             line.setSalesOrderLineId(orderLine.getId());
             line.setLineNo(lineNo++);
@@ -112,21 +147,38 @@ public class DeliveryNoteService {
         return toResponse(savedNote);
     }
 
-    private void validateOrderCanGenerateDeliveryNote(SalesOrder order, Long tenantId, Long salesOrderId) {
+    private void validateOrderCanGenerateDeliveryNote(
+            SalesOrder order,
+            Long tenantId,
+            Long companyId,
+            Long salesOrderId) {
+
         if (!"FULFILLED".equals(order.getStatus())) {
-            throw new BusinessException("Il DDT può essere creato solo da un ordine FULFILLED.");
+            throw new BusinessException(
+                    "Il DDT può essere creato solo da un ordine FULFILLED."
+            );
         }
 
-        boolean alreadyExists = deliveryNoteRepository.existsByTenantIdAndSalesOrderId(tenantId, salesOrderId);
+        boolean alreadyExists = deliveryNoteRepository
+                .existsByTenantIdAndCompanyIdAndSalesOrderId(
+                        tenantId,
+                        companyId,
+                        salesOrderId
+                );
+
         if (alreadyExists) {
-            throw new BusinessException("Esiste già un DDT associato a questo ordine.");
+            throw new BusinessException(
+                    "Esiste già un DDT associato a questo ordine nella società attiva."
+            );
         }
     }
-
-    private String generateNextDdtNumber(Long tenantId) {
-        return documentSequenceService.nextDeliveryNoteNumber(tenantId);
+    private String generateNextDdtNumber(Long tenantId, Long companyId) {
+        return documentSequenceService.nextNumber(
+                tenantId,
+                companyId,
+                DocumentSequenceService.DELIVERY_NOTE
+        );
     }
-
     private BigDecimal defaultZero(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
     }

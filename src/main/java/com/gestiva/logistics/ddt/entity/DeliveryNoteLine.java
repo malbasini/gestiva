@@ -1,7 +1,6 @@
 package com.gestiva.logistics.ddt.entity;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 
 @Entity
@@ -14,6 +13,9 @@ public class DeliveryNoteLine {
 
     @Column(name = "tenant_id", nullable = false)
     private Long tenantId;
+
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
 
     @Column(name = "delivery_note_id", nullable = false)
     private Long deliveryNoteId;
@@ -170,5 +172,13 @@ public class DeliveryNoteLine {
 
     public void setDeliveryNote(DeliveryNote deliveryNote) {
         this.deliveryNote = deliveryNote;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 }

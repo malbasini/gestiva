@@ -24,6 +24,69 @@ public class InventoryMovementService {
     }
 
     public Long registerMovement(Long tenantId,
+                                 Long companyId,
+                                 Long itemId,
+                                 LocalDate movementDate,
+                                 String movementType,
+                                 String causalCode,
+                                 BigDecimal quantity,
+                                 BigDecimal unitCost,
+                                 String referenceType,
+                                 Long referenceId,
+                                 String notes) {
+
+        if (tenantId == null) {
+            throw new BusinessException("Tenant non valido.");
+        }
+
+        if (companyId == null) {
+            throw new BusinessException("Società non selezionata.");
+        }
+
+        var item = itemRepository.findByTenantIdAndId(tenantId, itemId)
+                .orElseThrow(() -> new BusinessException("Articolo non trovato"));
+
+        if (!item.isTrackStock()) {
+            throw new BusinessException("L'articolo non è gestito a magazzino.");
+        }
+
+        BigDecimal qty = scaleQty(quantity);
+
+        if (qty.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("La quantità deve essere maggiore di zero.");
+        }
+
+        boolean outbound = isOutbound(movementType);
+
+        BigDecimal cost = outbound
+                ? null
+                : (unitCost == null ? null : scaleCost(unitCost));
+
+        BigDecimal totalCost = cost != null
+                ? scaleCost(cost.multiply(qty))
+                : null;
+
+        InventoryMovement movement = new InventoryMovement();
+
+        movement.setTenantId(tenantId);
+        movement.setCompanyId(companyId);
+        movement.setItemId(itemId);
+        movement.setMovementDate(movementDate);
+        movement.setMovementType(movementType);
+        movement.setCausalCode(causalCode);
+        movement.setQuantity(qty);
+        movement.setUnitCost(cost);
+        movement.setTotalCost(totalCost);
+        movement.setReferenceType(referenceType);
+        movement.setReferenceId(referenceId);
+        movement.setNotes(notes);
+        movement.setReversed(false);
+        movement.setReversalOfMovementId(null);
+
+        return inventoryMovementRepository.save(movement).getId();
+    }
+
+    public Long registerMovement(Long tenantId,
                                  Long itemId,
                                  LocalDate movementDate,
                                  String movementType,

@@ -8,6 +8,10 @@ import com.gestiva.logistics.ddt.repository.DeliveryNoteLineRepository;
 import com.gestiva.logistics.ddt.repository.DeliveryNoteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.gestiva.common.exception.BusinessException;
+import com.gestiva.security.company.context.CompanyContext;
+
+
 
 @Service
 @Transactional(readOnly = true)
@@ -17,26 +21,61 @@ public class DeliveryNoteDetailWebService {
     private final DeliveryNoteLineRepository deliveryNoteLineRepository;
     private final CustomerRepository customerRepository;
     private final InvoiceRepository invoiceRepository;
+    private final CompanyContext companyContext;
 
-    public DeliveryNoteDetailWebService(DeliveryNoteRepository deliveryNoteRepository,
-                                        DeliveryNoteLineRepository deliveryNoteLineRepository,
-                                        CustomerRepository customerRepository,
-                                        InvoiceRepository invoiceRepository) {
+    public DeliveryNoteDetailWebService(
+            DeliveryNoteRepository deliveryNoteRepository,
+            DeliveryNoteLineRepository deliveryNoteLineRepository,
+            CustomerRepository customerRepository,
+            InvoiceRepository invoiceRepository,
+            CompanyContext companyContext) {
 
         this.deliveryNoteRepository = deliveryNoteRepository;
         this.deliveryNoteLineRepository = deliveryNoteLineRepository;
         this.customerRepository = customerRepository;
         this.invoiceRepository = invoiceRepository;
+        this.companyContext = companyContext;
+    }
+
+    private Long requireCompanyId() {
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        return companyId;
     }
 
     public DeliveryNoteDetailView getDetail(Long tenantId, Long deliveryNoteId) {
-        var note = deliveryNoteRepository.findByTenantIdAndId(tenantId, deliveryNoteId)
-                .orElseThrow(() -> new NotFoundException("DDT non trovato"));
+        Long companyId = requireCompanyId();
 
-        var customer = customerRepository.findByTenantIdAndId(tenantId, note.getCustomerId())
-                .orElseThrow(() -> new NotFoundException("Cliente non trovato"));
+        var note = deliveryNoteRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        deliveryNoteId
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "DDT non trovato nella società attiva"
+                ));
 
-        var lines = deliveryNoteLineRepository.findByTenantIdAndDeliveryNoteIdOrderByLineNoAsc(tenantId, deliveryNoteId);
+        var customer = customerRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        note.getCustomerId()
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Cliente non trovato nella società attiva"
+                ));
+
+        var lines = deliveryNoteLineRepository
+                .findByTenantIdAndCompanyIdAndDeliveryNoteIdOrderByLineNoAsc(
+                        tenantId,
+                        companyId,
+                        deliveryNoteId
+                );
 
         DeliveryNoteDetailView view = new DeliveryNoteDetailView();
         view.setId(note.getId());
@@ -74,13 +113,19 @@ public class DeliveryNoteDetailWebService {
             l.setFormattedLineTotal(PdfFormatUtils.formatMoney(taxable));
             return l;
         }).toList());
-        var invoiceOpt = invoiceRepository.findByTenantIdAndDeliveryNoteId(tenantId, deliveryNoteId);
-
+        var invoiceOpt = invoiceRepository
+                .findByTenantIdAndCompanyIdAndDeliveryNoteId(
+                        tenantId,
+                        companyId,
+                        deliveryNoteId
+                );
         view.setInvoiceExists(invoiceOpt.isPresent());
-        view.setInvoiceCreatable("ISSUED".equals(note.getStatus()) && invoiceOpt.isEmpty());
-        view.setInvoiceExists(invoiceOpt.isPresent());
-        view.setInvoiceCreatable("ISSUED".equals(note.getStatus()) && invoiceOpt.isEmpty());
-        view.setCancelable("ISSUED".equals(note.getStatus()) && invoiceOpt.isEmpty());
+        view.setInvoiceCreatable(
+                "ISSUED".equals(note.getStatus()) && invoiceOpt.isEmpty()
+        );
+        view.setCancelable(
+                "ISSUED".equals(note.getStatus()) && invoiceOpt.isEmpty()
+        );
         invoiceOpt.ifPresent(invoice -> {
             view.setInvoiceId(invoice.getId());
             view.setInvoiceNumber(invoice.getInvoiceNumber());

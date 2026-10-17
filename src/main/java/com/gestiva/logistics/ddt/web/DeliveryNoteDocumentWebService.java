@@ -7,6 +7,8 @@ import com.gestiva.logistics.ddt.repository.DeliveryNoteLineRepository;
 import com.gestiva.logistics.ddt.repository.DeliveryNoteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.gestiva.common.exception.BusinessException;
+import com.gestiva.security.company.context.CompanyContext;
 
 @Service
 @Transactional(readOnly = true)
@@ -15,23 +17,58 @@ public class DeliveryNoteDocumentWebService {
     private final DeliveryNoteRepository deliveryNoteRepository;
     private final DeliveryNoteLineRepository deliveryNoteLineRepository;
     private final CustomerRepository customerRepository;
+    private final CompanyContext companyContext;
 
-    public DeliveryNoteDocumentWebService(DeliveryNoteRepository deliveryNoteRepository,
-                                          DeliveryNoteLineRepository deliveryNoteLineRepository,
-                                          CustomerRepository customerRepository) {
+    public DeliveryNoteDocumentWebService(
+            DeliveryNoteRepository deliveryNoteRepository,
+            DeliveryNoteLineRepository deliveryNoteLineRepository,
+            CustomerRepository customerRepository,
+            CompanyContext companyContext) {
+
         this.deliveryNoteRepository = deliveryNoteRepository;
         this.deliveryNoteLineRepository = deliveryNoteLineRepository;
         this.customerRepository = customerRepository;
+        this.companyContext = companyContext;
+    }
+
+    private Long requireCompanyId() {
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        return companyId;
     }
 
     public DeliveryNoteDocumentView getDocument(Long tenantId, Long deliveryNoteId) {
-        var note = deliveryNoteRepository.findByTenantIdAndId(tenantId, deliveryNoteId)
-                .orElseThrow(() -> new NotFoundException("DDT non trovato"));
+        Long companyId = requireCompanyId();
+        var note = deliveryNoteRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        deliveryNoteId
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "DDT non trovato nella società attiva"
+                ));
 
-        var customer = customerRepository.findByTenantIdAndId(tenantId, note.getCustomerId())
-                .orElseThrow(() -> new NotFoundException("Cliente non trovato"));
+        var customer = customerRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        note.getCustomerId()
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Cliente non trovato nella società attiva"
+                ));
 
-        var lines = deliveryNoteLineRepository.findByTenantIdAndDeliveryNoteIdOrderByLineNoAsc(tenantId, deliveryNoteId);
+        var lines = deliveryNoteLineRepository
+                .findByTenantIdAndCompanyIdAndDeliveryNoteIdOrderByLineNoAsc(
+                        tenantId,
+                        companyId,
+                        deliveryNoteId
+                );
 
         DeliveryNoteDocumentView view = new DeliveryNoteDocumentView();
         view.setId(note.getId());

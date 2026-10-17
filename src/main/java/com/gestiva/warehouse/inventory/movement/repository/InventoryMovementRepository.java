@@ -11,6 +11,31 @@ import java.util.List;
 import java.util.Optional;
 
 public interface InventoryMovementRepository extends JpaRepository<InventoryMovement, Long>, JpaSpecificationExecutor<InventoryMovement> {
+
+    // Gestiva V2 - Recupero movimento per società
+    Optional<InventoryMovement> findByTenantIdAndCompanyIdAndId(
+            Long tenantId,
+            Long companyId,
+            Long id
+    );
+
+    // Gestiva V2 - Movimenti associati a un documento
+    List<InventoryMovement> findByTenantIdAndCompanyIdAndReferenceTypeAndReferenceIdOrderByIdAsc(
+            Long tenantId,
+            Long companyId,
+            String referenceType,
+            Long referenceId
+    );
+
+    // Gestiva V2 - Verifica movimenti già registrati per un documento
+    boolean existsByTenantIdAndCompanyIdAndReferenceTypeAndReferenceIdAndCausalCode(
+            Long tenantId,
+            Long companyId,
+            String referenceType,
+            Long referenceId,
+            String causalCode
+    );
+
     Optional<InventoryMovement> findByTenantIdAndId(Long tenantId, Long id);
 
     List<InventoryMovement> findByTenantIdAndItemIdOrderByMovementDateAscIdAsc(Long tenantId, Long itemId);

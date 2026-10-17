@@ -18,4 +18,14 @@ public interface DeliveryNoteLineRepository extends JpaRepository<DeliveryNoteLi
        """)
 
     List<DeliveryNoteLine> findByTenantIdAndDeliveryNoteIdOrderByLineNoAsc(Long tenantId, Long id);
+
+    // =====================================================
+    // METODI V2 - MULTI-SOCIETÀ
+    // =====================================================
+
+    List<DeliveryNoteLine> findByTenantIdAndCompanyIdAndDeliveryNoteIdOrderByLineNoAsc(
+            Long tenantId,
+            Long companyId,
+            Long deliveryNoteId
+    );
 }

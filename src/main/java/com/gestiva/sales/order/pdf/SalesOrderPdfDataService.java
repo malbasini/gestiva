@@ -6,17 +6,19 @@ import com.gestiva.crm.contact.repository.CustomerRepository;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.platform.company.entity.CompanyProfile;
 import com.gestiva.platform.company.repository.CompanyProfileRepository;
-import com.gestiva.security.tenant.entity.Tenant;
 import com.gestiva.sales.order.entity.SalesOrder;
 import com.gestiva.sales.order.entity.SalesOrderLine;
 import com.gestiva.sales.order.repository.SalesOrderLineRepository;
 import com.gestiva.sales.order.repository.SalesOrderRepository;
-import com.gestiva.security.tenant.repository.TenantRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.security.company.context.CompanyContext;
 import java.util.List;
+import com.gestiva.platform.company.entity.Company;
+import com.gestiva.platform.company.repository.CompanyRepository;
+
+
 
 @Service
 @Transactional(readOnly = true)
@@ -26,22 +28,22 @@ public class SalesOrderPdfDataService {
     private final SalesOrderLineRepository salesOrderLineRepository;
     private final CustomerRepository customerRepository;
     private final CompanyProfileRepository companyProfileRepository;
-    private final TenantRepository tenantRepository;
     private final CompanyContext companyContext;
+    private final CompanyRepository companyRepository;
 
     public SalesOrderPdfDataService(
             SalesOrderRepository salesOrderRepository,
             SalesOrderLineRepository salesOrderLineRepository,
             CustomerRepository customerRepository,
             CompanyProfileRepository companyProfileRepository,
-            TenantRepository tenantRepository,
+            CompanyRepository companyRepository,
             CompanyContext companyContext) {
 
         this.salesOrderRepository = salesOrderRepository;
         this.salesOrderLineRepository = salesOrderLineRepository;
         this.customerRepository = customerRepository;
         this.companyProfileRepository = companyProfileRepository;
-        this.tenantRepository = tenantRepository;
+        this.companyRepository = companyRepository;
         this.companyContext = companyContext;
     }
 
@@ -58,6 +60,17 @@ public class SalesOrderPdfDataService {
 
     public SalesOrderPdfView buildView(Long tenantId, Long orderId) {
         Long companyId = requireCompanyId();
+        Company issuingCompany = companyRepository
+                .findByTenantIdAndId(tenantId, companyId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Società emittente non trovata"
+                ));
+
+        if (!issuingCompany.isActive()) {
+            throw new BusinessException(
+                    "La società emittente non è attiva."
+            );
+        }
         SalesOrder order = salesOrderRepository
                 .findByTenantIdAndCompanyIdAndId(
                         tenantId,
@@ -75,35 +88,50 @@ public class SalesOrderPdfDataService {
                                 companyId,
                                 orderId
                         );
-        Customer customer = customerRepository.findByTenantIdAndId(tenantId, order.getCustomerId())
-                .orElseThrow(() -> new NotFoundException("Cliente non trovato"));
-
+        Customer customer = customerRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        order.getCustomerId()
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Cliente non trovato nella società attiva"
+                ));
         CompanyProfile company = companyProfileRepository
                 .findByTenantIdAndCompanyId(
                         tenantId,
                         companyId
                 )
                 .orElse(null);
-        Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
 
         SalesOrderPdfView view = new SalesOrderPdfView();
+        view.setCompanyName(
+                firstNonBlank(
+                        company != null ? company.getLegalName() : null,
+                        issuingCompany.getLegalName()
+                )
+        );
 
-        if (company != null) {
-            view.setCompanyName(company.getLegalName());
-            view.setCompanyEmail(company.getEmail());
-            view.setCompanyPhone(company.getPhone());
-            view.setCompanyVatNumber(company.getVatNumber());
-        } else if (tenant != null) {
-            view.setCompanyName(tenant.getName());
-            view.setCompanyEmail(tenant.getEmail());
-            view.setCompanyPhone("");
-            view.setCompanyVatNumber("");
-        } else {
-            view.setCompanyName("Azienda Demo");
-            view.setCompanyEmail("");
-            view.setCompanyPhone("");
-            view.setCompanyVatNumber("");
-        }
+        view.setCompanyEmail(
+                firstNonBlank(
+                        company != null ? company.getEmail() : null,
+                        issuingCompany.getEmail()
+                )
+        );
+
+        view.setCompanyPhone(
+                firstNonBlank(
+                        company != null ? company.getPhone() : null,
+                        issuingCompany.getPhone()
+                )
+        );
+
+        view.setCompanyVatNumber(
+                firstNonBlank(
+                        company != null ? company.getVatNumber() : null,
+                        issuingCompany.getVatNumber()
+                )
+        );
         view.setCustomerName(customer.getName());
         view.setCustomerEmail(customer.getEmail());
         view.setCustomerVatNumber(customer.getVatNumber());
@@ -146,5 +174,15 @@ public class SalesOrderPdfDataService {
         }).toList());
 
         return view;
+    }
+
+    private String firstNonBlank(String preferred, String fallback) {
+        if (preferred != null && !preferred.isBlank()) {
+            return preferred;
+        }
+        if (fallback != null && !fallback.isBlank()) {
+            return fallback;
+        }
+        return "";
     }
 }

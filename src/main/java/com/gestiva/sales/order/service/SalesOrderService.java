@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import com.gestiva.security.company.context.CompanyContext;
-
+import com.gestiva.crm.contact.repository.CustomerRepository;
 
 @Service
 @Transactional
@@ -42,7 +42,7 @@ public class SalesOrderService {
     private final SalesOrderMapper salesOrderMapper;
     private final DocumentSequenceService documentSequenceService;
     private final CompanyContext companyContext;
-
+    private final CustomerRepository customerRepository;
 
 
     public SalesOrderService(SalesOrderRepository salesOrderRepository,
@@ -52,7 +52,8 @@ public class SalesOrderService {
                              DocumentSequenceRepository documentSequenceRepository,
                              SalesOrderMapper salesOrderMapper,
                              DocumentSequenceService documentSequenceService,
-                             CompanyContext companyContext) {
+                             CompanyContext companyContext,
+                             CustomerRepository customerRepository) {
 
         this.salesOrderRepository = salesOrderRepository;
         this.salesOrderLineRepository = salesOrderLineRepository;
@@ -62,6 +63,7 @@ public class SalesOrderService {
         this.salesOrderMapper = salesOrderMapper;
         this.documentSequenceService = documentSequenceService;
         this.companyContext = companyContext;
+        this.customerRepository = customerRepository;
     }
 
     private Long requireCompanyId() {
@@ -85,8 +87,22 @@ public class SalesOrderService {
 
         validateQuoteConvertible(tenantId, companyId, quote);
 
+        customerRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        quote.getCustomerId()
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "Il cliente del preventivo non appartiene alla società attiva."
+                ));
+
         List<QuoteLine> quoteLines = quoteLineRepository
-                .findByTenantIdAndQuoteIdOrderByLineNoAsc(tenantId, quoteId);
+                .findByTenantIdAndCompanyIdAndQuoteIdOrderByLineNoAsc(
+                        tenantId,
+                        companyId,
+                        quoteId
+                );
 
         if (quoteLines.isEmpty()) {
             throw new BusinessException(

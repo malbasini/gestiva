@@ -9,7 +9,8 @@ import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.gestiva.security.company.context.CompanyContext;
+import com.gestiva.common.exception.BusinessException;
 import java.time.LocalDate;
 
 @Service
@@ -17,13 +18,32 @@ import java.time.LocalDate;
 public class DeliveryNoteWebService {
 
     private final DeliveryNoteRepository deliveryNoteRepository;
+    private final CompanyContext companyContext;
     private final CustomerRepository customerRepository;
 
-    public DeliveryNoteWebService(DeliveryNoteRepository deliveryNoteRepository,
-                                  CustomerRepository customerRepository) {
+
+
+
+
+    public DeliveryNoteWebService(
+            DeliveryNoteRepository deliveryNoteRepository,
+            CustomerRepository customerRepository,
+            CompanyContext companyContext) {
 
         this.deliveryNoteRepository = deliveryNoteRepository;
         this.customerRepository = customerRepository;
+        this.companyContext = companyContext;
+    }
+
+    private Long requireCompanyId() {
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        return companyId;
     }
 
     public Page<DeliveryNoteListItemView> findPage(Long tenantId,
@@ -33,6 +53,7 @@ public class DeliveryNoteWebService {
                                                    String status,
                                                    LocalDate dateFrom,
                                                    LocalDate dateTo) {
+        Long companyId = requireCompanyId();
         Pageable pageable = PageRequest.of(
                 page,
                 size,
@@ -40,6 +61,7 @@ public class DeliveryNoteWebService {
         );
 
         Specification<DeliveryNote> spec = Specification.where(byTenant(tenantId))
+                .and(byCompany(companyId))
                 .and(bySearch(q))
                 .and(byStatus(status))
                 .and(byDateFrom(dateFrom))
@@ -50,6 +72,11 @@ public class DeliveryNoteWebService {
 
     private Specification<DeliveryNote> byTenant(Long tenantId) {
         return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
+    }
+
+    private Specification<DeliveryNote> byCompany(Long companyId) {
+        return (root, query, cb) ->
+                cb.equal(root.get("companyId"), companyId);
     }
 
     private Specification<DeliveryNote> bySearch(String q) {
@@ -84,7 +111,13 @@ public class DeliveryNoteWebService {
 
     private DeliveryNoteListItemView toListItemView(DeliveryNote note) {
         DeliveryNoteListItemView v = new DeliveryNoteListItemView();
-        Customer customer = customerRepository.findById(note.getCustomerId()).orElse(null);
+        Customer customer = customerRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        note.getTenantId(),
+                        note.getCompanyId(),
+                        note.getCustomerId()
+                )
+                .orElse(null);
         if (customer != null) {
             v.setCustomerName(customer.getName());
         }

@@ -2,7 +2,6 @@ package com.gestiva.sales.order.repository;
 
 import com.gestiva.sales.order.entity.SalesOrderLine;
 import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
 
 public interface SalesOrderLineRepository

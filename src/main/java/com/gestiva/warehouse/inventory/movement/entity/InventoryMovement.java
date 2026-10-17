@@ -22,6 +22,9 @@ import java.time.LocalDate;
 )
 public class InventoryMovement extends TenantAwareEntity {
 
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
+
     @Column(name = "item_id", nullable = false)
     private Long itemId;
 
@@ -174,5 +177,13 @@ public class InventoryMovement extends TenantAwareEntity {
 
     public void setLocationId(Long locationId) {
         this.locationId = locationId;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 }
