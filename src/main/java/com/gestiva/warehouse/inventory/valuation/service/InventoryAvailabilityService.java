@@ -148,4 +148,77 @@ public class InventoryAvailabilityService {
             );
         }
     }
+    // Gestiva V2 - Giacenza per società e magazzino
+    public BigDecimal getAvailableQtyByCompanyAndWarehouse(
+            Long tenantId,
+            Long companyId,
+            Long warehouseId,
+            Long itemId,
+            Long locationId) {
+
+        if (tenantId == null
+                || companyId == null
+                || warehouseId == null
+                || itemId == null) {
+
+            throw new BusinessException(
+                    "Tenant, società, magazzino e articolo sono obbligatori."
+            );
+        }
+
+        BigDecimal balance =
+                inventoryMovementRepository
+                        .calculateInventoryBalanceByCompanyAndWarehouse(
+                                tenantId,
+                                companyId,
+                                warehouseId,
+                                itemId,
+                                locationId
+                        );
+
+        return balance == null
+                ? BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP)
+                : balance.setScale(3, RoundingMode.HALF_UP);
+    }
+    // Gestiva V2 - Controllo disponibilità per società e magazzino
+    public void validateAvailabilityByCompanyAndWarehouse(
+            Long tenantId,
+            Long companyId,
+            Long warehouseId,
+            Long itemId,
+            Long locationId,
+            BigDecimal requiredQty) {
+
+        if (requiredQty == null
+                || requiredQty.compareTo(BigDecimal.ZERO) <= 0) {
+
+            throw new BusinessException(
+                    "La quantità richiesta deve essere maggiore di zero."
+            );
+        }
+
+        BigDecimal requested =
+                requiredQty.setScale(3, RoundingMode.HALF_UP);
+
+        BigDecimal available =
+                getAvailableQtyByCompanyAndWarehouse(
+                        tenantId,
+                        companyId,
+                        warehouseId,
+                        itemId,
+                        locationId
+                );
+
+        if (requested.compareTo(available) > 0) {
+
+            throw new BusinessException(
+                    "Disponibilità insufficiente nel magazzino selezionato. "
+                            + "Disponibile: "
+                            + PdfFormatUtils.formatDecimal(available, 3)
+                            + ", richiesta: "
+                            + PdfFormatUtils.formatDecimal(requested, 3)
+                            + "."
+            );
+        }
+    }
 }

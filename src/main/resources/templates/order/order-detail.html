@@ -31,18 +31,13 @@
               <span>Torna alla lista</span>
             </a>
             <th:block th:if="${order.deliveryNoteCreatable}">
-              <button type="button"
-                      class="btn btn-outline-primary"
-                      onclick="openConfirmModal(this)"
-                      data-confirm-title="Crea DDT"
-                      data-confirm-textContent="Sei sicuro di voler creare il DDT da questo ordine?"
-                      data-confirm-message="Confermi di voler creare il DDT da questo ordine evaso?"
-                      data-confirm-submit="Conferma creazione DDT"
-                      data-confirm-submit-class="btn btn-primary"
-                      th:attr="data-confirm-action=@{/orders/{id}/delivery-note(id=${order.id})}">
-                <i class="bi bi-check2-circle"></i>
-                <span>Crea DDT</span>
-              </button>
+                  <button type="button"
+                          class="btn btn-outline-primary"
+                          data-bs-toggle="modal"
+                          data-bs-target="#createDeliveryNoteModal">
+                      <i class="bi bi-truck"></i>
+                      <span>Crea DDT</span>
+                  </button>
             </th:block>
             <a class="btn btn-outline-primary"
                th:if="${order.deliveryNoteExists}"
@@ -184,5 +179,101 @@
   <div th:replace="~{fragments/layout :: appFooter}"></div>
 </div>
 <div th:replace="~{fragments/layout :: modalFragment}"></div>
+<!-- Finestra dedicata alla creazione del DDT -->
+<div th:if="${order.deliveryNoteCreatable}"
+     class="modal fade"
+     id="createDeliveryNoteModal"
+     tabindex="-1"
+     aria-labelledby="createDeliveryNoteModalLabel"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <form th:action="@{/orders/{id}/delivery-note(id=${order.id})}"
+                  method="post">
+
+                <input type="hidden"
+                       th:name="${_csrf.parameterName}"
+                       th:value="${_csrf.token}"/>
+
+                <input type="hidden"
+                       name="tenantId"
+                       th:value="${tenantId}"/>
+
+                <div class="modal-header">
+                    <h5 class="modal-title"
+                        id="createDeliveryNoteModalLabel">
+                        Crea documento di trasporto
+                    </h5>
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Chiudi">
+                    </button>
+                </div>
+
+                <div class="modal-body">
+
+                    <p>
+                        Seleziona il magazzino da cui verrà
+                        prelevata la merce.
+                    </p>
+
+                    <div class="mb-3">
+
+                        <label for="deliveryNoteWarehouse"
+                               class="form-label">
+                            Magazzino di partenza
+                        </label>
+
+                        <select id="deliveryNoteWarehouse"
+                                name="warehouseId"
+                                class="form-select"
+                                required>
+
+                            <option value="">
+                                -- Seleziona magazzino --
+                            </option>
+
+                            <option th:each="warehouse : ${warehouses}"
+                                    th:value="${warehouse.id}"
+                                    th:text="${warehouse.code + ' - ' + warehouse.name}">
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="alert alert-warning"
+                         th:if="${#lists.isEmpty(warehouses)}">
+                        Nessun magazzino attivo disponibile
+                        per la società corrente.
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+                        Annulla
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary"
+                            th:disabled="${#lists.isEmpty(warehouses)}">
+                        Conferma creazione DDT
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
 </body>
 </html>

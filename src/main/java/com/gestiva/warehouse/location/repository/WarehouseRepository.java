@@ -4,6 +4,11 @@ import com.gestiva.warehouse.location.entity.Warehouse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 
 public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
 
@@ -38,5 +43,20 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
             Long tenantId,
             Long companyId,
             String code
+    );
+
+    // Gestiva V2 - Blocco transazionale del magazzino
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        SELECT w
+        FROM Warehouse w
+        WHERE w.tenantId = :tenantId
+          AND w.company.id = :companyId
+          AND w.id = :warehouseId
+        """)
+    Optional<Warehouse> findByTenantAndCompanyAndIdForUpdate(
+            @Param("tenantId") Long tenantId,
+            @Param("companyId") Long companyId,
+            @Param("warehouseId") Long warehouseId
     );
 }

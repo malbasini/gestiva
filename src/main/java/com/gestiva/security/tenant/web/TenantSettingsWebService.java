@@ -40,10 +40,13 @@ public class TenantSettingsWebService {
 
         method = method.trim().toUpperCase();
 
-        if (!"FIFO".equals(method) && !"LIFO".equals(method) && !"AVERAGE".equals(method)) {
-            throw new BusinessException("Metodo di valorizzazione non valido: " + method);
+        // Gestiva V2 - La valorizzazione delle rimanenze utilizza FIFO
+        if (!"FIFO".equals(method)) {
+            throw new BusinessException(
+                    "Gestiva V2 supporta esclusivamente il metodo FIFO."
+            );
         }
-        tenant.setInventoryValuationMethod(InventoryValuationMethod.valueOf(method));
+        tenant.setInventoryValuationMethod(InventoryValuationMethod.FIFO);
         tenantRepository.save(tenant);
     }
 }

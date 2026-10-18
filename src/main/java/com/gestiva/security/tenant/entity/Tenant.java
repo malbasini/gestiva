@@ -28,7 +28,7 @@ public class Tenant extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "inventory_valuation_method", nullable = false, length = 20)
-    private InventoryValuationMethod inventoryValuationMethod = InventoryValuationMethod.LIFO;
+    private InventoryValuationMethod inventoryValuationMethod = InventoryValuationMethod.FIFO;
 
     @Column(name = "subscription_active", nullable = false)
     private boolean subscriptionActive;

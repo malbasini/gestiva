@@ -127,4 +127,31 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
             @Param("itemId") Long itemId,
             @Param("locationId") Long locationId
     );
+    // Gestiva V2 - Giacenza per società, magazzino e ubicazione
+    @Query("""
+        select coalesce(
+            sum(
+                case
+                    when upper(m.movementType) in ('IN', 'ADJUSTMENT_IN')
+                        then m.quantity
+                    when upper(m.movementType) in ('OUT', 'ADJUSTMENT_OUT')
+                        then -m.quantity
+                    else 0
+                end
+            ), 0
+        )
+        from InventoryMovement m
+        where m.tenantId = :tenantId
+          and m.companyId = :companyId
+          and m.warehouseId = :warehouseId
+          and m.itemId = :itemId
+          and (:locationId is null or m.locationId = :locationId)
+        """)
+    BigDecimal calculateInventoryBalanceByCompanyAndWarehouse(
+            @Param("tenantId") Long tenantId,
+            @Param("companyId") Long companyId,
+            @Param("warehouseId") Long warehouseId,
+            @Param("itemId") Long itemId,
+            @Param("locationId") Long locationId
+    );
 }

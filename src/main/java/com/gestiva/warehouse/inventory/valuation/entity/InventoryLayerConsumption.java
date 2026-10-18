@@ -15,11 +15,31 @@ import java.math.BigDecimal;
 @Table(
         name = "inventory_layer_consumption",
         indexes = {
-                @Index(name = "idx_inv_layer_cons_out", columnList = "tenant_id,out_movement_id"),
-                @Index(name = "idx_inv_layer_cons_layer", columnList = "tenant_id,layer_id")
+                @Index(
+                        name = "idx_inv_layer_cons_out",
+                        columnList = "tenant_id,out_movement_id"
+                ),
+                @Index(
+                        name = "idx_inv_layer_cons_layer",
+                        columnList = "tenant_id,layer_id"
+                ),
+                @Index(
+                        name = "idx_inv_layer_cons_company_out",
+                        columnList = "tenant_id,company_id,out_movement_id"
+                ),
+                @Index(
+                        name = "idx_inv_layer_cons_company_layer",
+                        columnList = "tenant_id,company_id,warehouse_id,layer_id"
+                )
         }
 )
 public class InventoryLayerConsumption extends TenantAwareEntity {
+
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
+
+    @Column(name = "warehouse_id", nullable = false)
+    private Long warehouseId;
 
     @Column(name = "out_movement_id", nullable = false)
     private Long outMovementId;
@@ -74,5 +94,21 @@ public class InventoryLayerConsumption extends TenantAwareEntity {
 
     public void setTotalCost(BigDecimal totalCost) {
         this.totalCost = totalCost;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
+    }
+
+    public Long getWarehouseId() {
+        return warehouseId;
+    }
+
+    public void setWarehouseId(Long warehouseId) {
+        this.warehouseId = warehouseId;
     }
 }

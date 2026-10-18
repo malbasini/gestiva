@@ -13,9 +13,10 @@ import com.gestiva.logistics.ddt.entity.DeliveryNoteLine;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptLineRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.gestiva.warehouse.location.repository.WarehouseRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import com.gestiva.logistics.ddt.repository.DeliveryNoteRepository;
 
 @Service
 @Transactional
@@ -28,24 +29,176 @@ public class InventoryDocumentPostingService {
     private final DeliveryNoteLineRepository deliveryNoteLineRepository;
     private final InventoryValuationService inventoryValuationService;
     private final InventoryAvailabilityService inventoryAvailabilityService;
+    private final WarehouseRepository warehouseRepository;
+    private final DeliveryNoteRepository deliveryNoteRepository;
 
-
-
-    public InventoryDocumentPostingService(InventoryMovementService inventoryMovementService,
-                                           InventoryMovementRepository inventoryMovementRepository,
-                                           ItemRepository itemRepository,
-                                           GoodsReceiptLineRepository goodsReceiptLineRepository,
-                                           DeliveryNoteLineRepository deliveryNoteLineRepository,
-                                           InventoryValuationService inventoryValuationService,
-                                           InventoryAvailabilityService inventoryAvailabilityService) {
+    public InventoryDocumentPostingService(
+            InventoryMovementService inventoryMovementService,
+            InventoryMovementRepository inventoryMovementRepository,
+            ItemRepository itemRepository,
+            GoodsReceiptLineRepository goodsReceiptLineRepository,
+            DeliveryNoteLineRepository deliveryNoteLineRepository,
+            InventoryValuationService inventoryValuationService,
+            InventoryAvailabilityService inventoryAvailabilityService,
+            WarehouseRepository warehouseRepository,
+            DeliveryNoteRepository deliveryNoteRepository) {
 
         this.inventoryMovementService = inventoryMovementService;
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.itemRepository = itemRepository;
         this.goodsReceiptLineRepository = goodsReceiptLineRepository;
-        this.deliveryNoteLineRepository = deliveryNoteLineRepository;
         this.inventoryValuationService = inventoryValuationService;
         this.inventoryAvailabilityService = inventoryAvailabilityService;
+        this.warehouseRepository = warehouseRepository;
+        this.deliveryNoteLineRepository = deliveryNoteLineRepository;
+        this.deliveryNoteRepository = deliveryNoteRepository;
+    }
+
+    // Gestiva V2 - Recupero DDT e blocco del magazzino
+    private DeliveryNote requireDeliveryNoteForPosting(
+            Long tenantId,
+            Long companyId,
+            Long deliveryNoteId) {
+
+        if (tenantId == null || companyId == null || deliveryNoteId == null) {
+            throw new BusinessException(
+                    "Tenant, società e DDT sono obbligatori."
+            );
+        }
+
+        DeliveryNote deliveryNote = deliveryNoteRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        deliveryNoteId
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "DDT non trovato nella società indicata."
+                ));
+
+        Long warehouseId = deliveryNote.getWarehouseId();
+
+        if (warehouseId == null) {
+            throw new BusinessException(
+                    "Impossibile registrare il DDT: magazzino non selezionato."
+            );
+        }
+
+        warehouseRepository
+                .findByTenantAndCompanyAndIdForUpdate(
+                        tenantId,
+                        companyId,
+                        warehouseId
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "Magazzino non trovato nella società indicata."
+                ));
+
+        return deliveryNote;
+    }
+
+    // =====================================================
+    // GESTIVA V2 - SCARICO MAGAZZINO DA DDT MULTI-SOCIETÀ
+    // =====================================================
+
+    public void postSalesDeliveryFromDeliveryNoteV2(
+            Long tenantId,
+            Long companyId,
+            Long deliveryNoteId) {
+
+        // 1. Recupero DDT e blocco pessimista sul magazzino
+        DeliveryNote deliveryNote = requireDeliveryNoteForPosting(
+                tenantId,
+                companyId,
+                deliveryNoteId
+        );
+
+        Long warehouseId = deliveryNote.getWarehouseId();
+        Long locationId = deliveryNote.getLocationId();
+
+        // 2. Controllo idempotenza dopo il blocco
+        boolean alreadyPosted = inventoryMovementRepository
+                .existsByTenantIdAndCompanyIdAndReferenceTypeAndReferenceIdAndCausalCode(
+                        tenantId,
+                        companyId,
+                        "DELIVERY_NOTE",
+                        deliveryNoteId,
+                        "SALES_DELIVERY"
+                );
+
+        if (alreadyPosted) {
+            return;
+        }
+
+        // 3. Recupero righe DDT della società
+        var lines = deliveryNoteLineRepository
+                .findByTenantIdAndCompanyIdAndDeliveryNoteIdOrderByLineNoAsc(
+                        tenantId,
+                        companyId,
+                        deliveryNoteId
+                );
+
+        if (lines.isEmpty()) {
+            return;
+        }
+
+        // 4. Registrazione scarichi
+        for (DeliveryNoteLine line : lines) {
+
+            if (line.getItemId() == null
+                    || isZeroOrNegative(line.getQuantity())) {
+                continue;
+            }
+
+            var item = itemRepository
+                    .findByTenantIdAndId(
+                            tenantId,
+                            line.getItemId()
+                    )
+                    .orElseThrow(() -> new BusinessException(
+                            "Articolo non trovato: " + line.getItemId()
+                    ));
+
+            if (!item.isTrackStock()) {
+                continue;
+            }
+
+            // 5. Verifica disponibilità per società e magazzino
+            inventoryAvailabilityService
+                    .validateAvailabilityByCompanyAndWarehouse(
+                            tenantId,
+                            companyId,
+                            warehouseId,
+                            line.getItemId(),
+                            locationId,
+                            line.getQuantity()
+                    );
+
+            // 6. Registrazione movimento V2
+            Long movementId = inventoryMovementService.registerMovement(
+                    tenantId,
+                    companyId,
+                    warehouseId,
+                    locationId,
+                    line.getItemId(),
+                    deliveryNote.getDdtDate(),
+                    "OUT",
+                    "SALES_DELIVERY",
+                    line.getQuantity(),
+                    null,
+                    "DELIVERY_NOTE",
+                    deliveryNoteId,
+                    "Scarico da DDT " + deliveryNote.getDdtNumber()
+            );
+
+            // 7. Valorizzazione FIFO V2
+            inventoryValuationService.applyOutboundValuation(
+                    tenantId,
+                    companyId,
+                    warehouseId,
+                    movementId
+            );
+        }
     }
 
     public void postSalesDeliveryFromDeliveryNote(Long tenantId, DeliveryNote deliveryNote) {

@@ -22,7 +22,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import com.gestiva.security.company.context.CompanyContext;
-
+import com.gestiva.warehouse.inventory.movement.service.InventoryLocationValidationService;
 
 @Service
 @Transactional
@@ -37,6 +37,8 @@ public class DeliveryNoteService {
     private final InventoryMovementRepository inventoryMovementRepository;
     private final InventoryMovementService inventoryMovementService;
     private final CompanyContext companyContext;
+    private final InventoryLocationValidationService inventoryLocationValidationService;
+
 
     public DeliveryNoteService(
             DeliveryNoteRepository deliveryNoteRepository,
@@ -47,7 +49,8 @@ public class DeliveryNoteService {
             DocumentSequenceService documentSequenceService,
             InventoryMovementRepository inventoryMovementRepository,
             InventoryMovementService inventoryMovementService,
-            CompanyContext companyContext) {
+            CompanyContext companyContext,
+            InventoryLocationValidationService inventoryLocationValidationService){
 
         this.deliveryNoteRepository = deliveryNoteRepository;
         this.deliveryNoteLineRepository = deliveryNoteLineRepository;
@@ -58,6 +61,7 @@ public class DeliveryNoteService {
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.inventoryMovementService = inventoryMovementService;
         this.companyContext = companyContext;
+        this.inventoryLocationValidationService = inventoryLocationValidationService;
     }
 
     private Long requireCompanyId() {
@@ -70,8 +74,20 @@ public class DeliveryNoteService {
         return companyId;
     }
 
-    public DeliveryNoteResponse createFromSalesOrder(Long tenantId, Long salesOrderId) {
+    public DeliveryNoteResponse createFromSalesOrder(
+            Long tenantId,
+            Long salesOrderId,
+            Long warehouseId,
+            Long locationId) {
+
         Long companyId = requireCompanyId();
+
+        inventoryLocationValidationService.validate(
+                tenantId,
+                companyId,
+                warehouseId,
+                locationId
+        );
 
         SalesOrder order = salesOrderRepository
                 .findByTenantIdAndCompanyIdAndId(
@@ -105,6 +121,8 @@ public class DeliveryNoteService {
         DeliveryNote note = new DeliveryNote();
         note.setTenantId(tenantId);
         note.setCompanyId(companyId);
+        note.setWarehouseId(warehouseId);
+        note.setLocationId(locationId);
         note.setSalesOrderId(order.getId());
         note.setCustomerId(order.getCustomerId());
         note.setDdtNumber(generateNextDdtNumber(tenantId, companyId));
@@ -143,7 +161,11 @@ public class DeliveryNoteService {
             line.setItemId(orderLine.getItemId());
             deliveryNoteLineRepository.save(line);
         }
-        inventoryDocumentPostingService.postSalesDeliveryFromDeliveryNote(tenantId, savedNote);
+        inventoryDocumentPostingService.postSalesDeliveryFromDeliveryNoteV2(
+                tenantId,
+                companyId,
+                savedNote.getId()
+        );
         return toResponse(savedNote);
     }
 
