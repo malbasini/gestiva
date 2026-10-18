@@ -287,6 +287,106 @@ public class InventoryDocumentPostingService {
         }
     }
 
+    // =====================================================
+    // GESTIVA V2 - STORNO DOCUMENTALE MULTI-SOCIETÀ
+    // =====================================================
+
+    public void reverseDocumentMovementsV2(
+            Long tenantId,
+            Long companyId,
+            String referenceType,
+            Long referenceId,
+            LocalDate reversalDate,
+            String notes) {
+
+        if (tenantId == null || companyId == null) {
+            throw new BusinessException(
+                    "Tenant e società sono obbligatori."
+            );
+        }
+
+        if (referenceType == null || referenceType.isBlank()
+                || referenceId == null) {
+            throw new BusinessException(
+                    "Il riferimento al documento è obbligatorio."
+            );
+        }
+
+        if (reversalDate == null) {
+            throw new BusinessException(
+                    "La data di storno è obbligatoria."
+            );
+        }
+
+        // Recupera esclusivamente i movimenti della società indicata.
+        var movements = inventoryMovementRepository
+                .findByTenantIdAndCompanyIdAndReferenceTypeAndReferenceIdOrderByIdAsc(
+                        tenantId,
+                        companyId,
+                        referenceType,
+                        referenceId
+                );
+
+        if (movements.isEmpty()) {
+            throw new BusinessException(
+                    "Nessun movimento di magazzino trovato per il documento."
+            );
+        }
+
+        // Gestiva V2 - Verifica della presenza di movimenti originali
+        boolean hasOriginalMovements = movements.stream()
+                .anyMatch(movement ->
+                        movement.getReversalOfMovementId() == null
+                );
+
+        if (!hasOriginalMovements) {
+            throw new BusinessException(
+                    "Il documento non contiene movimenti originali da stornare."
+            );
+        }
+
+        // Gestiva V2 - Validazione preventiva di tutti i movimenti originali
+        for (var movement : movements) {
+
+            if (movement.getReversalOfMovementId() != null) {
+                continue;
+            }
+
+            if (movement.isReversed()) {
+                throw new BusinessException(
+                        "Impossibile stornare il documento: " +
+                                "uno o più movimenti risultano già stornati."
+                );
+            }
+        }
+
+        // Storno in ordine inverso rispetto alla registrazione.
+        // Non utilizziamo il metodo legacy.
+        for (int i = movements.size() - 1; i >= 0; i--) {
+
+            var movement = movements.get(i);
+
+            // Esclude eventuali movimenti compensativi.
+            if (movement.getReversalOfMovementId() != null) {
+                continue;
+            }
+
+            if (movement.isReversed()) {
+                throw new BusinessException(
+                        "Il documento contiene movimenti già stornati."
+                );
+            }
+
+            inventoryMovementService.reverseMovement(
+                    tenantId,
+                    companyId,
+                    movement.getId(),
+                    reversalDate,
+                    notes
+            );
+        }
+    }
+
     public void reverseDocumentMovements(Long tenantId,
                                          String referenceType,
                                          Long referenceId,

@@ -9,7 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-
+import com.gestiva.warehouse.inventory.valuation.service.InventoryValuationService;
+import com.gestiva.warehouse.location.repository.WarehouseRepository;
 
 @Service
 @Transactional
@@ -18,15 +19,21 @@ public class InventoryMovementService {
     private final InventoryMovementRepository inventoryMovementRepository;
     private final ItemRepository itemRepository;
     private final InventoryLocationValidationService inventoryLocationValidationService;
+    private final InventoryValuationService inventoryValuationService;
+    private final WarehouseRepository warehouseRepository;
 
     public InventoryMovementService(
             InventoryMovementRepository inventoryMovementRepository,
             ItemRepository itemRepository,
-            InventoryLocationValidationService inventoryLocationValidationService) {
+            InventoryLocationValidationService inventoryLocationValidationService,
+            InventoryValuationService inventoryValuationService,
+            WarehouseRepository warehouseRepository) {
 
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.itemRepository = itemRepository;
         this.inventoryLocationValidationService = inventoryLocationValidationService;
+        this.inventoryValuationService = inventoryValuationService;
+        this.warehouseRepository = warehouseRepository;
     }
 
     // Gestiva V2 - Registrazione movimento per società e magazzino
@@ -250,18 +257,15 @@ public class InventoryMovementService {
             );
         }
 
-
-
-
-
-
         if (tenantId == null || companyId == null) {
             throw new BusinessException(
                     "Tenant e società sono obbligatori."
             );
         }
 
-        var original = inventoryMovementRepository
+        // Gestiva V2 - Recupero preliminare del movimento
+// per individuare il magazzino da bloccare.
+        InventoryMovement movementToReverse = inventoryMovementRepository
                 .findByTenantIdAndCompanyIdAndId(
                         tenantId,
                         companyId,
@@ -271,9 +275,53 @@ public class InventoryMovementService {
                         "Movimento di magazzino non trovato nella società attiva."
                 ));
 
+        if (movementToReverse.getWarehouseId() == null) {
+            throw new BusinessException(
+                    "Impossibile stornare un movimento senza magazzino."
+            );
+        }
+
+        // Gestiva V2 - Il magazzino viene bloccato prima
+        // del movimento originale.
+        warehouseRepository.findByTenantAndCompanyAndIdForUpdate(
+                tenantId,
+                companyId,
+                movementToReverse.getWarehouseId()
+        ).orElseThrow(() -> new BusinessException(
+                "Magazzino non trovato nella società attiva."
+        ));
+
+        // Gestiva V2 - Blocco pessimista del movimento originale
+        // per impedire storni concorrenti.
+        var original = inventoryMovementRepository
+                .findByTenantIdAndCompanyIdAndIdForUpdate(
+                        tenantId,
+                        companyId,
+                        movementId
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "Movimento di magazzino non trovato nella società attiva."
+                ));
+
+        // Gestiva V2 - Verifica della coerenza del magazzino
+        // dopo l'acquisizione dei lock.
+        if (!movementToReverse.getWarehouseId().equals(original.getWarehouseId())) {
+            throw new BusinessException(
+                    "Il magazzino del movimento è cambiato durante lo storno. " +
+                            "Operazione annullata per garantire la coerenza FIFO."
+            );
+        }
+
         if (original.isReversed()) {
             throw new BusinessException(
                     "Il movimento è già stato stornato."
+            );
+        }
+
+        // Gestiva V2 - Impedisce lo storno di un movimento compensativo
+        if (original.getReversalOfMovementId() != null) {
+            throw new BusinessException(
+                    "Impossibile stornare un movimento che rappresenta già uno storno."
             );
         }
 
@@ -283,11 +331,39 @@ public class InventoryMovementService {
             );
         }
 
+        // Gestiva V2 - Validazione della data di storno
+        if (reversalDate == null) {
+            throw new BusinessException(
+                    "La data di storno è obbligatoria."
+            );
+        }
+
+        if (original.getMovementDate() == null) {
+            throw new BusinessException(
+                    "Il movimento originale non ha una data valida."
+            );
+        }
+
+        if (reversalDate.isBefore(original.getMovementDate())) {
+            throw new BusinessException(
+                    "La data di storno non può precedere quella del movimento originale."
+            );
+        }
+
         inventoryLocationValidationService.validate(
                 tenantId,
                 companyId,
                 original.getWarehouseId(),
                 original.getLocationId()
+        );
+
+        // Gestiva V2 - Ripristino FIFO nella stessa transazione
+        // del movimento compensativo.
+        inventoryValuationService.reverseFifoValuation(
+                tenantId,
+                companyId,
+                original.getWarehouseId(),
+                original.getId()
         );
 
         InventoryMovement reversal = new InventoryMovement();

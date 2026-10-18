@@ -407,6 +407,262 @@ public class InventoryValuationService {
 
         return new InventoryValuationResult(totalCost, unitCost);
     }
+
+    // Gestiva V2 - Controlli preliminari allo storno FIFO
+    public void reverseFifoValuation(
+            Long tenantId,
+            Long companyId,
+            Long warehouseId,
+            Long originalMovementId) {
+
+        lockWarehouseForValuation(
+                tenantId,
+                companyId,
+                warehouseId
+        );
+
+        InventoryMovement original = requireCompanyMovement(
+                tenantId,
+                companyId,
+                warehouseId,
+                originalMovementId
+        );
+
+        if (!isInbound(original.getMovementType())
+                && !isOutbound(original.getMovementType())) {
+            throw new BusinessException(
+                    "Tipo movimento non supportato dallo storno FIFO V2."
+            );
+        }
+
+        boolean hasSubsequentMovements = inventoryMovementRepository
+                .existsByTenantIdAndCompanyIdAndWarehouseIdAndItemIdAndIdGreaterThan(
+                        tenantId,
+                        companyId,
+                        warehouseId,
+                        original.getItemId(),
+                        originalMovementId
+                );
+
+        if (hasSubsequentMovements) {
+            throw new BusinessException(
+                    "Impossibile stornare il movimento: esistono movimenti successivi " +
+                            "dello stesso articolo nel magazzino."
+            );
+        }
+
+        // Gestiva V2 - Ripristino FIFO per movimento di uscita
+        if (isOutbound(original.getMovementType())) {
+
+            List<InventoryLayerConsumption> consumptions =
+                    inventoryLayerConsumptionRepository
+                            .findByTenantIdAndCompanyIdAndWarehouseIdAndOutMovementIdOrderByIdAsc(
+                                    tenantId,
+                                    companyId,
+                                    warehouseId,
+                                    originalMovementId
+                            );
+
+            if (consumptions.isEmpty()) {
+                throw new BusinessException(
+                        "Impossibile stornare lo scarico: consumi FIFO non trovati."
+                );
+            }
+
+            BigDecimal restoredQty = scaleQty(BigDecimal.ZERO);
+
+            // Gestiva V2 - Valore complessivo dei consumi FIFO da ripristinare
+            BigDecimal restoredValue = BigDecimal.ZERO;
+
+            for (InventoryLayerConsumption consumption : consumptions) {
+
+                InventoryLayer layer = inventoryLayerRepository
+                        .findByTenantIdAndCompanyIdAndId(
+                                tenantId,
+                                companyId,
+                                consumption.getLayerId()
+                        )
+                        .orElseThrow(() -> new BusinessException(
+                                "Livello FIFO originale non trovato."
+                        ));
+
+                if (!warehouseId.equals(layer.getWarehouseId())
+                        || !original.getItemId().equals(layer.getItemId())) {
+                    throw new BusinessException(
+                            "Il livello FIFO non appartiene all'articolo o al magazzino."
+                    );
+                }
+
+                BigDecimal consumedQty = scaleQty(
+                        consumption.getConsumedQty()
+                );
+
+                if (consumedQty.compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new BusinessException(
+                            "Quantità consumata FIFO non valida."
+                    );
+                }
+
+                BigDecimal newRemainingQty = scaleQty(
+                        layer.getRemainingQty().add(consumedQty)
+                );
+
+                if (newRemainingQty.compareTo(layer.getOriginalQty()) > 0) {
+                    throw new BusinessException(
+                            "Il ripristino supererebbe la quantità originale del livello FIFO."
+                    );
+                }
+
+                layer.setRemainingQty(newRemainingQty);
+                layer.setClosed(false);
+
+                inventoryLayerRepository.save(layer);
+
+                restoredQty = scaleQty(
+                        restoredQty.add(consumedQty)
+                );
+
+                // Gestiva V2 - Verifica e accumulo del valore consumato
+                if (consumption.getTotalCost() == null) {
+                    throw new BusinessException(
+                            "Il consumo FIFO non presenta un costo totale valido."
+                    );
+                }
+
+                restoredValue = restoredValue.add(
+                        consumption.getTotalCost()
+                );
+            }
+
+            if (restoredQty.compareTo(scaleQty(original.getQuantity())) != 0) {
+                throw new BusinessException(
+                        "La quantità FIFO ripristinata non coincide con quella del movimento."
+                );
+            }
+
+            // Gestiva V2 - Verifica della corrispondenza dei costi FIFO
+            if (original.getTotalCost() == null) {
+                throw new BusinessException(
+                        "Il movimento originale non presenta un costo totale valido."
+                );
+            }
+
+            if (scaleCost(restoredValue)
+                    .compareTo(scaleCost(original.getTotalCost())) != 0) {
+                throw new BusinessException(
+                        "Il valore dei consumi FIFO non coincide con il costo totale del movimento."
+                );
+            }
+
+            // Gestiva V2 - Ripristino FIFO OUT completato.
+            // Il movimento compensativo viene registrato dal servizio chiamante.
+            return;
+        }
+
+        // Gestiva V2 - Annullamento FIFO per movimento di ingresso
+        if (isInbound(original.getMovementType())) {
+
+            List<InventoryLayer> layers = inventoryLayerRepository
+                    .findByTenantIdAndCompanyIdAndSourceMovementIdOrderByIdAsc(
+                            tenantId,
+                            companyId,
+                            originalMovementId
+                    );
+
+            if (layers.isEmpty()) {
+                throw new BusinessException(
+                        "Impossibile stornare il carico: livelli FIFO non trovati."
+                );
+            }
+
+            BigDecimal totalLayerQty = scaleQty(BigDecimal.ZERO);
+
+            // Gestiva V2 - Valore complessivo dei livelli FIFO da annullare
+            BigDecimal totalLayerValue = BigDecimal.ZERO;
+
+            for (InventoryLayer layer : layers) {
+
+                if (!warehouseId.equals(layer.getWarehouseId())
+                        || !original.getItemId().equals(layer.getItemId())) {
+                    throw new BusinessException(
+                            "Il livello FIFO non appartiene all'articolo o al magazzino."
+                    );
+                }
+
+                List<InventoryLayerConsumption> consumptions =
+                        inventoryLayerConsumptionRepository
+                                .findByTenantIdAndCompanyIdAndWarehouseIdAndLayerIdOrderByIdAsc(
+                                        tenantId,
+                                        companyId,
+                                        warehouseId,
+                                        layer.getId()
+                                );
+
+                if (!consumptions.isEmpty()) {
+                    throw new BusinessException(
+                            "Impossibile stornare il carico: il livello FIFO è già stato utilizzato."
+                    );
+                }
+
+                if (scaleQty(layer.getRemainingQty())
+                        .compareTo(scaleQty(layer.getOriginalQty())) != 0) {
+                    throw new BusinessException(
+                            "Impossibile stornare il carico: quantità FIFO già movimentata."
+                    );
+                }
+
+                totalLayerQty = scaleQty(
+                        totalLayerQty.add(layer.getOriginalQty())
+                );
+
+                // Gestiva V2 - Accumulo del valore originale dei livelli FIFO
+                if (layer.getUnitCost() == null
+                        || layer.getOriginalQty() == null) {
+                    throw new BusinessException(
+                            "Il livello FIFO presenta quantità o costo non validi."
+                    );
+                }
+
+                totalLayerValue = totalLayerValue.add(
+                        layer.getOriginalQty().multiply(layer.getUnitCost())
+                );
+
+                layer.setRemainingQty(scaleQty(BigDecimal.ZERO));
+                layer.setClosed(true);
+
+                inventoryLayerRepository.save(layer);
+            }
+
+            // Gestiva V2 - Verifica del valore FIFO originale
+            if (original.getTotalCost() == null) {
+                throw new BusinessException(
+                        "Il movimento originale non presenta un costo totale valido."
+                );
+            }
+
+            if (scaleCost(totalLayerValue)
+                    .compareTo(scaleCost(original.getTotalCost())) != 0) {
+                throw new BusinessException(
+                        "Il valore dei livelli FIFO non coincide con il costo totale del movimento."
+                );
+            }
+
+            if (totalLayerQty.compareTo(scaleQty(original.getQuantity())) != 0) {
+                throw new BusinessException(
+                        "La quantità dei livelli FIFO non coincide con quella del movimento."
+                );
+            }
+
+            // Gestiva V2 - Annullamento FIFO IN completato.
+            // Il movimento compensativo viene registrato dal servizio chiamante.
+            return;
+        }
+
+        throw new BusinessException(
+                "Tipo movimento non supportato dallo storno FIFO V2."
+        );
+    }
+
     private InventoryValuationMethod resolveValuationMethod(Long tenantId) {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new BusinessException("Tenant non trovato."));

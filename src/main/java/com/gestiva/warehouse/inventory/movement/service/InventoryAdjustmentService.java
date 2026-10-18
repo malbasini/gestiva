@@ -47,8 +47,19 @@ public class InventoryAdjustmentService {
         Long companyId = companyContext.requireCurrentCompanyId();
 
         Long warehouseId = form.getWarehouseId();
-        Long locationId = form.getLocationId();
         Long itemId = form.getItemId();
+
+        // Gestiva V2: le rettifiche manuali operano
+        // attualmente a livello di magazzino.
+        // Le ubicazioni saranno gestite quando il FIFO
+        // supporterà la valorizzazione per ubicazione.
+        if (form.getLocationId() != null) {
+            throw new BusinessException(
+                    "Le rettifiche per ubicazione non sono ancora supportate."
+            );
+        }
+
+        Long locationId = null;
 
         if (warehouseId == null) {
             throw new BusinessException(

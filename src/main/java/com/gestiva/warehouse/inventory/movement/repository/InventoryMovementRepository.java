@@ -9,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 
 public interface InventoryMovementRepository extends JpaRepository<InventoryMovement, Long>, JpaSpecificationExecutor<InventoryMovement> {
 
@@ -17,6 +19,21 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
             Long tenantId,
             Long companyId,
             Long id
+    );
+
+    // Gestiva V2 - Blocco pessimista del movimento durante lo storno
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+    select m
+    from InventoryMovement m
+    where m.tenantId = :tenantId
+      and m.companyId = :companyId
+      and m.id = :movementId
+    """)
+    Optional<InventoryMovement> findByTenantIdAndCompanyIdAndIdForUpdate(
+            @Param("tenantId") Long tenantId,
+            @Param("companyId") Long companyId,
+            @Param("movementId") Long movementId
     );
 
     // Gestiva V2 - Movimenti associati a un documento
