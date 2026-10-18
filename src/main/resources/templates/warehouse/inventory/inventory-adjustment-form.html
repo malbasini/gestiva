@@ -27,9 +27,26 @@
                         </a>
                     </div>
                 </div>
-
                 <form th:action="@{/inventory-adjustments}" th:object="${inventoryAdjustmentForm}" method="post">
                     <div class="form-grid">
+                        <!-- Gestiva V2 - Selezione magazzino della società attiva -->
+                        <div class="form-field full">
+                            <label for="warehouseId">Magazzino *</label>
+                            <select id="warehouseId"
+                                    th:field="*{warehouseId}"
+                                    required>
+                                <option value="">-- seleziona magazzino --</option>
+                                <option th:each="warehouse : ${warehouseOptions}"
+                                        th:value="${warehouse.id}"
+                                        th:text="${warehouse.code + ' - ' + warehouse.name}">
+                                </option>
+                            </select>
+                            <div class="field-error"
+                                 th:if="${#fields.hasErrors('warehouseId')}"
+                                 th:errors="*{warehouseId}">
+                                Errore magazzino
+                            </div>
+                        </div>
                         <div class="form-field full">
                             <label for="itemId">Articolo</label>
                             <select id="itemId" th:field="*{itemId}">

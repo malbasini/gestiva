@@ -51,6 +51,17 @@ public class GoodsReceiptService {
     }
 
     public Long createFromPurchaseOrder(Long tenantId, Long purchaseOrderId) {
+
+        // Gestiva V2 - Blocco temporaneo della ricezione merci.
+        // La funzionalità sarà riattivata dopo l'adeguamento
+        // multi-società, multi-magazzino e FIFO V2.
+        if (true) {
+            throw new BusinessException(
+                    "Ricezione merci temporaneamente non disponibile: migrazione Gestiva V2 in corso."
+            );
+        }
+
+
         var po = purchaseOrderRepository.findByTenantIdAndId(tenantId, purchaseOrderId)
                 .orElseThrow(() -> new BusinessException("Ordine fornitore non trovato."));
 

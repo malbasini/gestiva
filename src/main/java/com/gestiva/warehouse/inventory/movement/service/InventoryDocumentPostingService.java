@@ -292,19 +292,18 @@ public class InventoryDocumentPostingService {
                                          Long referenceId,
                                          LocalDate reversalDate,
                                          String notes) {
-        var movements = inventoryMovementRepository
-                .findByTenantIdAndReferenceTypeAndReferenceIdOrderByIdAsc(tenantId, referenceType, referenceId);
 
-        for (var movement : movements) {
-            if (!movement.isReversed()) {
-                inventoryMovementService.reverseMovement(
-                        tenantId,
-                        movement.getId(),
-                        reversalDate,
-                        notes
-                );
-            }
-        }
+        // Gestiva V2 - Storno documentale legacy disabilitato.
+        // Il metodo non garantisce l'isolamento multi-società
+        // e non ripristina i livelli FIFO consumati.
+        //
+        // Non riattivare prima di implementare uno storno V2
+        // transazionale, isolato per società e magazzino.
+
+        throw new BusinessException(
+                "Storno documentale temporaneamente non disponibile: " +
+                        "ripristino FIFO V2 in fase di completamento."
+        );
     }
 
     private boolean isZeroOrNegative(BigDecimal value) {

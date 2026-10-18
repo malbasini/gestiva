@@ -238,6 +238,23 @@ public class InventoryMovementService {
             LocalDate reversalDate,
             String notes) {
 
+
+        // Gestiva V2 - Storno temporaneamente disabilitato.
+        // Il movimento compensativo non ripristina ancora
+        // i livelli FIFO e i relativi consumi.
+
+        if (true) {
+            throw new BusinessException(
+                    "Storno movimento V2 temporaneamente non disponibile: " +
+                            "ripristino FIFO in fase di completamento."
+            );
+        }
+
+
+
+
+
+
         if (tenantId == null || companyId == null) {
             throw new BusinessException(
                     "Tenant e società sono obbligatori."
@@ -308,38 +325,20 @@ public class InventoryMovementService {
         return savedReversal.getId();
     }
 
-    public Long reverseMovement(Long tenantId, Long movementId, LocalDate reversalDate, String notes) {
-        var original = inventoryMovementRepository.findByTenantIdAndId(tenantId, movementId)
-                .orElseThrow(() -> new BusinessException("Movimento di magazzino non trovato"));
+    // Gestiva V2 - Storno legacy disabilitato.
+    // Non garantisce l'isolamento multi-società
+    // e non aggiorna i livelli FIFO.
+    @Deprecated
+    public Long reverseMovement(
+            Long tenantId,
+            Long movementId,
+            LocalDate reversalDate,
+            String notes) {
 
-        if (original.isReversed()) {
-            throw new BusinessException("Il movimento è già stato stornato.");
-        }
-
-        InventoryMovement reversal = new InventoryMovement();
-        reversal.setTenantId(tenantId);
-        reversal.setItemId(original.getItemId());
-        // Lo storno deve interessare lo stesso magazzino e la stessa ubicazione.
-        reversal.setWarehouseId(original.getWarehouseId());
-        reversal.setLocationId(original.getLocationId());
-        reversal.setMovementDate(reversalDate);
-        reversal.setMovementType(reverseType(original.getMovementType()));
-        reversal.setCausalCode("DOCUMENT_CANCEL_RESTORE");
-        reversal.setQuantity(original.getQuantity());
-        reversal.setUnitCost(original.getUnitCost());
-        reversal.setTotalCost(original.getTotalCost());
-        reversal.setReferenceType(original.getReferenceType());
-        reversal.setReferenceId(original.getReferenceId());
-        reversal.setNotes(notes);
-        reversal.setReversed(false);
-        reversal.setReversalOfMovementId(original.getId());
-
-        InventoryMovement savedReversal = inventoryMovementRepository.save(reversal);
-
-        original.setReversed(true);
-        inventoryMovementRepository.save(original);
-
-        return savedReversal.getId();
+        throw new BusinessException(
+                "Storno movimento legacy non disponibile: " +
+                        "utilizzare esclusivamente il percorso FIFO V2 dopo il completamento della migrazione."
+        );
     }
 
     private String reverseType(String movementType) {

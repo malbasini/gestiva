@@ -154,4 +154,14 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
             @Param("itemId") Long itemId,
             @Param("locationId") Long locationId
     );
+
+    // Gestiva V2 - Verifica movimenti registrati successivamente
+    // per lo stesso articolo, società e magazzino.
+    boolean existsByTenantIdAndCompanyIdAndWarehouseIdAndItemIdAndIdGreaterThan(
+            Long tenantId,
+            Long companyId,
+            Long warehouseId,
+            Long itemId,
+            Long movementId
+    );
 }
