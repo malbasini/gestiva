@@ -379,6 +379,12 @@ public class QuoteService {
             line.setLineNo(i + 1);
             line.setDescription(request.getDescription().trim());
             line.setQuantity(quantity);
+            line.setUnitOfMeasure(
+                    request.getUnitOfMeasure() == null
+                            || request.getUnitOfMeasure().isBlank()
+                            ? null
+                            : request.getUnitOfMeasure().trim()
+            );
             line.setUnitPrice(unitPrice);
             line.setDiscountPct(discountPct);
             line.setTaxPct(taxPct);

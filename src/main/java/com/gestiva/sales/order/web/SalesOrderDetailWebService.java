@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.security.company.context.CompanyContext;
+import com.gestiva.billing.invoice.repository.InvoiceRepository;
+import com.gestiva.warehouse.item.entity.ItemType;
+import com.gestiva.warehouse.item.repository.ItemRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -19,6 +22,8 @@ public class SalesOrderDetailWebService {
     private final SalesOrderLineRepository salesOrderLineRepository;
     private final CustomerRepository customerRepository;
     private final DeliveryNoteRepository deliveryNoteRepository;
+    private final InvoiceRepository invoiceRepository;
+    private final ItemRepository itemRepository;
     private final CompanyContext companyContext;
 
 
@@ -28,12 +33,16 @@ public class SalesOrderDetailWebService {
             SalesOrderLineRepository salesOrderLineRepository,
             CustomerRepository customerRepository,
             DeliveryNoteRepository deliveryNoteRepository,
+            InvoiceRepository invoiceRepository,
+            ItemRepository itemRepository,
             CompanyContext companyContext) {
 
         this.salesOrderRepository = salesOrderRepository;
         this.salesOrderLineRepository = salesOrderLineRepository;
         this.customerRepository = customerRepository;
         this.deliveryNoteRepository = deliveryNoteRepository;
+        this.invoiceRepository = invoiceRepository;
+        this.itemRepository = itemRepository;
         this.companyContext = companyContext;
     }
 
@@ -113,9 +122,57 @@ public class SalesOrderDetailWebService {
                 );
         boolean deliveryNoteExists = deliveryNoteOpt.isPresent();
         view.setDeliveryNoteExists(deliveryNoteExists);
+        // Verifica se tutte le righe sono servizi.
+        boolean serviceOnly = !lines.isEmpty()
+                && lines.stream().allMatch(line -> {
+
+            if (line.getItemId() == null) {
+                return false;
+            }
+
+            return itemRepository
+                    .findByTenantIdAndId(
+                            tenantId,
+                            line.getItemId()
+                    )
+                    .map(item ->
+                            item.getItemType() == ItemType.SERVICE
+                    )
+                    .orElse(false);
+        });
+
+// Recupera le fatture già associate all'ordine.
+        var invoices = invoiceRepository
+                .findByTenantIdAndCompanyIdAndSalesOrderIdOrderByInvoiceDateDescIdDesc(
+                        tenantId,
+                        companyId,
+                        orderId
+                );
+
+        boolean alreadyInvoiced = !invoices.isEmpty();
+
+        // Espone il collegamento alla fattura esistente.
+        if (alreadyInvoiced) {
+            var invoice = invoices.get(0);
+
+            view.setInvoiceId(invoice.getId());
+            view.setInvoiceNumber(invoice.getInvoiceNumber());
+        }
+
+       // Fatturazione diretta: esclusivamente servizi.
+        view.setDirectInvoiceCreatable(
+                "FULFILLED".equals(order.getStatus())
+                        && serviceOnly
+                        && !deliveryNoteExists
+                        && !alreadyInvoiced
+        );
+
+       // Creazione DDT: prodotti o ordini misti.
         view.setDeliveryNoteCreatable(
                 "FULFILLED".equals(order.getStatus())
+                        && !serviceOnly
                         && !deliveryNoteExists
+                        && !alreadyInvoiced
         );
         deliveryNoteOpt.ifPresent(ddt -> {
             view.setDeliveryNoteId(ddt.getId());

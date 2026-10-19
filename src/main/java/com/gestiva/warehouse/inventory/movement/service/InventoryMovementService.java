@@ -245,18 +245,6 @@ public class InventoryMovementService {
             LocalDate reversalDate,
             String notes) {
 
-
-        // Gestiva V2 - Storno temporaneamente disabilitato.
-        // Il movimento compensativo non ripristina ancora
-        // i livelli FIFO e i relativi consumi.
-
-        if (true) {
-            throw new BusinessException(
-                    "Storno movimento V2 temporaneamente non disponibile: " +
-                            "ripristino FIFO in fase di completamento."
-            );
-        }
-
         if (tenantId == null || companyId == null) {
             throw new BusinessException(
                     "Tenant e società sono obbligatori."

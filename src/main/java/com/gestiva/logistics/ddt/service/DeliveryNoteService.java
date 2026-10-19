@@ -152,7 +152,7 @@ public class DeliveryNoteService {
             line.setLineNo(lineNo++);
             line.setDescription(orderLine.getDescription());
             line.setQuantity(orderLine.getQuantity());
-            line.setUnitOfMeasure("pz");
+            line.setUnitOfMeasure(orderLine.getUnitOfMeasure());
             line.setUnitPrice(orderLine.getUnitPrice());
             line.setDiscountPct(defaultZero(orderLine.getDiscountPct()));
             line.setTaxPct(defaultZero(orderLine.getTaxPct()));

@@ -217,11 +217,11 @@ public class SalesOrderService {
             orderLine.setLineNo(quoteLine.getLineNo());
             orderLine.setDescription(quoteLine.getDescription());
             orderLine.setQuantity(quoteLine.getQuantity());
+            orderLine.setUnitOfMeasure(quoteLine.getUnitOfMeasure());
             orderLine.setUnitPrice(quoteLine.getUnitPrice());
             orderLine.setDiscountPct(quoteLine.getDiscountPct());
             orderLine.setTaxPct(quoteLine.getTaxPct());
             orderLine.setLineTotal(quoteLine.getLineTotal());
-            orderLine.setItemId(quoteLine.getItemId());
             BigDecimal taxPct = quoteLine.getTaxPct() == null
                     ? BigDecimal.ZERO
                     : quoteLine.getTaxPct();

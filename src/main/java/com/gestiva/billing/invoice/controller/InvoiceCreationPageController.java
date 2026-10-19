@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
-@RequestMapping("/delivery-notes")
 public class InvoiceCreationPageController {
 
     private final InvoiceService invoiceService;
@@ -21,7 +20,7 @@ public class InvoiceCreationPageController {
         this.tenantContext = tenantContext;
     }
 
-    @PostMapping("/{id}/invoice")
+    @PostMapping("/delivery-notes/{id}/invoice")
     public String createInvoice(@PathVariable Long id,
                                 @RequestParam(required = false) Long tenantId,
                                 RedirectAttributes redirectAttributes) {
@@ -38,6 +37,44 @@ public class InvoiceCreationPageController {
         } catch (BusinessException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
             return "redirect:/delivery-notes/" + id + "?tenantId=" + resolvedTenantId;
+        }
+    }
+
+    @PostMapping("/orders/{id}/invoice")
+    public String createInvoiceFromSalesOrder(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long tenantId,
+            RedirectAttributes redirectAttributes) {
+
+        Long resolvedTenantId =
+                tenantId != null
+                        ? tenantId
+                        : tenantContext.getCurrentTenantId();
+        try {
+            InvoiceResponse response =
+                    invoiceService.createFromSalesOrder(
+                            resolvedTenantId,
+                            id
+                    );
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "Fattura creata con successo: "
+                            + response.getInvoiceNumber()
+            );
+            return "redirect:/invoices/"
+                    + response.getId()
+                    + "?tenantId="
+                    + resolvedTenantId;
+
+        } catch (BusinessException ex) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    ex.getMessage()
+            );
+            return "redirect:/orders/"
+                    + id
+                    + "?tenantId="
+                    + resolvedTenantId;
         }
     }
 }

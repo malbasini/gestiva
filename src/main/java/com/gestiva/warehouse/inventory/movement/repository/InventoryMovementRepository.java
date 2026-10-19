@@ -107,9 +107,8 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
        ), 0
    )
    from InventoryMovement m
-   where m.tenantId = :tenantId
-     and m.itemId = :itemId
-     and m.reversed = false
+      where m.tenantId = :tenantId
+      and m.itemId = :itemId
    """)
     BigDecimal calculateInventoryBalance(@Param("tenantId") Long tenantId,
                                          @Param("itemId") Long itemId);
@@ -180,5 +179,26 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
             Long warehouseId,
             Long itemId,
             Long movementId
+    );
+
+    // Gestiva V2 - Verifica movimenti successivi ancora attivi.
+    // Esclude movimenti originali già stornati e movimenti compensativi.
+    @Query("""
+    select case when count(m) > 0 then true else false end
+    from InventoryMovement m
+    where m.tenantId = :tenantId
+      and m.companyId = :companyId
+      and m.warehouseId = :warehouseId
+      and m.itemId = :itemId
+      and m.id > :movementId
+      and m.reversed = false
+      and m.reversalOfMovementId is null
+    """)
+    boolean existsSubsequentActiveOriginalMovements(
+            @Param("tenantId") Long tenantId,
+            @Param("companyId") Long companyId,
+            @Param("warehouseId") Long warehouseId,
+            @Param("itemId") Long itemId,
+            @Param("movementId") Long movementId
     );
 }

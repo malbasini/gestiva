@@ -1,7 +1,6 @@
 package com.gestiva.billing.invoice.entity;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 
 @Entity
@@ -20,6 +19,9 @@ public class InvoiceLine {
 
     @Column(name = "delivery_note_line_id")
     private Long deliveryNoteLineId;
+
+    @Column(name = "sales_order_line_id")
+    private Long salesOrderLineId;
 
     @Column(name = "line_no", nullable = false)
     private Integer lineNo;
@@ -157,5 +159,13 @@ public class InvoiceLine {
 
     public void setLineTotal(BigDecimal lineTotal) {
         this.lineTotal = lineTotal;
+    }
+
+    public Long getSalesOrderLineId() {
+        return salesOrderLineId;
+    }
+
+    public void setSalesOrderLineId(Long salesOrderLineId) {
+        this.salesOrderLineId = salesOrderLineId;
     }
 }

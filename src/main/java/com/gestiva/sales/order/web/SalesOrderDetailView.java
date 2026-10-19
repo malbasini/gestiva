@@ -21,6 +21,10 @@ public class SalesOrderDetailView {
     private Long deliveryNoteId;
     private String deliveryNoteNumber;
 
+    private boolean directInvoiceCreatable;
+    private Long invoiceId;
+    private String invoiceNumber;
+
     public Long getDeliveryNoteId() {
         return deliveryNoteId;
     }
@@ -160,5 +164,29 @@ public class SalesOrderDetailView {
 
     public void setLines(List<SalesOrderDetailLineView> lines) {
         this.lines = lines;
+    }
+
+    public boolean isDirectInvoiceCreatable() {
+        return directInvoiceCreatable;
+    }
+
+    public void setDirectInvoiceCreatable(boolean directInvoiceCreatable) {
+        this.directInvoiceCreatable = directInvoiceCreatable;
+    }
+
+    public Long getInvoiceId() {
+        return invoiceId;
+    }
+
+    public void setInvoiceId(Long invoiceId) {
+        this.invoiceId = invoiceId;
+    }
+
+    public String getInvoiceNumber() {
+        return invoiceNumber;
+    }
+
+    public void setInvoiceNumber(String invoiceNumber) {
+        this.invoiceNumber = invoiceNumber;
     }
 }

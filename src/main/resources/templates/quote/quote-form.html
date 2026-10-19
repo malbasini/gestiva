@@ -113,6 +113,7 @@
               <div>#</div>
               <div>Descrizione</div>
               <div>Qtà</div>
+              <div>U.M.</div>
               <div>Prezzo</div>
               <div>Sconto</div>
               <div>Articolo</div>
@@ -134,6 +135,15 @@
               <div>
                 <input type="text" inputmode="decimal" class="form-control"
                        th:field="*{lines[__${stat.index}__].quantity}"/>
+              </div>
+
+              <div>
+                    <input type="text"
+                           class="form-control js-line-uom"
+                           maxlength="20"
+                           th:attr="data-row-index=${stat.index}"
+                           th:field="*{lines[__${stat.index}__].unitOfMeasure}"
+                           placeholder="U.M."/>
               </div>
 
               <div>

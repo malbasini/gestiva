@@ -97,6 +97,7 @@ public class QuoteManageWebService {
             QuoteLineForm lf = new QuoteLineForm();
             lf.setDescription(line.getDescription());
             lf.setQuantity(PdfFormatUtils.formatDecimal(line.getQuantity(),0));
+            lf.setUnitOfMeasure(line.getUnitOfMeasure());
             lf.setUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
             lf.setDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct(),0));
             lf.setTaxPct(PdfFormatUtils.formatDecimal(line.getTaxPct(),0));
@@ -167,6 +168,7 @@ public class QuoteManageWebService {
             QuoteLineRequest req = new QuoteLineRequest();
             req.setDescription(line.getDescription());
             req.setQuantity(NumberInputUtils.parseDecimal(line.getQuantity(),"quantity"));
+            req.setUnitOfMeasure(line.getUnitOfMeasure());
             req.setUnitPrice(NumberInputUtils.parseDecimal(line.getUnitPrice(),"unitPrice"));
             req.setDiscountPct(defaultZero(NumberInputUtils.parseDecimal(line.getDiscountPct(),"discountPct")));
             req.setTaxPct(defaultZero(NumberInputUtils.parseDecimal(line.getTaxPct(),"taxPct")));

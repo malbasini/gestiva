@@ -779,7 +779,7 @@ a:hover {
 .line-grid-header,
 .line-grid-row {
     display: grid;
-    grid-template-columns: 44px minmax(280px, 1.8fr) 90px 90px 90px 180px 90px 52px;
+    grid-template-columns: 44px minmax(280px, 1.8fr) 90px 75px 90px 90px 180px 90px 52px;
     gap: 12px;
     align-items: center;
 }
@@ -836,7 +836,7 @@ a:hover {
 @media (max-width: 1200px) {
     .line-grid-header,
     .line-grid-row {
-        grid-template-columns: 44px minmax(220px, 1.6fr) 80px 80px 80px 150px 80px 52px;
+        grid-template-columns: 44px minmax(220px, 1.6fr) 80px 70px 80px 80px 150px 80px 52px;
         gap: 10px;
     }
 }

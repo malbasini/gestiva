@@ -76,14 +76,18 @@ public class DeliveryNoteWorkflowService {
                     "Il DDT non può essere annullato perché esiste già una fattura associata."
             );
         }
-
-        // BLOCCO TEMPORANEO GESTIVA V2:
-        // Lo storno FIFO deve ancora essere completato.
-        // Non modificare lo stato del DDT e non generare movimenti.
-
-        throw new BusinessException(
-                "Annullamento DDT temporaneamente non disponibile: "
-                        + "ripristino FIFO in fase di completamento."
+        // Gestiva V2 - Storno dei movimenti del DDT
+        // con ripristino della valorizzazione FIFO.
+        inventoryDocumentPostingService.reverseDocumentMovementsV2(
+                tenantId,
+                companyId,
+                "DELIVERY_NOTE",
+                deliveryNoteId,
+                LocalDate.now(),
+                "Annullamento DDT " + deliveryNote.getDdtNumber()
         );
+        // Aggiornamento dello stato soltanto dopo lo storno.
+        deliveryNote.setStatus("CANCELLED");
+        deliveryNoteRepository.save(deliveryNote);
     }
 }

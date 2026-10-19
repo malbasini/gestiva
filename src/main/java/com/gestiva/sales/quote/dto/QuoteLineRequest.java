@@ -19,6 +19,8 @@ public class QuoteLineRequest {
     @DecimalMin("0.00")
     private BigDecimal unitPrice;
 
+    private String unitOfMeasure;
+
     private BigDecimal discountPct;
     private BigDecimal taxPct;
 
@@ -40,4 +42,12 @@ public class QuoteLineRequest {
     public void setDiscountPct(BigDecimal discountPct) { this.discountPct = discountPct; }
     public BigDecimal getTaxPct() { return taxPct; }
     public void setTaxPct(BigDecimal taxPct) { this.taxPct = taxPct; }
+
+    public String getUnitOfMeasure() {
+        return unitOfMeasure;
+    }
+
+    public void setUnitOfMeasure(String unitOfMeasure) {
+        this.unitOfMeasure = unitOfMeasure;
+    }
 }

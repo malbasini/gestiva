@@ -38,6 +38,9 @@ public class QuoteLine extends TenantAwareEntity {
     @Column(precision = 15, scale = 3, nullable = false)
     private BigDecimal quantity;
 
+    @Column(name = "unit_of_measure", length = 20)
+    private String unitOfMeasure;
+
     @Column(name = "unit_price", precision = 15, scale = 2, nullable = false)
     private BigDecimal unitPrice;
 
@@ -131,5 +134,13 @@ public class QuoteLine extends TenantAwareEntity {
 
     public void setCompanyId(Long companyId) {
         this.companyId = companyId;
+    }
+
+    public String getUnitOfMeasure() {
+        return unitOfMeasure;
+    }
+
+    public void setUnitOfMeasure(String unitOfMeasure) {
+        this.unitOfMeasure = unitOfMeasure;
     }
 }

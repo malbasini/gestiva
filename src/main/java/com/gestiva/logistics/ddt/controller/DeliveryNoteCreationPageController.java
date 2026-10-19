@@ -27,6 +27,7 @@ public class DeliveryNoteCreationPageController {
             @PathVariable Long id,
             @RequestParam(required = false) Long tenantId,
             @RequestParam(required = false) Long warehouseId,
+            @RequestParam(required = false) Long locationId,
             RedirectAttributes redirectAttributes) {
 
         Long resolvedTenantId = tenantId != null
@@ -34,29 +35,31 @@ public class DeliveryNoteCreationPageController {
                 : tenantContext.getCurrentTenantId();
 
         try {
-
             if (warehouseId == null) {
                 throw new BusinessException(
                         "Selezionare un magazzino di partenza."
                 );
             }
-
-            // BLOCCO TEMPORANEO:
-            // La creazione del DDT rimane disabilitata
-            // finché il servizio non gestisce e valida
-            // il magazzino della società corrente.
-            throw new BusinessException(
-                    "Creazione DDT temporaneamente non disponibile: "
-                            + "validazione del magazzino in fase di completamento."
+            // Gestiva V2 - Creazione DDT nella società attiva.
+            // Il servizio valida magazzino, ubicazione e ordine.
+            deliveryNoteService.createFromSalesOrder(
+                    resolvedTenantId,
+                    id,
+                    warehouseId,
+                    locationId
             );
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "DDT creato correttamente."
+            );
+            return "redirect:/orders/" + id
+                    + "?tenantId=" + resolvedTenantId;
 
         } catch (BusinessException ex) {
-
             redirectAttributes.addFlashAttribute(
                     "errorMessage",
                     ex.getMessage()
             );
-
             return "redirect:/orders/" + id
                     + "?tenantId=" + resolvedTenantId;
         }

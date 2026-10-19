@@ -1,11 +1,8 @@
 package com.gestiva.sales.quote.web;
 
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
-import java.math.BigDecimal;
 
 public class QuoteLineForm {
 
@@ -15,6 +12,9 @@ public class QuoteLineForm {
 
     @NotNull(message = "La quantità è obbligatoria")
     private String quantity;
+
+    @Size(max = 20, message = "L'unità di misura non può superare 20 caratteri")
+    private String unitOfMeasure;
 
     @NotNull(message = "Il prezzo unitario è obbligatorio")
     private String unitPrice;
@@ -73,5 +73,13 @@ public class QuoteLineForm {
 
     public void setTaxPct(String taxPct) {
         this.taxPct = taxPct;
+    }
+
+    public String getUnitOfMeasure() {
+        return unitOfMeasure;
+    }
+
+    public void setUnitOfMeasure(String unitOfMeasure) {
+        this.unitOfMeasure = unitOfMeasure;
     }
 }

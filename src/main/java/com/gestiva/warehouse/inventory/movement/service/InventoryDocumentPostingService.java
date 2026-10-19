@@ -312,9 +312,29 @@ public class InventoryDocumentPostingService {
             );
         }
 
+        // Gestiva V2 - Storno documentale attualmente supportato
+        // esclusivamente per i DDT multi-società.
+        if (!"DELIVERY_NOTE".equals(referenceType)) {
+            throw new BusinessException(
+                    "Storno documentale V2 non disponibile per il tipo: "
+                            + referenceType
+            );
+        }
+
         if (reversalDate == null) {
             throw new BusinessException(
                     "La data di storno è obbligatoria."
+            );
+        }
+
+        // Gestiva V2 - Blocco del magazzino prima del recupero
+        // dei movimenti associati al DDT.
+        if ("DELIVERY_NOTE".equals(referenceType)) {
+
+            requireDeliveryNoteForPosting(
+                    tenantId,
+                    companyId,
+                    referenceId
             );
         }
 

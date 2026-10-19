@@ -41,7 +41,7 @@ public class Invoice {
     @Column(name = "company_id", nullable = false)
     private Long companyId;
 
-    @Column(name = "delivery_note_id", nullable = false)
+    @Column(name = "delivery_note_id")
     private Long deliveryNoteId;
 
     @Column(name = "sales_order_id", nullable = false)

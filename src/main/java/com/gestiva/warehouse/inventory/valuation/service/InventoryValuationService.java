@@ -435,8 +435,12 @@ public class InventoryValuationService {
             );
         }
 
+        // Gestiva V2 - Blocca lo storno soltanto se esistono
+        // movimenti originali successivi ancora attivi.
+        // I movimenti già stornati e quelli compensativi
+        // non impediscono il ripristino FIFO.
         boolean hasSubsequentMovements = inventoryMovementRepository
-                .existsByTenantIdAndCompanyIdAndWarehouseIdAndItemIdAndIdGreaterThan(
+                .existsSubsequentActiveOriginalMovements(
                         tenantId,
                         companyId,
                         warehouseId,
