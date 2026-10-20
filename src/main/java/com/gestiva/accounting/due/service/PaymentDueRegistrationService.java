@@ -4,14 +4,13 @@ import com.gestiva.accounting.due.entity.PaymentDueTransaction;
 import com.gestiva.accounting.due.repository.PaymentDueRepository;
 import com.gestiva.accounting.due.repository.PaymentDueTransactionRepository;
 import com.gestiva.accounting.due.web.PaymentDueRegistrationForm;
-import com.gestiva.accounting.entry.service.AccountingEntryService;
 import com.gestiva.accounting.v2.journal.service.JournalAutoPostingService;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
+import com.gestiva.security.company.context.CompanyContext;
 import java.math.RoundingMode;
 
 @Service
@@ -20,25 +19,37 @@ public class PaymentDueRegistrationService {
 
     private final PaymentDueRepository paymentDueRepository;
     private final PaymentDueTransactionRepository paymentDueTransactionRepository;
-    private final AccountingEntryService accountingEntryService;
     private final JournalAutoPostingService journalAutoPostingService;
+    private final CompanyContext companyContext;
 
 
-
-    public PaymentDueRegistrationService(PaymentDueRepository paymentDueRepository,
-                                         PaymentDueTransactionRepository paymentDueTransactionRepository,
-                                         AccountingEntryService accountingEntryService,
-                                         JournalAutoPostingService journalAutoPostingService) {
+    public PaymentDueRegistrationService(
+            PaymentDueRepository paymentDueRepository,
+            PaymentDueTransactionRepository paymentDueTransactionRepository,
+            JournalAutoPostingService journalAutoPostingService,
+            CompanyContext companyContext) {
 
         this.paymentDueRepository = paymentDueRepository;
         this.paymentDueTransactionRepository = paymentDueTransactionRepository;
-        this.accountingEntryService = accountingEntryService;
         this.journalAutoPostingService = journalAutoPostingService;
+        this.companyContext = companyContext;
     }
 
     public void registerMovement(Long tenantId, Long paymentDueId, PaymentDueRegistrationForm form) {
-        var due = paymentDueRepository.findByTenantIdAndId(tenantId, paymentDueId)
-                .orElseThrow(() -> new NotFoundException("Scadenza non trovata"));
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException("Nessuna società attiva selezionata.");
+        }
+        var due = paymentDueRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        paymentDueId
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Scadenza non trovata nella società attiva."
+                ));
 
         if ("PAID".equalsIgnoreCase(due.getStatus()) || "CANCELLED".equalsIgnoreCase(due.getStatus())) {
             throw new BusinessException("Su questa scadenza non è possibile registrare movimenti.");
@@ -56,6 +67,7 @@ public class PaymentDueRegistrationService {
 
         PaymentDueTransaction tx = new PaymentDueTransaction();
         tx.setTenantId(tenantId);
+        tx.setCompanyId(due.getCompanyId());
         tx.setPaymentDueId(due.getId());
         tx.setTransactionDate(form.getTransactionDate());
         tx.setAmount(amount);
@@ -79,16 +91,6 @@ public class PaymentDueRegistrationService {
         }
         paymentDueRepository.save(due);
         if ("RECEIVABLE".equalsIgnoreCase(due.getDirection())) {
-            accountingEntryService.registerCustomerReceipt(
-                    tenantId,
-                    form.getTransactionDate(),
-                    "Incasso su scadenza " + due.getDocumentNumber(),
-                    due.getCurrencyCode(),
-                    amount,
-                    "PAYMENT_DUE",
-                    due.getId(),
-                    form.getNotes()
-            );
             journalAutoPostingService.postCustomerReceipt(
                     tenantId,
                     form.getTransactionDate(),
@@ -99,16 +101,6 @@ public class PaymentDueRegistrationService {
                     form.getNotes()
             );
         } else {
-            accountingEntryService.registerSupplierPayment(
-                    tenantId,
-                    form.getTransactionDate(),
-                    "Pagamento su scadenza " + due.getDocumentNumber(),
-                    due.getCurrencyCode(),
-                    amount,
-                    "PAYMENT_DUE",
-                    due.getId(),
-                    form.getNotes()
-            );
             journalAutoPostingService.postSupplierPayment(
                     tenantId,
                     form.getTransactionDate(),

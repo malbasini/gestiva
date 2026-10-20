@@ -7,7 +7,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Index;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -21,6 +20,9 @@ import java.time.LocalDate;
         }
 )
 public class PaymentDueTransaction extends TenantAwareEntity {
+
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
 
     @Column(name = "payment_due_id", nullable = false)
     private Long paymentDueId;
@@ -75,5 +77,13 @@ public class PaymentDueTransaction extends TenantAwareEntity {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 }

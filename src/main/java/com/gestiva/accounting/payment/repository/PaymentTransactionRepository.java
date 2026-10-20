@@ -12,6 +12,12 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
 
     List<PaymentTransaction> findByTenantIdAndPaymentDueIdOrderByPaymentDateAscIdAsc(Long tenantId, Long paymentDueId);
 
+    List<PaymentTransaction> findByTenantIdAndCompanyIdAndPaymentDueIdOrderByPaymentDateAscIdAsc(
+            Long tenantId,
+            Long companyId,
+            Long paymentDueId
+    );
+
     @org.springframework.data.jpa.repository.Query("""
            select coalesce(sum(p.amount), 0)
            from PaymentTransaction p
@@ -32,4 +38,24 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
     Page<PaymentTransaction> findByTenantId(Long tenantId, Pageable pageable);
 
     Optional<PaymentTransaction> findByTenantIdAndId(Long tenantId, Long id);
+
+    Page<PaymentTransaction> findByTenantIdAndCompanyId(
+            Long tenantId,
+            Long companyId,
+            Pageable pageable
+    );
+
+    Page<PaymentTransaction> findByTenantIdAndCompanyIdAndDirection(
+            Long tenantId,
+            Long companyId,
+            String direction,
+            Pageable pageable
+    );
+
+    Optional<PaymentTransaction> findByTenantIdAndCompanyIdAndId(
+            Long tenantId,
+            Long companyId,
+            Long id
+    );
+
 }

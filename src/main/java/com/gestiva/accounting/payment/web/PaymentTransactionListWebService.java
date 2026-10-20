@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import com.gestiva.security.company.context.CompanyContext;
 
 @Service
 @Transactional(readOnly = true)
@@ -25,22 +26,32 @@ public class PaymentTransactionListWebService {
     private final PaymentDueRepository paymentDueRepository;
     private final CustomerRepository customerRepository;
     private final SupplierRepository supplierRepository;
+    private final CompanyContext companyContext;
 
-    public PaymentTransactionListWebService(PaymentTransactionRepository paymentTransactionRepository,
-                                            PaymentDueRepository paymentDueRepository,
-                                            CustomerRepository customerRepository,
-                                            SupplierRepository supplierRepository) {
+    public PaymentTransactionListWebService(
+            PaymentTransactionRepository paymentTransactionRepository,
+            PaymentDueRepository paymentDueRepository,
+            CustomerRepository customerRepository,
+            SupplierRepository supplierRepository,
+            CompanyContext companyContext) {
 
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.paymentDueRepository = paymentDueRepository;
         this.customerRepository = customerRepository;
         this.supplierRepository = supplierRepository;
+        this.companyContext = companyContext;
     }
 
     public Page<PaymentTransactionListItemView> findPage(Long tenantId,
                                                          int page,
                                                          int size,
                                                          String direction) {
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException("Nessuna società attiva selezionata.");
+        }
+
         Pageable pageable = PageRequest.of(
                 page,
                 size,
@@ -50,23 +61,32 @@ public class PaymentTransactionListWebService {
         Page<PaymentTransaction> txPage;
 
         if (direction != null && !direction.isBlank()) {
-            txPage = paymentTransactionRepository.findByTenantIdAndDirection(
+            txPage = paymentTransactionRepository.findByTenantIdAndCompanyIdAndDirection(
                     tenantId,
+                    companyId,
                     direction.trim().toUpperCase(),
                     pageable
             );
         } else {
-            txPage = paymentTransactionRepository.findByTenantId(tenantId, pageable);
+            txPage = paymentTransactionRepository.findByTenantIdAndCompanyId(
+                    tenantId,
+                    companyId,
+                    pageable
+            );
         }
-
         Set<Long> dueIds = txPage.getContent().stream()
                 .map(PaymentTransaction::getPaymentDueId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        Map<Long, PaymentDue> duesById = paymentDueRepository.findAllById(dueIds).stream()
-                .collect(Collectors.toMap(PaymentDue::getId, Function.identity()));
-
+        Map<Long, PaymentDue> duesById = dueIds.stream()
+                .map(dueId -> paymentDueRepository
+                        .findByTenantIdAndCompanyIdAndId(tenantId, companyId, dueId))
+                .flatMap(Optional::stream)
+                .collect(Collectors.toMap(
+                        PaymentDue::getId,
+                        Function.identity()
+                ));
         Set<Long> customerIds = new HashSet<>();
         Set<Long> supplierIds = new HashSet<>();
 
@@ -83,16 +103,22 @@ public class PaymentTransactionListWebService {
             }
         }
 
-        Map<Long, String> customerNamesById = customerRepository.findAllById(customerIds).stream()
+        Map<Long, String> customerNamesById = customerIds.stream()
+                .map(customerId -> customerRepository
+                        .findByTenantIdAndCompanyIdAndId(tenantId, companyId, customerId))
+                .flatMap(Optional::stream)
                 .collect(Collectors.toMap(
                         Customer::getId,
-                        c -> buildCustomerLabel(c)
+                        this::buildCustomerLabel
                 ));
 
-        Map<Long, String> supplierNamesById = supplierRepository.findAllById(supplierIds).stream()
+        Map<Long, String> supplierNamesById = supplierIds.stream()
+                .map(supplierId -> supplierRepository
+                        .findByTenantIdAndCompanyIdAndId(tenantId, companyId, supplierId))
+                .flatMap(Optional::stream)
                 .collect(Collectors.toMap(
                         Supplier::getId,
-                        s -> buildSupplierLabel(s)
+                        this::buildSupplierLabel
                 ));
 
         return txPage.map(tx -> toView(
@@ -188,12 +214,26 @@ public class PaymentTransactionListWebService {
     }
 
     public PaymentTransactionDetailView findDetail(Long tenantId, Long id) {
-        PaymentTransaction tx = paymentTransactionRepository.findByTenantIdAndId(tenantId, id)
-                .orElseThrow(() -> new BusinessException("Registrazione incasso/pagamento non trovata."));
+        Long companyId = companyContext.resolveCurrentCompanyId();
+
+        if (companyId == null) {
+            throw new BusinessException("Nessuna società attiva selezionata.");
+        }
+        PaymentTransaction tx = paymentTransactionRepository
+                .findByTenantIdAndCompanyIdAndId(tenantId, companyId, id)
+                .orElseThrow(() -> new BusinessException(
+                        "Registrazione incasso/pagamento non trovata."
+                ));
 
         PaymentDue due = null;
         if (tx.getPaymentDueId() != null) {
-            due = paymentDueRepository.findByTenantIdAndId(tenantId, tx.getPaymentDueId()).orElse(null);
+            due = paymentDueRepository
+                    .findByTenantIdAndCompanyIdAndId(
+                            tenantId,
+                            companyId,
+                            tx.getPaymentDueId()
+                    )
+                    .orElse(null);
         }
 
         java.util.Map<Long, String> customerNamesById = new java.util.HashMap<>();
@@ -201,10 +241,18 @@ public class PaymentTransactionListWebService {
 
         if (due != null && due.getPartyId() != null && due.getPartyType() != null) {
             if ("CUSTOMER".equalsIgnoreCase(due.getPartyType())) {
-                customerRepository.findByTenantIdAndId(tenantId, due.getPartyId())
+                customerRepository.findByTenantIdAndCompanyIdAndId(
+                                tenantId,
+                                companyId,
+                                due.getPartyId()
+                        )
                         .ifPresent(c -> customerNamesById.put(c.getId(), buildCustomerLabel(c)));
             } else if ("SUPPLIER".equalsIgnoreCase(due.getPartyType())) {
-                supplierRepository.findByTenantIdAndId(tenantId, due.getPartyId())
+                supplierRepository.findByTenantIdAndCompanyIdAndId(
+                                tenantId,
+                                companyId,
+                                due.getPartyId()
+                        )
                         .ifPresent(s -> supplierNamesById.put(s.getId(), buildSupplierLabel(s)));
             }
         }
@@ -236,12 +284,4 @@ public class PaymentTransactionListWebService {
             default -> status;
         };
     }
-
-
-
-
-
-
-
-
 }

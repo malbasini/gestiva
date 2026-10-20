@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import com.gestiva.security.company.context.CompanyContext;
 
 @Service
 @Transactional
@@ -22,11 +23,16 @@ public class PaymentAccountingService {
 
     private final JournalEntryService journalEntryService;
     private final AccountRepository accountRepository;
+    private final CompanyContext companyContext;
 
-    public PaymentAccountingService(JournalEntryService journalEntryService,
-                                    AccountRepository accountRepository) {
+    public PaymentAccountingService(
+            JournalEntryService journalEntryService,
+            AccountRepository accountRepository,
+            CompanyContext companyContext) {
+
         this.journalEntryService = journalEntryService;
         this.accountRepository = accountRepository;
+        this.companyContext = companyContext;
     }
 
     public Long createAccountingEntryForPayment(Long tenantId,
@@ -79,25 +85,44 @@ public class PaymentAccountingService {
     }
 
     private Long resolveTradeAccountId(Long tenantId, PaymentDue due) {
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        if (!companyId.equals(due.getCompanyId())) {
+            throw new BusinessException(
+                    "La scadenza non appartiene alla società attiva."
+            );
+        }
+        String accountCode;
+
         if ("RECEIVABLE".equalsIgnoreCase(due.getDirection())) {
-            return accountRepository.findByTenantIdAndCode(tenantId, CUSTOMER_RECEIVABLE_ACCOUNT_CODE)
-                    .orElseThrow(() -> new BusinessException(
-                            "Conto " + CUSTOMER_RECEIVABLE_ACCOUNT_CODE + " Crediti verso clienti non trovato."
-                    ))
-                    .getId();
+            accountCode = CUSTOMER_RECEIVABLE_ACCOUNT_CODE;
+
+        } else if ("PAYABLE".equalsIgnoreCase(due.getDirection())) {
+            accountCode = SUPPLIER_PAYABLE_ACCOUNT_CODE;
+
+        } else {
+            throw new BusinessException(
+                    "Direzione scadenza non valida: " + due.getDirection()
+            );
         }
 
-        if ("PAYABLE".equalsIgnoreCase(due.getDirection())) {
-            return accountRepository.findByTenantIdAndCode(tenantId, SUPPLIER_PAYABLE_ACCOUNT_CODE)
-                    .orElseThrow(() -> new BusinessException(
-                            "Conto " + SUPPLIER_PAYABLE_ACCOUNT_CODE + " Debiti verso fornitori non trovato."
-                    ))
-                    .getId();
-        }
-
-        throw new BusinessException("Direzione scadenza non valida: " + due.getDirection());
+        return accountRepository
+                .findByTenantIdAndCompanyIdAndCode(
+                        tenantId,
+                        companyId,
+                        accountCode
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "Conto " + accountCode
+                                + " non trovato nella società attiva."
+                ))
+                .getId();
     }
-
     private List<JournalEntryLineForm> buildCustomerReceiptLines(Long financialAccountId,
                                                                  Long receivableAccountId,
                                                                  BigDecimal amount,

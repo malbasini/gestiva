@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import com.gestiva.security.company.context.CompanyContext;
 
 @Service
 @Transactional
@@ -16,11 +17,16 @@ public class PaymentDueService {
 
     private final PaymentDueRepository paymentDueRepository;
     private final InvoiceRepository invoiceRepository;
+    private final CompanyContext companyContext;
 
-    public PaymentDueService(PaymentDueRepository paymentDueRepository,
-                             InvoiceRepository invoiceRepository) {
+    public PaymentDueService(
+            PaymentDueRepository paymentDueRepository,
+            InvoiceRepository invoiceRepository,
+            CompanyContext companyContext) {
+
         this.paymentDueRepository = paymentDueRepository;
         this.invoiceRepository = invoiceRepository;
+        this.companyContext = companyContext;
     }
 
     public Long createReceivableFromCustomerInvoice(Long tenantId,
@@ -84,8 +90,15 @@ public class PaymentDueService {
                            BigDecimal grossAmount,
                            String notes) {
 
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new IllegalStateException(
+                    "Nessuna società attiva selezionata"
+            );
+        }
         PaymentDue due = new PaymentDue();
         due.setTenantId(tenantId);
+        due.setCompanyId(companyId);
         due.setDirection(direction);
         due.setPartyType(partyType);
         due.setPartyId(partyId);
@@ -102,16 +115,15 @@ public class PaymentDueService {
         due.setOpenAmount(amount);
         due.setStatus("OPEN");
         due.setNotes(notes);
-        var existing = paymentDueRepository.findByTenantIdAndReferenceTypeAndReferenceId(
-                tenantId, referenceType, referenceId
-        );
+        var existing =
+                paymentDueRepository.findByTenantIdAndCompanyIdAndReferenceTypeAndReferenceId(
+                        tenantId,
+                        companyId,
+                        referenceType,
+                        referenceId
+                );
         if (existing.isPresent()) {
             return existing.get().getId();
-        }
-        Invoice invoice = invoiceRepository.findByTenantIdAndId(tenantId, referenceId).orElse(null);
-        if (invoice != null) {
-            invoice.setStatus("ISSUED");
-            invoiceRepository.save(invoice);
         }
         return paymentDueRepository.save(due).getId();
     }

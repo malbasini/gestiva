@@ -12,6 +12,9 @@ import java.time.LocalDate;
 @Table(name = "payment_transaction")
 public class PaymentTransaction extends TenantAwareEntity {
 
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
+
     @Column(name = "direction", nullable = false, length = 10)
     private String direction; // IN / OUT
 
@@ -88,4 +91,12 @@ public class PaymentTransaction extends TenantAwareEntity {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
+    }
 }

@@ -4,7 +4,19 @@ import com.gestiva.accounting.due.entity.PaymentDueTransaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
-public interface PaymentDueTransactionRepository extends JpaRepository<PaymentDueTransaction, Long> {
+public interface PaymentDueTransactionRepository
+        extends JpaRepository<PaymentDueTransaction, Long> {
 
-    List<PaymentDueTransaction> findByTenantIdAndPaymentDueIdOrderByTransactionDateAscIdAsc(Long tenantId, Long paymentDueId);
+    List<PaymentDueTransaction>
+    findByTenantIdAndPaymentDueIdOrderByTransactionDateAscIdAsc(
+            Long tenantId,
+            Long paymentDueId
+    );
+
+    List<PaymentDueTransaction>
+    findByTenantIdAndCompanyIdAndPaymentDueIdOrderByTransactionDateAscIdAsc(
+            Long tenantId,
+            Long companyId,
+            Long paymentDueId
+    );
 }

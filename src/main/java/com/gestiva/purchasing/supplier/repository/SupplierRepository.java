@@ -15,4 +15,10 @@ public interface SupplierRepository extends JpaRepository<Supplier, Long>, JpaSp
     boolean existsByTenantIdAndCode(Long tenantId, String code);
 
     List<Supplier> findByTenantIdAndActiveTrueOrderByNameAsc(Long tenantId);
+
+    Optional<Supplier> findByTenantIdAndCompanyIdAndId(
+            Long tenantId,
+            Long companyId,
+            Long id
+    );
 }

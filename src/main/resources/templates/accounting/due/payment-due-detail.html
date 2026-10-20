@@ -84,48 +84,18 @@
                 </div>
 
                 <div class="panel" th:if="${due.canRegisterMovement}">
-                    <h2 class="section-title">Nuova registrazione</h2>
-
-                    <form method="post"
-                          th:action="@{/payment-dues/{id}/register(id=${due.id})}"
-                          th:object="${registrationForm}">
-
-                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-
-                        <div class="form-grid">
-                            <div class="form-field">
-                                <label for="transactionDate">Data registrazione</label>
-                                <input id="transactionDate"
-                                       type="date"
-                                       name="transactionDate"
-                                       th:value="${registrationForm.transactionDate != null ? #temporals.format(registrationForm.transactionDate, 'yyyy-MM-dd') : ''}"/>
-                                <div class="field-error" th:if="${#fields.hasErrors('transactionDate')}" th:errors="*{transactionDate}">Errore</div>
-                            </div>
-
-                            <div class="form-field">
-                                <label for="amount">Importo</label>
-                                <input id="amount" type="number" step="1"  th:field="*{amount}"/>
-                                <div class="field-error" th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}">Errore</div>
-                            </div>
-
-                            <div class="form-field full">
-                                <label for="notes">Note</label>
-                                <textarea id="notes" th:field="*{notes}" rows="3" placeholder="Note registrazione"></textarea>
-                            </div>
-                        </div>
-
-                        <div class="actions" style="margin-top:16px;">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-cash-coin"></i>
-                                <span th:text="${due.registerButtonLabel}">Registra</span>
-                            </button>
-                        </div>
-                    </form>
+                    <h2 class="section-title">Registrazione incasso / pagamento</h2>
+                    <p>
+                        Registra un incasso o un pagamento utilizzando
+                        il sistema contabile Gestiva V2.
+                    </p>
+                    <a class="btn btn-primary"
+                       th:href="@{/payment-dues/{id}/register-payment(id=${due.id})}">
+                        Registra incasso / pagamento
+                    </a>
                 </div>
-
                 <div class="panel" th:if="${!#lists.isEmpty(due.transactions)}" style="margin-top:24px;">
                     <h2 class="section-title">Storico registrazioni</h2>
-
                     <table class="table">
                         <thead>
                         <tr>

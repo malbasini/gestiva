@@ -7,6 +7,7 @@ import com.gestiva.security.usercontext.TenantContext;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @Controller
 public class InvoiceCreationPageController {
@@ -76,5 +77,32 @@ public class InvoiceCreationPageController {
                     + "?tenantId="
                     + resolvedTenantId;
         }
+        catch (DataIntegrityViolationException ex) {
+            if (!isDuplicateSalesOrderInvoice(ex)) {
+                throw ex;
+            }
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    "L'ordine cliente risulta già fatturato."
+            );
+            return "redirect:/orders/"
+                    + id
+                    + "?tenantId="
+                    + resolvedTenantId;
+        }
+    }
+
+    private boolean isDuplicateSalesOrderInvoice(DataIntegrityViolationException ex) {
+        Throwable cause = ex;
+        while (cause != null) {
+            String message = cause.getMessage();
+            if (message != null
+                    && message.contains(
+                    "uk_invoice_tenant_company_sales_order")) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
 }

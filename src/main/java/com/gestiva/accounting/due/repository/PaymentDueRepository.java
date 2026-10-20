@@ -11,6 +11,19 @@ public interface PaymentDueRepository extends JpaRepository<PaymentDue, Long>, J
 
     Optional<PaymentDue> findByTenantIdAndId(Long tenantId, Long id);
 
+    Optional<PaymentDue> findByTenantIdAndCompanyIdAndId(
+            Long tenantId,
+            Long companyId,
+            Long id
+    );
+
+    Optional<PaymentDue> findByTenantIdAndCompanyIdAndReferenceTypeAndReferenceId(
+            Long tenantId,
+            Long companyId,
+            String referenceType,
+            Long referenceId
+    );
+
     Optional<PaymentDue> findByTenantIdAndReferenceTypeAndReferenceId(Long tenantId, String referenceType, Long referenceId);
 
     List<PaymentDue> findByTenantIdAndDirectionAndStatusInOrderByDueDateAsc(

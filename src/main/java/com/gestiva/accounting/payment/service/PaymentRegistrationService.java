@@ -9,9 +9,9 @@ import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.util.NumberInputUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import com.gestiva.security.company.context.CompanyContext;
 
 @Service
 @Transactional
@@ -20,18 +20,34 @@ public class PaymentRegistrationService {
     private final PaymentDueRepository paymentDueRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final PaymentAccountingService paymentAccountingService;
+    private final CompanyContext companyContext;
 
-    public PaymentRegistrationService(PaymentDueRepository paymentDueRepository,
-                                      PaymentTransactionRepository paymentTransactionRepository,
-                                      PaymentAccountingService paymentAccountingService) {
+    public PaymentRegistrationService(
+            PaymentDueRepository paymentDueRepository,
+            PaymentTransactionRepository paymentTransactionRepository,
+            PaymentAccountingService paymentAccountingService,
+            CompanyContext companyContext) {
+
         this.paymentDueRepository = paymentDueRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.paymentAccountingService = paymentAccountingService;
+        this.companyContext = companyContext;
     }
 
     public Long register(Long tenantId, PaymentRegistrationForm form) {
-        PaymentDue due = paymentDueRepository.findByTenantIdAndId(tenantId, form.getPaymentDueId())
-                .orElseThrow(() -> new BusinessException("Scadenza non trovata."));
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException("Nessuna società attiva selezionata.");
+        }
+        PaymentDue due = paymentDueRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        form.getPaymentDueId()
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "Scadenza non trovata nella società attiva."
+                ));
 
         if ("PAID".equalsIgnoreCase(due.getStatus())) {
             throw new BusinessException("La scadenza risulta già saldata.");
@@ -62,6 +78,7 @@ public class PaymentRegistrationService {
 
         PaymentTransaction tx = new PaymentTransaction();
         tx.setTenantId(tenantId);
+        tx.setCompanyId(due.getCompanyId());
         tx.setDirection(resolveTransactionDirection(due));
         tx.setCounterpartyType(due.getPartyType());
         tx.setCounterpartyId(due.getPartyId());

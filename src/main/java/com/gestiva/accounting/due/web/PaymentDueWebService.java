@@ -1,11 +1,8 @@
 package com.gestiva.accounting.due.web;
 
 import com.gestiva.accounting.due.entity.PaymentDue;
-import com.gestiva.accounting.due.entity.PaymentDueTransaction;
 import com.gestiva.accounting.due.repository.PaymentDueRepository;
 import com.gestiva.accounting.due.repository.PaymentDueTransactionRepository;
-import com.gestiva.accounting.v2.journal.entity.JournalEntry;
-import com.gestiva.accounting.v2.journal.web.JournalEntryDetailView;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.purchasing.supplier.repository.SupplierRepository;
 import com.gestiva.crm.contact.repository.CustomerRepository;
@@ -16,40 +13,60 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.gestiva.security.company.context.CompanyContext;
+import com.gestiva.common.exception.BusinessException;
 import java.time.LocalDate;
 import java.util.List;
+import com.gestiva.accounting.payment.repository.PaymentTransactionRepository;
 
 @Service
 @Transactional(readOnly = true)
 public class PaymentDueWebService {
 
     private final PaymentDueRepository paymentDueRepository;
+    private final CompanyContext companyContext;
     private final CustomerRepository customerRepository;
     private final SupplierRepository supplierRepository;
     private final PaymentDueTransactionRepository paymentDueTransactionRepository;
+    private final PaymentTransactionRepository paymentTransactionRepository;
 
-    public PaymentDueWebService(PaymentDueRepository paymentDueRepository,
-                                CustomerRepository customerRepository,
-                                SupplierRepository supplierRepository,
-                                PaymentDueTransactionRepository paymentDueTransaction) {
+    public PaymentDueWebService(
+            PaymentDueRepository paymentDueRepository,
+            CustomerRepository customerRepository,
+            SupplierRepository supplierRepository,
+            PaymentDueTransactionRepository paymentDueTransactionRepository,
+            PaymentTransactionRepository paymentTransactionRepository,
+            CompanyContext companyContext) {
+
         this.paymentDueRepository = paymentDueRepository;
         this.customerRepository = customerRepository;
         this.supplierRepository = supplierRepository;
-        this.paymentDueTransactionRepository = paymentDueTransaction;
+        this.paymentDueTransactionRepository = paymentDueTransactionRepository;
+        this.paymentTransactionRepository = paymentTransactionRepository;
+        this.companyContext = companyContext;
     }
 
     public List<PaymentDueListItemView> findAll(Long tenantId, String direction, boolean openOnly) {
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException("Nessuna società attiva selezionata.");
+        }
         List<String> openStatuses = List.of("OPEN", "PARTIALLY_PAID");
-
-        var dues = (direction != null && !direction.isBlank())
-                ? (openOnly
-                   ? paymentDueRepository.findByTenantIdAndDirectionAndStatusInOrderByDueDateAscIdAsc(tenantId, direction, openStatuses)
-                   : paymentDueRepository.findByTenantIdAndDirectionOrderByDueDateAscIdAsc(tenantId, direction))
-                : (openOnly
-                   ? paymentDueRepository.findByTenantIdAndStatusInOrderByDueDateAscIdAsc(tenantId, openStatuses)
-                   : paymentDueRepository.findByTenantIdOrderByDueDateAscIdAsc(tenantId));
-
+        Specification<PaymentDue> spec = Specification.where(byTenant(tenantId))
+                .and(byCompany(companyId))
+                .and(byDirection(direction));
+        if (openOnly) {
+            spec = spec.and((root, query, cb) ->
+                    root.get("status").in(openStatuses));
+        }
+        List<PaymentDue> dues = paymentDueRepository.findAll(
+                spec,
+                Sort.by(
+                        Sort.Order.asc("dueDate"),
+                        Sort.Order.asc("id")
+                )
+        );
         LocalDate today = LocalDate.now();
 
         return dues.stream().map(due -> {
@@ -92,11 +109,22 @@ public class PaymentDueWebService {
     }
 
     public PaymentDueDetailView getDetail(Long tenantId, Long id) {
-        var due = paymentDueRepository.findByTenantIdAndId(tenantId, id)
-                .orElseThrow(() -> new com.gestiva.common.exception.NotFoundException("Scadenza non trovata"));
 
-        var transactions = paymentDueTransactionRepository.findByTenantIdAndPaymentDueIdOrderByTransactionDateAscIdAsc(tenantId, id);
-
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException("Nessuna società attiva selezionata.");
+        }
+        var due = paymentDueRepository
+                .findByTenantIdAndCompanyIdAndId(tenantId, companyId, id)
+                .orElseThrow(() -> new com.gestiva.common.exception.NotFoundException(
+                        "Scadenza non trovata"
+                ));
+        var transactions = paymentTransactionRepository
+                .findByTenantIdAndCompanyIdAndPaymentDueIdOrderByPaymentDateAscIdAsc(
+                        tenantId,
+                        companyId,
+                        id
+                );
         java.time.LocalDate today = java.time.LocalDate.now();
 
         PaymentDueDetailView v = new PaymentDueDetailView();
@@ -122,9 +150,19 @@ public class PaymentDueWebService {
 
         for (var tx : transactions) {
             PaymentDueTransactionView tv = new PaymentDueTransactionView();
-            tv.setFormattedTransactionDate(PdfFormatUtils.formatDate(tx.getTransactionDate()));
-            tv.setDirection(tx.getDirection());
-            tv.setFormattedAmount(PdfFormatUtils.formatMoney(tx.getAmount()));
+            tv.setFormattedTransactionDate(
+                    PdfFormatUtils.formatDate(tx.getPaymentDate())
+            );
+            tv.setDirection(
+                    "IN".equalsIgnoreCase(tx.getDirection())
+                            ? "Incasso"
+                            : "OUT".equalsIgnoreCase(tx.getDirection())
+                            ? "Pagamento"
+                            : tx.getDirection()
+            );
+            tv.setFormattedAmount(
+                    PdfFormatUtils.formatMoney(tx.getAmount())
+            );
             tv.setNotes(tx.getNotes());
             v.getTransactions().add(tv);
         }
@@ -140,12 +178,17 @@ public class PaymentDueWebService {
                                                  String q,
                                                  LocalDate dateFrom,
                                                  LocalDate dateTo) {
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException("Nessuna società attiva selezionata.");
+        }
         Pageable pageable = PageRequest.of(
                 page,
                 size,
                 Sort.by(Sort.Order.desc("documentDate"), Sort.Order.desc("id"))
         );
         Specification<PaymentDue> spec = Specification.where(byTenant(tenantId))
+                .and(byCompany(companyId))
                 .and(byStatus(status))
                 .and(byDirection(direction))
                 .and(bySearch(q))
@@ -158,7 +201,10 @@ public class PaymentDueWebService {
     private Specification<PaymentDue> byTenant(Long tenantId) {
         return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
     }
-
+    private Specification<PaymentDue> byCompany(Long companyId) {
+        return (root, query, cb) ->
+                cb.equal(root.get("companyId"), companyId);
+    }
     private Specification<PaymentDue> byStatus(String status) {
         if (status == null ||status.trim().isEmpty()) {
             return null;

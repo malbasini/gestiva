@@ -13,21 +13,27 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.gestiva.security.company.context.CompanyContext;
 
 @Controller
 @RequestMapping("/payment-dues")
 public class PaymentRegistrationPageController {
 
     private final TenantContext tenantContext;
+    private final CompanyContext companyContext;
     private final PaymentDueRepository paymentDueRepository;
     private final PaymentRegistrationService paymentRegistrationService;
     private final AccountWebService accountWebService;
 
-    public PaymentRegistrationPageController(TenantContext tenantContext,
-                                             PaymentDueRepository paymentDueRepository,
-                                             PaymentRegistrationService paymentRegistrationService,
-                                             AccountWebService accountWebService) {
+    public PaymentRegistrationPageController(
+            TenantContext tenantContext,
+            CompanyContext companyContext,
+            PaymentDueRepository paymentDueRepository,
+            PaymentRegistrationService paymentRegistrationService,
+            AccountWebService accountWebService) {
+
         this.tenantContext = tenantContext;
+        this.companyContext = companyContext;
         this.paymentDueRepository = paymentDueRepository;
         this.paymentRegistrationService = paymentRegistrationService;
         this.accountWebService = accountWebService;
@@ -35,11 +41,17 @@ public class PaymentRegistrationPageController {
 
     @GetMapping("/{id}/register-payment")
     public String form(@PathVariable Long id, Model model) {
+
         Long tenantId = tenantContext.getCurrentTenantId();
-
-        var due = paymentDueRepository.findByTenantIdAndId(tenantId, id)
-                .orElseThrow(() -> new BusinessException("Scadenza non trovata."));
-
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException("Nessuna società attiva selezionata.");
+        }
+        var due = paymentDueRepository
+                .findByTenantIdAndCompanyIdAndId(tenantId, companyId, id)
+                .orElseThrow(() -> new BusinessException(
+                        "Scadenza non trovata nella società attiva."
+                ));
         String grossAmount = PdfFormatUtils.formatMoney(due.getGrossAmount());
         String paidAmount = PdfFormatUtils.formatMoney(due.getPaidAmount());
         String openAmount = PdfFormatUtils.formatMoney(due.getOpenAmount());
@@ -58,10 +70,15 @@ public class PaymentRegistrationPageController {
                          Model model,
                          RedirectAttributes redirectAttributes) {
         Long tenantId = tenantContext.getCurrentTenantId();
-
-        var due = paymentDueRepository.findByTenantIdAndId(tenantId, id)
-                .orElseThrow(() -> new BusinessException("Scadenza non trovata."));
-
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException("Nessuna società attiva selezionata.");
+        }
+        var due = paymentDueRepository
+                .findByTenantIdAndCompanyIdAndId(tenantId, companyId, id)
+                .orElseThrow(() -> new BusinessException(
+                        "Scadenza non trovata nella società attiva."
+                ));
         String grossAmount = PdfFormatUtils.formatMoney(due.getGrossAmount());
         String paidAmount = PdfFormatUtils.formatMoney(due.getPaidAmount());
         String openAmount = PdfFormatUtils.formatMoney(due.getOpenAmount());
