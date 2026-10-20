@@ -6,6 +6,7 @@ import com.gestiva.accounting.v2.journal.repository.JournalEntryLineRepository;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryRepository;
 import com.gestiva.common.exception.NotFoundException;
 import com.gestiva.documents.pdf.PdfFormatUtils;
+import com.gestiva.security.company.context.CompanyContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -13,7 +14,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -26,17 +26,29 @@ public class JournalEntryWebService {
     private final JournalEntryRepository journalEntryRepository;
     private final JournalEntryLineRepository journalEntryLineRepository;
     private final AccountRepository accountRepository;
+    private final CompanyContext companyContext;
 
     public JournalEntryWebService(JournalEntryRepository journalEntryRepository,
                                   JournalEntryLineRepository journalEntryLineRepository,
-                                  AccountRepository accountRepository) {
+                                  AccountRepository accountRepository,
+                                  CompanyContext companyContext) {
         this.journalEntryRepository = journalEntryRepository;
         this.journalEntryLineRepository = journalEntryLineRepository;
         this.accountRepository = accountRepository;
+        this.companyContext = companyContext;
     }
 
     public List<JournalEntryListItemView> findAll(Long tenantId) {
-        return journalEntryRepository.findByTenantIdOrderByEntryDateDescIdDesc(tenantId)
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new NotFoundException("Nessuna società attiva selezionata.");
+        }
+        return journalEntryRepository
+                .findByTenantIdAndCompanyIdOrderByEntryDateDescIdDesc(
+                        tenantId,
+                        companyId
+                )
                 .stream()
                 .map(entry -> {
                     JournalEntryListItemView v = new JournalEntryListItemView();
@@ -57,17 +69,30 @@ public class JournalEntryWebService {
     }
 
     public JournalEntryDetailView getDetail(Long tenantId, Long id) {
-        var entry = journalEntryRepository.findByTenantIdAndId(tenantId, id)
-                .orElseThrow(() -> new NotFoundException("Scrittura contabile V2 non trovata"));
+
+            Long companyId = companyContext.resolveCurrentCompanyId();
+            if (companyId == null) {
+                throw new NotFoundException("Nessuna società attiva selezionata.");
+            }
+            var entry = journalEntryRepository
+                    .findByTenantIdAndCompanyIdAndId(tenantId, companyId, id)
+                    .orElseThrow(() ->
+                            new NotFoundException("Scrittura contabile V2 non trovata")
+                    );
 
         var lines = journalEntryLineRepository.findByTenantIdAndJournalEntryIdOrderByLineNoAsc(tenantId, id);
-
         Map<Long, com.gestiva.accounting.v2.account.entity.Account> accountsById = new HashMap<>();
         for (var line : lines) {
-            accountRepository.findByTenantIdAndId(tenantId, line.getAccountId())
-                    .ifPresent(account -> accountsById.put(account.getId(), account));
+            accountRepository
+                    .findByTenantIdAndCompanyIdAndId(
+                            tenantId,
+                            companyId,
+                            line.getAccountId()
+                    )
+                    .ifPresent(account ->
+                            accountsById.put(account.getId(), account)
+                    );
         }
-
         JournalEntryDetailView v = new JournalEntryDetailView();
         v.setId(entry.getId());
         v.setEntryNumber(entry.getEntryNumber());
@@ -106,22 +131,35 @@ public class JournalEntryWebService {
                                                    String q,
                                                    LocalDate dateFrom,
                                                    LocalDate dateTo) {
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new NotFoundException("Nessuna società attiva selezionata.");
+        }
+
         Pageable pageable = PageRequest.of(
                 page,
                 size,
                 Sort.by(Sort.Order.desc("entryDate"), Sort.Order.desc("id"))
         );
         Specification<JournalEntry> spec = Specification.where(byTenant(tenantId))
+                .and(byCompany(companyId))
                 .and(byCausalCode(causalCode))
                 .and(bySearch(q))
                 .and(byDateFrom(dateFrom))
                 .and(byDateTo(dateTo));
+
         return journalEntryRepository.findAll(spec, pageable).map(this::toListItemView);
 
     }
 
     private Specification<JournalEntry> byTenant(Long tenantId) {
         return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
+    }
+
+    private Specification<JournalEntry> byCompany(Long companyId) {
+        return (root, query, cb) ->
+                cb.equal(root.get("companyId"), companyId);
     }
 
     private Specification<JournalEntry> byCausalCode(String causalCode) {

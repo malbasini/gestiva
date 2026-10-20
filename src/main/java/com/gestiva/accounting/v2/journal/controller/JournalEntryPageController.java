@@ -8,6 +8,7 @@ import com.gestiva.accounting.v2.journal.web.CausalOptionView;
 import com.gestiva.accounting.v2.journal.web.JournalEntryForm;
 import com.gestiva.accounting.v2.journal.web.JournalEntryLineForm;
 import com.gestiva.accounting.v2.journal.web.JournalEntryWebService;
+import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.security.usercontext.TenantContext;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
@@ -15,7 +16,6 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
 import java.time.LocalDate;
 import java.util.List;
 
@@ -29,19 +29,22 @@ public class JournalEntryPageController {
     private final AccountChartBootstrapService accountChartBootstrapService;
     private final TenantContext tenantContext;
     private final JournalEntryRepository journalEntryRepository;
+    private final CompanyContext companyContext;
 
     public JournalEntryPageController(JournalEntryService journalEntryService,
                                       JournalEntryWebService journalEntryWebService,
                                       AccountWebService accountWebService,
                                       AccountChartBootstrapService accountChartBootstrapService,
                                       TenantContext tenantContext,
-                                      JournalEntryRepository journalEntryRepository) {
+                                      JournalEntryRepository journalEntryRepository,
+                                      CompanyContext companyContext) {
         this.journalEntryService = journalEntryService;
         this.journalEntryWebService = journalEntryWebService;
         this.accountWebService = accountWebService;
         this.accountChartBootstrapService = accountChartBootstrapService;
         this.tenantContext = tenantContext;
         this.journalEntryRepository = journalEntryRepository;
+        this.companyContext = companyContext;
     }
 
     @GetMapping("/{id}")
@@ -168,7 +171,19 @@ public class JournalEntryPageController {
     }
 
     public List<CausalOptionView> findCausalOptions(Long tenantId) {
-        return journalEntryRepository.findDistinctCausalCodesByTenantId(tenantId).stream()
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new com.gestiva.common.exception.NotFoundException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        return journalEntryRepository
+                .findDistinctCausalCodesByTenantIdAndCompanyId(
+                        tenantId,
+                        companyId
+                )
+                .stream()
                 .map(code -> new CausalOptionView(code, toLabel(code)))
                 .toList();
     }

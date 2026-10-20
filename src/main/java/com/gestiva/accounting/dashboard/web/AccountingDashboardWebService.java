@@ -1,55 +1,90 @@
 package com.gestiva.accounting.dashboard.web;
 
 import com.gestiva.accounting.due.repository.PaymentDueRepository;
-import com.gestiva.accounting.entry.repository.AccountingEntryRepository;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import com.gestiva.security.company.context.CompanyContext;
+import com.gestiva.accounting.payment.repository.PaymentTransactionRepository;
+import com.gestiva.accounting.v2.journal.repository.JournalEntryRepository;
 
 @Service
 @Transactional(readOnly = true)
 public class AccountingDashboardWebService {
 
     private final PaymentDueRepository paymentDueRepository;
-    private final AccountingEntryRepository accountingEntryRepository;
+    private final CompanyContext companyContext;
+    private final PaymentTransactionRepository paymentTransactionRepository;
+    private final JournalEntryRepository journalEntryRepository;
 
-    public AccountingDashboardWebService(PaymentDueRepository paymentDueRepository,
-                                         AccountingEntryRepository accountingEntryRepository) {
+    public AccountingDashboardWebService(
+            PaymentDueRepository paymentDueRepository,
+            JournalEntryRepository journalEntryRepository,
+            CompanyContext companyContext,
+            PaymentTransactionRepository paymentTransactionRepository) {
+
         this.paymentDueRepository = paymentDueRepository;
-        this.accountingEntryRepository = accountingEntryRepository;
+        this.journalEntryRepository = journalEntryRepository;
+        this.companyContext = companyContext;
+        this.paymentTransactionRepository = paymentTransactionRepository;
     }
 
     public AccountingDashboardView build(Long tenantId) {
-        List<String> openStatuses = List.of("OPEN", "PARTIALLY_PAID");
 
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new com.gestiva.common.exception.BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+
+        List<String> openStatuses = List.of("OPEN", "PARTIALLY_PAID");
         LocalDate today = LocalDate.now();
         LocalDate monthStart = today.withDayOfMonth(1);
         LocalDate monthEnd = today;
 
         BigDecimal openReceivables = nvl(
-                paymentDueRepository.sumOpenAmountByDirectionAndStatuses(tenantId, "RECEIVABLE", openStatuses)
-        );
-        BigDecimal openPayables = nvl(
-                paymentDueRepository.sumOpenAmountByDirectionAndStatuses(tenantId, "PAYABLE", openStatuses)
+                paymentDueRepository.sumOpenAmountByCompanyAndDirectionAndStatuses(
+                        tenantId, companyId, "RECEIVABLE", openStatuses
+                )
         );
 
-        long overdueCount = paymentDueRepository.countOverdue(tenantId, openStatuses, today);
+        BigDecimal openPayables = nvl(
+                paymentDueRepository.sumOpenAmountByCompanyAndDirectionAndStatuses(
+                        tenantId, companyId, "PAYABLE", openStatuses
+                )
+        );
+
+        long overdueCount = paymentDueRepository.countOverdueByCompany(
+                tenantId, companyId, openStatuses, today
+        );
+
         BigDecimal overdueAmount = nvl(
-                paymentDueRepository.sumOverdueOpenAmount(tenantId, openStatuses, today)
+                paymentDueRepository.sumOverdueOpenAmountByCompany(
+                        tenantId, companyId, openStatuses, today
+                )
         );
 
         BigDecimal monthReceipts = nvl(
-                accountingEntryRepository.sumTotalByCausalCodeAndPeriod(
-                        tenantId, "CUSTOMER_RECEIPT", monthStart, monthEnd
+                paymentTransactionRepository.sumAmountByCompanyAndDirectionAndPeriod(
+                        tenantId,
+                        companyId,
+                        "IN",
+                        monthStart,
+                        monthEnd
                 )
         );
 
         BigDecimal monthPayments = nvl(
-                accountingEntryRepository.sumTotalByCausalCodeAndPeriod(
-                        tenantId, "SUPPLIER_PAYMENT", monthStart, monthEnd
+                paymentTransactionRepository.sumAmountByCompanyAndDirectionAndPeriod(
+                        tenantId,
+                        companyId,
+                        "OUT",
+                        monthStart,
+                        monthEnd
                 )
         );
 
@@ -61,7 +96,10 @@ public class AccountingDashboardWebService {
         view.setFormattedMonthReceipts(PdfFormatUtils.formatMoney(monthReceipts));
         view.setFormattedMonthPayments(PdfFormatUtils.formatMoney(monthPayments));
 
-        accountingEntryRepository.findTop10ByTenantIdOrderByEntryDateDescIdDesc(tenantId)
+        journalEntryRepository.findTop10ByTenantIdAndCompanyIdOrderByEntryDateDescIdDesc(
+                        tenantId,
+                        companyId
+                )
                 .forEach(entry -> {
                     AccountingDashboardRecentEntryView rv = new AccountingDashboardRecentEntryView();
                     rv.setId(entry.getId());
@@ -69,7 +107,9 @@ public class AccountingDashboardWebService {
                     rv.setFormattedEntryDate(PdfFormatUtils.formatDate(entry.getEntryDate()));
                     rv.setCausalCode(entry.getCausalCode());
                     rv.setDescription(entry.getDescription());
-                    rv.setFormattedTotalAmount(PdfFormatUtils.formatMoney(entry.getTotalAmount()));
+                    rv.setFormattedTotalAmount(
+                            PdfFormatUtils.formatMoney(entry.getTotalDebit())
+                    );
                     view.getRecentEntries().add(rv);
                 });
 

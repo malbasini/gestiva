@@ -91,8 +91,16 @@ public class JournalEntryService {
                             "Conto non trovato nella società attiva."
                     ));
 
+            if (!account.isActive()) {
+                throw new BusinessException(
+                        "Non è possibile registrare movimenti su un conto disattivato."
+                );
+            }
+
             if (!account.isLeafAccount()) {
-                throw new BusinessException("È possibile registrare movimenti solo su conti foglia.");
+                throw new BusinessException(
+                        "È possibile registrare movimenti solo su conti foglia."
+                );
             }
 
             BigDecimal debit = scale(lineForm.getDebitAmount());

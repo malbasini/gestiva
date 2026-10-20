@@ -28,6 +28,17 @@ import com.gestiva.sales.order.repository.SalesOrderLineRepository;
 import com.gestiva.warehouse.item.entity.Item;
 import com.gestiva.warehouse.item.entity.ItemType;
 import com.gestiva.warehouse.item.repository.ItemRepository;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Objects;
+
+
+
+
+
+
 @Service
 @Transactional
 public class InvoiceService {
@@ -106,11 +117,67 @@ public class InvoiceService {
         }
 
         List<DeliveryNoteLine> deliveryNoteLines = deliveryNoteLineRepository
-                .findByTenantIdAndDeliveryNoteIdOrderByLineNoAsc(tenantId, deliveryNoteId);
+                .findByTenantIdAndCompanyIdAndDeliveryNoteIdOrderByLineNoAsc(
+                        tenantId,
+                        companyId,
+                        deliveryNoteId
+                );
 
         if (deliveryNoteLines.isEmpty()) {
             throw new BusinessException("Impossibile creare una fattura da un DDT senza righe.");
         }
+
+        // Recupero dell'ordine originale associato al DDT.
+        // Necessario per includere nella fattura anche i servizi.
+        if (deliveryNote.getSalesOrderId() == null) {
+            throw new BusinessException(
+                    "Impossibile generare la fattura: "
+                            + "il DDT non è associato a un ordine cliente."
+            );
+        }
+
+        SalesOrder order = salesOrderRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        deliveryNote.getSalesOrderId()
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "Impossibile generare la fattura: "
+                                + "ordine cliente non trovato nella società attiva."
+                ));
+
+        List<SalesOrderLine> orderLines = salesOrderLineRepository
+                .findByTenantIdAndCompanyIdAndSalesOrderIdOrderByLineNoAsc(
+                        tenantId,
+                        companyId,
+                        order.getId()
+                );
+
+        if (orderLines.isEmpty()) {
+            throw new BusinessException(
+                    "Impossibile generare la fattura: "
+                            + "l'ordine cliente non contiene righe."
+            );
+        }
+
+        if (!order.getCustomerId().equals(deliveryNote.getCustomerId())) {
+            throw new BusinessException(
+                    "Impossibile generare la fattura: "
+                            + "il cliente del DDT non corrisponde "
+                            + "al cliente dell'ordine."
+            );
+        }
+
+        validateDeliveryNoteLinesAgainstOrder(
+                tenantId,
+                orderLines,
+                deliveryNoteLines
+        );
+
+        validateSalesOrderTotals(order, orderLines);
+
+        validateDeliveryNoteTotals(deliveryNote, deliveryNoteLines);
 
         OffsetDateTime now = OffsetDateTime.now();
 
@@ -124,9 +191,10 @@ public class InvoiceService {
         invoice.setInvoiceDate(LocalDate.now());
         invoice.setStatus("DRAFT");
         invoice.setCurrencyCode(deliveryNote.getCurrencyCode());
-        invoice.setSubtotalAmount(defaultZero(deliveryNote.getSubtotalAmount()));
-        invoice.setTaxAmount(defaultZero(deliveryNote.getTaxAmount()));
-        invoice.setTotalAmount(defaultZero(deliveryNote.getTotalAmount()));
+        // La fattura comprende prodotti e servizi dell'intero ordine.
+        invoice.setSubtotalAmount(defaultZero(order.getSubtotalAmount()));
+        invoice.setTaxAmount(defaultZero(order.getTaxAmount()));
+        invoice.setTotalAmount(defaultZero(order.getTotalAmount()));
         invoice.setNotes(deliveryNote.getNotes());
         invoice.setCreatedAt(now);
         invoice.setUpdatedAt(now);
@@ -150,6 +218,50 @@ public class InvoiceService {
             line.setItemId(deliveryNoteLine.getItemId());
             invoiceLineRepository.save(line);
         }
+
+        // Aggiunta delle righe SERVICE dell'ordine originale.
+        // I servizi non transitano dal DDT e non movimentano il magazzino.
+        for (SalesOrderLine orderLine : orderLines) {
+
+            Item item = itemRepository
+                    .findByTenantIdAndId(
+                            tenantId,
+                            orderLine.getItemId()
+                    )
+                    .orElseThrow(() -> new BusinessException(
+                            "Articolo non trovato per la riga "
+                                    + orderLine.getLineNo()
+                    ));
+
+            if (item.getItemType() != ItemType.SERVICE) {
+                continue;
+            }
+
+            InvoiceLine line = new InvoiceLine();
+
+            line.setTenantId(tenantId);
+            line.setInvoiceId(savedInvoice.getId());
+
+            // I servizi non hanno una riga DDT.
+            line.setDeliveryNoteLineId(null);
+
+            // Manteniamo il collegamento con la riga dell'ordine.
+            line.setSalesOrderLineId(orderLine.getId());
+
+            line.setLineNo(lineNo++);
+            line.setDescription(orderLine.getDescription());
+            line.setQuantity(orderLine.getQuantity());
+            line.setUnitOfMeasure(orderLine.getUnitOfMeasure());
+            line.setUnitPrice(orderLine.getUnitPrice());
+            line.setDiscountPct(defaultZero(orderLine.getDiscountPct()));
+            line.setTaxPct(defaultZero(orderLine.getTaxPct()));
+            line.setTaxAmount(defaultZero(orderLine.getTaxAmount()));
+            line.setLineTotal(defaultZero(orderLine.getLineTotal()));
+            line.setItemId(orderLine.getItemId());
+
+            invoiceLineRepository.save(line);
+        }
+
         paymentDueService.createReceivableFromCustomerInvoice(
                 tenantId,
                 invoice.getCustomerId(),
@@ -208,6 +320,8 @@ public class InvoiceService {
                 order,
                 orderLines
         );
+
+        validateSalesOrderTotals(order, orderLines);
 
         // Un ordine già associato a un DDT deve seguire
         // esclusivamente il normale percorso di fatturazione da DDT.
@@ -373,6 +487,186 @@ public class InvoiceService {
             );
         }
     }
+
+    private void validateDeliveryNoteLinesAgainstOrder(
+            Long tenantId,
+            List<SalesOrderLine> orderLines,
+            List<DeliveryNoteLine> deliveryNoteLines) {
+
+        Map<Long, SalesOrderLine> orderLinesById = new HashMap<>();
+        Set<Long> expectedProductLineIds = new HashSet<>();
+
+        for (SalesOrderLine orderLine : orderLines) {
+
+            if (orderLine.getItemId() == null) {
+                throw new BusinessException(
+                        "La riga " + orderLine.getLineNo()
+                                + " dell'ordine non ha un articolo associato."
+                );
+            }
+
+            Item item = itemRepository
+                    .findByTenantIdAndId(tenantId, orderLine.getItemId())
+                    .orElseThrow(() -> new BusinessException(
+                            "Articolo non trovato per la riga "
+                                    + orderLine.getLineNo()
+                    ));
+
+            if (orderLinesById.put(orderLine.getId(), orderLine) != null) {
+                throw new BusinessException(
+                        "Riga ordine duplicata: " + orderLine.getId()
+                );
+            }
+
+            if (item.getItemType() == ItemType.PRODUCT) {
+                expectedProductLineIds.add(orderLine.getId());
+            } else if (item.getItemType() != ItemType.SERVICE) {
+                throw new BusinessException(
+                        "Tipo articolo non supportato nella riga "
+                                + orderLine.getLineNo()
+                );
+            }
+        }
+
+        Set<Long> actualProductLineIds = new HashSet<>();
+
+        for (DeliveryNoteLine ddtLine : deliveryNoteLines) {
+
+            Long orderLineId = ddtLine.getSalesOrderLineId();
+
+            SalesOrderLine orderLine = orderLinesById.get(orderLineId);
+
+            if (orderLine == null) {
+                throw new BusinessException(
+                        "Il DDT contiene una riga non appartenente all'ordine."
+                );
+            }
+
+            if (!expectedProductLineIds.contains(orderLineId)) {
+                throw new BusinessException(
+                        "Il DDT contiene una riga che non è un prodotto."
+                );
+            }
+
+            if (!actualProductLineIds.add(orderLineId)) {
+                throw new BusinessException(
+                        "Il DDT contiene una riga prodotto duplicata."
+                );
+            }
+
+            if (!Objects.equals(ddtLine.getItemId(), orderLine.getItemId())
+                    || ddtLine.getQuantity().compareTo(orderLine.getQuantity()) != 0
+                    || ddtLine.getLineTotal().compareTo(orderLine.getLineTotal()) != 0
+                    || ddtLine.getTaxAmount().compareTo(orderLine.getTaxAmount()) != 0) {
+
+                throw new BusinessException(
+                        "La riga prodotto " + orderLine.getLineNo()
+                                + " del DDT non corrisponde all'ordine."
+                );
+            }
+        }
+
+        if (!actualProductLineIds.equals(expectedProductLineIds)) {
+            throw new BusinessException(
+                    "Il DDT non contiene tutti i prodotti dell'ordine."
+            );
+        }
+    }
+
+    private void validateSalesOrderTotals(
+            SalesOrder order,
+            List<SalesOrderLine> orderLines) {
+
+        BigDecimal calculatedSubtotal = BigDecimal.ZERO;
+        BigDecimal calculatedTax = BigDecimal.ZERO;
+
+        for (SalesOrderLine line : orderLines) {
+
+            if (line.getLineTotal() == null || line.getTaxAmount() == null) {
+                throw new BusinessException(
+                        "Impossibile generare la fattura: "
+                                + "importi mancanti nella riga "
+                                + line.getLineNo()
+                );
+            }
+
+            calculatedSubtotal = calculatedSubtotal.add(
+                    line.getLineTotal()
+            );
+
+            calculatedTax = calculatedTax.add(
+                    line.getTaxAmount()
+            );
+        }
+
+        BigDecimal calculatedTotal = calculatedSubtotal.add(calculatedTax);
+
+        if (order.getSubtotalAmount() == null
+                || order.getTaxAmount() == null
+                || order.getTotalAmount() == null) {
+
+            throw new BusinessException(
+                    "Impossibile generare la fattura: "
+                            + "totali dell'ordine mancanti."
+            );
+        }
+
+        if (calculatedSubtotal.compareTo(order.getSubtotalAmount()) != 0
+                || calculatedTax.compareTo(order.getTaxAmount()) != 0
+                || calculatedTotal.compareTo(order.getTotalAmount()) != 0) {
+
+            throw new BusinessException(
+                    "Impossibile generare la fattura: "
+                            + "i totali dell'ordine non corrispondono "
+                            + "alla somma delle righe."
+            );
+        }
+    }
+
+    private void validateDeliveryNoteTotals(
+            DeliveryNote deliveryNote,
+            List<DeliveryNoteLine> deliveryNoteLines) {
+
+        BigDecimal calculatedSubtotal = BigDecimal.ZERO;
+        BigDecimal calculatedTax = BigDecimal.ZERO;
+
+        for (DeliveryNoteLine line : deliveryNoteLines) {
+
+            if (line.getLineTotal() == null || line.getTaxAmount() == null) {
+                throw new BusinessException(
+                        "Impossibile generare la fattura: "
+                                + "importi mancanti nelle righe del DDT."
+                );
+            }
+
+            calculatedSubtotal = calculatedSubtotal.add(line.getLineTotal());
+            calculatedTax = calculatedTax.add(line.getTaxAmount());
+        }
+
+        BigDecimal calculatedTotal = calculatedSubtotal.add(calculatedTax);
+
+        if (deliveryNote.getSubtotalAmount() == null
+                || deliveryNote.getTaxAmount() == null
+                || deliveryNote.getTotalAmount() == null) {
+
+            throw new BusinessException(
+                    "Impossibile generare la fattura: "
+                            + "totali del DDT mancanti."
+            );
+        }
+
+        if (calculatedSubtotal.compareTo(deliveryNote.getSubtotalAmount()) != 0
+                || calculatedTax.compareTo(deliveryNote.getTaxAmount()) != 0
+                || calculatedTotal.compareTo(deliveryNote.getTotalAmount()) != 0) {
+
+            throw new BusinessException(
+                    "Impossibile generare la fattura: "
+                            + "i totali del DDT non corrispondono "
+                            + "alla somma delle righe prodotto."
+            );
+        }
+    }
+
     private String generateNextInvoiceNumber(Long tenantId, Long companyId) {
         return documentSequenceService.nextNumber(
                 tenantId,

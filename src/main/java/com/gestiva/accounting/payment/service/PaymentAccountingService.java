@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import com.gestiva.security.company.context.CompanyContext;
+import com.gestiva.accounting.v2.account.web.AccountWebService;
 
 @Service
 @Transactional
@@ -24,15 +25,18 @@ public class PaymentAccountingService {
     private final JournalEntryService journalEntryService;
     private final AccountRepository accountRepository;
     private final CompanyContext companyContext;
+    private final AccountWebService accountWebService;
 
     public PaymentAccountingService(
             JournalEntryService journalEntryService,
             AccountRepository accountRepository,
-            CompanyContext companyContext) {
+            CompanyContext companyContext,
+            AccountWebService accountWebService) {
 
         this.journalEntryService = journalEntryService;
         this.accountRepository = accountRepository;
         this.companyContext = companyContext;
+        this.accountWebService = accountWebService;
     }
 
     public Long createAccountingEntryForPayment(Long tenantId,
@@ -45,6 +49,19 @@ public class PaymentAccountingService {
 
         if (financialAccountId == null) {
             throw new BusinessException("Seleziona il conto finanziario.");
+        }
+
+        boolean validFinancialAccount = accountWebService
+                .findFinancialAccountOptions(tenantId)
+                .stream()
+                .anyMatch(option ->
+                        financialAccountId.equals(option.getId())
+                );
+
+        if (!validFinancialAccount) {
+            throw new BusinessException(
+                    "Il conto finanziario selezionato non è valido per la società attiva."
+            );
         }
 
         Long tradeAccountId = resolveTradeAccountId(tenantId, due);

@@ -4,6 +4,7 @@ import com.gestiva.accounting.v2.account.entity.Account;
 import com.gestiva.accounting.v2.account.repository.AccountRepository;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryLineRepository;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryRepository;
+import com.gestiva.security.company.context.CompanyContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
@@ -17,19 +18,32 @@ public class AccountWebService {
     private final AccountRepository accountRepository;
     private final JournalEntryRepository journalEntryRepository;
     private final JournalEntryLineRepository journalEntryLineRepository;
+    private final CompanyContext companyContext;
 
     public AccountWebService(AccountRepository accountRepository,
                              JournalEntryRepository journalEntryRepository,
-                             JournalEntryLineRepository journalEntryLineRepository) {
+                             JournalEntryLineRepository journalEntryLineRepository,
+                             CompanyContext companyContext) {
 
         this.accountRepository = accountRepository;
         this.journalEntryRepository = journalEntryRepository;
         this.journalEntryLineRepository = journalEntryLineRepository;
+        this.companyContext = companyContext;
     }
 
     public List<AccountListItemView> findAll(Long tenantId) {
-        List<Account> accounts = accountRepository.findByTenantIdOrderByCodeAsc(tenantId);
 
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new com.gestiva.common.exception.NotFoundException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        List<Account> accounts =
+                accountRepository.findByTenantIdAndCompanyIdOrderByCodeAsc(
+                        tenantId,
+                        companyId
+                );
         Map<Long, Account> byId = new HashMap<>();
         for (Account account : accounts) {
             byId.put(account.getId(), account);
@@ -69,7 +83,21 @@ public class AccountWebService {
     }
 
     public List<AccountOptionView> findFinancialAccountOptions(Long tenantId) {
-        return accountRepository.findByTenantIdOrderByCodeAsc(tenantId).stream()
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+
+        if (companyId == null) {
+            throw new com.gestiva.common.exception.NotFoundException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+
+        return accountRepository
+                .findByTenantIdAndCompanyIdOrderByCodeAsc(
+                        tenantId,
+                        companyId
+                )
+                .stream()
                 .filter(Account::isActive)
                 .filter(Account::isLeafAccount)
                 .filter(this::isSelectableFinancialAccount)
@@ -120,7 +148,19 @@ public class AccountWebService {
                 || name.contains("TESORERIA");
     }
     public java.util.List<AccountOptionView> findLeafOptions(Long tenantId) {
-        return accountRepository.findByTenantIdAndLeafAccountTrueAndActiveTrueOrderByCodeAsc(tenantId)
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new com.gestiva.common.exception.NotFoundException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+
+        return accountRepository
+                .findByTenantIdAndCompanyIdAndLeafAccountTrueAndActiveTrueOrderByCodeAsc(
+                        tenantId,
+                        companyId
+                )
                 .stream()
                 .map(account -> {
                     AccountOptionView v = new AccountOptionView();
@@ -133,20 +173,45 @@ public class AccountWebService {
                 .toList();
     }
     public AccountLedgerView getLedger(Long tenantId, Long accountId) {
-        var account = accountRepository.findByTenantIdAndId(tenantId, accountId)
-                .orElseThrow(() -> new com.gestiva.common.exception.NotFoundException("Conto non trovato"));
 
-        var lines = journalEntryLineRepository.findByTenantIdAndAccountIdOrderByJournalEntryIdAscLineNoAsc(tenantId, accountId);
-
-        java.util.Map<Long, com.gestiva.accounting.v2.journal.entity.JournalEntry> entriesById = new java.util.HashMap<>();
-        for (var line : lines) {
-            journalEntryRepository.findByTenantIdAndId(tenantId, line.getJournalEntryId())
-                    .ifPresent(entry -> entriesById.put(entry.getId(), entry));
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new com.gestiva.common.exception.NotFoundException(
+                    "Nessuna società attiva selezionata."
+            );
         }
-
+        var account = accountRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        accountId
+                )
+                .orElseThrow(() ->
+                        new com.gestiva.common.exception.NotFoundException(
+                                "Conto non trovato"
+                        )
+                );
+        var lines = journalEntryLineRepository
+                .findByTenantIdAndCompanyIdAndAccountIdOrderByJournalEntryIdAscLineNoAsc(
+                        tenantId,
+                        companyId,
+                        accountId
+                );
+        java.util.Map<Long, com.gestiva.accounting.v2.journal.entity.JournalEntry> entriesById =
+                new java.util.HashMap<>();
+        for (var line : lines) {
+            journalEntryRepository
+                    .findByTenantIdAndCompanyIdAndId(
+                            tenantId,
+                            companyId,
+                            line.getJournalEntryId()
+                    )
+                    .ifPresent(entry ->
+                            entriesById.put(entry.getId(), entry)
+                    );
+        }
         java.math.BigDecimal totalDebit = java.math.BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP);
         java.math.BigDecimal totalCredit = java.math.BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP);
-
         AccountLedgerView v = new AccountLedgerView();
         v.setAccountId(account.getId());
         v.setCode(account.getCode());

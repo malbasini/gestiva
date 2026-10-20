@@ -8,6 +8,7 @@ import com.gestiva.accounting.v2.journal.repository.JournalEntryLineRepository;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryRepository;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.documents.pdf.PdfFormatUtils;
+import com.gestiva.security.company.context.CompanyContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,21 +27,40 @@ public class AccountLedgerWebService {
     private final AccountRepository accountRepository;
     private final JournalEntryRepository journalEntryRepository;
     private final JournalEntryLineRepository journalEntryLineRepository;
+    private final CompanyContext companyContext;
 
     public AccountLedgerWebService(AccountRepository accountRepository,
                                    JournalEntryRepository journalEntryRepository,
-                                   JournalEntryLineRepository journalEntryLineRepository) {
+                                   JournalEntryLineRepository journalEntryLineRepository,
+                                   CompanyContext companyContext) {
+
         this.accountRepository = accountRepository;
         this.journalEntryRepository = journalEntryRepository;
         this.journalEntryLineRepository = journalEntryLineRepository;
+        this.companyContext = companyContext;
     }
 
     public AccountLedgerView build(Long tenantId, Long accountId, LocalDate dateFrom, LocalDate dateTo) {
-        Account account = accountRepository.findByTenantIdAndId(tenantId, accountId)
+
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException("Nessuna società attiva selezionata.");
+        }
+        Account account = accountRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        accountId
+                )
                 .orElseThrow(() -> new BusinessException("Conto non trovato."));
 
         List<JournalEntry> entries = journalEntryRepository
-                .findByTenantIdAndEntryDateBetweenOrderByEntryDateAscIdAsc(tenantId, dateFrom, dateTo);
+                .findByTenantIdAndCompanyIdAndEntryDateBetweenOrderByEntryDateAscIdAsc(
+                        tenantId,
+                        companyId,
+                        dateFrom,
+                        dateTo
+                );
 
         Map<Long, JournalEntry> entryById = new HashMap<>();
         for (JournalEntry entry : entries) {
@@ -51,10 +71,13 @@ public class AccountLedgerWebService {
 
         List<JournalEntryLine> lines = entryIds.isEmpty()
                 ? List.of()
-                : journalEntryLineRepository.findByTenantIdAndAccountIdAndJournalEntryIdInOrderByJournalEntryIdAscLineNoAsc(
-                tenantId, accountId, entryIds
-        );
-
+                : journalEntryLineRepository
+                .findByTenantIdAndCompanyIdAndAccountIdAndJournalEntryIdInOrderByJournalEntryIdAscLineNoAsc(
+                        tenantId,
+                        companyId,
+                        accountId,
+                        entryIds
+                );
         lines = lines.stream()
                 .sorted(Comparator
                         .comparing((JournalEntryLine l) -> entryById.get(l.getJournalEntryId()).getEntryDate())

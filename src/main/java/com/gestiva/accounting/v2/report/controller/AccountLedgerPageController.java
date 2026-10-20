@@ -5,6 +5,7 @@ import com.gestiva.accounting.v2.report.web.AccountLedgerCsvExportService;
 import com.gestiva.accounting.v2.report.web.AccountLedgerView;
 import com.gestiva.accounting.v2.report.web.AccountLedgerWebService;
 import com.gestiva.accounting.v2.report.web.AccountLedgerXlsxExportService;
+import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.security.usercontext.TenantContext;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
@@ -20,26 +21,28 @@ import java.time.LocalDate;
 public class AccountLedgerPageController {
 
     private final TenantContext tenantContext;
+    private final CompanyContext companyContext;
     private final AccountLedgerWebService accountLedgerWebService;
     private final AccountRepository accountRepository;
     private final AccountLedgerCsvExportService accountLedgerCsvExportService;
     private final AccountLedgerXlsxExportService accountLedgerXlsxExportService;
 
+    public AccountLedgerPageController(
+            TenantContext tenantContext,
+            CompanyContext companyContext,
+            AccountLedgerWebService accountLedgerWebService,
+            AccountRepository accountRepository,
+            AccountLedgerCsvExportService accountLedgerCsvExportService,
+            AccountLedgerXlsxExportService accountLedgerXlsxExportService) {
 
-
-
-    public AccountLedgerPageController(TenantContext tenantContext,
-                                       AccountLedgerWebService accountLedgerWebService,
-                                       AccountRepository accountRepository,
-                                       AccountLedgerCsvExportService accountLedgerCsvExportService,
-                                       AccountLedgerXlsxExportService accountLedgerXlsxExportService) {
-        
         this.tenantContext = tenantContext;
+        this.companyContext = companyContext;
         this.accountLedgerWebService = accountLedgerWebService;
         this.accountRepository = accountRepository;
         this.accountLedgerCsvExportService = accountLedgerCsvExportService;
         this.accountLedgerXlsxExportService = accountLedgerXlsxExportService;
     }
+
     @GetMapping("/account-ledger/export.csv")
     public org.springframework.http.ResponseEntity<byte[]> exportCsv(
             @RequestParam(name = "accountId") Long accountId,
@@ -100,8 +103,26 @@ public class AccountLedgerPageController {
         LocalDate from = dateFrom != null ? dateFrom : LocalDate.now().withDayOfMonth(1);
         LocalDate to = dateTo != null ? dateTo : LocalDate.now();
 
-        model.addAttribute("ledger", accountLedgerWebService.build(tenantId, accountId, from, to));
-        model.addAttribute("accounts", accountRepository.findByTenantIdAndLeafAccountTrueAndActiveTrueOrderByCodeAsc(tenantId));
+        Long companyId = companyContext.resolveCurrentCompanyId();
+
+        if (companyId == null) {
+            throw new com.gestiva.common.exception.BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        model.addAttribute(
+                "ledger",
+                accountLedgerWebService.build(tenantId, accountId, from, to)
+        );
+
+        model.addAttribute(
+                "accounts",
+                accountRepository
+                        .findByTenantIdAndCompanyIdAndLeafAccountTrueAndActiveTrueOrderByCodeAsc(
+                                tenantId,
+                                companyId
+                        )
+        );
         model.addAttribute("accountId", accountId);
         model.addAttribute("dateFrom", from);
         model.addAttribute("dateTo", to);

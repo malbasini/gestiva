@@ -17,8 +17,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import com.gestiva.security.company.context.CompanyContext;
 
-
-
 @Service
 @Transactional
 public class JournalAutoPostingService {
@@ -29,9 +27,6 @@ public class JournalAutoPostingService {
     private final DocumentSequenceService documentSequenceService;
     private final InvoiceRepository invoiceRepository;
     private final CompanyContext companyContext;
-
-
-
 
     public JournalAutoPostingService(JournalEntryRepository journalEntryRepository,
                                      JournalEntryLineRepository journalEntryLineRepository,
@@ -172,13 +167,24 @@ public class JournalAutoPostingService {
     }
 
     private Account requireAccount(Long tenantId, Long companyId, String code) {
-        return accountRepository
+
+        Account account = accountRepository
                 .findByTenantIdAndCompanyIdAndCode(tenantId, companyId, code)
                 .orElseThrow(() -> new BusinessException(
                         "Conto contabile non trovato nella società attiva: " + code
                 ));
+        if (!account.isActive()) {
+            throw new BusinessException(
+                    "Il conto contabile " + code + " è disattivato."
+            );
+        }
+        if (!account.isLeafAccount()) {
+            throw new BusinessException(
+                    "Il conto contabile " + code + " non è movimentabile."
+            );
+        }
+        return account;
     }
-
     private String nextEntryNumber(Long tenantId, Long companyId) {
         return documentSequenceService.nextJournalEntryNumber(
                 tenantId,

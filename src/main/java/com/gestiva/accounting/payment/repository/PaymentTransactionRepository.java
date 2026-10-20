@@ -58,4 +58,20 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
             Long id
     );
 
+    @org.springframework.data.jpa.repository.Query("""
+    select coalesce(sum(p.amount), 0)
+    from PaymentTransaction p
+    where p.tenantId = :tenantId
+      and p.companyId = :companyId
+      and p.direction = :direction
+      and p.paymentDate between :dateFrom and :dateTo
+    """)
+    BigDecimal sumAmountByCompanyAndDirectionAndPeriod(
+            Long tenantId,
+            Long companyId,
+            String direction,
+            java.time.LocalDate dateFrom,
+            java.time.LocalDate dateTo
+    );
+
 }

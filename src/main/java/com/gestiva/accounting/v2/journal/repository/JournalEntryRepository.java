@@ -73,4 +73,9 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, Long
             java.time.LocalDate dateFrom,
             java.time.LocalDate dateTo
     );
+
+    List<JournalEntry> findTop10ByTenantIdAndCompanyIdOrderByEntryDateDescIdDesc(
+            Long tenantId,
+            Long companyId
+    );
 }

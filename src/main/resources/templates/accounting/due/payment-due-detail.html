@@ -103,6 +103,7 @@
                             <th>Tipo</th>
                             <th class="text-right">Importo</th>
                             <th>Note</th>
+                            <th>Azioni</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -111,11 +112,25 @@
                             <td th:text="${tx.direction}">RECEIPT</td>
                             <td class="text-right" th:text="${tx.formattedAmount}">50,00 €</td>
                             <td th:text="${tx.notes != null ? tx.notes : '-'}">Note</td>
+                            <td>
+                                <a class="btn btn-outline-primary btn-sm"
+                                   th:href="@{/payments/{id}(id=${tx.id})}"
+                                   title="Visualizza il dettaglio del pagamento">
+                                    <i class="bi bi-eye"></i>
+                                    Dettaglio
+                                </a>
+                                <a class="btn btn-outline-secondary btn-sm"
+                                   th:if="${tx.journalEntryId != null}"
+                                   th:href="@{/v2/journal-entries/{id}(id=${tx.journalEntryId})}"
+                                   title="Visualizza la scrittura contabile">
+                                    <i class="bi bi-journal-text"></i>
+                                    Contabilità
+                                </a>
+                            </td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
-
             </div>
         </div>
     </main>

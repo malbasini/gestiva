@@ -40,7 +40,7 @@ public class PaymentRegistrationService {
             throw new BusinessException("Nessuna società attiva selezionata.");
         }
         PaymentDue due = paymentDueRepository
-                .findByTenantIdAndCompanyIdAndId(
+                .findByTenantIdAndCompanyIdAndIdForUpdate(
                         tenantId,
                         companyId,
                         form.getPaymentDueId()
@@ -48,7 +48,6 @@ public class PaymentRegistrationService {
                 .orElseThrow(() -> new BusinessException(
                         "Scadenza non trovata nella società attiva."
                 ));
-
         if ("PAID".equalsIgnoreCase(due.getStatus())) {
             throw new BusinessException("La scadenza risulta già saldata.");
         }

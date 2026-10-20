@@ -85,7 +85,7 @@
                             <td th:text="${entry.description}">Incasso su scadenza INV-001</td>
                             <td class="text-right" th:text="${entry.formattedTotalAmount}">100,00 €</td>
                             <td class="link-actions">
-                                <a th:href="@{/accounting-entries/{id}(id=${entry.id})}">
+                                <a th:href="@{/v2/journal-entries/{id}(id=${entry.id})}">
                                     <i class="bi bi-eye"></i>
                                     <span>Dettaglio</span>
                                 </a>
@@ -100,7 +100,7 @@
                         <i class="bi bi-calendar-check"></i>
                         <span>Apri scadenzario</span>
                     </a>
-                    <a class="btn btn-outline-success" th:href="@{/accounting-entries}">
+                    <a class="btn btn-outline-success" th:href="@{/v2/journal-entries}">
                         <i class="bi bi-journal-text"></i>
                         <span>Apri prima nota</span>
                     </a>

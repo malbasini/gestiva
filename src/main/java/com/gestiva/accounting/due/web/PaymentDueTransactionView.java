@@ -2,6 +2,8 @@ package com.gestiva.accounting.due.web;
 
 public class PaymentDueTransactionView {
 
+    private Long id;
+    private Long journalEntryId;
     private String formattedTransactionDate;
     private String direction;
     private String formattedAmount;
@@ -37,5 +39,21 @@ public class PaymentDueTransactionView {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getJournalEntryId() {
+        return journalEntryId;
+    }
+
+    public void setJournalEntryId(Long journalEntryId) {
+        this.journalEntryId = journalEntryId;
     }
 }

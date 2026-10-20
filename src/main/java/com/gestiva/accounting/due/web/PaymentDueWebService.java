@@ -150,6 +150,8 @@ public class PaymentDueWebService {
 
         for (var tx : transactions) {
             PaymentDueTransactionView tv = new PaymentDueTransactionView();
+            tv.setId(tx.getId());
+            tv.setJournalEntryId(tx.getJournalEntryId());
             tv.setFormattedTransactionDate(
                     PdfFormatUtils.formatDate(tx.getPaymentDate())
             );

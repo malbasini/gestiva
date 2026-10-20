@@ -23,6 +23,9 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.warehouse.inventory.movement.service.InventoryLocationValidationService;
+import com.gestiva.warehouse.item.entity.Item;
+import com.gestiva.warehouse.item.entity.ItemType;
+import com.gestiva.warehouse.item.repository.ItemRepository;
 
 @Service
 @Transactional
@@ -38,7 +41,7 @@ public class DeliveryNoteService {
     private final InventoryMovementService inventoryMovementService;
     private final CompanyContext companyContext;
     private final InventoryLocationValidationService inventoryLocationValidationService;
-
+    private final ItemRepository itemRepository;
 
     public DeliveryNoteService(
             DeliveryNoteRepository deliveryNoteRepository,
@@ -50,7 +53,8 @@ public class DeliveryNoteService {
             InventoryMovementRepository inventoryMovementRepository,
             InventoryMovementService inventoryMovementService,
             CompanyContext companyContext,
-            InventoryLocationValidationService inventoryLocationValidationService){
+            InventoryLocationValidationService inventoryLocationValidationService,
+            ItemRepository itemRepository){
 
         this.deliveryNoteRepository = deliveryNoteRepository;
         this.deliveryNoteLineRepository = deliveryNoteLineRepository;
@@ -62,6 +66,7 @@ public class DeliveryNoteService {
         this.inventoryMovementService = inventoryMovementService;
         this.companyContext = companyContext;
         this.inventoryLocationValidationService = inventoryLocationValidationService;
+        this.itemRepository = itemRepository;
     }
 
     private Long requireCompanyId() {
@@ -117,6 +122,59 @@ public class DeliveryNoteService {
             throw new BusinessException("Impossibile creare un DDT da un ordine senza righe.");
         }
 
+        // Il DDT deve contenere esclusivamente articoli PRODUCT.
+        List<SalesOrderLine> productLines = new java.util.ArrayList<>();
+
+        BigDecimal ddtSubtotal = BigDecimal.ZERO;
+        BigDecimal ddtTax = BigDecimal.ZERO;
+
+        for (SalesOrderLine orderLine : orderLines) {
+
+            if (orderLine.getItemId() == null) {
+                throw new BusinessException(
+                        "Impossibile generare il DDT: la riga "
+                                + orderLine.getLineNo()
+                                + " non ha un articolo associato."
+                );
+            }
+
+            Item item = itemRepository
+                    .findByTenantIdAndId(tenantId, orderLine.getItemId())
+                    .orElseThrow(() -> new BusinessException(
+                            "Articolo non trovato per la riga "
+                                    + orderLine.getLineNo()
+                    ));
+
+            if (item.getItemType() == ItemType.PRODUCT) {
+
+                productLines.add(orderLine);
+
+                ddtSubtotal = ddtSubtotal.add(
+                        defaultZero(orderLine.getLineTotal())
+                );
+
+                ddtTax = ddtTax.add(
+                        defaultZero(orderLine.getTaxAmount())
+                );
+
+            } else if (item.getItemType() != ItemType.SERVICE) {
+
+                throw new BusinessException(
+                        "Tipo articolo non supportato nella riga "
+                                + orderLine.getLineNo()
+                );
+            }
+        }
+
+        if (productLines.isEmpty()) {
+            throw new BusinessException(
+                    "Impossibile generare il DDT: "
+                            + "l'ordine contiene esclusivamente servizi."
+            );
+        }
+
+        BigDecimal ddtTotal = ddtSubtotal.add(ddtTax);
+
         OffsetDateTime now = OffsetDateTime.now();
         DeliveryNote note = new DeliveryNote();
         note.setTenantId(tenantId);
@@ -134,16 +192,16 @@ public class DeliveryNoteService {
         note.setCarrierName(null);
 
         note.setCurrencyCode(order.getCurrencyCode());
-        note.setSubtotalAmount(defaultZero(order.getSubtotalAmount()));
-        note.setTaxAmount(defaultZero(order.getTaxAmount()));
-        note.setTotalAmount(defaultZero(order.getTotalAmount()));
+        note.setSubtotalAmount(ddtSubtotal);
+        note.setTaxAmount(ddtTax);
+        note.setTotalAmount(ddtTotal);
         note.setNotes(null);
         note.setCreatedAt(now);
         note.setUpdatedAt(now);
         DeliveryNote savedNote = deliveryNoteRepository.save(note);
         DeliveryNoteLine line = null;
         int lineNo = 1;
-        for (SalesOrderLine orderLine : orderLines) {
+        for (SalesOrderLine orderLine : productLines) {
             line = new DeliveryNoteLine();
             line.setTenantId(tenantId);
             line.setCompanyId(companyId);
