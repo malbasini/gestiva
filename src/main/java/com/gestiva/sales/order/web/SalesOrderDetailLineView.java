@@ -4,6 +4,7 @@ public class SalesOrderDetailLineView {
 
     private Integer lineNo;
     private String description;
+    private String itemType;
     private String formattedQuantity;
     private String formattedUnitPrice;
     private String formattedDiscountPct;
@@ -64,5 +65,13 @@ public class SalesOrderDetailLineView {
 
     public void setFormattedLineTotal(String formattedLineTotal) {
         this.formattedLineTotal = formattedLineTotal;
+    }
+
+    public String getItemType() {
+        return itemType;
+    }
+
+    public void setItemType(String itemType) {
+        this.itemType = itemType;
     }
 }

@@ -26,7 +26,7 @@ public class InvoiceCreationPageController {
                                 @RequestParam(required = false) Long tenantId,
                                 RedirectAttributes redirectAttributes) {
 
-        Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
+        Long resolvedTenantId = tenantContext.getCurrentTenantId();
 
         try {
             InvoiceResponse response = invoiceService.createFromDeliveryNote(resolvedTenantId, id);
@@ -47,10 +47,7 @@ public class InvoiceCreationPageController {
             @RequestParam(required = false) Long tenantId,
             RedirectAttributes redirectAttributes) {
 
-        Long resolvedTenantId =
-                tenantId != null
-                        ? tenantId
-                        : tenantContext.getCurrentTenantId();
+        Long resolvedTenantId = tenantContext.getCurrentTenantId();
         try {
             InvoiceResponse response =
                     invoiceService.createFromSalesOrder(

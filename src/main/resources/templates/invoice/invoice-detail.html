@@ -27,9 +27,11 @@
               <i class="bi bi-arrow-left"></i>
               <span>Lista fatture</span>
             </a>
-            <a class="btn btn-outline-success" th:href="@{/delivery-notes/{id}(id=${invoice.deliveryNoteId}, tenantId=${tenantId})}">
-              <i class="bi bi-arrow-left"></i>
-              <span>Torna al DDT</span>
+            <a class="btn btn-outline-success"
+                 th:if="${invoice.deliveryNoteId != null}"
+                 th:href="@{/delivery-notes/{id}(id=${invoice.deliveryNoteId}, tenantId=${tenantId})}">
+                  <i class="bi bi-arrow-left"></i>
+                  <span>Apri DDT</span>
             </a>
             <a class="btn btn-outline-primary" th:href="@{/invoices/{id}/preview(id=${invoice.id}, tenantId=${tenantId})}">
               <i class="bi bi-eye"></i>
@@ -75,11 +77,18 @@
             </div>
           </div>
           <div class="info-box">
-            <div class="label">DDT origine</div>
-            <div class="value" th:text="${invoice.deliveryNoteId}">1</div>
-          </div>
+                <div class="label">DDT origine</div>
+                <div class="value"
+                     th:if="${invoice.deliveryNoteId != null}"
+                     th:text="${invoice.deliveryNoteId}">
+                    1
+                </div>
+                <div class="value muted"
+                     th:if="${invoice.deliveryNoteId == null}">
+                    Fatturazione diretta da ordine
+                </div>
+            </div>
         </div>
-
         <div class="info-grid three-cols">
           <div class="info-box">
             <div class="label">Ordine origine</div>

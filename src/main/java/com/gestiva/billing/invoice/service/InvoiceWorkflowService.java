@@ -6,20 +6,35 @@ import com.gestiva.common.exception.BusinessException;
 import com.gestiva.common.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.gestiva.security.company.context.CompanyContext;
 
 @Service
 @Transactional
 public class InvoiceWorkflowService {
 
     private final InvoiceRepository invoiceRepository;
+    private final CompanyContext companyContext;
 
-    public InvoiceWorkflowService(InvoiceRepository invoiceRepository) {
+    public InvoiceWorkflowService(
+            InvoiceRepository invoiceRepository,
+            CompanyContext companyContext) {
+
         this.invoiceRepository = invoiceRepository;
+        this.companyContext = companyContext;
     }
 
     public void cancel(Long tenantId, Long invoiceId) {
-        Invoice invoice = invoiceRepository.findByTenantIdAndId(tenantId, invoiceId)
-                .orElseThrow(() -> new NotFoundException("Fattura non trovata"));
+
+        Long companyId = companyContext.requireCurrentCompanyId();
+        Invoice invoice = invoiceRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        invoiceId
+                )
+                .orElseThrow(() -> new NotFoundException(
+                        "Fattura non trovata nella società attiva."
+                ));
 
         if ("CANCELLED".equals(invoice.getStatus())) {
             throw new BusinessException("La fattura è già annullata.");

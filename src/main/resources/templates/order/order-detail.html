@@ -177,6 +177,7 @@
           <tr>
             <th>#</th>
             <th>Descrizione</th>
+            <th>Tipo</th>
             <th class="text-right">Qtà</th>
             <th class="text-right">Prezzo</th>
             <th class="text-right">Sconto %</th>
@@ -186,9 +187,26 @@
           </thead>
           <tbody>
           <tr th:each="line : ${order.lines}">
-            <td th:text="${line.lineNo}">1</td>
-            <td th:text="${line.description}">Modulo CRM</td>
-            <td class="text-right" th:text="${line.formattedQuantity}">1,00</td>
+              <td th:text="${line.lineNo}">1</td>
+              <td th:text="${line.description}">Modulo CRM</td>
+              <td>
+                 <span th:if="${line.itemType == 'PRODUCT'}"
+                         class="badge badge-confirmed">
+                             Prodotto
+                 </span>
+                 <span th:if="${line.itemType == 'SERVICE'}"
+                        class="badge badge-fulfilled">
+                             Servizio
+                 </span>
+                 <span th:if="${line.itemType == null}"
+                        class="muted">
+                         Non disponibile
+                 </span>
+              </td>
+              <td class="text-right"
+                  th:text="${line.formattedQuantity}">
+                  1,00
+              </td>
             <td class="text-right" th:text="${line.formattedUnitPrice}">500,00 €</td>
             <td class="text-right" th:text="${line.formattedDiscountPct + '%'}">0,00%</td>
             <td class="text-right" th:text="${line.formattedTaxPct + '%'}">22,00%</td>
@@ -252,16 +270,32 @@
                             aria-label="Chiudi">
                     </button>
                 </div>
-
                 <div class="modal-body">
-
+                    <div class="alert alert-info">
+                        <strong>
+                            <i class="bi bi-info-circle"></i>
+                            Informazioni sul documento di trasporto
+                        </strong>
+                        <p class="mb-2 mt-2">
+                            Il DDT comprenderà esclusivamente gli articoli
+                            di tipo <strong>Prodotto</strong> presenti nell'ordine.
+                        </p>
+                        <p class="mb-2">
+                            Gli eventuali articoli di tipo
+                            <strong>Servizio</strong> non saranno inseriti
+                            nel documento di trasporto.
+                        </p>
+                        <p class="mb-0">
+                            La successiva fattura generata dal DDT
+                            comprenderà sia i prodotti sia i servizi
+                            presenti nell'ordine originale.
+                        </p>
+                    </div>
                     <p>
                         Seleziona il magazzino da cui verrà
                         prelevata la merce.
                     </p>
-
                     <div class="mb-3">
-
                         <label for="deliveryNoteWarehouse"
                                class="form-label">
                             Magazzino di partenza

@@ -24,7 +24,7 @@ public class InvoiceDetailPageController {
                          @RequestParam(required = false) Long tenantId,
                          Model model) {
 
-        Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
+        Long resolvedTenantId = tenantContext.getCurrentTenantId();
 
         model.addAttribute("invoice", invoiceDetailWebService.getDetail(resolvedTenantId, id));
         model.addAttribute("tenantId", resolvedTenantId);

@@ -112,13 +112,18 @@
 </div>
 
 <div class="section-line">
-    <strong>DDT di origine:</strong>
-    <span th:text="${invoice.deliveryNoteId}">1</span>
-    <br></br>
-    <br></br>
-    <br></br>
-    <strong>Ordine di origine:</strong>
-    <span th:text="${invoice.salesOrderId}">29</span>
+    <div th:if="${invoice.deliveryNoteId != null}">
+        <strong>DDT di origine:</strong>
+        <span th:text="${invoice.deliveryNoteId}">1</span>
+    </div>
+    <div th:if="${invoice.deliveryNoteId == null}">
+        <strong>Origine fattura:</strong>
+        <span>Fatturazione diretta da ordine</span>
+    </div>
+    <div style="margin-top:8px;">
+        <strong>Ordine di origine:</strong>
+        <span th:text="${invoice.salesOrderId}">29</span>
+    </div>
 </div>
 
 <table class="lines">

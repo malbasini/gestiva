@@ -25,7 +25,7 @@ public class InvoiceWorkflowPageController {
                          @RequestParam(required = false) Long tenantId,
                          RedirectAttributes redirectAttributes) {
 
-        Long resolvedTenantId = tenantId != null ? tenantId : tenantContext.getCurrentTenantId();
+        Long resolvedTenantId = tenantContext.getCurrentTenantId();
 
         try {
             invoiceWorkflowService.cancel(resolvedTenantId, id);

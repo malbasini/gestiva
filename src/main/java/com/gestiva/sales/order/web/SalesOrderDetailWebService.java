@@ -101,6 +101,14 @@ public class SalesOrderDetailWebService {
             SalesOrderDetailLineView l = new SalesOrderDetailLineView();
             l.setLineNo(line.getLineNo());
             l.setDescription(line.getDescription());
+            if (line.getItemId() != null) {
+                String itemType = itemRepository
+                        .findByTenantIdAndId(tenantId, line.getItemId())
+                        .map(item -> item.getItemType().name())
+                        .orElse(null);
+
+                l.setItemType(itemType);
+            }
             l.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),2));
             l.setFormattedUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
             l.setFormattedDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct()));

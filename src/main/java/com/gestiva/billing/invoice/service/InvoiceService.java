@@ -34,11 +34,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Objects;
 
-
-
-
-
-
 @Service
 @Transactional
 public class InvoiceService {
@@ -169,6 +164,22 @@ public class InvoiceService {
             );
         }
 
+        // La valuta del DDT deve corrispondere a quella
+        // dell'ordine originale, da cui derivano gli importi
+        // complessivi della fattura.
+
+        if (order.getCurrencyCode() == null
+                || deliveryNote.getCurrencyCode() == null
+                || !order.getCurrencyCode().equals(
+                deliveryNote.getCurrencyCode())) {
+
+            throw new BusinessException(
+                    "Impossibile generare la fattura: "
+                            + "la valuta del DDT non corrisponde "
+                            + "alla valuta dell'ordine cliente."
+            );
+        }
+
         validateDeliveryNoteLinesAgainstOrder(
                 tenantId,
                 orderLines,
@@ -199,30 +210,28 @@ public class InvoiceService {
         invoice.setCreatedAt(now);
         invoice.setUpdatedAt(now);
         Invoice savedInvoice = invoiceRepository.save(invoice);
-        int lineNo = 1;
+        // Associazione tra righe dell'ordine e righe PRODUCT del DDT.
+        Map<Long, DeliveryNoteLine> deliveryNoteLinesByOrderLineId =
+                new HashMap<>();
+
         for (DeliveryNoteLine deliveryNoteLine : deliveryNoteLines) {
-            InvoiceLine line = new InvoiceLine();
-            line.setTenantId(tenantId);
-            line.setInvoiceId(savedInvoice.getId());
-            line.setDeliveryNoteLineId(deliveryNoteLine.getId());
-            line.setSalesOrderLineId(deliveryNoteLine.getSalesOrderLineId());
-            line.setLineNo(lineNo++);
-            line.setDescription(deliveryNoteLine.getDescription());
-            line.setQuantity(deliveryNoteLine.getQuantity());
-            line.setUnitOfMeasure(deliveryNoteLine.getUnitOfMeasure());
-            line.setUnitPrice(deliveryNoteLine.getUnitPrice());
-            line.setDiscountPct(defaultZero(deliveryNoteLine.getDiscountPct()));
-            line.setTaxPct(defaultZero(deliveryNoteLine.getTaxPct()));
-            line.setTaxAmount(defaultZero(deliveryNoteLine.getTaxAmount()));
-            line.setLineTotal(defaultZero(deliveryNoteLine.getLineTotal()));
-            line.setItemId(deliveryNoteLine.getItemId());
-            invoiceLineRepository.save(line);
+
+            DeliveryNoteLine previous = deliveryNoteLinesByOrderLineId.put(
+                    deliveryNoteLine.getSalesOrderLineId(),
+                    deliveryNoteLine
+            );
+
+            if (previous != null) {
+                throw new BusinessException(
+                        "Il DDT contiene righe prodotto duplicate."
+                );
+            }
         }
-
-        // Aggiunta delle righe SERVICE dell'ordine originale.
-        // I servizi non transitano dal DDT e non movimentano il magazzino.
+        // Le righe della fattura seguono la sequenza originale dell'ordine.
+        // PRODUCT: dati provenienti dal DDT.
+        // SERVICE: dati provenienti direttamente dall'ordine.
+        int lineNo = 1;
         for (SalesOrderLine orderLine : orderLines) {
-
             Item item = itemRepository
                     .findByTenantIdAndId(
                             tenantId,
@@ -232,36 +241,50 @@ public class InvoiceService {
                             "Articolo non trovato per la riga "
                                     + orderLine.getLineNo()
                     ));
-
-            if (item.getItemType() != ItemType.SERVICE) {
-                continue;
-            }
-
             InvoiceLine line = new InvoiceLine();
-
             line.setTenantId(tenantId);
             line.setInvoiceId(savedInvoice.getId());
-
-            // I servizi non hanno una riga DDT.
-            line.setDeliveryNoteLineId(null);
-
-            // Manteniamo il collegamento con la riga dell'ordine.
             line.setSalesOrderLineId(orderLine.getId());
-
             line.setLineNo(lineNo++);
-            line.setDescription(orderLine.getDescription());
-            line.setQuantity(orderLine.getQuantity());
-            line.setUnitOfMeasure(orderLine.getUnitOfMeasure());
-            line.setUnitPrice(orderLine.getUnitPrice());
-            line.setDiscountPct(defaultZero(orderLine.getDiscountPct()));
-            line.setTaxPct(defaultZero(orderLine.getTaxPct()));
-            line.setTaxAmount(defaultZero(orderLine.getTaxAmount()));
-            line.setLineTotal(defaultZero(orderLine.getLineTotal()));
-            line.setItemId(orderLine.getItemId());
-
+            if (item.getItemType() == ItemType.PRODUCT) {
+                DeliveryNoteLine deliveryNoteLine =
+                        deliveryNoteLinesByOrderLineId.get(orderLine.getId());
+                if (deliveryNoteLine == null) {
+                    throw new BusinessException(
+                            "Riga DDT mancante per il prodotto "
+                                    + orderLine.getLineNo()
+                    );
+                }
+                line.setDeliveryNoteLineId(deliveryNoteLine.getId());
+                line.setDescription(deliveryNoteLine.getDescription());
+                line.setQuantity(deliveryNoteLine.getQuantity());
+                line.setUnitOfMeasure(deliveryNoteLine.getUnitOfMeasure());
+                line.setUnitPrice(deliveryNoteLine.getUnitPrice());
+                line.setDiscountPct(defaultZero(deliveryNoteLine.getDiscountPct()));
+                line.setTaxPct(defaultZero(deliveryNoteLine.getTaxPct()));
+                line.setTaxAmount(defaultZero(deliveryNoteLine.getTaxAmount()));
+                line.setLineTotal(defaultZero(deliveryNoteLine.getLineTotal()));
+                line.setItemId(deliveryNoteLine.getItemId());
+            } else if (item.getItemType() == ItemType.SERVICE) {
+                // I servizi non transitano dal DDT.
+                line.setDeliveryNoteLineId(null);
+                line.setDescription(orderLine.getDescription());
+                line.setQuantity(orderLine.getQuantity());
+                line.setUnitOfMeasure(orderLine.getUnitOfMeasure());
+                line.setUnitPrice(orderLine.getUnitPrice());
+                line.setDiscountPct(defaultZero(orderLine.getDiscountPct()));
+                line.setTaxPct(defaultZero(orderLine.getTaxPct()));
+                line.setTaxAmount(defaultZero(orderLine.getTaxAmount()));
+                line.setLineTotal(defaultZero(orderLine.getLineTotal()));
+                line.setItemId(orderLine.getItemId());
+            } else {
+                throw new BusinessException(
+                        "Tipo articolo non supportato nella riga "
+                                + orderLine.getLineNo()
+                );
+            }
             invoiceLineRepository.save(line);
         }
-
         paymentDueService.createReceivableFromCustomerInvoice(
                 tenantId,
                 invoice.getCustomerId(),
@@ -555,9 +578,33 @@ public class InvoiceService {
             }
 
             if (!Objects.equals(ddtLine.getItemId(), orderLine.getItemId())
-                    || ddtLine.getQuantity().compareTo(orderLine.getQuantity()) != 0
+                    || !Objects.equals(
+                    ddtLine.getDescription(),
+                    orderLine.getDescription())
+                    || !Objects.equals(
+                    ddtLine.getUnitOfMeasure(),
+                    orderLine.getUnitOfMeasure())
+                    || !Objects.equals(
+                    ddtLine.getQuantity(),
+                    orderLine.getQuantity())
+                    && (ddtLine.getQuantity() == null
+                    || orderLine.getQuantity() == null
+                    || ddtLine.getQuantity().compareTo(orderLine.getQuantity()) != 0)
+                    || ddtLine.getUnitPrice() == null
+                    || orderLine.getUnitPrice() == null
+                    || ddtLine.getUnitPrice().compareTo(orderLine.getUnitPrice()) != 0
+                    || !Objects.equals(
+                    defaultZero(ddtLine.getDiscountPct()),
+                    defaultZero(orderLine.getDiscountPct()))
+                    && defaultZero(ddtLine.getDiscountPct())
+                    .compareTo(defaultZero(orderLine.getDiscountPct())) != 0
+                    || defaultZero(ddtLine.getTaxPct())
+                    .compareTo(defaultZero(orderLine.getTaxPct())) != 0
+                    || ddtLine.getLineTotal() == null
+                    || orderLine.getLineTotal() == null
                     || ddtLine.getLineTotal().compareTo(orderLine.getLineTotal()) != 0
-                    || ddtLine.getTaxAmount().compareTo(orderLine.getTaxAmount()) != 0) {
+                    || defaultZero(ddtLine.getTaxAmount())
+                    .compareTo(defaultZero(orderLine.getTaxAmount())) != 0) {
 
                 throw new BusinessException(
                         "La riga prodotto " + orderLine.getLineNo()

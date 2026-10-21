@@ -29,18 +29,18 @@
               <span>Torna alla lista</span>
             </a>
             <th:block th:if="${deliveryNote.invoiceCreatable}">
-                <button type="button"
-                        class="btn btn-outline-success"
-                        onclick="openConfirmModal(this)"
-                        data-confirm-textContent="Sei sicuro di voler creare la fattura?"
-                        data-confirm-title="Crea fattura"
-                        data-confirm-message="Confermi di voler creare la fattura da questo DDT?"
-                        data-confirm-submit="Conferma creazione fattura"
-                        data-confirm-submit-class="btn btn-primary"
-                        th:attr="data-confirm-action=@{/delivery-notes/{id}/invoice(id=${deliveryNote.id})}">
-                  <i class="bi bi-x-circle"></i>
-                  <span>Crea fattura</span>
-                </button>
+                  <button type="button"
+                          class="btn btn-outline-success"
+                          onclick="openConfirmModal(this)"
+                          data-confirm-title="Crea fattura"
+                          data-confirm-textContent="Confermi la generazione della fattura?"
+                          data-confirm-message="La fattura comprenderà tutti i prodotti presenti nel DDT e gli eventuali servizi dell'ordine originale. Verranno inoltre create la scadenza cliente e la registrazione contabile."
+                          data-confirm-submit="Conferma creazione fattura"
+                          data-confirm-submit-class="btn btn-primary"
+                          th:attr="data-confirm-action=@{/delivery-notes/{id}/invoice(id=${deliveryNote.id})}">
+                      <i class="bi bi-receipt"></i>
+                      <span>Crea fattura</span>
+                  </button>
             </th:block>
             <a class="btn btn-outline-primary"
                th:if="${deliveryNote.invoiceExists}"
@@ -174,12 +174,25 @@
             <td class="text-right" th:text="${deliveryNote.formattedTotalAmount}">170,80 €</td>
           </tr>
         </table>
+        <div class="alert alert-info mt-3">
+              <i class="bi bi-info-circle"></i>
+              <strong>Informazioni sugli importi</strong>
+              <p class="mb-0 mt-2">
+                  Il totale del DDT comprende esclusivamente
+                  i prodotti presenti nel documento di trasporto.
 
+                  Gli eventuali servizi associati all'ordine
+                  originale saranno inclusi nella fattura.
+
+                  Per questo motivo, in presenza di servizi,
+                  il totale della fattura potrebbe essere
+                  diverso dal totale del DDT.
+              </p>
+        </div>
         <div class="notes" th:if="${deliveryNote.notes != null and !#strings.isEmpty(deliveryNote.notes)}">
           <strong>Note</strong><br/>
           <span th:text="${deliveryNote.notes}">Note DDT</span>
         </div>
-
       </div>
     </div>
   </main>

@@ -58,13 +58,24 @@
           <span th:text="${invoice.customerName}">Rossi Srl</span>
         </div>
 
-        <div style="margin-top:12px;">
-          <strong>DDT di origine:</strong>
-          <span th:text="${invoice.deliveryNoteId}">1</span>
-          &nbsp;&nbsp;&nbsp;
-          <strong>Ordine di origine:</strong>
-          <span th:text="${invoice.salesOrderId}">29</span>
-        </div>
+          <div style="margin-top:12px;">
+
+              <div th:if="${invoice.deliveryNoteId != null}">
+                  <strong>DDT di origine:</strong>
+                  <span th:text="${invoice.deliveryNoteId}">1</span>
+              </div>
+
+              <div th:if="${invoice.deliveryNoteId == null}">
+                  <strong>Origine fattura:</strong>
+                  <span>Fatturazione diretta da ordine</span>
+              </div>
+
+              <div style="margin-top:8px;">
+                  <strong>Ordine di origine:</strong>
+                  <span th:text="${invoice.salesOrderId}">29</span>
+              </div>
+
+          </div>
 
         <table class="table" style="margin-top:24px;">
           <thead>

@@ -7,7 +7,7 @@ import com.gestiva.crm.contact.repository.CustomerRepository;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.gestiva.security.company.context.CompanyContext;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
@@ -18,18 +18,32 @@ public class InvoiceDetailWebService {
     private final InvoiceRepository invoiceRepository;
     private final InvoiceLineRepository invoiceLineRepository;
     private final CustomerRepository customerRepository;
+    private final CompanyContext companyContext;
 
-    public InvoiceDetailWebService(InvoiceRepository invoiceRepository,
-                                   InvoiceLineRepository invoiceLineRepository,
-                                   CustomerRepository customerRepository) {
+    public InvoiceDetailWebService(
+            InvoiceRepository invoiceRepository,
+            InvoiceLineRepository invoiceLineRepository,
+            CustomerRepository customerRepository,
+            CompanyContext companyContext) {
+
         this.invoiceRepository = invoiceRepository;
         this.invoiceLineRepository = invoiceLineRepository;
         this.customerRepository = customerRepository;
+        this.companyContext = companyContext;
     }
 
     public InvoiceDetailView getDetail(Long tenantId, Long invoiceId) {
-        var invoice = invoiceRepository.findByTenantIdAndId(tenantId, invoiceId)
-                .orElseThrow(() -> new NotFoundException("Fattura non trovata"));
+
+            Long companyId = companyContext.requireCurrentCompanyId();
+            var invoice = invoiceRepository
+                    .findByTenantIdAndCompanyIdAndId(
+                            tenantId,
+                            companyId,
+                            invoiceId
+                    )
+                    .orElseThrow(() ->
+                            new NotFoundException("Fattura non trovata")
+                    );
 
         var customer = customerRepository.findByTenantIdAndId(tenantId, invoice.getCustomerId())
                 .orElseThrow(() -> new NotFoundException("Cliente non trovato"));
