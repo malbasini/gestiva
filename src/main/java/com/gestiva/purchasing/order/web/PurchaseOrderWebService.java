@@ -12,6 +12,7 @@ import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
 import com.gestiva.purchasing.supplier.repository.SupplierRepository;
 import com.gestiva.warehouse.item.repository.ItemRepository;
 import com.gestiva.settings.sequence.service.DocumentSequenceService;
+import com.gestiva.security.company.context.CompanyContext;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.domain.Page;
@@ -37,6 +38,7 @@ public class PurchaseOrderWebService {
     private final ItemRepository itemRepository;
     private final GoodsReceiptRepository goodsReceiptRepository;
     private final DocumentSequenceService documentSequenceService;
+    private final CompanyContext companyContext;
 
 
 
@@ -45,7 +47,8 @@ public class PurchaseOrderWebService {
                                    SupplierRepository supplierRepository,
                                    ItemRepository itemRepository,
                                    GoodsReceiptRepository goodsReceiptRepository,
-                                   DocumentSequenceService documentSequenceService) {
+                                   DocumentSequenceService documentSequenceService,
+                                   CompanyContext companyContext) {
 
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.purchaseOrderLineRepository = purchaseOrderLineRepository;
@@ -53,6 +56,7 @@ public class PurchaseOrderWebService {
         this.itemRepository = itemRepository;
         this.goodsReceiptRepository = goodsReceiptRepository;
         this.documentSequenceService = documentSequenceService;
+        this.companyContext = companyContext;
     }
 
     @Transactional(readOnly = true)
@@ -68,9 +72,11 @@ public class PurchaseOrderWebService {
 
     @Transactional(readOnly = true)
     public List<PurchaseOrderListItemView> findAll(Long tenantId) {
+        Long companyId = companyContext.resolveCurrentCompanyId();
+
         var orders = purchaseOrderRepository.findAll(
                 org.springframework.data.jpa.domain.Specification
-                        .where((root, query, cb) -> cb.equal(root.get("tenantId"), tenantId)),
+                        .where(byTenantAndCompany(tenantId, companyId)),
                 Sort.by(Sort.Direction.DESC, "orderDate").and(Sort.by(Sort.Direction.DESC, "id"))
         );
 
@@ -81,7 +87,11 @@ public class PurchaseOrderWebService {
             v.setOrderNumber(po.getOrderNumber());
             v.setFormattedOrderDate(PdfFormatUtils.formatDate(po.getOrderDate()));
             v.setSupplierName(
-                    supplierRepository.findByTenantIdAndId(tenantId, po.getSupplierId())
+                    supplierRepository.findByTenantIdAndCompanyIdAndId(
+                            tenantId,
+                            po.getCompanyId(),
+                            po.getSupplierId()
+                    )
                             .map(s -> s.getName())
                             .orElse("-")
             );
@@ -94,7 +104,13 @@ public class PurchaseOrderWebService {
 
     @Transactional(readOnly = true)
     public PurchaseOrderDetailView getDetail(Long tenantId, Long id) {
-        var po = purchaseOrderRepository.findByTenantIdAndId(tenantId, id)
+        Long companyId = companyContext.resolveCurrentCompanyId();
+
+        var po = purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        id
+                )
                 .orElseThrow(() -> new NotFoundException("Ordine fornitore non trovato"));
 
         var lines = purchaseOrderLineRepository.findByTenantIdAndPurchaseOrderIdOrderByLineNoAsc(tenantId, id);
@@ -105,7 +121,11 @@ public class PurchaseOrderWebService {
         v.setFormattedOrderDate(PdfFormatUtils.formatDate(po.getOrderDate()));
         v.setFormattedExpectedDeliveryDate(po.getExpectedDeliveryDate() != null ? PdfFormatUtils.formatDate(po.getExpectedDeliveryDate()) : "-");
         v.setSupplierName(
-                supplierRepository.findByTenantIdAndId(tenantId, po.getSupplierId())
+                supplierRepository.findByTenantIdAndCompanyIdAndId(
+                            tenantId,
+                            po.getCompanyId(),
+                            po.getSupplierId()
+                    )
                         .map(s -> s.getName())
                         .orElse("-")
         );
@@ -140,7 +160,13 @@ public class PurchaseOrderWebService {
 
     @Transactional(readOnly = true)
     public PurchaseOrderForm getForm(Long tenantId, Long id) {
-        var po = purchaseOrderRepository.findByTenantIdAndId(tenantId, id)
+        Long companyId = companyContext.resolveCurrentCompanyId();
+
+        var po = purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        id
+                )
                 .orElseThrow(() -> new NotFoundException("Ordine fornitore non trovato"));
 
         var lines = purchaseOrderLineRepository.findByTenantIdAndPurchaseOrderIdOrderByLineNoAsc(tenantId, id);
@@ -205,12 +231,15 @@ public class PurchaseOrderWebService {
         }
     }
     public Long create(Long tenantId, PurchaseOrderForm form) {
-        validateHeader(tenantId, form);
+        Long companyId = companyContext.resolveCurrentCompanyId();
 
-        String orderNumber = nextOrderNumber(tenantId);
+        validateHeader(tenantId, companyId, form);
+
+        String orderNumber = nextOrderNumber(tenantId, companyId);
 
         PurchaseOrder po = new PurchaseOrder();
         po.setTenantId(tenantId);
+        po.setCompanyId(companyId);
         po.setOrderNumber(orderNumber);
         applyHeader(po, form);
 
@@ -226,14 +255,20 @@ public class PurchaseOrderWebService {
     }
 
     public void update(Long tenantId, Long id, PurchaseOrderForm form) {
-        var po = purchaseOrderRepository.findByTenantIdAndId(tenantId, id)
+        Long companyId = companyContext.resolveCurrentCompanyId();
+
+        var po = purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        id
+                )
                 .orElseThrow(() -> new NotFoundException("Ordine fornitore non trovato"));
 
         if ("CONFIRMED".equalsIgnoreCase(po.getStatus()) || "CANCELLED".equalsIgnoreCase(po.getStatus())) {
             throw new BusinessException("Questo ordine fornitore non è più modificabile.");
         }
 
-        validateHeader(tenantId, form);
+        validateHeader(tenantId, po.getCompanyId(), form);
         applyHeader(po, form);
 
         Totals totals = calculateTotals(form.getLines());
@@ -246,13 +281,19 @@ public class PurchaseOrderWebService {
         saveLines(tenantId, id, form.getLines());
     }
 
-    private void validateHeader(Long tenantId, PurchaseOrderForm form) {
+    private void validateHeader(Long tenantId, Long companyId, PurchaseOrderForm form) {
         if (form.getSupplierId() == null) {
             throw new BusinessException("Il fornitore è obbligatorio.");
         }
 
-        supplierRepository.findByTenantIdAndId(tenantId, form.getSupplierId())
-                .orElseThrow(() -> new BusinessException("Fornitore non valido."));
+        supplierRepository.findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        form.getSupplierId()
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "Fornitore non valido per la società selezionata."
+                ));
 
         if (form.getLines() == null || form.getLines().isEmpty()) {
             throw new BusinessException("Inserire almeno una riga.");
@@ -337,8 +378,12 @@ public class PurchaseOrderWebService {
         return line;
     }
 
-    private String nextOrderNumber(Long tenantId) {
-        return documentSequenceService.nextPurchaseOrderNumber(tenantId);
+    private String nextOrderNumber(Long tenantId, Long companyId) {
+        return documentSequenceService.nextNumber(
+                tenantId,
+                companyId,
+                DocumentSequenceService.PURCHASE_ORDER
+        );
     }
 
     @Transactional(readOnly = true)
@@ -372,7 +417,9 @@ public class PurchaseOrderWebService {
                 size,
                 Sort.by(Sort.Order.desc("orderDate"), Sort.Order.desc("id"))
         );
-        Specification<PurchaseOrder> spec = Specification.where(byTenant(tenantId))
+        Long companyId = companyContext.resolveCurrentCompanyId();
+
+        Specification<PurchaseOrder> spec = Specification.where(byTenantAndCompany(tenantId, companyId))
                 .and(bySearch(q))
                 .and(byStatus(status))
                 .and(byDateFrom(dateFrom))
@@ -380,8 +427,14 @@ public class PurchaseOrderWebService {
         return purchaseOrderRepository.findAll(spec, pageable).map(this::toListItemView);
     }
 
-    private Specification<PurchaseOrder> byTenant(Long tenantId) {
-        return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
+    private Specification<PurchaseOrder> byTenantAndCompany(
+            Long tenantId,
+            Long companyId
+    ) {
+        return (root, query, cb) -> cb.and(
+                cb.equal(root.get("tenantId"), tenantId),
+                cb.equal(root.get("companyId"), companyId)
+        );
     }
 
     private Specification<PurchaseOrder> bySearch(String q) {
@@ -431,7 +484,11 @@ public class PurchaseOrderWebService {
         v.setFormattedTotalAmount(PdfFormatUtils.formatMoney(order.getTotalAmount()));
         v.setCurrencyCode(order.getCurrencyCode());
         v.setSupplierName(
-                supplierRepository.findByTenantIdAndId(order.getTenantId(), order.getSupplierId())
+                supplierRepository.findByTenantIdAndCompanyIdAndId(
+                        order.getTenantId(),
+                        order.getCompanyId(),
+                        order.getSupplierId()
+                )
                         .map(s -> s.getName())
                         .orElse("-")
         );

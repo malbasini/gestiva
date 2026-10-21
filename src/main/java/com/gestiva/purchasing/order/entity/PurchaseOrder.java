@@ -12,10 +12,16 @@ import java.time.LocalDate;
 @Table(
         name = "purchase_order",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_purchase_order_tenant_number", columnNames = {"tenant_id", "order_number"})
+                @UniqueConstraint(
+                        name = "uk_purchase_order_tenant_company_number",
+                        columnNames = {"tenant_id", "company_id", "order_number"}
+                )
         }
 )
 public class PurchaseOrder extends TenantAwareEntity {
+
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
 
     @Column(name = "order_number", nullable = false, length = 50)
     private String orderNumber;
@@ -50,6 +56,14 @@ public class PurchaseOrder extends TenantAwareEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "supplier_id", insertable = false, updatable = false)
     private Supplier supplier;
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
+    }
 
     public String getOrderNumber() {
         return orderNumber;

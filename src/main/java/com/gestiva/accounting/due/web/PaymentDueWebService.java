@@ -93,14 +93,22 @@ public class PaymentDueWebService {
     }
 
     private String resolvePartyName(Long tenantId, String partyType, Long partyId) {
+        Long companyId = companyContext.requireCurrentCompanyId();
+
+        if (partyId == null) {
+            return "-";
+        }
+
         if ("CUSTOMER".equalsIgnoreCase(partyType)) {
-            return customerRepository.findByTenantIdAndId(tenantId, partyId)
+            return customerRepository
+                    .findByTenantIdAndCompanyIdAndId(tenantId, companyId, partyId)
                     .map(c -> c.getName())
                     .orElse("-");
         }
 
         if ("SUPPLIER".equalsIgnoreCase(partyType)) {
-            return supplierRepository.findByTenantIdAndId(tenantId, partyId)
+            return supplierRepository
+                    .findByTenantIdAndCompanyIdAndId(tenantId, companyId, partyId)
                     .map(s -> s.getName())
                     .orElse("-");
         }

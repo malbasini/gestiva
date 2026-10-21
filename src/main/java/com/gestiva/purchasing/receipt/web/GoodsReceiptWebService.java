@@ -1,6 +1,7 @@
 package com.gestiva.purchasing.receipt.web;
 
 import com.gestiva.common.exception.NotFoundException;
+import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.purchasing.invoice.repository.SupplierInvoiceRepository;
 import com.gestiva.purchasing.order.entity.PurchaseOrder;
@@ -31,6 +32,7 @@ public class GoodsReceiptWebService {
     private final SupplierRepository supplierRepository;
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final SupplierInvoiceRepository supplierInvoiceRepository;
+    private final CompanyContext companyContext;
 
 
 
@@ -38,18 +40,22 @@ public class GoodsReceiptWebService {
                                   GoodsReceiptLineRepository goodsReceiptLineRepository,
                                   SupplierRepository supplierRepository,
                                   PurchaseOrderRepository purchaseOrderRepository,
-                                  SupplierInvoiceRepository supplierInvoiceRepository) {
+                                  SupplierInvoiceRepository supplierInvoiceRepository,
+                                  CompanyContext companyContext) {
         this.goodsReceiptRepository = goodsReceiptRepository;
         this.goodsReceiptLineRepository = goodsReceiptLineRepository;
         this.supplierRepository = supplierRepository;
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.supplierInvoiceRepository = supplierInvoiceRepository;
+        this.companyContext = companyContext;
     }
 
     public List<GoodsReceiptListItemView> findAll(Long tenantId) {
+        Long companyId = companyContext.resolveCurrentCompanyId();
+
         var receipts = goodsReceiptRepository.findAll(
                 org.springframework.data.jpa.domain.Specification
-                        .where((root, query, cb) -> cb.equal(root.get("tenantId"), tenantId)),
+                        .where(byTenantAndCompany(tenantId, companyId)),
                 Sort.by(Sort.Direction.DESC, "receiptDate").and(Sort.by(Sort.Direction.DESC, "id"))
         );
 
@@ -60,12 +66,20 @@ public class GoodsReceiptWebService {
             v.setReceiptNumber(receipt.getReceiptNumber());
             v.setFormattedReceiptDate(PdfFormatUtils.formatDate(receipt.getReceiptDate()));
             v.setSupplierName(
-                    supplierRepository.findByTenantIdAndId(tenantId, receipt.getSupplierId())
+                    supplierRepository.findByTenantIdAndCompanyIdAndId(
+                            tenantId,
+                            receipt.getCompanyId(),
+                            receipt.getSupplierId()
+                    )
                             .map(s -> s.getName())
                             .orElse("-")
             );
             v.setPurchaseOrderNumber(
-                    purchaseOrderRepository.findByTenantIdAndId(tenantId, receipt.getPurchaseOrderId())
+                    purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
+                            tenantId,
+                            receipt.getCompanyId(),
+                            receipt.getPurchaseOrderId()
+                    )
                             .map(po -> po.getOrderNumber())
                             .orElse("-")
             );
@@ -75,7 +89,13 @@ public class GoodsReceiptWebService {
     }
 
     public GoodsReceiptDetailView getDetail(Long tenantId, Long id) {
-        var receipt = goodsReceiptRepository.findByTenantIdAndId(tenantId, id)
+        Long companyId = companyContext.resolveCurrentCompanyId();
+
+        var receipt = goodsReceiptRepository.findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        id
+                )
                 .orElseThrow(() -> new NotFoundException("Ricezione merci non trovata"));
 
         var lines = goodsReceiptLineRepository.findByTenantIdAndGoodsReceiptIdOrderByLineNoAsc(tenantId, id);
@@ -85,12 +105,20 @@ public class GoodsReceiptWebService {
         v.setReceiptNumber(receipt.getReceiptNumber());
         v.setFormattedReceiptDate(PdfFormatUtils.formatDate(receipt.getReceiptDate()));
         v.setSupplierName(
-                supplierRepository.findByTenantIdAndId(tenantId, receipt.getSupplierId())
+                supplierRepository.findByTenantIdAndCompanyIdAndId(
+                            tenantId,
+                            receipt.getCompanyId(),
+                            receipt.getSupplierId()
+                    )
                         .map(s -> s.getName())
                         .orElse("-")
         );
         v.setPurchaseOrderNumber(
-                purchaseOrderRepository.findByTenantIdAndId(tenantId, receipt.getPurchaseOrderId())
+                purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
+                            tenantId,
+                            receipt.getCompanyId(),
+                            receipt.getPurchaseOrderId()
+                    )
                         .map(po -> po.getOrderNumber())
                         .orElse("-")
         );
@@ -126,7 +154,10 @@ public class GoodsReceiptWebService {
                 size,
                 Sort.by(Sort.Order.desc("receiptDate"), Sort.Order.desc("id"))
         );
-        Specification<GoodsReceipt> spec = Specification.where(byTenant(tenantId))
+        Long companyId = companyContext.resolveCurrentCompanyId();
+
+        Specification<GoodsReceipt> spec = Specification.where(
+                        byTenantAndCompany(tenantId, companyId))
                 .and(bySearch(q))
                 .and(byDateFrom(dateFrom))
                 .and(byDateTo(dateTo));
@@ -134,8 +165,14 @@ public class GoodsReceiptWebService {
 
     }
 
-    private Specification<GoodsReceipt> byTenant(Long tenantId) {
-        return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
+    private Specification<GoodsReceipt> byTenantAndCompany(
+            Long tenantId,
+            Long companyId
+    ) {
+        return (root, query, cb) -> cb.and(
+                cb.equal(root.get("tenantId"), tenantId),
+                cb.equal(root.get("companyId"), companyId)
+        );
     }
 
     private Specification<GoodsReceipt> bySearch(String q) {
@@ -166,14 +203,22 @@ public class GoodsReceiptWebService {
         v.setId(receipt.getId());
         v.setReceiptNumber(receipt.getReceiptNumber());
         v.setSupplierName(
-                supplierRepository.findByTenantIdAndId(receipt.getTenantId(), receipt.getSupplierId())
+                supplierRepository.findByTenantIdAndCompanyIdAndId(
+                        receipt.getTenantId(),
+                        receipt.getCompanyId(),
+                        receipt.getSupplierId()
+                )
                         .map(Supplier::getName)
                         .orElse("-")
         );
         v.setFormattedReceiptDate(PdfFormatUtils.formatDate(receipt.getReceiptDate()));
         v.setPurchaseOrderId(receipt.getPurchaseOrderId());
         v.setPurchaseOrderNumber(
-                purchaseOrderRepository.findByTenantIdAndId(receipt.getTenantId(), receipt.getPurchaseOrderId())
+                purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
+                        receipt.getTenantId(),
+                        receipt.getCompanyId(),
+                        receipt.getPurchaseOrderId()
+                )
                         .map(PurchaseOrder::getOrderNumber)
                         .orElse("-")
         );

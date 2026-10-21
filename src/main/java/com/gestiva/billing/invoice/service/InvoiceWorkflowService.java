@@ -41,10 +41,15 @@ public class InvoiceWorkflowService {
         }
 
         if (!"ISSUED".equals(invoice.getStatus())) {
-            throw new BusinessException("Solo una fattura ISSUED può essere annullata.");
+            throw new BusinessException(
+                    "Solo una fattura ISSUED può essere annullata."
+            );
         }
 
-        invoice.setStatus("CANCELLED");
-        invoiceRepository.save(invoice);
+        throw new BusinessException(
+                "Annullamento non disponibile: la fattura è già contabilizzata. "
+                        + "È necessaria una procedura di rettifica contabile "
+                        + "e, ove previsto, l'emissione di una nota di credito."
+        );
     }
 }

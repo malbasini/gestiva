@@ -10,6 +10,31 @@ import java.util.Optional;
 
 public interface GoodsReceiptRepository extends JpaRepository<GoodsReceipt, Long>, JpaSpecificationExecutor<GoodsReceipt> {
     Optional<GoodsReceipt> findByTenantIdAndId(Long tenantId, Long id);
+
+    // Gestiva V2 - Ricerche isolate per tenant e società
+    Optional<GoodsReceipt> findByTenantIdAndCompanyIdAndId(
+            Long tenantId,
+            Long companyId,
+            Long id
+    );
+
+    boolean existsByTenantIdAndCompanyIdAndReceiptNumber(
+            Long tenantId,
+            Long companyId,
+            String receiptNumber
+    );
+
+    boolean existsByTenantIdAndCompanyIdAndPurchaseOrderId(
+            Long tenantId,
+            Long companyId,
+            Long purchaseOrderId
+    );
+
+    Optional<GoodsReceipt> findFirstByTenantIdAndCompanyIdAndPurchaseOrderId(
+            Long tenantId,
+            Long companyId,
+            Long purchaseOrderId
+    );
     boolean existsByTenantIdAndReceiptNumber(Long tenantId, String receiptNumber);
     boolean existsByTenantIdAndPurchaseOrderId(Long tenantId, Long purchaseOrderId);
     java.util.Optional<com.gestiva.purchasing.receipt.entity.GoodsReceipt> findFirstByTenantIdAndPurchaseOrderId(Long tenantId, Long purchaseOrderId);

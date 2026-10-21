@@ -11,10 +11,16 @@ import java.util.List;
 @Table(
         name = "goods_receipt",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_goods_receipt_tenant_number", columnNames = {"tenant_id", "receipt_number"})
+                @UniqueConstraint(
+                        name = "uk_goods_receipt_tenant_company_number",
+                        columnNames = {"tenant_id", "company_id", "receipt_number"}
+                )
         }
 )
 public class GoodsReceipt extends TenantAwareEntity {
+
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
 
     @Column(name = "receipt_number", nullable = false, length = 50)
     private String receiptNumber;
@@ -39,6 +45,14 @@ public class GoodsReceipt extends TenantAwareEntity {
 
     @OneToMany(mappedBy = "goodsReceipt", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GoodsReceiptLine> lines = new ArrayList<>();
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
+    }
 
     public String getReceiptNumber() {
         return receiptNumber;

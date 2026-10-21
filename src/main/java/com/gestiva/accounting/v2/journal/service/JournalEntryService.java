@@ -106,6 +106,12 @@ public class JournalEntryService {
             BigDecimal debit = scale(lineForm.getDebitAmount());
             BigDecimal credit = scale(lineForm.getCreditAmount());
 
+            if (debit.signum() < 0 || credit.signum() < 0) {
+                throw new BusinessException(
+                        "Gli importi in Dare e Avere non possono essere negativi."
+                );
+            }
+
             boolean hasDebit = debit.compareTo(BigDecimal.ZERO) > 0;
             boolean hasCredit = credit.compareTo(BigDecimal.ZERO) > 0;
 

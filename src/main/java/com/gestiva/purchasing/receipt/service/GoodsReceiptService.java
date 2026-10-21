@@ -1,6 +1,7 @@
 package com.gestiva.purchasing.receipt.service;
 
 import com.gestiva.common.exception.BusinessException;
+import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
 import com.gestiva.warehouse.inventory.movement.service.InventoryDocumentPostingService;
 import com.gestiva.purchasing.order.repository.PurchaseOrderLineRepository;
@@ -28,6 +29,7 @@ public class GoodsReceiptService {
     private final InventoryDocumentPostingService inventoryDocumentPostingService;
     private final InventoryMovementRepository inventoryMovementRepository;
     private final DocumentSequenceService documentSequenceService;
+    private final CompanyContext companyContext;
 
 
     public GoodsReceiptService(PurchaseOrderRepository purchaseOrderRepository,
@@ -37,7 +39,8 @@ public class GoodsReceiptService {
                                ItemRepository itemRepository,
                                InventoryDocumentPostingService inventoryDocumentPostingService,
                                InventoryMovementRepository inventoryMovementRepository,
-                               DocumentSequenceService documentSequenceService) {
+                               DocumentSequenceService documentSequenceService,
+                               CompanyContext companyContext) {
 
 
         this.purchaseOrderRepository = purchaseOrderRepository;
@@ -48,6 +51,7 @@ public class GoodsReceiptService {
         this.inventoryDocumentPostingService = inventoryDocumentPostingService;
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.documentSequenceService = documentSequenceService;
+        this.companyContext = companyContext;
     }
 
     public Long createFromPurchaseOrder(Long tenantId, Long purchaseOrderId) {
@@ -62,14 +66,24 @@ public class GoodsReceiptService {
         }
 
 
-        var po = purchaseOrderRepository.findByTenantIdAndId(tenantId, purchaseOrderId)
+        Long companyId = companyContext.resolveCurrentCompanyId();
+
+        var po = purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
+                tenantId,
+                companyId,
+                purchaseOrderId
+        )
                 .orElseThrow(() -> new BusinessException("Ordine fornitore non trovato."));
 
         if (!"CONFIRMED".equalsIgnoreCase(po.getStatus())) {
             throw new BusinessException("Solo gli ordini fornitore confermati possono essere ricevuti.");
         }
 
-        if (goodsReceiptRepository.existsByTenantIdAndPurchaseOrderId(tenantId, purchaseOrderId)) {
+        if (goodsReceiptRepository.existsByTenantIdAndCompanyIdAndPurchaseOrderId(
+                tenantId,
+                companyId,
+                purchaseOrderId
+        )) {
             throw new BusinessException("Esiste già una ricezione merci per questo ordine.");
         }
 
@@ -81,7 +95,8 @@ public class GoodsReceiptService {
 
         GoodsReceipt receipt = new GoodsReceipt();
         receipt.setTenantId(tenantId);
-        receipt.setReceiptNumber(nextReceiptNumber(tenantId));
+        receipt.setCompanyId(companyId);
+        receipt.setReceiptNumber(nextReceiptNumber(tenantId, companyId));
         receipt.setReceiptDate(LocalDate.now());
         receipt.setPurchaseOrderId(po.getId());
         receipt.setSupplierId(po.getSupplierId());
@@ -113,7 +128,11 @@ public class GoodsReceiptService {
         return savedReceipt.getId();
     }
 
-    private String nextReceiptNumber(Long tenantId) {
-        return documentSequenceService.nextGoodsReceiptNumber(tenantId);
+    private String nextReceiptNumber(Long tenantId, Long companyId) {
+        return documentSequenceService.nextNumber(
+                tenantId,
+                companyId,
+                DocumentSequenceService.GOODS_RECEIPT
+        );
     }
 }
