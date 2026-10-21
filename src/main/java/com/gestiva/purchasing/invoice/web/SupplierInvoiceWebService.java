@@ -1,6 +1,8 @@
 package com.gestiva.purchasing.invoice.web;
 
 import com.gestiva.common.exception.NotFoundException;
+import com.gestiva.common.exception.BusinessException;
+import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.purchasing.invoice.entity.SupplierInvoice;
 import com.gestiva.purchasing.invoice.repository.SupplierInvoiceLineRepository;
@@ -30,23 +32,29 @@ public class SupplierInvoiceWebService {
     private final SupplierRepository supplierRepository;
     private final GoodsReceiptRepository goodsReceiptRepository;
     private final PurchaseOrderRepository purchaseOrderRepository;
+    private final CompanyContext companyContext;
 
     public SupplierInvoiceWebService(SupplierInvoiceRepository supplierInvoiceRepository,
                                      SupplierInvoiceLineRepository supplierInvoiceLineRepository,
                                      SupplierRepository supplierRepository,
                                      GoodsReceiptRepository goodsReceiptRepository,
-                                     PurchaseOrderRepository purchaseOrderRepository) {
+                                     PurchaseOrderRepository purchaseOrderRepository,
+                                     CompanyContext companyContext) {
         this.supplierInvoiceRepository = supplierInvoiceRepository;
         this.supplierInvoiceLineRepository = supplierInvoiceLineRepository;
         this.supplierRepository = supplierRepository;
         this.goodsReceiptRepository = goodsReceiptRepository;
         this.purchaseOrderRepository = purchaseOrderRepository;
+        this.companyContext = companyContext;
     }
 
     public List<SupplierInvoiceListItemView> findAll(Long tenantId) {
+        Long companyId = requireCompanyId();
+
         var invoices = supplierInvoiceRepository.findAll(
                 org.springframework.data.jpa.domain.Specification
-                        .where((root, query, cb) -> cb.equal(root.get("tenantId"), tenantId)),
+                        .where(byTenant(tenantId))
+                        .and(byCompany(companyId)),
                 Sort.by(Sort.Direction.DESC, "invoiceDate").and(Sort.by(Sort.Direction.DESC, "id"))
         );
 
@@ -70,7 +78,11 @@ public class SupplierInvoiceWebService {
     }
 
     public SupplierInvoiceDetailView getDetail(Long tenantId, Long id) {
-        var invoice = supplierInvoiceRepository.findByTenantIdAndId(tenantId, id)
+        Long companyId = requireCompanyId();
+
+        var invoice = supplierInvoiceRepository.findByTenantIdAndCompanyIdAndId(
+                tenantId, companyId, id
+        )
                 .orElseThrow(() -> new NotFoundException("Fattura fornitore non trovata"));
 
         var lines = supplierInvoiceLineRepository.findByTenantIdAndSupplierInvoiceIdOrderByLineNoAsc(tenantId, id);
@@ -89,13 +101,17 @@ public class SupplierInvoiceWebService {
         v.setNotes(invoice.getNotes());
         v.setGoodsReceiptId(invoice.getGoodsReceiptId());
         v.setGoodsReceiptNumber(
-                goodsReceiptRepository.findByTenantIdAndId(tenantId, invoice.getGoodsReceiptId())
+                goodsReceiptRepository.findByTenantIdAndCompanyIdAndId(
+                        tenantId, companyId, invoice.getGoodsReceiptId()
+                )
                         .map(gr -> gr.getReceiptNumber())
                         .orElse("-")
         );
         v.setPurchaseOrderId(invoice.getPurchaseOrderId());
         v.setPurchaseOrderNumber(
-                purchaseOrderRepository.findByTenantIdAndId(tenantId, invoice.getPurchaseOrderId())
+                purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
+                        tenantId, companyId, invoice.getPurchaseOrderId()
+                )
                         .map(po -> po.getOrderNumber())
                         .orElse("-")
         );
@@ -107,7 +123,7 @@ public class SupplierInvoiceWebService {
             SupplierInvoiceDetailLineView lv = new SupplierInvoiceDetailLineView();
             lv.setLineNo(line.getLineNo());
             lv.setDescription(line.getDescription());
-            lv.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),2));
+            lv.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(), 3));
             lv.setFormattedUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
             lv.setFormattedDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct()) + "%");
             lv.setFormattedTaxPct(PdfFormatUtils.formatDecimalTrimmed(line.getTaxPct(),2) + "%");
@@ -125,12 +141,15 @@ public class SupplierInvoiceWebService {
                                                       String status,
                                                       LocalDate dateFrom,
                                                       LocalDate dateTo) {
+        Long companyId = requireCompanyId();
+
         Pageable pageable = PageRequest.of(
                 page,
                 size,
                 Sort.by(Sort.Order.desc("invoiceDate"), Sort.Order.desc("id"))
         );
         Specification<SupplierInvoice> spec = Specification.where(byTenant(tenantId))
+                .and(byCompany(companyId))
                 .and(bySearch(q))
                 .and(byStatus(status))
                 .and(byDateFrom(dateFrom))
@@ -141,6 +160,20 @@ public class SupplierInvoiceWebService {
 
     private Specification<SupplierInvoice> byTenant(Long tenantId) {
         return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
+    }
+
+    private Specification<SupplierInvoice> byCompany(Long companyId) {
+        return (root, query, cb) -> cb.equal(root.get("companyId"), companyId);
+    }
+
+    private Long requireCompanyId() {
+        Long companyId = companyContext.resolveCurrentCompanyId();
+
+        if (companyId == null) {
+            throw new BusinessException("Nessuna società attiva selezionata.");
+        }
+
+        return companyId;
     }
 
     private Specification<SupplierInvoice> bySearch(String q) {

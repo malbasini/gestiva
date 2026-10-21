@@ -117,6 +117,12 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
     List<InventoryMovement> findTop10ByTenantIdAndItemIdOrderByMovementDateDescIdDesc(Long tenantId, Long itemId);
     java.util.List<InventoryMovement> findTop10ByTenantIdOrderByMovementDateDescIdDesc(Long tenantId);
 
+    // Gestiva V2 - Ultimi movimenti isolati per società.
+    List<InventoryMovement> findTop10ByTenantIdAndCompanyIdOrderByMovementDateDescIdDesc(
+            Long tenantId,
+            Long companyId
+    );
+
 
 
     @Query("""

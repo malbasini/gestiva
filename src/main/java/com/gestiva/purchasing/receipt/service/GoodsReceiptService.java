@@ -2,6 +2,7 @@ package com.gestiva.purchasing.receipt.service;
 
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.security.company.context.CompanyContext;
+import com.gestiva.warehouse.location.repository.WarehouseRepository;
 import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
 import com.gestiva.warehouse.inventory.movement.service.InventoryDocumentPostingService;
 import com.gestiva.purchasing.order.repository.PurchaseOrderLineRepository;
@@ -30,6 +31,7 @@ public class GoodsReceiptService {
     private final InventoryMovementRepository inventoryMovementRepository;
     private final DocumentSequenceService documentSequenceService;
     private final CompanyContext companyContext;
+    private final WarehouseRepository warehouseRepository;
 
 
     public GoodsReceiptService(PurchaseOrderRepository purchaseOrderRepository,
@@ -40,7 +42,8 @@ public class GoodsReceiptService {
                                InventoryDocumentPostingService inventoryDocumentPostingService,
                                InventoryMovementRepository inventoryMovementRepository,
                                DocumentSequenceService documentSequenceService,
-                               CompanyContext companyContext) {
+                               CompanyContext companyContext,
+                               WarehouseRepository warehouseRepository) {
 
 
         this.purchaseOrderRepository = purchaseOrderRepository;
@@ -52,9 +55,13 @@ public class GoodsReceiptService {
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.documentSequenceService = documentSequenceService;
         this.companyContext = companyContext;
+        this.warehouseRepository = warehouseRepository;
     }
 
-    public Long createFromPurchaseOrder(Long tenantId, Long purchaseOrderId) {
+    public Long createFromPurchaseOrder(
+            Long tenantId,
+            Long purchaseOrderId,
+            Long warehouseId) {
 
         // Gestiva V2 - Blocco temporaneo della ricezione merci.
         // La funzionalità sarà riattivata dopo l'adeguamento
@@ -66,7 +73,29 @@ public class GoodsReceiptService {
         }
 
 
-        Long companyId = companyContext.resolveCurrentCompanyId();
+        Long companyId = companyContext.requireCurrentCompanyId();
+
+        if (warehouseId == null) {
+            throw new BusinessException(
+                    "Seleziona un magazzino di destinazione."
+            );
+        }
+
+        var warehouse = warehouseRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        warehouseId
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "Magazzino non trovato nella società corrente."
+                ));
+
+        if (!warehouse.isActive()) {
+            throw new BusinessException(
+                    "Il magazzino selezionato non è attivo."
+            );
+        }
 
         var po = purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
                 tenantId,
@@ -96,6 +125,8 @@ public class GoodsReceiptService {
         GoodsReceipt receipt = new GoodsReceipt();
         receipt.setTenantId(tenantId);
         receipt.setCompanyId(companyId);
+        receipt.setWarehouseId(warehouseId);
+        receipt.setLocationId(null);
         receipt.setReceiptNumber(nextReceiptNumber(tenantId, companyId));
         receipt.setReceiptDate(LocalDate.now());
         receipt.setPurchaseOrderId(po.getId());
@@ -124,7 +155,12 @@ public class GoodsReceiptService {
                 continue;
             }
         }
-        inventoryDocumentPostingService.postPurchaseReceiptFromGoodsReceipt(tenantId, savedReceipt);
+        // Gestiva V2 - Carico merci multi-società e valorizzazione FIFO.
+        inventoryDocumentPostingService.postPurchaseReceiptFromGoodsReceiptV2(
+                tenantId,
+                companyId,
+                savedReceipt.getId()
+        );
         return savedReceipt.getId();
     }
 

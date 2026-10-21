@@ -84,6 +84,62 @@ public class VatSettlementWebService {
         return view;
     }
 
+    // =====================================================
+    // GESTIVA V2 - LIQUIDAZIONE IVA MULTI-COMPANY
+    // =====================================================
+
+    public VatSettlementView calculateSettlement(Long tenantId, Long companyId, LocalDate dateFrom, LocalDate dateTo) {
+        BigDecimal salesTaxable = zero();
+        BigDecimal salesTax = zero();
+
+        List<Invoice> salesInvoices = invoiceRepository
+                .findByTenantIdAndCompanyIdAndInvoiceDateBetweenOrderByInvoiceDateAscInvoiceNumberAsc(
+                        tenantId, companyId, dateFrom, dateTo
+                );
+
+        for (Invoice invoice : salesInvoices) {
+            List<InvoiceLine> lines =
+                    invoiceLineRepository.findByTenantIdAndInvoiceIdOrderByLineNoAsc(tenantId, invoice.getId());
+
+            for (InvoiceLine line : lines) {
+                salesTaxable = money(salesTaxable.add(money(line.getLineTotal())));
+                salesTax = money(salesTax.add(money(line.getTaxAmount())));
+            }
+        }
+
+        BigDecimal purchaseTaxable = zero();
+        BigDecimal purchaseTax = zero();
+
+        List<SupplierInvoice> purchaseInvoices = supplierInvoiceRepository
+                .findByTenantIdAndCompanyIdAndInvoiceDateBetweenOrderByInvoiceDateAscInvoiceNumberAsc(
+                        tenantId, companyId, dateFrom, dateTo
+                );
+
+        for (SupplierInvoice invoice : purchaseInvoices) {
+            List<SupplierInvoiceLine> lines =
+                    supplierInvoiceLineRepository.findByTenantIdAndSupplierInvoiceIdOrderByLineNoAsc(tenantId, invoice.getId());
+
+            for (SupplierInvoiceLine line : lines) {
+                purchaseTaxable = money(purchaseTaxable.add(money(line.getLineSubtotal())));
+                purchaseTax = money(purchaseTax.add(money(line.getTaxAmount())));
+            }
+        }
+
+        BigDecimal vatBalance = money(salesTax.subtract(purchaseTax));
+
+        VatSettlementView view = new VatSettlementView();
+        view.setFormattedDateFrom(PdfFormatUtils.formatDate(dateFrom));
+        view.setFormattedDateTo(PdfFormatUtils.formatDate(dateTo));
+        view.setFormattedSalesTaxableAmount(PdfFormatUtils.formatMoney(salesTaxable));
+        view.setFormattedSalesTaxAmount(PdfFormatUtils.formatMoney(salesTax));
+        view.setFormattedPurchaseTaxableAmount(PdfFormatUtils.formatMoney(purchaseTaxable));
+        view.setFormattedPurchaseTaxAmount(PdfFormatUtils.formatMoney(purchaseTax));
+        view.setFormattedVatBalance(PdfFormatUtils.formatMoney(vatBalance));
+        view.setBalanceTypeLabel(resolveBalanceType(vatBalance));
+
+        return view;
+    }
+
     private String resolveBalanceType(BigDecimal vatBalance) {
         int cmp = vatBalance.compareTo(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
         if (cmp > 0) {

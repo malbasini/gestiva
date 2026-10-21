@@ -29,24 +29,23 @@ public class SupplierInvoicePageController {
         this.supplierInvoiceWebService = supplierInvoiceWebService;
     }
 
+    // Gestiva V2 - Blocco temporaneo dell'endpoint legacy.
+    // La generazione delle fatture fornitori sarà riabilitata
+    // esclusivamente tramite POST e dopo la migrazione multi-company.
     @GetMapping("/{id}/invoice")
-    public String createInvoice(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        Long invoiceId = null;
-        try {
-            Long tenantId = tenantContext.getCurrentTenantId();
-            invoiceId = supplierInvoiceService.createFromGoodsReceipt(tenantId, id);
-            redirectAttributes.addFlashAttribute(
-                    "successMessage",
-                    "Fattura creata con successo: " + invoiceId
-            );
+    public String createInvoice(
+            @PathVariable Long id,
+            RedirectAttributes redirectAttributes) {
 
-        }
-        catch (BusinessException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/goods-receipts/" + id;
-        }
-        return "redirect:/supplier-invoices/" + invoiceId;
+        redirectAttributes.addFlashAttribute(
+                "errorMessage",
+                "Generazione fattura fornitore temporaneamente non disponibile: "
+                        + "migrazione multi-company in corso."
+        );
+
+        return "redirect:/goods-receipts/" + id;
     }
+
     @GetMapping
     public String list(@RequestParam(name = "page", defaultValue = "0") int page,
                        @RequestParam(name = "size", defaultValue = "10") int size,

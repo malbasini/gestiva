@@ -46,13 +46,8 @@
             <th:block th:if="${purchaseOrder.canReceiveGoods}">
               <button type="button"
                       class="btn btn-outline-primary"
-                      onclick="openConfirmModal(this)"
-                      data-confirm-title="Ricevi merce"
-                      data-confirm-textContent="Sei sicuro di voler ricevere questo ordine?"
-                      data-confirm-message="Confermi di voler ricevere questo ordine?"
-                      data-confirm-submit="Conferma ricezione"
-                      data-confirm-submit-class="btn btn-primary"
-                      th:attr="data-confirm-action=@{/purchase-orders/{id}/receive(id=${purchaseOrder.id})}">
+                      data-bs-toggle="modal"
+                      data-bs-target="#receiveGoodsModal">
                 <i class="bi bi-check2-circle"></i>
                 <span>Ricevi merce</span>
               </button>
@@ -129,5 +124,92 @@
   <div th:replace="~{fragments/layout :: appFooter}"></div>
 </div>
 <div th:replace="~{fragments/layout :: modalFragment}"></div>
+
+<!-- Gestiva V2 - Ricevimento merci con selezione magazzino -->
+<div class="modal fade"
+     id="receiveGoodsModal"
+     tabindex="-1"
+     aria-labelledby="receiveGoodsModalLabel"
+     aria-hidden="true"
+     th:if="${purchaseOrder.canReceiveGoods}">
+
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <form method="post"
+            th:action="@{/purchase-orders/{id}/receive(id=${purchaseOrder.id})}">
+
+        <input type="hidden"
+               th:name="${_csrf.parameterName}"
+               th:value="${_csrf.token}"/>
+
+        <div class="modal-header">
+          <h5 class="modal-title" id="receiveGoodsModalLabel">
+            Ricevimento merci
+          </h5>
+          <button type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Chiudi"></button>
+        </div>
+
+        <div class="modal-body">
+
+          <p>
+            Seleziona il magazzino nel quale ricevere la merce
+            relativa a questo ordine fornitore.
+          </p>
+
+          <div class="mb-3">
+            <label for="receiveWarehouseId" class="form-label">
+              Magazzino di destinazione
+            </label>
+
+            <select id="receiveWarehouseId"
+                    name="warehouseId"
+                    class="form-select"
+                    required>
+
+              <option value="">Seleziona un magazzino</option>
+
+              <option th:each="warehouse : ${warehouseOptions}"
+                      th:value="${warehouse.id}"
+                      th:text="${warehouse.code + ' - ' + warehouse.name}">
+                Magazzino
+              </option>
+
+            </select>
+          </div>
+
+          <div class="alert alert-warning"
+               th:if="${#lists.isEmpty(warehouseOptions)}">
+            Non sono disponibili magazzini attivi
+            per la società corrente.
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+
+          <button type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal">
+            Annulla
+          </button>
+
+          <button type="submit"
+                  class="btn btn-primary"
+                  th:disabled="${#lists.isEmpty(warehouseOptions)}">
+            Conferma ricezione
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

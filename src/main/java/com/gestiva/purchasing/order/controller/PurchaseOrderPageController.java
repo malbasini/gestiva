@@ -4,6 +4,8 @@ import com.gestiva.purchasing.order.web.PurchaseOrderForm;
 import com.gestiva.purchasing.order.web.PurchaseOrderWebService;
 import com.gestiva.purchasing.supplier.web.SupplierWebService;
 import com.gestiva.security.usercontext.TenantContext;
+import com.gestiva.security.company.context.CompanyContext;
+import com.gestiva.warehouse.location.service.WarehouseService;
 import com.gestiva.warehouse.item.web.ItemWebService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
@@ -20,21 +22,35 @@ public class PurchaseOrderPageController {
     private final SupplierWebService supplierWebService;
     private final ItemWebService itemWebService;
     private final TenantContext tenantContext;
+    private final WarehouseService warehouseService;
+    private final CompanyContext companyContext;
 
     public PurchaseOrderPageController(PurchaseOrderWebService purchaseOrderWebService,
                                        SupplierWebService supplierWebService,
                                        ItemWebService itemWebService,
-                                       TenantContext tenantContext) {
+                                       TenantContext tenantContext,
+                                       WarehouseService warehouseService,
+                                       CompanyContext companyContext) {
         this.purchaseOrderWebService = purchaseOrderWebService;
         this.supplierWebService = supplierWebService;
         this.itemWebService = itemWebService;
         this.tenantContext = tenantContext;
+        this.warehouseService = warehouseService;
+        this.companyContext = companyContext;
     }
 
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         Long tenantId = tenantContext.getCurrentTenantId();
         model.addAttribute("purchaseOrder", purchaseOrderWebService.getDetail(tenantId, id));
+
+        // Gestiva V2 - Magazzini attivi della società corrente.
+        Long companyId = companyContext.requireCurrentCompanyId();
+        model.addAttribute(
+                "warehouseOptions",
+                warehouseService.findActive(tenantId, companyId)
+        );
+
         model.addAttribute("activeMenu", "purchaseOrders");
         return "purchasing/order/purchase-order-detail";
     }

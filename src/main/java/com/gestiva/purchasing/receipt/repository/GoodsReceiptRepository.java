@@ -52,5 +52,27 @@ public interface GoodsReceiptRepository extends JpaRepository<GoodsReceipt, Long
 """)
     long countToInvoiceByTenantId(@Param("tenantId") Long tenantId);
 
+    // =====================================================
+    // GESTIVA V2 - RICEVIMENTI DA FATTURARE PER SOCIETÀ
+    // =====================================================
+
+    @Query("""
+        select count(gr)
+        from GoodsReceipt gr
+        where gr.tenantId = :tenantId
+          and gr.companyId = :companyId
+          and not exists (
+              select 1
+              from SupplierInvoice si
+              where si.tenantId = gr.tenantId
+                and si.companyId = gr.companyId
+                and si.goodsReceiptId = gr.id
+          )
+        """)
+    long countToInvoiceByTenantIdAndCompanyId(
+            @Param("tenantId") Long tenantId,
+            @Param("companyId") Long companyId
+    );
+
 
 }

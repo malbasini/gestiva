@@ -125,7 +125,12 @@ public class GoodsReceiptWebService {
         v.setNotes(receipt.getNotes());
         v.setPurchaseOrderId(receipt.getPurchaseOrderId());
 
-        var invoiceOpt = supplierInvoiceRepository.findFirstByTenantIdAndGoodsReceiptId(tenantId, receipt.getId());
+        var invoiceOpt = supplierInvoiceRepository
+                .findFirstByTenantIdAndCompanyIdAndGoodsReceiptId(
+                        tenantId,
+                        receipt.getCompanyId(),
+                        receipt.getId()
+                );
         v.setHasSupplierInvoice(invoiceOpt.isPresent());
         v.setCanCreateSupplierInvoice(invoiceOpt.isEmpty());
         invoiceOpt.ifPresent(invoice -> {
@@ -137,7 +142,7 @@ public class GoodsReceiptWebService {
             GoodsReceiptDetailLineView lv = new GoodsReceiptDetailLineView();
             lv.setLineNo(line.getLineNo());
             lv.setDescription(line.getDescription());
-            lv.setFormattedQuantityReceived(PdfFormatUtils.formatDecimal(line.getQuantityReceived()));
+            lv.setFormattedQuantityReceived(PdfFormatUtils.formatDecimalTrimmed(line.getQuantityReceived(), 3));
             v.getLines().add(lv);
         }
 

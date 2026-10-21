@@ -33,14 +33,19 @@ public class DashboardPageController {
 
         Long companyId = companyContext.resolveCurrentCompanyId();
 
+        // Gestiva V2 - La dashboard richiede una società autorizzata.
+        // CompanyContext verifica l'accesso alla società selezionata.
+        if (companyId == null) {
+            return "redirect:/company/select";
+        }
+
         // Espone la società attiva alla vista.
         model.addAttribute("activeCompanyId", companyId);
 
-        // Manteniamo temporaneamente la dashboard
-        // basata sul tenant.
+        // Dashboard isolata per tenant e società.
         model.addAttribute(
                 "dashboard",
-                dashboardWebService.build(tenantId)
+                dashboardWebService.build(tenantId, companyId)
         );
 
         model.addAttribute("activeMenu", "dashboard");

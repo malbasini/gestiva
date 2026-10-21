@@ -73,7 +73,31 @@ public class DashboardWebService {
 
     private static final List<String> OPEN_DUE_STATUSES = List.of("OPEN", "PARTIALLY_PAID");
 
+    // =====================================================
+    // GESTIVA V2 - DASHBOARD MULTI-COMPANY
+    // =====================================================
+
+    @Deprecated
     public DashboardView build(Long tenantId) {
+        throw new IllegalStateException(
+                "Dashboard tenant-only disabilitata: utilizzare build(tenantId, companyId)."
+        );
+    }
+
+    public DashboardView build(Long tenantId, Long companyId) {
+
+        if (tenantId == null) {
+            throw new IllegalStateException(
+                    "Impossibile caricare la dashboard: tenant non disponibile."
+            );
+        }
+
+        if (companyId == null) {
+            throw new IllegalStateException(
+                    "Impossibile caricare la dashboard: nessuna società attiva selezionata."
+            );
+        }
+
         DashboardView view = new DashboardView();
 
         LocalDate from = LocalDate.now().withDayOfMonth(1);
@@ -82,39 +106,45 @@ public class DashboardWebService {
         // =========================================================
         // KPI PRINCIPALI
         // =========================================================
-        view.setOpenQuotesCount(readOpenQuotesCount(tenantId));
-        view.setOpenSalesOrdersCount(readOpenSalesOrdersCount(tenantId));
+        view.setOpenQuotesCount(readOpenQuotesCount(tenantId, companyId));
+        view.setOpenSalesOrdersCount(readOpenSalesOrdersCount(tenantId, companyId));
         view.setReceivablesDueCount(
-                paymentDueRepository.countByTenantIdAndDirectionAndStatusIn(
-                        tenantId, "RECEIVABLE", OPEN_DUE_STATUSES
+                paymentDueRepository.countByTenantIdAndCompanyIdAndDirectionAndStatusIn(
+                        tenantId, companyId, "RECEIVABLE", OPEN_DUE_STATUSES
                 )
         );
         view.setPayablesDueCount(
-                paymentDueRepository.countByTenantIdAndDirectionAndStatusIn(
-                        tenantId, "PAYABLE", OPEN_DUE_STATUSES
+                paymentDueRepository.countByTenantIdAndCompanyIdAndDirectionAndStatusIn(
+                        tenantId, companyId, "PAYABLE", OPEN_DUE_STATUSES
                 )
         );
         // =========================================================
         // CICLO ATTIVO
         // =========================================================
-        view.setDeliveryNotesToInvoiceCount(readDeliveryNotesToInvoiceCount(tenantId));
-        view.setOpenSalesInvoicesCount(readOpenSalesInvoicesCount(tenantId));
-        mapRecentSalesDocuments(view, tenantId);
+        view.setDeliveryNotesToInvoiceCount(readDeliveryNotesToInvoiceCount(tenantId, companyId));
+        view.setOpenSalesInvoicesCount(readOpenSalesInvoicesCount(tenantId, companyId));
+        mapRecentSalesDocuments(view, tenantId, companyId);
 
         // =========================================================
         // CICLO PASSIVO
         // =========================================================
-        view.setOpenPurchaseOrdersCount(readOpenPurchaseOrdersCount(tenantId));
-        view.setGoodsReceiptsToInvoiceCount(goodsReceiptRepository.countToInvoiceByTenantId(tenantId));
-        view.setOpenSupplierInvoicesCount(readOpenSupplierInvoicesCount(tenantId));
-        mapRecentSupplierInvoicesDocuments(view, tenantId);
+        view.setOpenPurchaseOrdersCount(readOpenPurchaseOrdersCount(tenantId, companyId));
+        view.setGoodsReceiptsToInvoiceCount(
+                goodsReceiptRepository.countToInvoiceByTenantIdAndCompanyId(
+                        tenantId, companyId
+                )
+        );
+        view.setOpenSupplierInvoicesCount(readOpenSupplierInvoicesCount(tenantId, companyId));
+        mapRecentSupplierInvoicesDocuments(view, tenantId, companyId);
 
 
 
         // =========================================================
         // CONTABILITÀ
         // =========================================================
-        IncomeStatementView income = incomeStatementWebService.build(tenantId, from, to);
+        IncomeStatementView income = incomeStatementWebService.build(
+                tenantId, companyId, from, to
+        );
         view.setFormattedPeriodRevenue(defaultString(income.getFormattedTotalRevenue(), "0,00"));
         view.setFormattedPeriodCost(defaultString(income.getFormattedTotalCost(), "0,00"));
         view.setFormattedPeriodResult(defaultString(income.getFormattedPeriodResult(), "0,00"));
@@ -122,7 +152,9 @@ public class DashboardWebService {
         // =========================================================
         // IVA
         // =========================================================
-        VatSettlementView vat = vatSettlementWebService.calculateSettlement(tenantId, from, to);
+        VatSettlementView vat = vatSettlementWebService.calculateSettlement(
+                tenantId, companyId, from, to
+        );
         view.setFormattedVatSales(defaultString(vat.getFormattedSalesTaxAmount(), "0,00"));
         view.setFormattedVatPurchases(defaultString(vat.getFormattedPurchaseTaxAmount(), "0,00"));
         view.setFormattedVatBalance(defaultString(vat.getFormattedVatBalance(), "0,00"));
@@ -135,54 +167,62 @@ public class DashboardWebService {
         // TODO: calcolare con minStockLevel + saldo reale
         view.setLowStockItemsCount(0L);
 
-        mapRecentInventoryMovements(view, tenantId);
+        mapRecentInventoryMovements(view, tenantId, companyId);
 
         return view;
     }
 
-    private long readOpenQuotesCount(Long tenantId) {
-        return quoteRepository.countByTenantIdAndStatusIn(
+    private long readOpenQuotesCount(Long tenantId, Long companyId) {
+        return quoteRepository.countByTenantIdAndCompanyIdAndStatusIn(
                 tenantId,
+                companyId,
                 List.of("DRAFT", "SENT")
         );
     }
 
-    private long readOpenSalesOrdersCount(Long tenantId) {
-        return salesOrderRepository.countByTenantIdAndStatusIn(
+    private long readOpenSalesOrdersCount(Long tenantId, Long companyId) {
+        return salesOrderRepository.countByTenantIdAndCompanyIdAndStatusIn(
                 tenantId,
+                companyId,
                 List.of("DRAFT", "CONFIRMED")
         );
     }
 
-    private long readDeliveryNotesToInvoiceCount(Long tenantId) {
-        return deliveryNoteRepository.countToInvoiceByTenantIdAndStatusIn(
+    private long readDeliveryNotesToInvoiceCount(Long tenantId, Long companyId) {
+        return deliveryNoteRepository.countToInvoiceByTenantIdAndCompanyIdAndStatusIn(
                 tenantId,
+                companyId,
                 List.of("ISSUED", "CONFIRMED")
         );
     }
 
-    private long readOpenSalesInvoicesCount(Long tenantId) {
-        return invoiceRepository.countByTenantIdAndStatusIn(
+    private long readOpenSalesInvoicesCount(Long tenantId, Long companyId) {
+        return invoiceRepository.countByTenantIdAndCompanyIdAndStatusIn(
                 tenantId,
+                companyId,
                 List.of("ISSUED")
         );
     }
 
-    private long readOpenPurchaseOrdersCount(Long tenantId) {
-        return purchaseOrderRepository.countByTenantIdAndStatusIn(
+    private long readOpenPurchaseOrdersCount(Long tenantId, Long companyId) {
+        return purchaseOrderRepository.countByTenantIdAndCompanyIdAndStatusIn(
                 tenantId,
+                companyId,
                 List.of("DRAFT")
         );
     }
 
-    private long readOpenSupplierInvoicesCount(Long tenantId) {
-        return supplierInvoiceRepository.countByTenantIdAndStatusIn(
+    private long readOpenSupplierInvoicesCount(Long tenantId, Long companyId) {
+        return supplierInvoiceRepository.countByTenantIdAndCompanyIdAndStatusIn(
                 tenantId,
+                companyId,
                 List.of("DRAFT", "SENT", "CONFIRMED")
         );
     }
-    private void mapRecentSalesDocuments(DashboardView view, Long tenantId) {
-        List<Invoice> recentInvoices = invoiceRepository.findTop5ByTenantIdOrderByInvoiceDateDescIdDesc(tenantId);
+    private void mapRecentSalesDocuments(DashboardView view, Long tenantId, Long companyId) {
+        List<Invoice> recentInvoices = invoiceRepository.findTop5ByTenantIdAndCompanyIdOrderByInvoiceDateDescIdDesc(
+                tenantId, companyId
+        );
         List<DashboardRecentDocumentView> docs = recentInvoices.stream().map(inv -> {
             DashboardRecentDocumentView d = new DashboardRecentDocumentView();
             d.setDate(formatDate(inv.getInvoiceDate()));
@@ -196,8 +236,10 @@ public class DashboardWebService {
 
         view.setRecentSalesDocuments(docs);
     }
-    private void mapRecentSupplierInvoicesDocuments(DashboardView view, Long tenantId) {
-        List<SupplierInvoice> recentInvoices = supplierInvoiceRepository.findTop5ByTenantIdOrderByInvoiceDateDescIdDesc(tenantId);
+    private void mapRecentSupplierInvoicesDocuments(DashboardView view, Long tenantId, Long companyId) {
+        List<SupplierInvoice> recentInvoices = supplierInvoiceRepository.findTop5ByTenantIdAndCompanyIdOrderByInvoiceDateDescIdDesc(
+                tenantId, companyId
+        );
         List<DashboardRecentDocumentView> docs = recentInvoices.stream().map(inv -> {
             DashboardRecentDocumentView d = new DashboardRecentDocumentView();
             d.setDate(formatDate(inv.getInvoiceDate()));
@@ -210,9 +252,15 @@ public class DashboardWebService {
 
         view.setRecentSupplierDocuments(docs);
     }
-    private void mapRecentInventoryMovements(DashboardView view, Long tenantId) {
+    private void mapRecentInventoryMovements(
+            DashboardView view,
+            Long tenantId,
+            Long companyId
+    ) {
         List<InventoryMovement> recent = inventoryMovementRepository
-                .findTop10ByTenantIdOrderByMovementDateDescIdDesc(tenantId);
+                .findTop10ByTenantIdAndCompanyIdOrderByMovementDateDescIdDesc(
+                        tenantId, companyId
+                );
 
         List<DashboardRecentInventoryMovementView> rows = recent.stream().map(m -> {
             DashboardRecentInventoryMovementView r = new DashboardRecentInventoryMovementView();

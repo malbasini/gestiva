@@ -88,6 +88,14 @@ public interface PaymentDueRepository extends JpaRepository<PaymentDue, Long>, J
     java.math.BigDecimal sumOverdueOpenAmount(Long tenantId, java.util.List<String> statuses, java.time.LocalDate today);
     long countByTenantIdAndDirectionAndStatusIn(Long tenantId, String direction, java.util.Collection<String> statuses);
 
+    // Gestiva V2 - Conteggio scadenze isolato per società.
+    long countByTenantIdAndCompanyIdAndDirectionAndStatusIn(
+            Long tenantId,
+            Long companyId,
+            String direction,
+            java.util.Collection<String> statuses
+    );
+
     @Query("""
     select coalesce(sum(p.openAmount), 0)
     from PaymentDue p

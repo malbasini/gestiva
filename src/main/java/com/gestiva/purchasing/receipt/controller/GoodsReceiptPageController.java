@@ -27,17 +27,34 @@ public class GoodsReceiptPageController {
     }
 
     @PostMapping("/{id}/receive")
-    public String receive(@PathVariable Long id, RedirectAttributes redirectAttributes,Model model) {
+    public String receive(
+            @PathVariable Long id,
+            @RequestParam(value = "warehouseId", required = false) Long warehouseId,
+            RedirectAttributes redirectAttributes,
+            Model model) {
+
         try {
+            if (warehouseId == null) {
+                throw new IllegalArgumentException(
+                        "Seleziona un magazzino di destinazione."
+                );
+            }
+
             Long tenantId = tenantContext.getCurrentTenantId();
-            Long goodsReceiptId = goodsReceiptService.createFromPurchaseOrder(tenantId, id);
+
+            // Gestiva V2 - Ricevimento con magazzino di destinazione.
+            Long goodsReceiptId = goodsReceiptService.createFromPurchaseOrder(
+                    tenantId,
+                    id,
+                    warehouseId
+            );
             redirectAttributes.addFlashAttribute("successMessage", "Ricezione merce creata con successo.");
             model.addAttribute("activeMenu", "goodsReceipts");
             return "redirect:/goods-receipts/" + goodsReceiptId;
         }
         catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/goods-receipts/" + id;
+            return "redirect:/purchase-orders/" + id;
         }
     }
 

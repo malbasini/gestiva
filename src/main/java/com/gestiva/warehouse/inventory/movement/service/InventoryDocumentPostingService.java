@@ -11,6 +11,7 @@ import com.gestiva.purchasing.receipt.entity.GoodsReceiptLine;
 import com.gestiva.logistics.ddt.entity.DeliveryNote;
 import com.gestiva.logistics.ddt.entity.DeliveryNoteLine;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptLineRepository;
+import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.gestiva.warehouse.location.repository.WarehouseRepository;
@@ -26,6 +27,7 @@ public class InventoryDocumentPostingService {
     private final InventoryMovementRepository inventoryMovementRepository;
     private final ItemRepository itemRepository;
     private final GoodsReceiptLineRepository goodsReceiptLineRepository;
+    private final GoodsReceiptRepository goodsReceiptRepository;
     private final DeliveryNoteLineRepository deliveryNoteLineRepository;
     private final InventoryValuationService inventoryValuationService;
     private final InventoryAvailabilityService inventoryAvailabilityService;
@@ -37,6 +39,7 @@ public class InventoryDocumentPostingService {
             InventoryMovementRepository inventoryMovementRepository,
             ItemRepository itemRepository,
             GoodsReceiptLineRepository goodsReceiptLineRepository,
+            GoodsReceiptRepository goodsReceiptRepository,
             DeliveryNoteLineRepository deliveryNoteLineRepository,
             InventoryValuationService inventoryValuationService,
             InventoryAvailabilityService inventoryAvailabilityService,
@@ -47,6 +50,7 @@ public class InventoryDocumentPostingService {
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.itemRepository = itemRepository;
         this.goodsReceiptLineRepository = goodsReceiptLineRepository;
+        this.goodsReceiptRepository = goodsReceiptRepository;
         this.inventoryValuationService = inventoryValuationService;
         this.inventoryAvailabilityService = inventoryAvailabilityService;
         this.warehouseRepository = warehouseRepository;
@@ -246,6 +250,148 @@ public class InventoryDocumentPostingService {
                     "Scarico da DDT " + deliveryNote.getDdtNumber()
             );
             inventoryValuationService.applyOutboundValuation(tenantId, idMovement);
+        }
+    }
+
+    // =====================================================
+    // GESTIVA V2 - CARICO MERCI MULTI-SOCIETÀ CON FIFO
+    // =====================================================
+
+    public void postPurchaseReceiptFromGoodsReceiptV2(
+            Long tenantId,
+            Long companyId,
+            Long goodsReceiptId) {
+
+        if (tenantId == null || companyId == null || goodsReceiptId == null) {
+            throw new BusinessException(
+                    "Tenant, società e ricevimento merci sono obbligatori."
+            );
+        }
+
+        GoodsReceipt receipt = goodsReceiptRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        goodsReceiptId
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "Ricevimento merci non trovato nella società indicata."
+                ));
+
+        Long warehouseId = receipt.getWarehouseId();
+
+        if (warehouseId == null) {
+            throw new BusinessException(
+                    "Impossibile registrare il ricevimento: magazzino non selezionato."
+            );
+        }
+
+        // FIFO V2: per ora il carico avviene a livello di magazzino.
+        if (receipt.getLocationId() != null) {
+            throw new BusinessException(
+                    "Il carico merci per ubicazione non è ancora abilitato."
+            );
+        }
+
+        Long locationId = null;
+
+        // Blocco transazionale del magazzino.
+        var warehouse = warehouseRepository
+                .findByTenantAndCompanyAndIdForUpdate(
+                        tenantId,
+                        companyId,
+                        warehouseId
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "Magazzino non trovato nella società indicata."
+                ));
+
+        if (!warehouse.isActive()) {
+            throw new BusinessException(
+                    "Il magazzino selezionato non è attivo."
+            );
+        }
+
+        // Controllo idempotenza dopo il blocco.
+        boolean alreadyPosted = inventoryMovementRepository
+                .existsByTenantIdAndCompanyIdAndReferenceTypeAndReferenceIdAndCausalCode(
+                        tenantId,
+                        companyId,
+                        "GOODS_RECEIPT",
+                        goodsReceiptId,
+                        "PURCHASE_RECEIPT"
+                );
+
+        if (alreadyPosted) {
+            return;
+        }
+
+        var lines = goodsReceiptLineRepository
+                .findByTenantIdAndGoodsReceiptIdOrderByLineNoAsc(
+                        tenantId,
+                        goodsReceiptId
+                );
+
+        if (lines.isEmpty()) {
+            throw new BusinessException(
+                    "Il ricevimento merci non contiene righe."
+            );
+        }
+
+        for (GoodsReceiptLine line : lines) {
+
+            if (line.getItemId() == null) {
+                continue;
+            }
+
+            var item = itemRepository
+                    .findByTenantIdAndId(tenantId, line.getItemId())
+                    .orElseThrow(() -> new BusinessException(
+                            "Articolo non trovato: " + line.getItemId()
+                    ));
+
+            if (!item.isTrackStock()) {
+                continue;
+            }
+
+            if (line.getQuantityReceived() == null
+                    || line.getQuantityReceived().signum() <= 0) {
+                throw new BusinessException(
+                        "Quantità ricevuta non valida per l'articolo: "
+                                + line.getItemId()
+                );
+            }
+
+            if (line.getUnitCost() == null
+                    || line.getUnitCost().signum() <= 0) {
+                throw new BusinessException(
+                        "Costo unitario non valido per l'articolo: "
+                                + line.getItemId()
+                );
+            }
+
+            Long movementId = inventoryMovementService.registerMovement(
+                    tenantId,
+                    companyId,
+                    warehouseId,
+                    locationId,
+                    line.getItemId(),
+                    receipt.getReceiptDate(),
+                    "IN",
+                    "PURCHASE_RECEIPT",
+                    line.getQuantityReceived(),
+                    line.getUnitCost(),
+                    "GOODS_RECEIPT",
+                    goodsReceiptId,
+                    "Carico da ricevimento merci " + receipt.getReceiptNumber()
+            );
+
+            inventoryValuationService.applyInboundValuation(
+                    tenantId,
+                    companyId,
+                    warehouseId,
+                    movementId
+            );
         }
     }
 

@@ -55,6 +55,18 @@ public class SupplierInvoiceService {
     }
 
     public Long createFromGoodsReceipt(Long tenantId, Long goodsReceiptId) {
+
+        // Gestiva V2 - BLOCCO TEMPORANEO DI SICUREZZA.
+        // Non rimuovere prima del completamento della migrazione
+        // multi-company delle fatture fornitori e della verifica
+        // delle relative scadenze e registrazioni contabili.
+        if (true) {
+            throw new BusinessException(
+                    "Generazione fatture fornitori temporaneamente non disponibile: "
+                            + "migrazione multi-company Gestiva V2 in corso."
+            );
+        }
+
         var receipt = goodsReceiptRepository.findByTenantIdAndId(tenantId, goodsReceiptId)
                 .orElseThrow(() -> new BusinessException("Ricezione merci non trovata."));
 

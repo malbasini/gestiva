@@ -147,7 +147,7 @@ public class PurchaseOrderWebService {
             PurchaseOrderDetailLineView lv = new PurchaseOrderDetailLineView();
             lv.setLineNo(line.getLineNo());
             lv.setDescription(line.getDescription());
-            lv.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),2));
+            lv.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),3));
             lv.setFormattedUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
             lv.setFormattedDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct()) + "%");
             lv.setFormattedTaxPct(PdfFormatUtils.formatDecimalTrimmed(line.getTaxPct(),2) + "%");
@@ -183,7 +183,7 @@ public class PurchaseOrderWebService {
             PurchaseOrderLineForm lf = new PurchaseOrderLineForm();
             lf.setItemId(line.getItemId());
             lf.setDescription(line.getDescription());
-            lf.setQuantity(PdfFormatUtils.formatDecimal(line.getQuantity(),2));
+            lf.setQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),3));
             lf.setUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
             lf.setDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct(),0));
             lf.setTaxPct(PdfFormatUtils.formatDecimal(line.getTaxPct(),0));
@@ -319,7 +319,7 @@ public class PurchaseOrderWebService {
             line.setLineNo(lineNo++);
             line.setItemId(lineForm.getItemId());
             line.setDescription(lineForm.getDescription().trim());
-            line.setQuantity(scale(NumberInputUtils.parseDecimal(lineForm.getQuantity(), "quantity"),1));
+            line.setQuantity(parseOrderQuantity(lineForm.getQuantity()));
             line.setUnitPrice(scale(NumberInputUtils.parseDecimal(lineForm.getUnitPrice(), "unit price"),2));
             line.setDiscountPct(scale(NumberInputUtils.parseDecimal(lineForm.getDiscountPct(),"discount"), 2));
             line.setTaxPct(scale(NumberInputUtils.parseDecimal(lineForm.getTaxPct(), "tax pct"),0));
@@ -350,7 +350,7 @@ public class PurchaseOrderWebService {
 
     private LineTotals calculateLineTotals(PurchaseOrderLineForm line) {
 
-        BigDecimal qty = scale(NumberInputUtils.parseDecimal(line.getQuantity(), "quantity"),1);
+        BigDecimal qty = parseOrderQuantity(line.getQuantity());
         BigDecimal unitPrice = scale(NumberInputUtils.parseDecimal(line.getUnitPrice(), "unit price"),2);
         BigDecimal discountPct = scale(NumberInputUtils.parseDecimal(line.getDiscountPct(),"discount"), 2);
         BigDecimal taxPct = scale(NumberInputUtils.parseDecimal(line.getTaxPct(),"tax pct" ),0);
@@ -361,6 +361,24 @@ public class PurchaseOrderWebService {
         BigDecimal total = subtotal.add(tax).setScale(2, RoundingMode.HALF_UP);
 
         return new LineTotals(subtotal, tax, total);
+    }
+
+    private BigDecimal parseOrderQuantity(String value) {
+        BigDecimal quantity = NumberInputUtils.parseDecimal(value, "quantity");
+
+        if (quantity.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(
+                    "La quantità dell'ordine deve essere maggiore di zero."
+            );
+        }
+
+        if (quantity.stripTrailingZeros().scale() > 3) {
+            throw new BusinessException(
+                    "La quantità dell'ordine può avere al massimo 3 decimali."
+            );
+        }
+
+        return quantity.setScale(3, RoundingMode.UNNECESSARY);
     }
 
     private BigDecimal scale(BigDecimal value, int scale) {
