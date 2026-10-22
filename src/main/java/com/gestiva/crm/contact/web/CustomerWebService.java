@@ -5,7 +5,6 @@ import com.gestiva.crm.contact.dto.CustomerSearchRequest;
 import com.gestiva.crm.contact.entity.Customer;
 import com.gestiva.crm.contact.repository.CustomerRepository;
 import com.gestiva.crm.contact.repository.CustomerSpecifications;
-import com.gestiva.security.company.context.CompanyContext;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,27 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class CustomerWebService {
 
     private final CustomerRepository customerRepository;
-    private final CompanyContext companyContext;
 
     public CustomerWebService(
-            CustomerRepository customerRepository,
-            CompanyContext companyContext
+            CustomerRepository customerRepository
     ) {
         this.customerRepository = customerRepository;
-        this.companyContext = companyContext;
-    }
-
-    private Long requireCompanyId() {
-
-        Long companyId = companyContext.resolveCurrentCompanyId();
-
-        if (companyId == null) {
-            throw new IllegalStateException(
-                    "Nessuna società attiva selezionata"
-            );
-        }
-
-        return companyId;
     }
 
     public PageResponse<CustomerListItemView> search(
@@ -49,11 +32,8 @@ public class CustomerWebService {
             Pageable pageable
     ) {
 
-        Long companyId = requireCompanyId();
-
         Specification<Customer> specification =
                 CustomerSpecifications.hasTenantId(tenantId)
-                        .and(byCompany(companyId))
                         .and(CustomerSpecifications.hasStatus(request.getStatus()))
                         .and(CustomerSpecifications.hasType(request.getType()))
                         .and(CustomerSpecifications.matchesSearch(request.getSearch()));
@@ -88,8 +68,6 @@ public class CustomerWebService {
             String status
     ) {
 
-        Long companyId = requireCompanyId();
-
         Pageable pageable = PageRequest.of(
                 page,
                 size,
@@ -98,7 +76,6 @@ public class CustomerWebService {
 
         Specification<Customer> spec =
                 Specification.where(byTenant(tenantId))
-                        .and(byCompany(companyId))
                         .and(bySearch(q))
                         .and(byStatus(status));
 
@@ -111,12 +88,6 @@ public class CustomerWebService {
 
         return (root, query, cb) ->
                 cb.equal(root.get("tenantId"), tenantId);
-    }
-
-    private Specification<Customer> byCompany(Long companyId) {
-
-        return (root, query, cb) ->
-                cb.equal(root.get("companyId"), companyId);
     }
 
     private Specification<Customer> bySearch(String q) {

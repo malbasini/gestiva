@@ -293,9 +293,47 @@ public class JournalAutoPostingService {
                                     String notes) {
 
         Long companyId = requireCompanyId();
+
+        if (supplierInvoiceId == null) {
+            throw new BusinessException(
+                    "Identificativo della fattura fornitore mancante."
+            );
+        }
+
+        if (journalEntryRepository
+                .existsByTenantIdAndCompanyIdAndReferenceTypeAndReferenceId(
+                        tenantId,
+                        companyId,
+                        "SUPPLIER_INVOICE",
+                        supplierInvoiceId
+                )) {
+            throw new BusinessException(
+                    "La fattura fornitore è già stata contabilizzata."
+            );
+        }
+
+        if (taxableAmount == null || taxAmount == null || totalAmount == null) {
+            throw new BusinessException(
+                    "Gli importi della fattura fornitore non possono essere nulli."
+            );
+        }
+
         BigDecimal imponibile = scale(taxableAmount);
         BigDecimal iva = scale(taxAmount);
         BigDecimal totale = scale(totalAmount);
+
+        if (imponibile.signum() < 0 || iva.signum() < 0 || totale.signum() <= 0) {
+            throw new BusinessException(
+                    "Gli importi della fattura fornitore non sono validi."
+            );
+        }
+
+        if (imponibile.add(iva).compareTo(totale) != 0) {
+            throw new BusinessException(
+                    "La fattura fornitore non è quadrata: "
+                            + "imponibile + IVA deve essere uguale al totale."
+            );
+        }
 
         Account purchaseCosts = requireAccount(tenantId,companyId, "5100");
         Account vatInput = requireAccount(tenantId, companyId,"2220");

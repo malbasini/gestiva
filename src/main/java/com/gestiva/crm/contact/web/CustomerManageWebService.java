@@ -3,7 +3,6 @@ package com.gestiva.crm.contact.web;
 import com.gestiva.common.exception.NotFoundException;
 import com.gestiva.crm.contact.entity.Customer;
 import com.gestiva.crm.contact.repository.CustomerRepository;
-import com.gestiva.security.company.context.CompanyContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,31 +11,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class CustomerManageWebService {
 
     private final CustomerRepository customerRepository;
-    private final CompanyContext companyContext;
 
     public CustomerManageWebService(
-            CustomerRepository customerRepository,
-            CompanyContext companyContext
+            CustomerRepository customerRepository
     ) {
         this.customerRepository = customerRepository;
-        this.companyContext = companyContext;
-    }
-
-    private Long requireCompanyId() {
-        Long companyId = companyContext.resolveCurrentCompanyId();
-
-        if (companyId == null) {
-            throw new IllegalStateException(
-                    "Nessuna società attiva selezionata"
-            );
-        }
-
-        return companyId;
     }
 
     public CustomerForm buildCreateForm() {
-
-        requireCompanyId();
 
         CustomerForm form = new CustomerForm();
         form.setType("COMPANY");
@@ -52,12 +34,9 @@ public class CustomerManageWebService {
             Long customerId
     ) {
 
-        Long companyId = requireCompanyId();
-
         Customer customer = customerRepository
-                .findByTenantIdAndCompanyIdAndId(
+                .findByTenantIdAndId(
                         tenantId,
-                        companyId,
                         customerId
                 )
                 .orElseThrow(() ->
@@ -85,12 +64,9 @@ public class CustomerManageWebService {
             CustomerForm form
     ) {
 
-        Long companyId = requireCompanyId();
-
         Customer customer = new Customer();
 
         customer.setTenantId(tenantId);
-        customer.setCompanyId(companyId);
 
         applyForm(customer, form);
 
@@ -105,12 +81,9 @@ public class CustomerManageWebService {
             CustomerForm form
     ) {
 
-        Long companyId = requireCompanyId();
-
         Customer customer = customerRepository
-                .findByTenantIdAndCompanyIdAndId(
+                .findByTenantIdAndId(
                         tenantId,
-                        companyId,
                         customerId
                 )
                 .orElseThrow(() ->

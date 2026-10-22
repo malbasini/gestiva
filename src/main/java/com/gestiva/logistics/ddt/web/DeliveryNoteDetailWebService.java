@@ -61,13 +61,12 @@ public class DeliveryNoteDetailWebService {
                 ));
 
         var customer = customerRepository
-                .findByTenantIdAndCompanyIdAndId(
+                .findByTenantIdAndId(
                         tenantId,
-                        companyId,
                         note.getCustomerId()
                 )
                 .orElseThrow(() -> new NotFoundException(
-                        "Cliente non trovato nella società attiva"
+                        "Cliente non trovato nel tenant"
                 ));
 
         var lines = deliveryNoteLineRepository

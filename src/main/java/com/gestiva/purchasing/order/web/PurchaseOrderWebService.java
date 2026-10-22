@@ -87,11 +87,7 @@ public class PurchaseOrderWebService {
             v.setOrderNumber(po.getOrderNumber());
             v.setFormattedOrderDate(PdfFormatUtils.formatDate(po.getOrderDate()));
             v.setSupplierName(
-                    supplierRepository.findByTenantIdAndCompanyIdAndId(
-                            tenantId,
-                            po.getCompanyId(),
-                            po.getSupplierId()
-                    )
+                    supplierRepository.findByTenantIdAndId(tenantId, po.getSupplierId())
                             .map(s -> s.getName())
                             .orElse("-")
             );
@@ -121,11 +117,7 @@ public class PurchaseOrderWebService {
         v.setFormattedOrderDate(PdfFormatUtils.formatDate(po.getOrderDate()));
         v.setFormattedExpectedDeliveryDate(po.getExpectedDeliveryDate() != null ? PdfFormatUtils.formatDate(po.getExpectedDeliveryDate()) : "-");
         v.setSupplierName(
-                supplierRepository.findByTenantIdAndCompanyIdAndId(
-                            tenantId,
-                            po.getCompanyId(),
-                            po.getSupplierId()
-                    )
+                supplierRepository.findByTenantIdAndId(tenantId, po.getSupplierId())
                         .map(s -> s.getName())
                         .orElse("-")
         );
@@ -286,13 +278,9 @@ public class PurchaseOrderWebService {
             throw new BusinessException("Il fornitore è obbligatorio.");
         }
 
-        supplierRepository.findByTenantIdAndCompanyIdAndId(
-                        tenantId,
-                        companyId,
-                        form.getSupplierId()
-                )
+        supplierRepository.findByTenantIdAndId(tenantId, form.getSupplierId())
                 .orElseThrow(() -> new BusinessException(
-                        "Fornitore non valido per la società selezionata."
+                        "Fornitore non valido per il tenant corrente."
                 ));
 
         if (form.getLines() == null || form.getLines().isEmpty()) {
@@ -502,11 +490,7 @@ public class PurchaseOrderWebService {
         v.setFormattedTotalAmount(PdfFormatUtils.formatMoney(order.getTotalAmount()));
         v.setCurrencyCode(order.getCurrencyCode());
         v.setSupplierName(
-                supplierRepository.findByTenantIdAndCompanyIdAndId(
-                        order.getTenantId(),
-                        order.getCompanyId(),
-                        order.getSupplierId()
-                )
+                supplierRepository.findByTenantIdAndId(order.getTenantId(), order.getSupplierId())
                         .map(s -> s.getName())
                         .orElse("-")
         );

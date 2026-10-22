@@ -7,6 +7,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Index;
+import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -18,6 +19,17 @@ import java.time.LocalDate;
                 @Index(name = "idx_payment_due_tenant_due_date", columnList = "tenant_id,due_date"),
                 @Index(name = "idx_payment_due_tenant_direction_status", columnList = "tenant_id,direction,status"),
                 @Index(name = "idx_payment_due_tenant_ref", columnList = "tenant_id,reference_type,reference_id")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_payment_due_company_reference",
+                        columnNames = {
+                                "tenant_id",
+                                "company_id",
+                                "reference_type",
+                                "reference_id"
+                        }
+                )
         }
 )
 public class PaymentDue extends TenantAwareEntity {

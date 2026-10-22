@@ -105,7 +105,7 @@ public class PaymentTransactionListWebService {
 
         Map<Long, String> customerNamesById = customerIds.stream()
                 .map(customerId -> customerRepository
-                        .findByTenantIdAndCompanyIdAndId(tenantId, companyId, customerId))
+                        .findByTenantIdAndId(tenantId, customerId))
                 .flatMap(Optional::stream)
                 .collect(Collectors.toMap(
                         Customer::getId,
@@ -114,7 +114,7 @@ public class PaymentTransactionListWebService {
 
         Map<Long, String> supplierNamesById = supplierIds.stream()
                 .map(supplierId -> supplierRepository
-                        .findByTenantIdAndCompanyIdAndId(tenantId, companyId, supplierId))
+                        .findByTenantIdAndId(tenantId, supplierId))
                 .flatMap(Optional::stream)
                 .collect(Collectors.toMap(
                         Supplier::getId,
@@ -241,16 +241,14 @@ public class PaymentTransactionListWebService {
 
         if (due != null && due.getPartyId() != null && due.getPartyType() != null) {
             if ("CUSTOMER".equalsIgnoreCase(due.getPartyType())) {
-                customerRepository.findByTenantIdAndCompanyIdAndId(
+                customerRepository.findByTenantIdAndId(
                                 tenantId,
-                                companyId,
                                 due.getPartyId()
                         )
                         .ifPresent(c -> customerNamesById.put(c.getId(), buildCustomerLabel(c)));
             } else if ("SUPPLIER".equalsIgnoreCase(due.getPartyType())) {
-                supplierRepository.findByTenantIdAndCompanyIdAndId(
+                supplierRepository.findByTenantIdAndId(
                                 tenantId,
-                                companyId,
                                 due.getPartyId()
                         )
                         .ifPresent(s -> supplierNamesById.put(s.getId(), buildSupplierLabel(s)));

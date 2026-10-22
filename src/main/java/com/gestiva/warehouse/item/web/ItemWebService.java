@@ -7,6 +7,7 @@ import com.gestiva.common.util.NumberInputUtils;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.warehouse.item.entity.Item;
 import com.gestiva.warehouse.item.repository.ItemRepository;
+import com.gestiva.warehouse.item.repository.ItemUomRepository;
 import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,17 +29,20 @@ public class ItemWebService {
     private final ItemRepository itemRepository;
     private final InventoryMovementRepository inventoryMovementRepository;
     private final UnitOfMeasureRepository unitOfMeasureRepository;
+    private final ItemUomRepository itemUomRepository;
 
 
 
     public ItemWebService(
             ItemRepository itemRepository,
             InventoryMovementRepository inventoryMovementRepository,
-            UnitOfMeasureRepository unitOfMeasureRepository) {
+            UnitOfMeasureRepository unitOfMeasureRepository,
+            ItemUomRepository itemUomRepository) {
 
         this.itemRepository = itemRepository;
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.unitOfMeasureRepository = unitOfMeasureRepository;
+        this.itemUomRepository = itemUomRepository;
     }
     @Transactional(readOnly = true)
     public List<ItemListItemView> findAll(Long tenantId) {
@@ -148,6 +152,41 @@ public class ItemWebService {
                                         + uomCode
                         )
                 );
+
+        UnitOfMeasure currentBaseUom = item.getBaseUom();
+
+        boolean baseUomChanged = currentBaseUom == null
+                || !currentBaseUom.getId().equals(baseUom.getId());
+
+        if (baseUomChanged && !baseUom.isActive()) {
+            throw new BusinessException(
+                    "Non è possibile selezionare un'unità di misura inattiva."
+            );
+        }
+
+        if (currentBaseUom != null && baseUomChanged
+                && inventoryMovementRepository.existsByTenantIdAndItemId(
+                        item.getTenantId(),
+                        item.getId()
+                )) {
+
+            throw new BusinessException(
+                    "Non è possibile modificare l'unità di misura base "
+                            + "di un articolo con movimenti di magazzino."
+            );
+        }
+
+        if (currentBaseUom != null && baseUomChanged
+                && itemUomRepository.existsByTenantIdAndItemId(
+                        item.getTenantId(),
+                        item.getId()
+                )) {
+
+            throw new BusinessException(
+                    "Non è possibile modificare l'unità di misura base "
+                            + "di un articolo con unità alternative configurate."
+            );
+        }
 
         item.setBaseUom(baseUom);
 

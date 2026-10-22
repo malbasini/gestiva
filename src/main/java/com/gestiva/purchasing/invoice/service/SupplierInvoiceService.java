@@ -12,6 +12,7 @@ import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptLineRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
 import com.gestiva.settings.sequence.service.DocumentSequenceService;
+import com.gestiva.security.company.context.CompanyContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -30,6 +31,7 @@ public class SupplierInvoiceService {
     private final PaymentDueService paymentDueService;
     private final JournalAutoPostingService journalAutoPostingService;
     private final DocumentSequenceService documentSequenceService;
+    private final CompanyContext companyContext;
 
 
     public SupplierInvoiceService(SupplierInvoiceRepository supplierInvoiceRepository,
@@ -40,7 +42,8 @@ public class SupplierInvoiceService {
                                   PurchaseOrderLineRepository purchaseOrderLineRepository,
                                   PaymentDueService paymentDueService,
                                   JournalAutoPostingService journalAutoPostingService,
-                                  DocumentSequenceService documentSequenceService) {
+                                  DocumentSequenceService documentSequenceService,
+                                  CompanyContext companyContext) {
 
 
         this.supplierInvoiceRepository = supplierInvoiceRepository;
@@ -52,6 +55,7 @@ public class SupplierInvoiceService {
         this.paymentDueService = paymentDueService;
         this.journalAutoPostingService = journalAutoPostingService;
         this.documentSequenceService = documentSequenceService;
+        this.companyContext = companyContext;
     }
 
     public Long createFromGoodsReceipt(Long tenantId, Long goodsReceiptId) {
@@ -67,15 +71,23 @@ public class SupplierInvoiceService {
             );
         }
 
-        var receipt = goodsReceiptRepository.findByTenantIdAndId(tenantId, goodsReceiptId)
+        Long companyId = companyContext.requireCurrentCompanyId();
+
+        var receipt = goodsReceiptRepository.findByTenantIdAndCompanyIdAndId(tenantId, companyId, goodsReceiptId)
                 .orElseThrow(() -> new BusinessException("Ricezione merci non trovata."));
 
-        if (supplierInvoiceRepository.existsByTenantIdAndGoodsReceiptId(tenantId, goodsReceiptId)) {
+        if (supplierInvoiceRepository.existsByTenantIdAndCompanyIdAndGoodsReceiptId(tenantId, companyId, goodsReceiptId)) {
             throw new BusinessException("Esiste già una fattura fornitore per questa ricezione merci.");
         }
 
-        var purchaseOrder = purchaseOrderRepository.findByTenantIdAndId(tenantId, receipt.getPurchaseOrderId())
+        var purchaseOrder = purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(tenantId, companyId, receipt.getPurchaseOrderId())
                 .orElseThrow(() -> new BusinessException("Ordine fornitore non trovato."));
+
+        if (!java.util.Objects.equals(purchaseOrder.getSupplierId(), receipt.getSupplierId())) {
+            throw new BusinessException(
+                    "Il fornitore del ricevimento merci non coincide con quello dell'ordine di acquisto."
+            );
+        }
 
         var receiptLines = goodsReceiptLineRepository.findByTenantIdAndGoodsReceiptIdOrderByLineNoAsc(tenantId, goodsReceiptId);
 
@@ -85,7 +97,8 @@ public class SupplierInvoiceService {
 
         SupplierInvoice invoice = new SupplierInvoice();
         invoice.setTenantId(tenantId);
-        invoice.setInvoiceNumber(nextInvoiceNumber(tenantId));
+        invoice.setCompanyId(companyId);
+        invoice.setInvoiceNumber(nextInvoiceNumber(tenantId, companyId));
         invoice.setInvoiceDate(LocalDate.now());
         invoice.setSupplierId(receipt.getSupplierId());
         invoice.setGoodsReceiptId(receipt.getId());
@@ -106,8 +119,39 @@ public class SupplierInvoiceService {
 
         int lineNo = 1;
         for (var receiptLine : receiptLines) {
-            var poLine = purchaseOrderLineRepository.findById(receiptLine.getPurchaseOrderLineId())
-                    .orElseThrow(() -> new BusinessException("Riga ordine fornitore non trovata."));
+            var poLine = purchaseOrderLineRepository.findByTenantIdAndPurchaseOrderIdAndId(
+                    tenantId,
+                    purchaseOrder.getId(),
+                    receiptLine.getPurchaseOrderLineId()
+            ).orElseThrow(() -> new BusinessException("Riga ordine fornitore non trovata."));
+
+            if (receiptLine.getQuantityReceived() == null
+                    || receiptLine.getQuantityReceived().signum() <= 0) {
+                throw new BusinessException(
+                        "La quantità ricevuta deve essere maggiore di zero."
+                );
+            }
+
+            if (poLine.getQuantity() == null
+                    || poLine.getQuantity().signum() <= 0) {
+                throw new BusinessException(
+                        "La quantità ordinata deve essere maggiore di zero."
+                );
+            }
+
+            if (receiptLine.getQuantityReceived().compareTo(poLine.getQuantity()) > 0) {
+                throw new BusinessException(
+                        "La quantità ricevuta supera la quantità ordinata."
+                );
+            }
+
+            if (!java.util.Objects.equals(
+                    poLine.getItemId(),
+                    receiptLine.getItemId())) {
+                throw new BusinessException(
+                        "L'articolo del ricevimento merci non coincide con quello dell'ordine di acquisto."
+                );
+            }
 
             SupplierInvoiceLine line = new SupplierInvoiceLine();
             line.setTenantId(tenantId);
@@ -164,7 +208,11 @@ public class SupplierInvoiceService {
         return saved.getId();
     }
 
-    private String nextInvoiceNumber(Long tenantId) {
-        return documentSequenceService.nextSupplierInvoiceNumber(tenantId);
+    private String nextInvoiceNumber(Long tenantId, Long companyId) {
+        return documentSequenceService.nextNumber(
+                tenantId,
+                companyId,
+                DocumentSequenceService.SUPPLIER_INVOICE
+        );
     }
 }

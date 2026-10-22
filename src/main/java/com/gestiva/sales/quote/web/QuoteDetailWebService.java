@@ -58,13 +58,12 @@ public class QuoteDetailWebService {
                 ));
 
         var customer = customerRepository
-                .findByTenantIdAndCompanyIdAndId(
+                .findByTenantIdAndId(
                         tenantId,
-                        companyId,
                         quote.getCustomerId()
                 )
                 .orElseThrow(() -> new NotFoundException(
-                        "Cliente non trovato nella società attiva"
+                        "Cliente non trovato nel tenant"
                 ));
 
         var lines = quoteLineRepository

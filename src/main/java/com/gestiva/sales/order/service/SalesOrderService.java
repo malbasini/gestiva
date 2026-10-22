@@ -88,13 +88,12 @@ public class SalesOrderService {
         validateQuoteConvertible(tenantId, companyId, quote);
 
         customerRepository
-                .findByTenantIdAndCompanyIdAndId(
+                .findByTenantIdAndId(
                         tenantId,
-                        companyId,
                         quote.getCustomerId()
                 )
                 .orElseThrow(() -> new BusinessException(
-                        "Il cliente del preventivo non appartiene alla società attiva."
+                        "Il cliente del preventivo non appartiene al tenant."
                 ));
 
         List<QuoteLine> quoteLines = quoteLineRepository

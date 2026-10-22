@@ -88,13 +88,12 @@ public class QuotePdfDataService {
                 );
 
         Customer customer = customerRepository
-                .findByTenantIdAndCompanyIdAndId(
+                .findByTenantIdAndId(
                         tenantId,
-                        companyId,
                         quote.getCustomerId()
                 )
                 .orElseThrow(() -> new NotFoundException(
-                        "Cliente non trovato nella società attiva"
+                        "Cliente non trovato nel tenant"
                 ));
 
         CompanyProfile company = companyProfileRepository

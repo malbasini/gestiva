@@ -16,10 +16,13 @@ import java.time.LocalDate;
 @Table(
         name = "supplier_invoice",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_supplier_invoice_tenant_number", columnNames = {"tenant_id", "invoice_number"})
+                @UniqueConstraint(name = "uk_supplier_invoice_tenant_company_number", columnNames = {"tenant_id", "company_id", "invoice_number"})
         }
 )
 public class SupplierInvoice extends TenantAwareEntity {
+
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
 
     @Column(name = "invoice_number", nullable = false, length = 50)
     private String invoiceNumber;
@@ -53,6 +56,14 @@ public class SupplierInvoice extends TenantAwareEntity {
 
     @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalAmount;
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
+    }
 
     public String getInvoiceNumber() {
         return invoiceNumber;

@@ -34,6 +34,13 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, Long
             String entryNumber
     );
 
+    boolean existsByTenantIdAndCompanyIdAndReferenceTypeAndReferenceId(
+            Long tenantId,
+            Long companyId,
+            String referenceType,
+            Long referenceId
+    );
+
     List<JournalEntry> findByTenantIdAndCompanyIdOrderByEntryDateDescIdDesc(
             Long tenantId,
             Long companyId

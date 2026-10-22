@@ -89,13 +89,12 @@ public class SalesOrderPdfDataService {
                                 orderId
                         );
         Customer customer = customerRepository
-                .findByTenantIdAndCompanyIdAndId(
+                .findByTenantIdAndId(
                         tenantId,
-                        companyId,
                         order.getCustomerId()
                 )
                 .orElseThrow(() -> new NotFoundException(
-                        "Cliente non trovato nella società attiva"
+                        "Cliente non trovato nel tenant"
                 ));
         CompanyProfile company = companyProfileRepository
                 .findByTenantIdAndCompanyId(

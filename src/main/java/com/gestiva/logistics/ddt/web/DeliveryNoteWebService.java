@@ -112,9 +112,8 @@ public class DeliveryNoteWebService {
     private DeliveryNoteListItemView toListItemView(DeliveryNote note) {
         DeliveryNoteListItemView v = new DeliveryNoteListItemView();
         Customer customer = customerRepository
-                .findByTenantIdAndCompanyIdAndId(
+                .findByTenantIdAndId(
                         note.getTenantId(),
-                        note.getCompanyId(),
                         note.getCustomerId()
                 )
                 .orElse(null);

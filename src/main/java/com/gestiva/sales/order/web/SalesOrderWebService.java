@@ -156,9 +156,8 @@ public class SalesOrderWebService {
     private SalesOrderListItemView toListItemView(SalesOrder order) {
         SalesOrderListItemView v = new SalesOrderListItemView();
         Customer customer = customerRepository
-                .findByTenantIdAndCompanyIdAndId(
+                .findByTenantIdAndId(
                         order.getTenantId(),
-                        order.getCompanyId(),
                         order.getCustomerId()
                 )
                 .orElse(null);

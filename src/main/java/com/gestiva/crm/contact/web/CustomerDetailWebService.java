@@ -2,7 +2,6 @@ package com.gestiva.crm.contact.web;
 
 import com.gestiva.common.exception.NotFoundException;
 import com.gestiva.crm.contact.repository.CustomerRepository;
-import com.gestiva.security.company.context.CompanyContext;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,27 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class CustomerDetailWebService {
 
     private final CustomerRepository customerRepository;
-    private final CompanyContext companyContext;
 
     public CustomerDetailWebService(
-            CustomerRepository customerRepository,
-            CompanyContext companyContext
+            CustomerRepository customerRepository
     ) {
         this.customerRepository = customerRepository;
-        this.companyContext = companyContext;
-    }
-
-    private Long requireCompanyId() {
-
-        Long companyId = companyContext.resolveCurrentCompanyId();
-
-        if (companyId == null) {
-            throw new IllegalStateException(
-                    "Nessuna società attiva selezionata"
-            );
-        }
-
-        return companyId;
     }
 
     public CustomerDetailView getDetail(
@@ -40,12 +23,9 @@ public class CustomerDetailWebService {
             Long customerId
     ) {
 
-        Long companyId = requireCompanyId();
-
         var customer = customerRepository
-                .findByTenantIdAndCompanyIdAndId(
+                .findByTenantIdAndId(
                         tenantId,
-                        companyId,
                         customerId
                 )
                 .orElseThrow(() ->

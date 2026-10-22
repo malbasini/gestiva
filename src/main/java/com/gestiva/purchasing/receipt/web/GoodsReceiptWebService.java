@@ -66,11 +66,7 @@ public class GoodsReceiptWebService {
             v.setReceiptNumber(receipt.getReceiptNumber());
             v.setFormattedReceiptDate(PdfFormatUtils.formatDate(receipt.getReceiptDate()));
             v.setSupplierName(
-                    supplierRepository.findByTenantIdAndCompanyIdAndId(
-                            tenantId,
-                            receipt.getCompanyId(),
-                            receipt.getSupplierId()
-                    )
+                    supplierRepository.findByTenantIdAndId(tenantId, receipt.getSupplierId())
                             .map(s -> s.getName())
                             .orElse("-")
             );
@@ -105,11 +101,7 @@ public class GoodsReceiptWebService {
         v.setReceiptNumber(receipt.getReceiptNumber());
         v.setFormattedReceiptDate(PdfFormatUtils.formatDate(receipt.getReceiptDate()));
         v.setSupplierName(
-                supplierRepository.findByTenantIdAndCompanyIdAndId(
-                            tenantId,
-                            receipt.getCompanyId(),
-                            receipt.getSupplierId()
-                    )
+                supplierRepository.findByTenantIdAndId(tenantId, receipt.getSupplierId())
                         .map(s -> s.getName())
                         .orElse("-")
         );
@@ -208,11 +200,7 @@ public class GoodsReceiptWebService {
         v.setId(receipt.getId());
         v.setReceiptNumber(receipt.getReceiptNumber());
         v.setSupplierName(
-                supplierRepository.findByTenantIdAndCompanyIdAndId(
-                        receipt.getTenantId(),
-                        receipt.getCompanyId(),
-                        receipt.getSupplierId()
-                )
+                supplierRepository.findByTenantIdAndId(receipt.getTenantId(), receipt.getSupplierId())
                         .map(Supplier::getName)
                         .orElse("-")
         );

@@ -16,9 +16,4 @@ public interface SupplierRepository extends JpaRepository<Supplier, Long>, JpaSp
 
     List<Supplier> findByTenantIdAndActiveTrueOrderByNameAsc(Long tenantId);
 
-    Optional<Supplier> findByTenantIdAndCompanyIdAndId(
-            Long tenantId,
-            Long companyId,
-            Long id
-    );
 }

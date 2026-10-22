@@ -55,6 +55,9 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
 
     Optional<InventoryMovement> findByTenantIdAndId(Long tenantId, Long id);
 
+    // Gestiva V2 - Verifica movimenti storici dell'articolo in tutte le società del tenant.
+    boolean existsByTenantIdAndItemId(Long tenantId, Long itemId);
+
     List<InventoryMovement> findByTenantIdAndItemIdOrderByMovementDateAscIdAsc(Long tenantId, Long itemId);
 
     List<InventoryMovement> findByTenantIdAndReferenceTypeAndReferenceIdOrderByIdAsc(Long tenantId, String referenceType, Long referenceId);

@@ -18,6 +18,13 @@ public interface ItemUomRepository
             Long itemId
     );
 
+    // Gestiva V2 - Verifica presenza di unità alternative,
+    // comprese quelle inattive.
+    boolean existsByTenantIdAndItemId(
+            Long tenantId,
+            Long itemId
+    );
+
     Optional<ItemUom> findByTenantIdAndItemIdAndUomId(
             Long tenantId,
             Long itemId,

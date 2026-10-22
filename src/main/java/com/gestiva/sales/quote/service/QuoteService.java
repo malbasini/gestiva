@@ -119,7 +119,7 @@ public class QuoteService {
 
         Long companyId = requireCompanyId();
 
-        validateCustomerExists(tenantId, companyId, request.getCustomerId());
+        validateCustomerExists(tenantId, request.getCustomerId());
         validateLines(request.getLines());
 
         String quoteNumber = documentSequenceService.nextNumber(
@@ -172,7 +172,7 @@ public class QuoteService {
                         "Preventivo non trovato nella società attiva"
                 ));
 
-        validateCustomerExists(tenantId, companyId, request.getCustomerId());
+        validateCustomerExists(tenantId, request.getCustomerId());
         validateLines(request.getLines());
         validateStatus(request.getStatus());
 
@@ -232,17 +232,15 @@ public class QuoteService {
     }
     private void validateCustomerExists(
             Long tenantId,
-            Long companyId,
             Long customerId
     ) {
         customerRepository
-                .findByTenantIdAndCompanyIdAndId(
+                .findByTenantIdAndId(
                         tenantId,
-                        companyId,
                         customerId
                 )
                 .orElseThrow(() -> new BusinessException(
-                        "Cliente non valido per la società attiva"
+                        "Cliente non valido per il tenant"
                 ));
     }
 

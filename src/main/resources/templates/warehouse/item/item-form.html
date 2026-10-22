@@ -63,9 +63,28 @@
                         </div>
 
                         <div class="form-field">
-                            <label for="unitOfMeasure">Unità di misura</label>
-                            <input id="unitOfMeasure" type="text" class="form-control" th:field="*{unitOfMeasure}" placeholder="pz"/>
-                            <div class="field-error" th:if="${#fields.hasErrors('unitOfMeasure')}" th:errors="*{unitOfMeasure}">Errore</div>
+                            <label for="unitOfMeasure">Unità di misura base</label>
+
+                            <select id="unitOfMeasure"
+                                    class="form-select"
+                                    th:field="*{unitOfMeasure}"
+                                    required>
+
+                                <option value="">Seleziona unità di misura</option>
+
+                                <option th:each="uom : ${availableUoms}"
+                                        th:value="${uom.code}"
+                                        th:text="${uom.code + ' - ' + uom.name + ' (' + uom.symbol + ')' + (uom.active ? '' : ' [INATTIVA]')}">
+                                    PZ - Pezzo (pz)
+                                </option>
+
+                            </select>
+
+                            <div class="field-error"
+                                 th:if="${#fields.hasErrors('unitOfMeasure')}"
+                                 th:errors="*{unitOfMeasure}">
+                                Errore
+                            </div>
                         </div>
 
                         <div class="form-field">

@@ -93,7 +93,6 @@ public class PaymentDueWebService {
     }
 
     private String resolvePartyName(Long tenantId, String partyType, Long partyId) {
-        Long companyId = companyContext.requireCurrentCompanyId();
 
         if (partyId == null) {
             return "-";
@@ -101,14 +100,14 @@ public class PaymentDueWebService {
 
         if ("CUSTOMER".equalsIgnoreCase(partyType)) {
             return customerRepository
-                    .findByTenantIdAndCompanyIdAndId(tenantId, companyId, partyId)
+                    .findByTenantIdAndId(tenantId, partyId)
                     .map(c -> c.getName())
                     .orElse("-");
         }
 
         if ("SUPPLIER".equalsIgnoreCase(partyType)) {
             return supplierRepository
-                    .findByTenantIdAndCompanyIdAndId(tenantId, companyId, partyId)
+                    .findByTenantIdAndId(tenantId, partyId)
                     .map(s -> s.getName())
                     .orElse("-");
         }

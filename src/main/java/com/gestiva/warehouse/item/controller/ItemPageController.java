@@ -1,11 +1,18 @@
 package com.gestiva.warehouse.item.controller;
 
+import com.gestiva.common.exception.BusinessException;
 import com.gestiva.warehouse.item.web.ItemMovementWebService;
 import com.gestiva.warehouse.inventory.movement.web.InventoryLedgerWebService;
 import com.gestiva.warehouse.inventory.valuation.web.InventoryValuationWebService;
 import com.gestiva.security.usercontext.TenantContext;
 import com.gestiva.warehouse.item.web.ItemForm;
 import com.gestiva.warehouse.item.web.ItemWebService;
+import com.gestiva.warehouse.uom.repository.UnitOfMeasureRepository;
+import com.gestiva.warehouse.item.repository.ItemRepository;
+import com.gestiva.warehouse.uom.entity.UnitOfMeasure;
+import com.gestiva.common.exception.NotFoundException;
+import java.util.ArrayList;
+import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,19 +29,25 @@ public class ItemPageController {
     private final InventoryLedgerWebService inventoryLedgerWebService;
     private final InventoryValuationWebService inventoryValuationWebService;
     private final ItemMovementWebService itemMovementWebService;
+    private final UnitOfMeasureRepository unitOfMeasureRepository;
+    private final ItemRepository itemRepository;
 
 
     public ItemPageController(ItemWebService itemWebService,
                               TenantContext tenantContext,
                               InventoryLedgerWebService inventoryLedgerWebService,
                               InventoryValuationWebService inventoryValuationWebService,
-                              ItemMovementWebService itemMovementWebService) {
+                              ItemMovementWebService itemMovementWebService,
+                              UnitOfMeasureRepository unitOfMeasureRepository,
+                              ItemRepository itemRepository) {
 
         this.itemWebService = itemWebService;
         this.tenantContext = tenantContext;
         this.inventoryLedgerWebService = inventoryLedgerWebService;
         this.inventoryValuationWebService = inventoryValuationWebService;
         this.itemMovementWebService = itemMovementWebService;
+        this.unitOfMeasureRepository = unitOfMeasureRepository;
+        this.itemRepository = itemRepository;
     }
 
     @GetMapping
@@ -67,6 +80,12 @@ public class ItemPageController {
 
     @GetMapping("/new")
     public String createForm(Model model) {
+        model.addAttribute(
+                "availableUoms",
+                unitOfMeasureRepository.findByTenantIdAndActiveTrueOrderByCodeAsc(
+                        tenantContext.getCurrentTenantId()
+                )
+        );
         model.addAttribute("itemForm", new ItemForm());
         model.addAttribute("formMode", "create");
         model.addAttribute("activeMenu", "items");
@@ -79,22 +98,54 @@ public class ItemPageController {
                          Model model,
                          RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
+            model.addAttribute(
+                    "availableUoms",
+                    unitOfMeasureRepository.findByTenantIdAndActiveTrueOrderByCodeAsc(
+                            tenantContext.getCurrentTenantId()
+                    )
+            );
             model.addAttribute("formMode", "create");
             model.addAttribute("activeMenu", "items");
             return "warehouse/item/item-form";
         }
 
         Long tenantId = tenantContext.getCurrentTenantId();
-        Long id = itemWebService.create(tenantId, form);
 
-        redirectAttributes.addFlashAttribute("successMessage", "Articolo creato con successo.");
-        return "redirect:/items/" + id;
+        try {
+            Long id = itemWebService.create(tenantId, form);
+
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "Articolo creato con successo."
+            );
+
+            return "redirect:/items/" + id;
+
+        } catch (BusinessException ex) {
+
+            model.addAttribute("errorMessage", ex.getMessage());
+
+            model.addAttribute(
+                    "availableUoms",
+                    unitOfMeasureRepository
+                            .findByTenantIdAndActiveTrueOrderByCodeAsc(tenantId)
+            );
+
+            model.addAttribute("formMode", "create");
+            model.addAttribute("activeMenu", "items");
+
+            return "warehouse/item/item-form";
+        }
     }
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
         Long tenantId = tenantContext.getCurrentTenantId();
         model.addAttribute("itemForm", itemWebService.getForm(tenantId, id));
+        model.addAttribute(
+                "availableUoms",
+                availableUomsForEdit(tenantId, id)
+        );
         model.addAttribute("itemId", id);
         model.addAttribute("formMode", "edit");
         model.addAttribute("activeMenu", "items");
@@ -108,6 +159,13 @@ public class ItemPageController {
                          Model model,
                          RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
+            model.addAttribute(
+                    "availableUoms",
+                    availableUomsForEdit(
+                            tenantContext.getCurrentTenantId(),
+                            id
+                    )
+            );
             model.addAttribute("itemId", id);
             model.addAttribute("formMode", "edit");
             model.addAttribute("activeMenu", "items");
@@ -115,10 +173,62 @@ public class ItemPageController {
         }
 
         Long tenantId = tenantContext.getCurrentTenantId();
-        itemWebService.update(tenantId, id, form);
 
-        redirectAttributes.addFlashAttribute("successMessage", "Articolo aggiornato con successo.");
-        return "redirect:/items/" + id;
+        try {
+            itemWebService.update(tenantId, id, form);
+
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "Articolo aggiornato con successo."
+            );
+
+            return "redirect:/items/" + id;
+
+        } catch (BusinessException ex) {
+
+            model.addAttribute("errorMessage", ex.getMessage());
+
+            model.addAttribute(
+                    "availableUoms",
+                    availableUomsForEdit(tenantId, id)
+            );
+
+            model.addAttribute("itemId", id);
+            model.addAttribute("formMode", "edit");
+            model.addAttribute("activeMenu", "items");
+
+            return "warehouse/item/item-form";
+        }
+    }
+
+    private List<UnitOfMeasure> availableUomsForEdit(
+            Long tenantId,
+            Long itemId) {
+
+        List<UnitOfMeasure> available = new ArrayList<>(
+                unitOfMeasureRepository
+                        .findByTenantIdAndActiveTrueOrderByCodeAsc(tenantId)
+        );
+
+        var item = itemRepository.findByTenantIdAndId(tenantId, itemId)
+                .orElseThrow(() ->
+                        new NotFoundException("Articolo non trovato")
+                );
+
+        UnitOfMeasure currentUom = item.getBaseUom();
+
+        if (currentUom != null
+                && available.stream().noneMatch(
+                        uom -> uom.getId().equals(currentUom.getId())
+                )) {
+            available.add(currentUom);
+        }
+
+        available.sort(
+                java.util.Comparator.comparing(UnitOfMeasure::getCode)
+        );
+
+        return available;
     }
 
     @GetMapping("/{id}/inventory")
