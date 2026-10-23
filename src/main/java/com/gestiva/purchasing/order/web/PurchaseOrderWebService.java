@@ -177,8 +177,8 @@ public class PurchaseOrderWebService {
             lf.setDescription(line.getDescription());
             lf.setQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),3));
             lf.setUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
-            lf.setDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct(),0));
-            lf.setTaxPct(PdfFormatUtils.formatDecimal(line.getTaxPct(),0));
+            lf.setDiscountPct(PdfFormatUtils.formatDecimalTrimmed(line.getDiscountPct(),2));
+            lf.setTaxPct(PdfFormatUtils.formatDecimalTrimmed(line.getTaxPct(),2));
             form.getLines().add(lf);
         }
 
@@ -196,35 +196,97 @@ public class PurchaseOrderWebService {
 
         for (int i = 0; i < lines.size(); i++) {
             PurchaseOrderLineForm line = lines.get(i);
+            int lineNo = i + 1;
+
+            if (line == null) {
+                throw new BusinessException("La riga " + lineNo + " non è valida");
+            }
 
             if (line.getDescription() == null || line.getDescription().isBlank()) {
-                throw new BusinessException("La descrizione della riga " + (i + 1) + " è obbligatoria");
+                throw new BusinessException(
+                    "La descrizione della riga " + lineNo + " è obbligatoria"
+                );
             }
 
-            if (line.getQuantity() == null || line.getQuantity().compareTo(String.valueOf(BigDecimal.ZERO)) <= 0) {
-                throw new BusinessException("La quantità della riga " + (i + 1) + " deve essere maggiore di zero");
+            if (line.getQuantity() == null || line.getQuantity().isBlank()) {
+                throw new BusinessException(
+                    "La quantità della riga " + lineNo + " è obbligatoria"
+                );
             }
 
-            if (line.getUnitPrice() == null || line.getUnitPrice().compareTo(String.valueOf(BigDecimal.ZERO)) < 0) {
-                throw new BusinessException("Il prezzo unitario della riga " + (i + 1) + " deve essere maggiore di zero");
+            if (line.getUnitPrice() == null || line.getUnitPrice().isBlank()) {
+                throw new BusinessException(
+                    "Il prezzo unitario della riga " + lineNo + " è obbligatorio"
+                );
             }
 
-            if (line.getDiscountPct() != null &&
-                    (line.getDiscountPct().compareTo(String.valueOf(BigDecimal.ZERO)) < 0 ||
-                            line.getDiscountPct().compareTo(String.valueOf(new BigDecimal("100"))) > 0)) {
-                throw new BusinessException("Lo sconto % della riga " + (i + 1) + " deve essere tra 0 e 100");
+            if (line.getDiscountPct() == null || line.getDiscountPct().isBlank()) {
+                throw new BusinessException(
+                    "Lo sconto della riga " + lineNo + " è obbligatorio"
+                );
             }
 
-            if (line.getTaxPct() != null &&
-                    (NumberInputUtils.parseDecimal(line.getTaxPct(),"tax pct").compareTo(BigDecimal.ZERO) < 0 ||
-                            NumberInputUtils.parseDecimal(line.getTaxPct(),"tax pct").compareTo(new BigDecimal("100")) > 0)) {
-                throw new BusinessException("L'aliquota IVA della riga " + (i + 1) + " deve essere tra 0 e 100");
+            if (line.getTaxPct() == null || line.getTaxPct().isBlank()) {
+                throw new BusinessException(
+                    "L'IVA della riga " + lineNo + " è obbligatoria"
+                );
+            }
+
+            BigDecimal quantity = parseOrderQuantity(
+                line.getQuantity()
+            );
+
+            BigDecimal unitPrice = NumberInputUtils.parseDecimal(
+                line.getUnitPrice(), "prezzo unitario"
+            );
+
+            BigDecimal discountPct = NumberInputUtils.parseDecimal(
+                line.getDiscountPct(), "sconto"
+            );
+
+            BigDecimal taxPct = NumberInputUtils.parseDecimal(
+                line.getTaxPct(), "IVA"
+            );
+
+            if (quantity.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new BusinessException(
+                    "La quantità della riga " + lineNo + " deve essere maggiore di zero"
+                );
+            }
+
+            if (unitPrice.compareTo(BigDecimal.ZERO) < 0) {
+                throw new BusinessException(
+                    "Il prezzo unitario della riga " + lineNo + " non può essere negativo"
+                );
+            }
+
+            if (discountPct.compareTo(BigDecimal.ZERO) < 0 ||
+                discountPct.compareTo(new BigDecimal("100")) > 0) {
+                throw new BusinessException(
+                    "Lo sconto della riga " + lineNo + " deve essere tra 0 e 100"
+                );
+            }
+
+            if (taxPct.compareTo(BigDecimal.ZERO) < 0 ||
+                taxPct.compareTo(new BigDecimal("100")) > 0) {
+                throw new BusinessException(
+                    "L'IVA della riga " + lineNo + " deve essere tra 0 e 100"
+                );
+            }
+
+            if (taxPct.stripTrailingZeros().scale() > 2) {
+                throw new BusinessException(
+                    "L'IVA della riga " + lineNo +
+                    " può avere al massimo 2 decimali"
+                );
             }
         }
     }
+
     public Long create(Long tenantId, PurchaseOrderForm form) {
         Long companyId = companyContext.resolveCurrentCompanyId();
 
+        validateLines(form.getLines());
         validateHeader(tenantId, companyId, form);
 
         String orderNumber = nextOrderNumber(tenantId, companyId);
@@ -260,6 +322,7 @@ public class PurchaseOrderWebService {
             throw new BusinessException("Questo ordine fornitore non è più modificabile.");
         }
 
+        validateLines(form.getLines());
         validateHeader(tenantId, po.getCompanyId(), form);
         applyHeader(po, form);
 
@@ -310,7 +373,7 @@ public class PurchaseOrderWebService {
             line.setQuantity(parseOrderQuantity(lineForm.getQuantity()));
             line.setUnitPrice(scale(NumberInputUtils.parseDecimal(lineForm.getUnitPrice(), "unit price"),2));
             line.setDiscountPct(scale(NumberInputUtils.parseDecimal(lineForm.getDiscountPct(),"discount"), 2));
-            line.setTaxPct(scale(NumberInputUtils.parseDecimal(lineForm.getTaxPct(), "tax pct"),0));
+            line.setTaxPct(scale(NumberInputUtils.parseDecimal(lineForm.getTaxPct(), "tax pct"),2));
 
             LineTotals lt = calculateLineTotals(lineForm);
             line.setLineSubtotal(lt.subtotal());
@@ -341,7 +404,7 @@ public class PurchaseOrderWebService {
         BigDecimal qty = parseOrderQuantity(line.getQuantity());
         BigDecimal unitPrice = scale(NumberInputUtils.parseDecimal(line.getUnitPrice(), "unit price"),2);
         BigDecimal discountPct = scale(NumberInputUtils.parseDecimal(line.getDiscountPct(),"discount"), 2);
-        BigDecimal taxPct = scale(NumberInputUtils.parseDecimal(line.getTaxPct(),"tax pct" ),0);
+        BigDecimal taxPct = scale(NumberInputUtils.parseDecimal(line.getTaxPct(),"tax pct" ),2);
         BigDecimal gross = qty.multiply(unitPrice);
         BigDecimal discountAmount = gross.multiply(discountPct).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
         BigDecimal subtotal = gross.subtract(discountAmount).setScale(2, RoundingMode.HALF_UP);

@@ -81,8 +81,8 @@ public class PurchaseOrderPageController {
                 model.addAttribute("errorMessage", bindingResult.getAllErrors().getFirst().getDefaultMessage());
                 return "purchasing/order/purchase-order-form";
             }
-            Long id = purchaseOrderWebService.create(tenantId, form);
             purchaseOrderWebService.validateLines(form.getLines());
+            Long id = purchaseOrderWebService.create(tenantId, form);
             redirectAttributes.addFlashAttribute("successMessage", "Ordine fornitore creato con successo.");
             return "redirect:/purchase-orders/" + id;
         }
