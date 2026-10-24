@@ -138,6 +138,192 @@ class PurchaseOrderWebServiceTest {
         assertEquals(expectedDiscount, actualDiscount);
     }
 
+    @Test
+    void shouldRejectInvalidPriceBeforeCreatingPurchaseOrder() {
+        Long tenantId = 2L;
+        Long companyId = 5L;
+
+        PurchaseOrderForm form = new PurchaseOrderForm();
+        form.setSupplierId(10L);
+        form.setOrderDate(LocalDate.of(2026, 10, 24));
+        form.setStatus("DRAFT");
+        form.setCurrencyCode("EUR");
+
+        validLine.setUnitPrice("12,345");
+        form.getLines().add(validLine);
+
+        when(companyContext.resolveCurrentCompanyId())
+                .thenReturn(companyId);
+
+        assertThrows(
+                BusinessException.class,
+                () -> service.create(tenantId, form)
+        );
+
+        verifyNoInteractions(
+                purchaseOrderRepository,
+                purchaseOrderLineRepository,
+                supplierRepository,
+                documentSequenceService
+        );
+    }
+
+    @Test
+    void shouldRejectInvalidPriceBeforeUpdatingPurchaseOrder() {
+        Long tenantId = 2L;
+        Long companyId = 5L;
+        Long orderId = 100L;
+
+        PurchaseOrder existingOrder = new PurchaseOrder();
+        existingOrder.setTenantId(tenantId);
+        existingOrder.setCompanyId(companyId);
+        existingOrder.setStatus("DRAFT");
+
+        PurchaseOrderForm form = new PurchaseOrderForm();
+        form.setSupplierId(10L);
+        form.setOrderDate(LocalDate.of(2026, 10, 24));
+        form.setStatus("DRAFT");
+        form.setCurrencyCode("EUR");
+
+        validLine.setUnitPrice("12,345");
+        form.getLines().add(validLine);
+
+        when(companyContext.resolveCurrentCompanyId())
+                .thenReturn(companyId);
+
+        when(purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
+                tenantId, companyId, orderId
+        )).thenReturn(Optional.of(existingOrder));
+
+        assertThrows(
+                BusinessException.class,
+                () -> service.update(tenantId, orderId, form)
+        );
+
+        verify(purchaseOrderRepository).findByTenantIdAndCompanyIdAndId(
+                tenantId, companyId, orderId
+        );
+
+        verify(purchaseOrderRepository, never())
+                .save(any(PurchaseOrder.class));
+
+        verifyNoInteractions(
+                purchaseOrderLineRepository,
+                supplierRepository,
+                documentSequenceService
+        );
+
+        assertEquals("DRAFT", existingOrder.getStatus());
+        assertEquals(tenantId, existingOrder.getTenantId());
+        assertEquals(companyId, existingOrder.getCompanyId());
+    }
+
+    @Test
+    void shouldNotUpdatePurchaseOrderBelongingToAnotherCompany() {
+        Long tenantId = 2L;
+        Long currentCompanyId = 5L;
+        Long otherCompanyId = 6L;
+        Long orderId = 100L;
+
+        PurchaseOrderForm form = new PurchaseOrderForm();
+        form.setSupplierId(10L);
+        form.setOrderDate(LocalDate.of(2026, 10, 24));
+        form.setStatus("DRAFT");
+        form.setCurrencyCode("EUR");
+        form.getLines().add(validLine);
+
+        when(companyContext.resolveCurrentCompanyId())
+                .thenReturn(currentCompanyId);
+
+        when(purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
+                tenantId, currentCompanyId, orderId
+        )).thenReturn(Optional.empty());
+
+        assertNotEquals(currentCompanyId, otherCompanyId);
+
+        assertThrows(
+                com.gestiva.common.exception.NotFoundException.class,
+                () -> service.update(tenantId, orderId, form)
+        );
+
+        verify(purchaseOrderRepository).findByTenantIdAndCompanyIdAndId(
+                tenantId, currentCompanyId, orderId
+        );
+
+        verify(purchaseOrderRepository, never())
+                .save(any(PurchaseOrder.class));
+
+        verifyNoInteractions(
+                purchaseOrderLineRepository,
+                supplierRepository,
+                documentSequenceService,
+                itemRepository,
+                goodsReceiptRepository
+        );
+    }
+
+    @Test
+    void shouldNotOpenPurchaseOrderFormFromAnotherCompany() {
+        Long tenantId = 2L;
+        Long currentCompanyId = 5L;
+        Long orderId = 100L;
+
+        when(companyContext.resolveCurrentCompanyId())
+                .thenReturn(currentCompanyId);
+
+        when(purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
+                tenantId, currentCompanyId, orderId
+        )).thenReturn(Optional.empty());
+
+        assertThrows(
+                com.gestiva.common.exception.NotFoundException.class,
+                () -> service.getForm(tenantId, orderId)
+        );
+
+        verify(purchaseOrderRepository).findByTenantIdAndCompanyIdAndId(
+                tenantId, currentCompanyId, orderId
+        );
+
+        verifyNoInteractions(
+                purchaseOrderLineRepository,
+                supplierRepository,
+                goodsReceiptRepository,
+                itemRepository,
+                documentSequenceService
+        );
+    }
+
+    @Test
+    void shouldNotReadPurchaseOrderDetailFromAnotherCompany() {
+        Long tenantId = 2L;
+        Long currentCompanyId = 5L;
+        Long orderId = 100L;
+
+        when(companyContext.resolveCurrentCompanyId())
+                .thenReturn(currentCompanyId);
+
+        when(purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
+                tenantId, currentCompanyId, orderId
+        )).thenReturn(Optional.empty());
+
+        assertThrows(
+                com.gestiva.common.exception.NotFoundException.class,
+                () -> service.getDetail(tenantId, orderId)
+        );
+
+        verify(purchaseOrderRepository).findByTenantIdAndCompanyIdAndId(
+                tenantId, currentCompanyId, orderId
+        );
+
+        verifyNoInteractions(
+                purchaseOrderLineRepository,
+                supplierRepository,
+                goodsReceiptRepository,
+                itemRepository,
+                documentSequenceService
+        );
+    }
+
     private void verifyVatCalculation(
             String taxPct,
             String expectedTax,
@@ -297,6 +483,62 @@ class PurchaseOrderWebServiceTest {
     @Test
     void shouldRejectNegativeUnitPrice() {
         validLine.setUnitPrice("-9,50");
+
+        assertThrows(BusinessException.class, this::validate);
+    }
+
+    @Test
+    void shouldAcceptDiscountWithTwoDecimals() {
+        validLine.setDiscountPct("5,50");
+
+        assertDoesNotThrow(this::validate);
+    }
+
+    @Test
+    void shouldAcceptDiscountWithTrailingZeros() {
+        validLine.setDiscountPct("5,500");
+
+        assertDoesNotThrow(this::validate);
+    }
+
+    @Test
+    void shouldRejectDiscountWithThreeDecimals() {
+        validLine.setDiscountPct("5,555");
+
+        assertThrows(BusinessException.class, this::validate);
+    }
+
+    @Test
+    void shouldRejectSmallDiscountWithThreeDecimals() {
+        validLine.setDiscountPct("0,755");
+
+        assertThrows(BusinessException.class, this::validate);
+    }
+
+    @Test
+    void shouldAcceptUnitPriceWithTwoDecimals() {
+        validLine.setUnitPrice("12,35");
+
+        assertDoesNotThrow(this::validate);
+    }
+
+    @Test
+    void shouldAcceptUnitPriceWithTrailingZeros() {
+        validLine.setUnitPrice("12,500");
+
+        assertDoesNotThrow(this::validate);
+    }
+
+    @Test
+    void shouldRejectUnitPriceWithThreeDecimals() {
+        validLine.setUnitPrice("12,345");
+
+        assertThrows(BusinessException.class, this::validate);
+    }
+
+    @Test
+    void shouldRejectSmallUnitPriceWithThreeDecimals() {
+        validLine.setUnitPrice("0,999");
 
         assertThrows(BusinessException.class, this::validate);
     }

@@ -260,10 +260,24 @@ public class PurchaseOrderWebService {
                 );
             }
 
+            if (unitPrice.stripTrailingZeros().scale() > 2) {
+                throw new BusinessException(
+                    "Il prezzo unitario della riga " + lineNo +
+                    " può avere al massimo 2 decimali"
+                );
+            }
+
             if (discountPct.compareTo(BigDecimal.ZERO) < 0 ||
                 discountPct.compareTo(new BigDecimal("100")) > 0) {
                 throw new BusinessException(
                     "Lo sconto della riga " + lineNo + " deve essere tra 0 e 100"
+                );
+            }
+
+            if (discountPct.stripTrailingZeros().scale() > 2) {
+                throw new BusinessException(
+                    "Lo sconto della riga " + lineNo +
+                    " può avere al massimo 2 decimali"
                 );
             }
 
