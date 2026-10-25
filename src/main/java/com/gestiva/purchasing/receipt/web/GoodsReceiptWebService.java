@@ -124,7 +124,7 @@ public class GoodsReceiptWebService {
                         receipt.getId()
                 );
         v.setHasSupplierInvoice(invoiceOpt.isPresent());
-        v.setCanCreateSupplierInvoice(invoiceOpt.isEmpty());
+        v.setCanCreateSupplierInvoice(false);
         invoiceOpt.ifPresent(invoice -> {
             v.setSupplierInvoiceId(invoice.getId());
             v.setSupplierInvoiceNumber(invoice.getInvoiceNumber());
