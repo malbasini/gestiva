@@ -127,6 +127,14 @@
                                 sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
                                 <a class="dropdown-item" th:href="@{/items}">Articoli</a>
                             </li>
+
+                            <li th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL' || tenantSubscriptionPlan == 'STARTER')}"
+                                sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
+                                <a class="dropdown-item"
+                                   th:href="@{/warehouse/uoms}">
+                                    Unità di misura
+                                </a>
+                            </li>
                             <li th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL')}"
                                sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
                                 <a class="dropdown-item" th:href="@{/inventory-adjustments/new}">Rettifiche inventario</a>

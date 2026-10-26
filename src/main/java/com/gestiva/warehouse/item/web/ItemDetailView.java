@@ -11,6 +11,7 @@ public class ItemDetailView {
     private boolean active;
     private boolean trackStock;
     private String formattedBasePrice;
+    private String formattedPurchasePrice;
     private String formattedDefaultTaxPct;
     private String formattedStockBalance;
     private boolean stockManaged;
@@ -85,6 +86,14 @@ public class ItemDetailView {
 
     public void setFormattedBasePrice(String formattedBasePrice) {
         this.formattedBasePrice = formattedBasePrice;
+    }
+
+    public String getFormattedPurchasePrice() {
+        return formattedPurchasePrice;
+    }
+
+    public void setFormattedPurchasePrice(String formattedPurchasePrice) {
+        this.formattedPurchasePrice = formattedPurchasePrice;
     }    public String getFormattedDefaultTaxPct() {
         return formattedDefaultTaxPct;
     }

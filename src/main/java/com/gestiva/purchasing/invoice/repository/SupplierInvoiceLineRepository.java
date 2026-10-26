@@ -8,5 +8,5 @@ public interface SupplierInvoiceLineRepository extends JpaRepository<SupplierInv
 
     List<SupplierInvoiceLine> findByTenantIdAndSupplierInvoiceIdOrderByLineNoAsc(Long tenantId, Long supplierInvoiceId);
 
-
+    boolean existsByTenantIdAndItemId(Long tenantId, Long itemId);
 }

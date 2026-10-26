@@ -123,6 +123,8 @@ public class SecurityConfig {
                         .requestMatchers("/supplier-invoices/**").hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
 
                         // magazzino
+                        .requestMatchers("/warehouse/uoms/**").hasAnyRole("ADMIN", "WAREHOUSE")
+                        .requestMatchers("/items/*/uoms", "/items/*/uoms/**").hasAnyRole("ADMIN", "WAREHOUSE")
                         .requestMatchers("/items/**").hasAnyRole("ADMIN", "SALES", "PURCHASING", "WAREHOUSE", "ACCOUNTING")
                         .requestMatchers("/inventory/**").hasAnyRole("ADMIN", "WAREHOUSE")
                         .requestMatchers("/inventory-adjustments/**").hasAnyRole("ADMIN", "WAREHOUSE")

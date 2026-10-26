@@ -9,8 +9,10 @@ public class ItemAutocompleteView {
     private String name;
     private String description;
     private String unitOfMeasure;
+    private Long baseUomId;
     private String itemType;
     private BigDecimal basePrice;
+    private BigDecimal purchasePrice;
     private BigDecimal defaultTaxPct;
 
     public Long getId() {
@@ -53,6 +55,14 @@ public class ItemAutocompleteView {
         this.unitOfMeasure = unitOfMeasure;
     }
 
+    public Long getBaseUomId() {
+        return baseUomId;
+    }
+
+    public void setBaseUomId(Long baseUomId) {
+        this.baseUomId = baseUomId;
+    }
+
     public String getItemType() {
         return itemType;
     }
@@ -67,6 +77,14 @@ public class ItemAutocompleteView {
 
     public void setBasePrice(BigDecimal basePrice) {
         this.basePrice = basePrice;
+    }
+
+    public BigDecimal getPurchasePrice() {
+        return purchasePrice;
+    }
+
+    public void setPurchasePrice(BigDecimal purchasePrice) {
+        this.purchasePrice = purchasePrice;
     }
 
     public BigDecimal getDefaultTaxPct() {

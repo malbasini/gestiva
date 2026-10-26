@@ -66,6 +66,9 @@ public class Item extends TenantAwareEntity {
     @Column(name = "base_price", precision = 15, scale = 2)
     private BigDecimal basePrice;
 
+    @Column(name = "purchase_price", precision = 15, scale = 2)
+    private BigDecimal purchasePrice;
+
     @Column(name = "default_tax_pct", precision = 6, scale = 2)
     private BigDecimal defaultTaxPct;
 
@@ -147,6 +150,14 @@ public class Item extends TenantAwareEntity {
 
     public void setBasePrice(BigDecimal basePrice) {
         this.basePrice = basePrice;
+    }
+
+    public BigDecimal getPurchasePrice() {
+        return purchasePrice;
+    }
+
+    public void setPurchasePrice(BigDecimal purchasePrice) {
+        this.purchasePrice = purchasePrice;
     }
 
     public BigDecimal getDefaultTaxPct() {

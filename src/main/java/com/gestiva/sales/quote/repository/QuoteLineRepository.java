@@ -53,4 +53,6 @@ public interface QuoteLineRepository extends JpaRepository<QuoteLine, Long> {
             Long companyId,
             Long itemId
     );
+
+    boolean existsByTenantIdAndItemId(Long tenantId, Long itemId);
 }

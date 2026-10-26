@@ -27,8 +27,10 @@ public class ItemForm {
 
     private boolean trackStock = true;
 
-    @NotBlank(message = "Il prezzo base è obbligatorio")
+    @NotBlank(message = "Il prezzo di vendita è obbligatorio")
     private String basePrice;
+
+    private String purchasePrice;
 
     @NotBlank(message = "L'IVA è obbligatoria")
     private String defaultTaxPct;
@@ -95,6 +97,14 @@ public class ItemForm {
 
     public void setBasePrice(String basePrice) {
         this.basePrice = basePrice;
+    }
+
+    public String getPurchasePrice() {
+        return purchasePrice;
+    }
+
+    public void setPurchasePrice(String purchasePrice) {
+        this.purchasePrice = purchasePrice;
     }
 
     public String getDefaultTaxPct() {

@@ -8,7 +8,14 @@ import java.math.BigDecimal;
 
 public class PurchaseOrderLineForm {
 
+    private Long lineId;
+
     private Long itemId;
+
+    private Long uomId;
+
+    private String conversionFactor;
+
 
     @NotBlank(message = "La descrizione è obbligatoria")
     private String description;
@@ -72,4 +79,30 @@ public class PurchaseOrderLineForm {
     public void setTaxPct(String taxPct) {
         this.taxPct = taxPct;
     }
+
+    public Long getUomId() {
+        return uomId;
+    }
+
+    public void setUomId(Long uomId) {
+        this.uomId = uomId;
+    }
+
+    public String getConversionFactor() {
+        return conversionFactor;
+    }
+
+    public void setConversionFactor(String conversionFactor) {
+        this.conversionFactor = conversionFactor;
+    }
+
+
+    public Long getLineId() {
+        return lineId;
+    }
+
+    public void setLineId(Long lineId) {
+        this.lineId = lineId;
+    }
+
 }

@@ -8,6 +8,11 @@ import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.warehouse.item.entity.Item;
 import com.gestiva.warehouse.item.repository.ItemRepository;
 import com.gestiva.warehouse.item.repository.ItemUomRepository;
+import com.gestiva.purchasing.order.repository.PurchaseOrderLineRepository;
+import com.gestiva.purchasing.receipt.repository.GoodsReceiptLineRepository;
+import com.gestiva.purchasing.invoice.repository.SupplierInvoiceLineRepository;
+import com.gestiva.sales.order.repository.SalesOrderLineRepository;
+import com.gestiva.sales.quote.repository.QuoteLineRepository;
 import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,6 +35,11 @@ public class ItemWebService {
     private final InventoryMovementRepository inventoryMovementRepository;
     private final UnitOfMeasureRepository unitOfMeasureRepository;
     private final ItemUomRepository itemUomRepository;
+    private final PurchaseOrderLineRepository purchaseOrderLineRepository;
+    private final GoodsReceiptLineRepository goodsReceiptLineRepository;
+    private final SupplierInvoiceLineRepository supplierInvoiceLineRepository;
+    private final SalesOrderLineRepository salesOrderLineRepository;
+    private final QuoteLineRepository quoteLineRepository;
 
 
 
@@ -37,12 +47,22 @@ public class ItemWebService {
             ItemRepository itemRepository,
             InventoryMovementRepository inventoryMovementRepository,
             UnitOfMeasureRepository unitOfMeasureRepository,
-            ItemUomRepository itemUomRepository) {
+            ItemUomRepository itemUomRepository,
+            PurchaseOrderLineRepository purchaseOrderLineRepository,
+            GoodsReceiptLineRepository goodsReceiptLineRepository,
+            SupplierInvoiceLineRepository supplierInvoiceLineRepository,
+            SalesOrderLineRepository salesOrderLineRepository,
+            QuoteLineRepository quoteLineRepository) {
 
         this.itemRepository = itemRepository;
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.unitOfMeasureRepository = unitOfMeasureRepository;
         this.itemUomRepository = itemUomRepository;
+        this.purchaseOrderLineRepository = purchaseOrderLineRepository;
+        this.goodsReceiptLineRepository = goodsReceiptLineRepository;
+        this.supplierInvoiceLineRepository = supplierInvoiceLineRepository;
+        this.salesOrderLineRepository = salesOrderLineRepository;
+        this.quoteLineRepository = quoteLineRepository;
     }
     @Transactional(readOnly = true)
     public List<ItemListItemView> findAll(Long tenantId) {
@@ -74,6 +94,11 @@ public class ItemWebService {
         form.setActive(item.isActive());
         form.setTrackStock(item.isTrackStock());
         form.setBasePrice(PdfFormatUtils.formatDecimal(item.getBasePrice(),2));
+        form.setPurchasePrice(
+                item.getPurchasePrice() == null
+                        ? ""
+                        : PdfFormatUtils.formatDecimal(item.getPurchasePrice(), 2)
+        );
         form.setDefaultTaxPct(PdfFormatUtils.formatDecimal(item.getDefaultTaxPct(),0));
         return form;
     }
@@ -188,6 +213,31 @@ public class ItemWebService {
             );
         }
 
+
+        if (currentBaseUom != null && baseUomChanged) {
+            Long tenantId = item.getTenantId();
+            Long itemId = item.getId();
+
+            boolean usedInDocuments =
+                    purchaseOrderLineRepository.existsByTenantIdAndItemId(
+                            tenantId, itemId)
+                    || goodsReceiptLineRepository.existsByTenantIdAndItemId(
+                            tenantId, itemId)
+                    || supplierInvoiceLineRepository.existsByTenantIdAndItemId(
+                            tenantId, itemId)
+                    || salesOrderLineRepository.existsByTenantIdAndItemId(
+                            tenantId, itemId)
+                    || quoteLineRepository.existsByTenantIdAndItemId(
+                            tenantId, itemId);
+
+            if (usedInDocuments) {
+                throw new BusinessException(
+                        "Non è possibile modificare l'unità di misura base "
+                                + "di un articolo già utilizzato in documenti gestionali."
+                );
+            }
+        }
+
         item.setBaseUom(baseUom);
 
         item.setActive(form.isActive());
@@ -198,6 +248,29 @@ public class ItemWebService {
                         "base price"
                 )
         );
+
+        String purchasePriceInput = form.getPurchasePrice();
+
+        if (purchasePriceInput == null || purchasePriceInput.trim().isEmpty()) {
+            item.setPurchasePrice(null);
+        } else {
+            BigDecimal purchasePrice = NumberInputUtils.parseDecimal(
+                    purchasePriceInput,
+                    "Prezzo di acquisto"
+            );
+
+            if (purchasePrice == null
+                    || purchasePrice.signum() < 0
+                    || purchasePrice.scale() > 2
+                    || purchasePrice.precision() - purchasePrice.scale() > 13) {
+                throw new BusinessException(
+                        "Il prezzo di acquisto deve essere non negativo, "
+                                + "con massimo 13 cifre intere e 2 decimali."
+                );
+            }
+
+            item.setPurchasePrice(purchasePrice);
+        }
 
         item.setDefaultTaxPct(
                 NumberInputUtils.parseDecimal(
@@ -237,6 +310,11 @@ public class ItemWebService {
         v.setTrackStock(item.isTrackStock());
         v.setStockManaged(item.isTrackStock());
         v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatDecimal(item.getBasePrice(),2) : "-");
+        v.setFormattedPurchasePrice(
+                item.getPurchasePrice() != null
+                        ? PdfFormatUtils.formatDecimal(item.getPurchasePrice(), 2) + " €"
+                        : "Non impostato"
+        );
         v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimal(item.getDefaultTaxPct(),0) + "%" : "-");
         if (item.isTrackStock()) {
             var currentStock = inventoryMovementRepository.calculateInventoryBalance(item.getTenantId(), item.getId());
@@ -279,6 +357,7 @@ public class ItemWebService {
         view.setUnitOfMeasure(item.getBaseUom().getCode());
         view.setItemType(item.getItemType().toString());
         view.setBasePrice(item.getBasePrice());
+        view.setPurchasePrice(item.getPurchasePrice());
         view.setDefaultTaxPct(item.getDefaultTaxPct());
         return view;
     }

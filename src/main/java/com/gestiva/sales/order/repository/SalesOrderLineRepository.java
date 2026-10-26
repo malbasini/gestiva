@@ -40,4 +40,6 @@ public interface SalesOrderLineRepository
             Long companyId,
             Long itemId
     );
+
+    boolean existsByTenantIdAndItemId(Long tenantId, Long itemId);
 }

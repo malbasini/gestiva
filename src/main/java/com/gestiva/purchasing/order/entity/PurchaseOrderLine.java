@@ -22,6 +22,13 @@ public class PurchaseOrderLine extends TenantAwareEntity {
 
     @Column(name = "item_id")
     private Long itemId;
+    
+    @Column(name = "uom_id")
+    private Long uomId;
+
+    @Column(name = "conversion_factor", precision = 19, scale = 6)
+    private BigDecimal conversionFactor;
+
 
     @Column(name = "description", nullable = false, length = 500)
     private String description;
@@ -134,4 +141,21 @@ public class PurchaseOrderLine extends TenantAwareEntity {
     public void setLineTotal(BigDecimal lineTotal) {
         this.lineTotal = lineTotal;
     }
+
+    public Long getUomId() {
+        return uomId;
+    }
+
+    public void setUomId(Long uomId) {
+        this.uomId = uomId;
+    }
+
+    public BigDecimal getConversionFactor() {
+        return conversionFactor;
+    }
+
+    public void setConversionFactor(BigDecimal conversionFactor) {
+        this.conversionFactor = conversionFactor;
+    }
+
 }

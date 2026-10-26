@@ -62,8 +62,14 @@
 
         <div class="info-grid">
           <div class="info-box">
-            <div class="label">Prezzo base</div>
-            <div class="value" th:text="${item.formattedBasePrice}">100,00 €</div>
+            <div class="label">Prezzo di acquisto</div>
+            <div class="value"
+                 th:text="${item.formattedPurchasePrice}">Non impostato</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Prezzo di vendita</div>
+            <div class="value"
+                 th:text="${item.formattedBasePrice}">100,00</div>
           </div>
           <div class="info-box">
             <div class="label">IVA standard</div>
@@ -73,17 +79,108 @@
             <div class="label">Stato</div>
             <div class="value" th:text="${item.active ? 'ACTIVE' : 'INACTIVE'}">ACTIVE</div>
           </div>
-          <div class="info-box">
-            <div class="label">Categoria logica</div>
-            <div class="value" th:text="${item.itemType == 'PRODUCT' ? 'Articolo di magazzino' : 'Servizio'}">Articolo di magazzino</div>
-          </div>
+
         </div>
 
         <div class="info-grid">
           <div class="info-box">
+            <div class="label">Categoria logica</div>
+            <div class="value"
+                 th:text="${item.itemType == 'PRODUCT' ? 'Articolo di magazzino' : 'Servizio'}">
+              Articolo di magazzino
+            </div>
+          </div>
+          <div class="info-box">
             <div class="label">Giacenza attuale</div>
             <div class="value" th:text="${item.formattedStockBalance + ' ' + item.unitOfMeasure}">0,000 pz</div>
           </div>
+        </div>
+
+        <!-- Unità di misura alternative -->
+        <div class="page-header" style="margin-top: 28px;">
+          <div class="page-header-left">
+            <h2 class="section-title" style="margin:0;">
+              Unità di misura alternative
+            </h2>
+            <div class="muted">
+              Conversioni specifiche per questo articolo.
+            </div>
+          </div>
+
+          <div class="page-header-right">
+            <a class="btn btn-outline-primary"
+               th:href="@{/items/{id}/uoms/new(id=${item.id})}">
+              <i class="bi bi-plus-circle"></i>
+              <span>Aggiungi unità alternativa</span>
+            </a>
+          </div>
+        </div>
+
+        <table class="table">
+          <thead>
+          <tr>
+            <th>Unità alternativa</th>
+            <th>Conversione</th>
+            <th>Acquisti</th>
+            <th>Vendite</th>
+            <th>Stato</th>
+          </tr>
+          </thead>
+
+          <tbody>
+
+          <tr th:if="${#lists.isEmpty(alternativeUoms)}">
+            <td colspan="5" class="muted">
+              Nessuna unità alternativa configurata.
+            </td>
+          </tr>
+
+          <tr th:each="alternative : ${alternativeUoms}">
+
+            <td>
+              <strong th:text="${alternative.uom.code}">
+                BOX
+              </strong>
+              <span class="muted"
+                    th:text="${alternative.uom.name}">
+                Scatola
+              </span>
+            </td>
+
+            <td>
+              <span>1</span>
+              <span th:text="${alternative.uom.code}">BOX</span>
+              <span>=</span>
+              <strong th:text="${alternative.conversionFactor.stripTrailingZeros().toPlainString().replace('.', ',')}">
+                10
+              </strong>
+              <span th:text="${item.unitOfMeasure}">pz</span>
+            </td>
+
+            <td th:text="${alternative.purchaseUom ? 'Sì' : 'No'}">
+              Sì
+            </td>
+
+            <td th:text="${alternative.salesUom ? 'Sì' : 'No'}">
+              Sì
+            </td>
+
+            <td>
+              <span class="badge"
+                    th:classappend="${alternative.active} ? ' badge-active' : ' badge-cancelled'"
+                    th:text="${alternative.active} ? 'Attiva' : 'Inattiva'">
+                Attiva
+              </span>
+            </td>
+
+          </tr>
+
+          </tbody>
+        </table>
+
+        <div class="muted" style="margin-top: 12px;">
+          Le giacenze di magazzino restano espresse
+          nell'unità di misura base dell'articolo.
         </div>
 
         <div class="page-header" style="margin-top: 28px;" th:if="${item.stockManaged}">

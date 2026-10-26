@@ -103,6 +103,16 @@
             </div>
 
             <div class="line-grid-row" th:each="line, stat : *{lines}">
+              <!-- Identificativo persistente della riga ordine -->
+              <input type="hidden"
+                     th:field="*{lines[__${stat.index}__].lineId}"/>
+              <!-- Unità commerciale e fattore storico.
+                   Il backend non deve fidarsi del fattore inviato. -->
+              <input type="hidden"
+                     th:field="*{lines[__${stat.index}__].uomId}"/>
+              <input type="hidden"
+                     th:field="*{lines[__${stat.index}__].conversionFactor}"/>
+
               <div class="line-col-num" th:text="${stat.index + 1}">1</div>
 
               <div class="line-col-description">
@@ -220,7 +230,7 @@
       }
 
       if (unitPriceInput) {
-        unitPriceInput.value = item.basePrice != null ? item.basePrice : 0;
+        unitPriceInput.value = item.purchasePrice != null ? item.purchasePrice : '';
       }
 
       if (taxPctInput) {

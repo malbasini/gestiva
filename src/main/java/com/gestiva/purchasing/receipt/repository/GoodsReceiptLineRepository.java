@@ -20,4 +20,14 @@ public interface GoodsReceiptLineRepository extends JpaRepository<GoodsReceiptLi
                                                                            @Param("id") Long id);
 
     List<GoodsReceiptLine> findByTenantIdAndGoodsReceipt_Id(Long tenantId, Long id);
+
+    boolean existsByTenantIdAndItemId(Long tenantId, Long itemId);
+
+    // Gestiva V2 - Protezione delle righe degli ordini fornitori
+    // già collegate a documenti di ricevimento merci.
+    boolean existsByTenantIdAndPurchaseOrderLineId(
+            Long tenantId,
+            Long purchaseOrderLineId
+    );
+
 }

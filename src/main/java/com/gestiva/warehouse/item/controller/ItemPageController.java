@@ -9,6 +9,7 @@ import com.gestiva.warehouse.item.web.ItemForm;
 import com.gestiva.warehouse.item.web.ItemWebService;
 import com.gestiva.warehouse.uom.repository.UnitOfMeasureRepository;
 import com.gestiva.warehouse.item.repository.ItemRepository;
+import com.gestiva.warehouse.item.repository.ItemUomRepository;
 import com.gestiva.warehouse.uom.entity.UnitOfMeasure;
 import com.gestiva.common.exception.NotFoundException;
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ public class ItemPageController {
     private final ItemMovementWebService itemMovementWebService;
     private final UnitOfMeasureRepository unitOfMeasureRepository;
     private final ItemRepository itemRepository;
+    private final ItemUomRepository itemUomRepository;
 
 
     public ItemPageController(ItemWebService itemWebService,
@@ -39,7 +41,8 @@ public class ItemPageController {
                               InventoryValuationWebService inventoryValuationWebService,
                               ItemMovementWebService itemMovementWebService,
                               UnitOfMeasureRepository unitOfMeasureRepository,
-                              ItemRepository itemRepository) {
+                              ItemRepository itemRepository,
+                              ItemUomRepository itemUomRepository) {
 
         this.itemWebService = itemWebService;
         this.tenantContext = tenantContext;
@@ -48,6 +51,7 @@ public class ItemPageController {
         this.itemMovementWebService = itemMovementWebService;
         this.unitOfMeasureRepository = unitOfMeasureRepository;
         this.itemRepository = itemRepository;
+        this.itemUomRepository = itemUomRepository;
     }
 
     @GetMapping
@@ -73,6 +77,12 @@ public class ItemPageController {
         Long tenantId = tenantContext.getCurrentTenantId();
         var item = itemWebService.getDetail(tenantId, id);
         model.addAttribute("item", item);
+        model.addAttribute(
+                "alternativeUoms",
+                itemUomRepository.findByTenantIdAndItemIdOrderByIdAsc(
+                        tenantId, id
+                )
+        );
         model.addAttribute("recentMovements", itemMovementWebService.findRecentMovements(tenantId, id));
         model.addAttribute("activeMenu", "items");
         return "warehouse/item/item-detail";

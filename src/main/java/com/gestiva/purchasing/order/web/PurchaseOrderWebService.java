@@ -8,9 +8,11 @@ import com.gestiva.purchasing.order.entity.PurchaseOrder;
 import com.gestiva.purchasing.order.entity.PurchaseOrderLine;
 import com.gestiva.purchasing.order.repository.PurchaseOrderLineRepository;
 import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
+import com.gestiva.purchasing.receipt.repository.GoodsReceiptLineRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
 import com.gestiva.purchasing.supplier.repository.SupplierRepository;
 import com.gestiva.warehouse.item.repository.ItemRepository;
+import com.gestiva.warehouse.item.repository.ItemUomRepository;
 import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import com.gestiva.security.company.context.CompanyContext;
 import jakarta.persistence.criteria.Join;
@@ -36,7 +38,9 @@ public class PurchaseOrderWebService {
     private final PurchaseOrderLineRepository purchaseOrderLineRepository;
     private final SupplierRepository supplierRepository;
     private final ItemRepository itemRepository;
+    private final ItemUomRepository itemUomRepository;
     private final GoodsReceiptRepository goodsReceiptRepository;
+    private final GoodsReceiptLineRepository goodsReceiptLineRepository;
     private final DocumentSequenceService documentSequenceService;
     private final CompanyContext companyContext;
 
@@ -46,7 +50,9 @@ public class PurchaseOrderWebService {
                                    PurchaseOrderLineRepository purchaseOrderLineRepository,
                                    SupplierRepository supplierRepository,
                                    ItemRepository itemRepository,
+                                   ItemUomRepository itemUomRepository,
                                    GoodsReceiptRepository goodsReceiptRepository,
+                                   GoodsReceiptLineRepository goodsReceiptLineRepository,
                                    DocumentSequenceService documentSequenceService,
                                    CompanyContext companyContext) {
 
@@ -54,7 +60,9 @@ public class PurchaseOrderWebService {
         this.purchaseOrderLineRepository = purchaseOrderLineRepository;
         this.supplierRepository = supplierRepository;
         this.itemRepository = itemRepository;
+        this.itemUomRepository = itemUomRepository;
         this.goodsReceiptRepository = goodsReceiptRepository;
+        this.goodsReceiptLineRepository = goodsReceiptLineRepository;
         this.documentSequenceService = documentSequenceService;
         this.companyContext = companyContext;
     }
@@ -173,6 +181,19 @@ public class PurchaseOrderWebService {
 
         for (var line : lines) {
             PurchaseOrderLineForm lf = new PurchaseOrderLineForm();
+
+            // Identificativo della riga originale.
+            lf.setLineId(line.getId());
+
+            // Unità commerciale e fattore storico.
+            // Nessun ricalcolo dall'anagrafica articolo.
+            lf.setUomId(line.getUomId());
+            lf.setConversionFactor(
+                    line.getConversionFactor() != null
+                            ? line.getConversionFactor().toPlainString()
+                            : null
+            );
+
             lf.setItemId(line.getItemId());
             lf.setDescription(line.getDescription());
             lf.setQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),3));
@@ -301,6 +322,7 @@ public class PurchaseOrderWebService {
         Long companyId = companyContext.resolveCurrentCompanyId();
 
         validateLines(form.getLines());
+        validateNewLineIds(form.getLines());
         validateHeader(tenantId, companyId, form);
 
         String orderNumber = nextOrderNumber(tenantId, companyId);
@@ -325,7 +347,7 @@ public class PurchaseOrderWebService {
     public void update(Long tenantId, Long id, PurchaseOrderForm form) {
         Long companyId = companyContext.resolveCurrentCompanyId();
 
-        var po = purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
+        var po = purchaseOrderRepository.findLockedByTenantIdAndCompanyIdAndId(
                         tenantId,
                         companyId,
                         id
@@ -337,6 +359,14 @@ public class PurchaseOrderWebService {
         }
 
         validateLines(form.getLines());
+
+        // Verifiche preventive sugli identificativi persistenti.
+        validateExistingLineIds(tenantId, id, form.getLines());
+
+        // Protezione delle righe già collegate a ricevimenti merci.
+        validateRemovedLines(tenantId, id, form.getLines());
+        validateReceivedLinesUnchanged(tenantId, id, form.getLines());
+
         validateHeader(tenantId, po.getCompanyId(), form);
         applyHeader(po, form);
 
@@ -346,7 +376,13 @@ public class PurchaseOrderWebService {
         po.setTotalAmount(totals.total());
 
         purchaseOrderRepository.save(po);
-        purchaseOrderLineRepository.deleteByTenantIdAndPurchaseOrderId(tenantId, id);
+
+        // Elimina soltanto le righe rimosse dal form.
+        // Le righe collegate a ricevimenti merci sono protette.
+        deleteRemovedLines(tenantId, id, form.getLines());
+
+        // Aggiorna le righe esistenti mantenendo gli ID.
+        // Inserisce le righe nuove con nuovi identificativi.
         saveLines(tenantId, id, form.getLines());
     }
 
@@ -374,20 +410,573 @@ public class PurchaseOrderWebService {
         po.setNotes(form.getNotes());
     }
 
-    private void saveLines(Long tenantId, Long purchaseOrderId, List<PurchaseOrderLineForm> lines) {
+
+    /**
+     * Verifica che ogni identificativo di riga ricevuto dal form
+     * appartenga all'ordine corrente e non sia duplicato.
+     *
+     * Le righe nuove hanno lineId null.
+     */
+    /**
+     * In fase di creazione tutte le righe devono essere nuove.
+     * Un identificativo persistente non può provenire dal browser.
+     */
+    private void validateNewLineIds(
+            List<PurchaseOrderLineForm> lines
+    ) {
+        for (PurchaseOrderLineForm line : lines) {
+            if (line.getLineId() != null) {
+                throw new BusinessException(
+                        "Una nuova riga ordine non può avere "
+                        + "un identificativo preesistente."
+                );
+            }
+        }
+    }
+
+    private void validateExistingLineIds(
+            Long tenantId,
+            Long purchaseOrderId,
+            List<PurchaseOrderLineForm> lines
+    ) {
+        java.util.Set<Long> seenIds = new java.util.HashSet<>();
+
+        for (PurchaseOrderLineForm lineForm : lines) {
+            Long lineId = lineForm.getLineId();
+
+            if (lineId == null) {
+                continue;
+            }
+
+            if (!seenIds.add(lineId)) {
+                throw new BusinessException(
+                        "La stessa riga dell'ordine è presente più volte."
+                );
+            }
+
+            purchaseOrderLineRepository
+                    .findByTenantIdAndPurchaseOrderIdAndId(
+                            tenantId,
+                            purchaseOrderId,
+                            lineId
+                    )
+                    .orElseThrow(() -> new BusinessException(
+                            "Riga ordine non valida per il documento corrente."
+                    ));
+        }
+    }
+
+
+    /**
+     * Impedisce la rimozione di righe di ordine già referenziate
+     * da un ricevimento merci.
+     *
+     * Il metodo non modifica alcun documento.
+     */
+    private void validateRemovedLines(
+            Long tenantId,
+            Long purchaseOrderId,
+            List<PurchaseOrderLineForm> submittedLines
+    ) {
+        java.util.Set<Long> submittedIds = new java.util.HashSet<>();
+
+        for (PurchaseOrderLineForm submitted : submittedLines) {
+            if (submitted.getLineId() != null) {
+                submittedIds.add(submitted.getLineId());
+            }
+        }
+
+        List<PurchaseOrderLine> originalLines =
+                purchaseOrderLineRepository
+                        .findByTenantIdAndPurchaseOrderIdOrderByLineNoAsc(
+                                tenantId,
+                                purchaseOrderId
+                        );
+
+        for (PurchaseOrderLine originalLine : originalLines) {
+            if (submittedIds.contains(originalLine.getId())) {
+                continue;
+            }
+
+            if (goodsReceiptLineRepository.existsByTenantIdAndPurchaseOrderLineId(
+                    tenantId,
+                    originalLine.getId()
+            )) {
+                throw new BusinessException(
+                        "Impossibile eliminare una riga già collegata "
+                        + "a un ricevimento merci."
+                );
+            }
+        }
+    }
+
+
+    /**
+     * Protegge le righe già collegate a ricevimenti merci.
+     *
+     * Una riga ricevuta può essere ripresentata dal form
+     * soltanto se tutti i suoi dati documentali sono invariati.
+     *
+     * Il fattore storico viene confrontato con quello persistito:
+     * il valore inviato dal browser non è una fonte attendibile
+     * per i successivi salvataggi.
+     */
+    private void validateReceivedLinesUnchanged(
+            Long tenantId,
+            Long purchaseOrderId,
+            List<PurchaseOrderLineForm> submittedLines
+    ) {
+        for (PurchaseOrderLineForm submitted : submittedLines) {
+            Long lineId = submitted.getLineId();
+
+            if (lineId == null) {
+                continue;
+            }
+
+            PurchaseOrderLine original =
+                    purchaseOrderLineRepository
+                            .findByTenantIdAndPurchaseOrderIdAndId(
+                                    tenantId,
+                                    purchaseOrderId,
+                                    lineId
+                            )
+                            .orElseThrow(() -> new BusinessException(
+                                    "Riga ordine non valida."
+                            ));
+
+            if (!goodsReceiptLineRepository
+                    .existsByTenantIdAndPurchaseOrderLineId(
+                            tenantId,
+                            lineId
+                    )) {
+                continue;
+            }
+
+            boolean unchanged =
+                    java.util.Objects.equals(
+                            original.getItemId(),
+                            submitted.getItemId()
+                    )
+                    && java.util.Objects.equals(
+                            original.getDescription(),
+                            submitted.getDescription() != null
+                                    ? submitted.getDescription().trim()
+                                    : null
+                    )
+                    && original.getQuantity().compareTo(
+                            parseOrderQuantity(submitted.getQuantity())
+                    ) == 0
+                    && original.getUnitPrice().compareTo(
+                            NumberInputUtils.parseDecimal(
+                                    submitted.getUnitPrice(),
+                                    "prezzo unitario"
+                            )
+                    ) == 0
+                    && original.getDiscountPct().compareTo(
+                            NumberInputUtils.parseDecimal(
+                                    submitted.getDiscountPct(),
+                                    "sconto"
+                            )
+                    ) == 0
+                    && original.getTaxPct().compareTo(
+                            NumberInputUtils.parseDecimal(
+                                    submitted.getTaxPct(),
+                                    "IVA"
+                            )
+                    ) == 0
+                    ;
+
+            if (!unchanged) {
+                throw new BusinessException(
+                        "Impossibile modificare una riga già "
+                        + "collegata a un ricevimento merci."
+                );
+            }
+
+            // Il fattore di conversione storico è immutabile.
+            // Non viene confrontato con il valore del browser,
+            // perché dovrà essere preservato dal database
+            // durante il successivo aggiornamento della riga.
+        }
+    }
+
+    /**
+     * Salva le righe preservando gli identificativi esistenti.
+     *
+     * Per le righe già persistite, uomId e conversionFactor
+     * rimangono quelli registrati nel database.
+     *
+     * Il fattore ricevuto dal browser non viene utilizzato.
+     */
+    /**
+     * Elimina soltanto le righe non più presenti nel form.
+     *
+     * Deve essere chiamato dopo l'acquisizione del lock
+     * sull'ordine e dopo le verifiche preventive.
+     *
+     * Non elimina mai righe collegate a ricevimenti merci.
+     */
+    private void deleteRemovedLines(
+            Long tenantId,
+            Long purchaseOrderId,
+            List<PurchaseOrderLineForm> submittedLines
+    ) {
+        java.util.Set<Long> retainedIds =
+                new java.util.HashSet<>();
+
+        for (PurchaseOrderLineForm submitted : submittedLines) {
+            if (submitted.getLineId() != null) {
+                retainedIds.add(submitted.getLineId());
+            }
+        }
+
+        List<PurchaseOrderLine> originalLines =
+                purchaseOrderLineRepository
+                        .findByTenantIdAndPurchaseOrderIdOrderByLineNoAsc(
+                                tenantId,
+                                purchaseOrderId
+                        );
+
+        for (PurchaseOrderLine original : originalLines) {
+            Long originalId = original.getId();
+
+            if (retainedIds.contains(originalId)) {
+                continue;
+            }
+
+            if (goodsReceiptLineRepository
+                    .existsByTenantIdAndPurchaseOrderLineId(
+                            tenantId,
+                            originalId
+                    )) {
+                throw new BusinessException(
+                        "Impossibile eliminare una riga "
+                        + "collegata a un ricevimento merci."
+                );
+            }
+
+            long deleted =
+                    purchaseOrderLineRepository
+                            .deleteByTenantIdAndPurchaseOrderIdAndId(
+                                    tenantId,
+                                    purchaseOrderId,
+                                    originalId
+                            );
+
+            if (deleted != 1L) {
+                throw new BusinessException(
+                        "Eliminazione riga ordine non riuscita "
+                        + "in modo univoco."
+                );
+            }
+        }
+    }
+
+    /**
+     * Risolve il fattore di conversione per un'unità di acquisto.
+     *
+     * Il fattore proviene esclusivamente dal database.
+     * Non utilizzare conversionFactor ricevuto dal browser.
+     *
+     * Metodo predisposto ma non ancora collegato al salvataggio.
+     */
+    private BigDecimal resolvePurchaseConversionFactor(
+            Long tenantId,
+            Long itemId,
+            Long uomId
+    ) {
+        if (itemId == null || uomId == null) {
+            throw new BusinessException(
+                    "Articolo e unità di misura sono obbligatori."
+            );
+        }
+
+        var item = itemRepository
+                .findWithBaseUomByTenantIdAndId(tenantId, itemId)
+                .orElseThrow(() -> new BusinessException(
+                        "Articolo non trovato."
+                ));
+
+        if (!item.isActive()) {
+            throw new BusinessException(
+                    "Non è possibile acquistare un articolo inattivo."
+            );
+        }
+
+        var baseUom = item.getBaseUom();
+
+        if (baseUom == null || !baseUom.isActive()) {
+            throw new BusinessException(
+                    "Unità di misura base non disponibile."
+            );
+        }
+
+        if (baseUom.getId().equals(uomId)) {
+            return BigDecimal.ONE.setScale(6);
+        }
+
+        var alternative = itemUomRepository
+                .findByTenantIdAndItemIdAndUomId(
+                        tenantId,
+                        itemId,
+                        uomId
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "Unità alternativa non configurata per l'articolo."
+                ));
+
+        if (!alternative.isActive()) {
+            throw new BusinessException(
+                    "Unità alternativa non attiva."
+            );
+        }
+
+        if (!alternative.isPurchaseUom()) {
+            throw new BusinessException(
+                    "Unità alternativa non autorizzata per gli acquisti."
+            );
+        }
+
+        var alternativeUom = alternative.getUom();
+
+        if (alternativeUom == null || !alternativeUom.isActive()) {
+            throw new BusinessException(
+                    "Unità alternativa non disponibile."
+            );
+        }
+
+        if (baseUom.getDimension() != alternativeUom.getDimension()) {
+            throw new BusinessException(
+                    "Unità di misura con dimensione incompatibile."
+            );
+        }
+
+        BigDecimal factor = alternative.getConversionFactor();
+
+        if (factor == null
+                || factor.compareTo(BigDecimal.ZERO) <= 0
+                || factor.stripTrailingZeros().scale() > 6
+                || factor.precision() - factor.scale() > 13) {
+            throw new BusinessException(
+                    "Fattore di conversione non valido."
+            );
+        }
+
+        return factor.setScale(6, RoundingMode.UNNECESSARY);
+    }
+
+    /**
+     * Verifica che una quantità commerciale sia convertibile
+     * esattamente nella quantità base utilizzata dal magazzino.
+     *
+     * Non modifica l'ordine e non registra movimenti.
+     *
+     * Metodo predisposto ma non ancora collegato al salvataggio.
+     */
+    private BigDecimal validatePurchaseUomQuantity(
+            Long tenantId,
+            Long itemId,
+            Long uomId,
+            BigDecimal commercialQuantity,
+            BigDecimal conversionFactor
+    ) {
+        if (commercialQuantity == null
+                || commercialQuantity.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(
+                    "La quantità di acquisto deve essere positiva."
+            );
+        }
+
+        if (conversionFactor == null
+                || conversionFactor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(
+                    "Fattore di conversione non valido."
+            );
+        }
+
+        var item = itemRepository
+                .findWithBaseUomByTenantIdAndId(tenantId, itemId)
+                .orElseThrow(() -> new BusinessException(
+                        "Articolo non trovato."
+                ));
+
+        var baseUom = item.getBaseUom();
+
+        if (baseUom == null) {
+            throw new BusinessException(
+                    "Unità base dell'articolo non disponibile."
+            );
+        }
+
+        int commercialDecimalPlaces;
+
+        if (baseUom.getId().equals(uomId)) {
+            commercialDecimalPlaces = baseUom.getDecimalPlaces();
+        } else {
+            var alternative = itemUomRepository
+                    .findByTenantIdAndItemIdAndUomId(
+                            tenantId,
+                            itemId,
+                            uomId
+                    )
+                    .orElseThrow(() -> new BusinessException(
+                            "Unità alternativa non configurata."
+                    ));
+
+            commercialDecimalPlaces =
+                    alternative.getUom().getDecimalPlaces();
+        }
+
+        if (commercialQuantity.stripTrailingZeros().scale()
+                > commercialDecimalPlaces) {
+            throw new BusinessException(
+                    "La quantità non rispetta i decimali "
+                    + "dell'unità commerciale."
+            );
+        }
+
+        BigDecimal baseQuantity =
+                commercialQuantity.multiply(conversionFactor);
+
+        if (baseQuantity.stripTrailingZeros().scale()
+                > baseUom.getDecimalPlaces()) {
+            throw new BusinessException(
+                    "La quantità convertita non rispetta "
+                    + "i decimali dell'unità base."
+            );
+        }
+
+        if (baseQuantity.stripTrailingZeros().scale() > 3) {
+            throw new BusinessException(
+                    "La quantità convertita supera "
+                    + "la precisione del magazzino."
+            );
+        }
+
+        BigDecimal normalized;
+
+        try {
+            normalized = baseQuantity.setScale(
+                    3,
+                    RoundingMode.UNNECESSARY
+            );
+        } catch (ArithmeticException ex) {
+            throw new BusinessException(
+                    "La quantità convertita non è rappresentabile "
+                    + "senza arrotondamenti."
+            );
+        }
+
+        if (normalized.precision() - normalized.scale() > 12) {
+            throw new BusinessException(
+                    "La quantità convertita supera "
+                    + "la capacità del magazzino."
+            );
+        }
+
+        return normalized;
+    }
+
+    private void saveLines(
+            Long tenantId,
+            Long purchaseOrderId,
+            List<PurchaseOrderLineForm> lines
+    ) {
         int lineNo = 1;
 
-        for (var lineForm : lines) {
-            PurchaseOrderLine line = new PurchaseOrderLine();
-            line.setTenantId(tenantId);
-            line.setPurchaseOrderId(purchaseOrderId);
+        for (PurchaseOrderLineForm lineForm : lines) {
+            PurchaseOrderLine line;
+
+            if (lineForm.getLineId() == null) {
+                // Fino all'attivazione della validazione UoM server-side,
+                // una nuova riga non può introdurre snapshot dal browser.
+                if (lineForm.getUomId() != null
+                        || (lineForm.getConversionFactor() != null
+                        && !lineForm.getConversionFactor().isBlank())) {
+                    throw new BusinessException(
+                            "Unità di misura della nuova riga non ancora "
+                            + "abilitata: dati di conversione non verificati."
+                    );
+                }
+
+                line = new PurchaseOrderLine();
+                line.setTenantId(tenantId);
+                line.setPurchaseOrderId(purchaseOrderId);
+            } else {
+                line = purchaseOrderLineRepository
+                        .findByTenantIdAndPurchaseOrderIdAndId(
+                                tenantId,
+                                purchaseOrderId,
+                                lineForm.getLineId()
+                        )
+                        .orElseThrow(() -> new BusinessException(
+                                "Riga ordine non valida per il documento corrente."
+                        ));
+
+                // Una riga storica senza snapshot non può ricevere
+                // una nuova unità commerciale tramite il browser.
+                if (line.getUomId() == null
+                        && line.getConversionFactor() == null
+                        && (lineForm.getUomId() != null
+                        || (lineForm.getConversionFactor() != null
+                        && !lineForm.getConversionFactor().isBlank()))) {
+                    throw new BusinessException(
+                            "Impossibile introdurre dati di conversione "
+                            + "su una riga storica senza snapshot."
+                    );
+                }
+
+                // Uno snapshot UoM appartiene all'articolo originale.
+                // Non può essere riutilizzato per un articolo diverso.
+                if ((line.getUomId() != null
+                        || line.getConversionFactor() != null)
+                        && !java.util.Objects.equals(
+                                line.getItemId(),
+                                lineForm.getItemId()
+                        )) {
+                    throw new BusinessException(
+                            "Impossibile cambiare articolo su una riga "
+                            + "con unità di misura storica."
+                    );
+                }
+            }
+
+            // Non sovrascrivere uomId o conversionFactor:
+            // per le righe esistenti sono dati storici persistiti.
+            // Le righe nuove saranno valorizzate da una successiva
+            // validazione server-side delle unità commerciali.
+
             line.setLineNo(lineNo++);
             line.setItemId(lineForm.getItemId());
             line.setDescription(lineForm.getDescription().trim());
             line.setQuantity(parseOrderQuantity(lineForm.getQuantity()));
-            line.setUnitPrice(scale(NumberInputUtils.parseDecimal(lineForm.getUnitPrice(), "unit price"),2));
-            line.setDiscountPct(scale(NumberInputUtils.parseDecimal(lineForm.getDiscountPct(),"discount"), 2));
-            line.setTaxPct(scale(NumberInputUtils.parseDecimal(lineForm.getTaxPct(), "tax pct"),2));
+            line.setUnitPrice(
+                    scale(
+                            NumberInputUtils.parseDecimal(
+                                    lineForm.getUnitPrice(),
+                                    "unit price"
+                            ),
+                            2
+                    )
+            );
+            line.setDiscountPct(
+                    scale(
+                            NumberInputUtils.parseDecimal(
+                                    lineForm.getDiscountPct(),
+                                    "discount"
+                            ),
+                            2
+                    )
+            );
+            line.setTaxPct(
+                    scale(
+                            NumberInputUtils.parseDecimal(
+                                    lineForm.getTaxPct(),
+                                    "tax pct"
+                            ),
+                            2
+                    )
+            );
 
             LineTotals lt = calculateLineTotals(lineForm);
             line.setLineSubtotal(lt.subtotal());
