@@ -90,11 +90,12 @@
             </div>
           </div>
 
-          <div class="lines-grid">
+          <div class="lines-grid purchase-order-lines-grid">
             <div class="line-grid-header">
               <div>#</div>
               <div>Descrizione</div>
               <div>Qtà</div>
+              <div>U.M.</div>
               <div>Prezzo</div>
               <div>Sconto</div>
               <div>Articolo</div>
@@ -105,12 +106,18 @@
             <div class="line-grid-row" th:each="line, stat : *{lines}">
               <!-- Identificativo persistente della riga ordine -->
               <input type="hidden"
+                     class="js-purchase-line-id"
+                     th:attr="data-row-index=${stat.index}"
                      th:field="*{lines[__${stat.index}__].lineId}"/>
               <!-- Unità commerciale e fattore storico.
                    Il backend non deve fidarsi del fattore inviato. -->
               <input type="hidden"
+                     class="js-purchase-uom-id"
+                     th:attr="data-row-index=${stat.index}"
                      th:field="*{lines[__${stat.index}__].uomId}"/>
               <input type="hidden"
+                     class="js-purchase-conversion-factor"
+                     th:attr="data-row-index=${stat.index}"
                      th:field="*{lines[__${stat.index}__].conversionFactor}"/>
 
               <div class="line-col-num" th:text="${stat.index + 1}">1</div>
@@ -136,6 +143,17 @@
                      th:errors="*{lines[__${stat.index}__].quantity}">
                   Errore quantità
                 </div>
+              </div>
+
+              <!-- Selettore visuale UoM: non invia dati al backend.
+                   Il collegamento all'API sarà attivato successivamente. -->
+              <div>
+                <select class="form-select js-purchase-uom-select"
+                        th:attr="data-row-index=${stat.index}"
+                        aria-label="Unità di misura acquisto"
+                        disabled>
+                  <option value="">-- U.M. --</option>
+                </select>
               </div>
 
               <div>
@@ -238,33 +256,372 @@
       }
     }
 
-    selects.forEach(function (select) {
-      select.addEventListener('change', function () {
-        const itemId = this.value;
-        const rowIndex = this.dataset.rowIndex;
+    // Moltiplicazione decimale esatta, senza floating-point.
+    // Restituisce null se il prezzo non è rappresentabile a 2 decimali.
+    function multiplyPurchasePriceExact(price, factor) {
+      if (price == null || factor == null) {
+        return null;
+      }
 
-        if (!itemId) {
+      function parseDecimalExact(value, maxDecimals) {
+        const text = String(value).trim();
+
+        if (!/^[0-9]+(?:\.[0-9]+)?$/.test(text)) {
+          return null;
+        }
+
+        const parts = text.split('.');
+        const decimals = parts.length === 2 ? parts[1] : '';
+
+        if (decimals.length > maxDecimals) {
+          return null;
+        }
+
+        return {
+          integer: BigInt(parts[0] + decimals),
+          scale: decimals.length
+        };
+      }
+
+      const parsedPrice = parseDecimalExact(price, 2);
+      const parsedFactor = parseDecimalExact(factor, 6);
+
+      if (!parsedPrice || !parsedFactor ||
+          parsedFactor.integer <= 0n) {
+        return null;
+      }
+
+      const product =
+        parsedPrice.integer * parsedFactor.integer;
+
+      const combinedScale =
+        parsedPrice.scale + parsedFactor.scale;
+
+      const divisor = 10n ** BigInt(combinedScale);
+      const centsNumerator = product * 100n;
+
+      // Nessun arrotondamento implicito.
+      if (centsNumerator % divisor !== 0n) {
+        return null;
+      }
+
+      const cents = centsNumerator / divisor;
+
+      // DECIMAL(15,2): massimo 13 cifre intere.
+      if (cents > 999999999999999n) {
+        return null;
+      }
+
+      const whole = cents / 100n;
+      const fractional = (cents % 100n)
+        .toString()
+        .padStart(2, '0');
+
+      return whole.toString() + '.' + fractional;
+    }
+
+    function configurePurchaseUom(rowIndex, item) {
+      const lineId = findRowField('.js-purchase-line-id', rowIndex);
+      const uomId = findRowField('.js-purchase-uom-id', rowIndex);
+      const factor = findRowField('.js-purchase-conversion-factor', rowIndex);
+      const selector = findRowField('.js-purchase-uom-select', rowIndex);
+
+      if (!lineId || !uomId || !factor || !selector) {
+        return;
+      }
+
+      selector.replaceChildren();
+      selector.add(new Option('-- U.M. --', ''));
+      selector.disabled = true;
+
+      // Le righe persistenti conservano sempre lo snapshot storico.
+      if (lineId.value.trim() !== '') {
+        if (uomId.value.trim() !== '') {
+          selector.add(new Option(
+            'U.M. storica (ID ' + uomId.value + ')',
+            uomId.value
+          ));
+          selector.value = uomId.value;
+        }
+        return;
+      }
+
+      // Il fattore non viene mai scritto dal browser.
+      // Il backend lo determina per ogni nuova riga.
+      if (factor.value.trim() !== '') {
+        return;
+      }
+
+      const options = Array.isArray(item.purchaseUomOptions)
+        ? item.purchaseUomOptions
+        : [];
+
+      options.forEach(function (option) {
+        if (option.uomId == null || !option.code) {
+          return;
+        }
+        selector.add(new Option(option.code, String(option.uomId)));
+      });
+
+      const existing = uomId.value.trim();
+      const validExisting = Array.from(selector.options).some(function (option) {
+        return option.value !== '' && option.value === existing;
+      });
+
+      if (existing !== '' && !validExisting) {
+        // Conserva il valore originale: non cancellare dati silenziosamente.
+        selector.add(new Option(
+          'U.M. non disponibile (ID ' + existing + ')',
+          existing
+        ));
+        selector.value = existing;
+        selector.disabled = true;
+        selector.title =
+          'Unità di misura non più disponibile. Verificare la riga prima di salvare.';
+        return;
+      }
+
+      selector.value = validExisting ? existing : '';
+      selector.disabled = options.length === 0;
+      selector.title = '';
+    }
+
+    selects.forEach(function (select) {
+      const rowIndex = select.dataset.rowIndex;
+      const lineId = findRowField('.js-purchase-line-id', rowIndex);
+      const uomId = findRowField('.js-purchase-uom-id', rowIndex);
+      const factor = findRowField('.js-purchase-conversion-factor', rowIndex);
+      const uomSelector = findRowField('.js-purchase-uom-select', rowIndex);
+
+      if (uomSelector && lineId && uomId && factor) {
+        uomSelector.addEventListener('change', function () {
+          if (lineId.value.trim() !== '' ||
+              factor.value.trim() !== '') {
+            return;
+          }
+          uomId.value = this.value;
+          proposePurchaseUomPrice();
+        });
+      }
+
+      let requestVersion = 0;
+      let currentPurchaseItem = null;
+
+      function proposePurchaseUomPrice() {
+        const priceInput = findRowField('.js-line-unit-price', rowIndex);
+
+        if (!priceInput || !lineId || !uomId || !factor ||
+            !uomSelector || lineId.value.trim() !== '' ||
+            factor.value.trim() !== '') {
           return;
         }
 
-        fetch('/api/items/' + itemId + '/autocomplete', {
+        priceInput.title = '';
+
+        if (!currentPurchaseItem ||
+            currentPurchaseItem.purchasePrice == null ||
+            uomId.value.trim() === '') {
+          priceInput.value = '';
+          return;
+        }
+
+        const options = Array.isArray(currentPurchaseItem.purchaseUomOptions)
+          ? currentPurchaseItem.purchaseUomOptions
+          : [];
+
+        const selectedOption = options.find(function (option) {
+          return String(option.uomId) === uomId.value;
+        });
+
+        if (!selectedOption || selectedOption.conversionFactor == null) {
+          priceInput.value = '';
+          priceInput.title =
+            'Unità di misura non valida: prezzo non proposto.';
+          return;
+        }
+
+        const convertedPrice = multiplyPurchasePriceExact(
+          currentPurchaseItem.purchasePrice,
+          selectedOption.conversionFactor
+        );
+
+        if (convertedPrice === null) {
+          priceInput.value = '';
+          priceInput.title =
+            'Conversione non rappresentabile esattamente a 2 decimali.';
+          return;
+        }
+
+        priceInput.value = convertedPrice;
+      }
+
+      function loadItemData(updateCommercialFields) {
+        const itemId = select.value;
+        const currentVersion = ++requestVersion;
+        currentPurchaseItem = null;
+
+        // Invalida la UoM precedente solo per una nuova riga
+        // quando l'articolo viene cambiato esplicitamente.
+        if (updateCommercialFields &&
+            lineId && uomId && factor &&
+            lineId.value.trim() === '' &&
+            factor.value.trim() === '') {
+          uomId.value = '';
+        }
+
+        // Solo un cambio esplicito dell'articolo può invalidare
+        // il prezzo precedente. Il ripristino non modifica il prezzo.
+        if (updateCommercialFields &&
+            lineId && lineId.value.trim() === '') {
+          const priceInput =
+            findRowField('.js-line-unit-price', rowIndex);
+
+          if (priceInput) {
+            priceInput.value = '';
+            priceInput.title =
+              'In attesa dei dati di acquisto dell’articolo.';
+          }
+        }
+
+        if (uomSelector) {
+          uomSelector.replaceChildren();
+          uomSelector.add(new Option('-- U.M. --', ''));
+          uomSelector.disabled = true;
+          uomSelector.title = '';
+        }
+
+        if (!itemId) {
+          if (lineId && uomId &&
+              lineId.value.trim() === '') {
+            uomId.value = '';
+          }
+
+          if (updateCommercialFields &&
+              lineId && lineId.value.trim() === '') {
+            const priceInput =
+              findRowField('.js-line-unit-price', rowIndex);
+
+            if (priceInput) {
+              priceInput.title = '';
+            }
+          }
+
+          return;
+        }
+
+        fetch('/api/items/' + encodeURIComponent(itemId) + '/autocomplete', {
           headers: {
             'X-Requested-With': 'XMLHttpRequest'
           }
         })
-                .then(function (response) {
-                  if (!response.ok) {
-                    throw new Error('Errore nel recupero dati articolo');
-                  }
-                  return response.json();
-                })
-                .then(function (item) {
-                  fillRowFromItem(rowIndex, item);
-                })
-                .catch(function (error) {
-                  console.error(error);
+          .then(function (response) {
+            if (!response.ok) {
+              throw new Error('Errore nel recupero dati articolo');
+            }
+            return response.json();
+          })
+          .then(function (item) {
+            if (currentVersion !== requestVersion ||
+                select.value !== itemId) {
+              return;
+            }
+
+            currentPurchaseItem = item;
+
+            if (updateCommercialFields) {
+              fillRowFromItem(rowIndex, item);
+            }
+
+            configurePurchaseUom(rowIndex, item);
+
+            if (updateCommercialFields &&
+                lineId && uomId && factor && uomSelector &&
+                lineId.value.trim() === '' &&
+                factor.value.trim() === '' &&
+                uomId.value.trim() === '' &&
+                item.baseUomId != null &&
+                !uomSelector.disabled) {
+
+              const baseUomId = String(item.baseUomId);
+
+              const baseOption = Array.from(uomSelector.options)
+                .find(function (option) {
+                  return option.value === baseUomId;
                 });
+
+              if (baseOption) {
+                uomSelector.value = baseUomId;
+                uomId.value = baseUomId;
+              }
+            }
+
+            if (updateCommercialFields) {
+              proposePurchaseUomPrice();
+            }
+          })
+          .catch(function (error) {
+            if (currentVersion !== requestVersion ||
+                select.value !== itemId) {
+              return;
+            }
+
+            console.error(error);
+
+            // Il ripristino non deve cancellare dati commerciali.
+            // Per un cambio esplicito, il prezzo è già stato
+            // invalidato prima della richiesta.
+            if (updateCommercialFields &&
+                lineId && lineId.value.trim() === '') {
+              const priceInput =
+                findRowField('.js-line-unit-price', rowIndex);
+
+              if (priceInput) {
+                priceInput.value = '';
+                priceInput.title =
+                  'Impossibile caricare i dati di acquisto dell’articolo.';
+              }
+            }
+
+            if (uomSelector) {
+              uomSelector.disabled = true;
+              uomSelector.title =
+                'Caricamento unità di misura non riuscito.';
+            }
+          });
+      }
+
+      const historicalItemId = select.value;
+      const hasHistoricalUomSnapshot =
+        lineId && uomId && factor &&
+        lineId.value.trim() !== '' &&
+        (uomId.value.trim() !== '' ||
+         factor.value.trim() !== '');
+
+      if (hasHistoricalUomSnapshot) {
+        select.title =
+          'Articolo bloccato: la riga conserva una U.M. storica.';
+      }
+
+      select.addEventListener('change', function () {
+        if (hasHistoricalUomSnapshot) {
+          // Non disabilitare il campo: itemId deve essere inviato al backend.
+          select.value = historicalItemId;
+          return;
+        }
+
+        if (lineId && uomId &&
+            lineId.value.trim() === '') {
+          uomId.value = '';
+        }
+
+        loadItemData(true);
       });
+
+      // Dopo Aggiungi riga o una validazione fallita,
+      // ripristina le opzioni senza sovrascrivere prezzi e descrizioni.
+      if (select.value) {
+        loadItemData(false);
+      }
     });
   });
 </script>

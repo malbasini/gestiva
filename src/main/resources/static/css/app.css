@@ -1129,3 +1129,40 @@ a:hover {
     display: block !important;
     width: 100% !important;
 }
+
+
+/* GESTIVA PURCHASE ORDER UOM GRID - PASSO 5.13.318 */
+@media (min-width: 1201px) {
+    .purchase-order-lines-grid .line-grid-header,
+    .purchase-order-lines-grid .line-grid-row {
+        grid-template-columns:
+            36px
+            minmax(220px, 1.8fr)
+            80px
+            90px
+            95px
+            85px
+            minmax(160px, 1.2fr)
+            75px
+            52px;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+    .purchase-order-lines-grid .line-grid-header,
+    .purchase-order-lines-grid .line-grid-row {
+        grid-template-columns:
+            36px
+            minmax(180px, 1.6fr)
+            70px
+            80px
+            85px
+            75px
+            minmax(130px, 1fr)
+            70px
+            52px;
+        gap: 10px;
+    }
+}
+
+/* Sotto 901px rimane attivo il layout responsive esistente. */

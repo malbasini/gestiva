@@ -288,6 +288,21 @@ public class PurchaseOrderWebService {
                 );
             }
 
+            // La colonna unit_price è DECIMAL(15,2):
+            // massimo 13 cifre intere, senza troncamenti.
+            BigDecimal normalizedUnitPrice = unitPrice.setScale(
+                    2,
+                    RoundingMode.UNNECESSARY
+            );
+
+            if (normalizedUnitPrice.precision()
+                    - normalizedUnitPrice.scale() > 13) {
+                throw new BusinessException(
+                    "Il prezzo unitario della riga " + lineNo
+                    + " supera la capacità massima consentita"
+                );
+            }
+
             if (discountPct.compareTo(BigDecimal.ZERO) < 0 ||
                 discountPct.compareTo(new BigDecimal("100")) > 0) {
                 throw new BusinessException(
@@ -794,6 +809,29 @@ public class PurchaseOrderWebService {
             );
         }
 
+        // La quantità commerciale deve essere rappresentabile
+        // esattamente nella colonna DECIMAL(15,3).
+        if (commercialQuantity.stripTrailingZeros().scale() > 3) {
+            throw new BusinessException(
+                    "La quantità commerciale può avere "
+                    + "al massimo 3 decimali."
+            );
+        }
+
+        BigDecimal normalizedCommercialQuantity =
+                commercialQuantity.setScale(
+                        3,
+                        RoundingMode.UNNECESSARY
+                );
+
+        if (normalizedCommercialQuantity.precision()
+                - normalizedCommercialQuantity.scale() > 12) {
+            throw new BusinessException(
+                    "La quantità commerciale supera "
+                    + "la capacità massima consentita."
+            );
+        }
+
         var item = itemRepository
                 .findWithBaseUomByTenantIdAndId(tenantId, itemId)
                 .orElseThrow(() -> new BusinessException(
@@ -877,6 +915,89 @@ public class PurchaseOrderWebService {
         return normalized;
     }
 
+    /**
+     * Verifica la quantità di una riga con snapshot UoM storico.
+     *
+     * Il fattore proviene esclusivamente dalla riga persistita.
+     * Non viene ricalcolato dalla configurazione corrente.
+     *
+     * Non modifica documenti e non registra movimenti.
+     */
+    private BigDecimal validateHistoricalPurchaseUomQuantity(
+            Long uomId,
+            BigDecimal conversionFactor,
+            BigDecimal commercialQuantity
+    ) {
+        if (uomId == null || conversionFactor == null) {
+            throw new BusinessException(
+                    "Snapshot dell'unità commerciale incompleto."
+            );
+        }
+
+        if (conversionFactor.compareTo(BigDecimal.ZERO) <= 0
+                || conversionFactor.stripTrailingZeros().scale() > 6
+                || conversionFactor.precision()
+                - conversionFactor.scale() > 13) {
+            throw new BusinessException(
+                    "Fattore di conversione storico non valido."
+            );
+        }
+
+        if (commercialQuantity == null
+                || commercialQuantity.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(
+                    "La quantità commerciale deve essere positiva."
+            );
+        }
+
+        if (commercialQuantity.stripTrailingZeros().scale() > 3) {
+            throw new BusinessException(
+                    "La quantità commerciale può avere "
+                    + "al massimo 3 decimali."
+            );
+        }
+
+        BigDecimal normalizedCommercialQuantity =
+                commercialQuantity.setScale(
+                        3,
+                        RoundingMode.UNNECESSARY
+                );
+
+        if (normalizedCommercialQuantity.precision()
+                - normalizedCommercialQuantity.scale() > 12) {
+            throw new BusinessException(
+                    "La quantità commerciale supera "
+                    + "la capacità massima consentita."
+            );
+        }
+
+        BigDecimal baseQuantity =
+                normalizedCommercialQuantity.multiply(conversionFactor);
+
+        if (baseQuantity.stripTrailingZeros().scale() > 3) {
+            throw new BusinessException(
+                    "La quantità base derivata dallo snapshot storico "
+                    + "non è rappresentabile senza arrotondamenti."
+            );
+        }
+
+        BigDecimal normalizedBaseQuantity =
+                baseQuantity.setScale(
+                        3,
+                        RoundingMode.UNNECESSARY
+                );
+
+        if (normalizedBaseQuantity.precision()
+                - normalizedBaseQuantity.scale() > 12) {
+            throw new BusinessException(
+                    "La quantità base supera "
+                    + "la capacità massima del magazzino."
+            );
+        }
+
+        return normalizedBaseQuantity;
+    }
+
     private void saveLines(
             Long tenantId,
             Long purchaseOrderId,
@@ -888,20 +1009,46 @@ public class PurchaseOrderWebService {
             PurchaseOrderLine line;
 
             if (lineForm.getLineId() == null) {
-                // Fino all'attivazione della validazione UoM server-side,
-                // una nuova riga non può introdurre snapshot dal browser.
-                if (lineForm.getUomId() != null
-                        || (lineForm.getConversionFactor() != null
-                        && !lineForm.getConversionFactor().isBlank())) {
+                // Il fattore inviato dal browser non è attendibile.
+                if (lineForm.getConversionFactor() != null
+                        && !lineForm.getConversionFactor().isBlank()) {
                     throw new BusinessException(
-                            "Unità di misura della nuova riga non ancora "
-                            + "abilitata: dati di conversione non verificati."
+                            "Il fattore di conversione non può "
+                            + "essere fornito dal browser."
                     );
                 }
 
                 line = new PurchaseOrderLine();
                 line.setTenantId(tenantId);
                 line.setPurchaseOrderId(purchaseOrderId);
+
+                if (lineForm.getUomId() != null) {
+                    if (lineForm.getItemId() == null) {
+                        throw new BusinessException(
+                                "L'unità commerciale richiede "
+                                + "un articolo selezionato."
+                        );
+                    }
+
+                    BigDecimal factor =
+                            resolvePurchaseConversionFactor(
+                                    tenantId,
+                                    lineForm.getItemId(),
+                                    lineForm.getUomId()
+                            );
+
+                    validatePurchaseUomQuantity(
+                            tenantId,
+                            lineForm.getItemId(),
+                            lineForm.getUomId(),
+                            parseOrderQuantity(lineForm.getQuantity()),
+                            factor
+                    );
+
+                    // Snapshot verificato dal backend.
+                    line.setUomId(lineForm.getUomId());
+                    line.setConversionFactor(factor);
+                }
             } else {
                 line = purchaseOrderLineRepository
                         .findByTenantIdAndPurchaseOrderIdAndId(
@@ -937,6 +1084,25 @@ public class PurchaseOrderWebService {
                     throw new BusinessException(
                             "Impossibile cambiare articolo su una riga "
                             + "con unità di misura storica."
+                    );
+                }
+
+                // Uno snapshot parziale non può essere interpretato.
+                if ((line.getUomId() == null)
+                        != (line.getConversionFactor() == null)) {
+                    throw new BusinessException(
+                            "Snapshot UoM storico incompleto: "
+                            + "modifica della riga non consentita."
+                    );
+                }
+
+                // Per uno snapshot completo utilizziamo soltanto
+                // il fattore storico persistito, mai quello del browser.
+                if (line.getUomId() != null) {
+                    validateHistoricalPurchaseUomQuantity(
+                            line.getUomId(),
+                            line.getConversionFactor(),
+                            parseOrderQuantity(lineForm.getQuantity())
                     );
                 }
             }
@@ -999,7 +1165,11 @@ public class PurchaseOrderWebService {
             total = total.add(lt.total());
         }
 
-        return new Totals(scale(subtotal, 2), scale(tax, 2), scale(total, 2));
+        return new Totals(
+                validateMonetaryCapacity(subtotal, "Subtotale ordine"),
+                validateMonetaryCapacity(tax, "IVA ordine"),
+                validateMonetaryCapacity(total, "Totale ordine")
+        );
     }
 
     private LineTotals calculateLineTotals(PurchaseOrderLineForm line) {
@@ -1014,7 +1184,51 @@ public class PurchaseOrderWebService {
         BigDecimal tax = subtotal.multiply(taxPct).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
         BigDecimal total = subtotal.add(tax).setScale(2, RoundingMode.HALF_UP);
 
-        return new LineTotals(subtotal, tax, total);
+        return new LineTotals(
+                validateMonetaryCapacity(subtotal, "Subtotale riga"),
+                validateMonetaryCapacity(tax, "IVA riga"),
+                validateMonetaryCapacity(total, "Totale riga")
+        );
+    }
+
+    /**
+     * Protegge gli importi destinati a colonne DECIMAL(15,2).
+     * Non arrotonda: rifiuta valori non rappresentabili esattamente.
+     */
+    private BigDecimal validateMonetaryCapacity(
+            BigDecimal amount,
+            String fieldName
+    ) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessException(
+                    fieldName + ": importo non valido."
+            );
+        }
+
+        BigDecimal normalized;
+
+        try {
+            normalized = amount.setScale(
+                    2,
+                    RoundingMode.UNNECESSARY
+            );
+        } catch (ArithmeticException ex) {
+            throw new BusinessException(
+                    fieldName
+                    + ": importo non rappresentabile esattamente "
+                    + "a 2 decimali."
+            );
+        }
+
+        if (normalized.precision() - normalized.scale() > 13) {
+            throw new BusinessException(
+                    fieldName
+                    + ": importo superiore alla capacità "
+                    + "massima consentita."
+            );
+        }
+
+        return normalized;
     }
 
     private BigDecimal parseOrderQuantity(String value) {
@@ -1032,7 +1246,19 @@ public class PurchaseOrderWebService {
             );
         }
 
-        return quantity.setScale(3, RoundingMode.UNNECESSARY);
+        BigDecimal normalized = quantity.setScale(
+                3,
+                RoundingMode.UNNECESSARY
+        );
+
+        if (normalized.precision() - normalized.scale() > 12) {
+            throw new BusinessException(
+                    "La quantità dell'ordine supera la capacità "
+                    + "massima consentita."
+            );
+        }
+
+        return normalized;
     }
 
     private BigDecimal scale(BigDecimal value, int scale) {

@@ -354,7 +354,88 @@ public class ItemWebService {
         view.setCode(item.getCode());
         view.setName(item.getName());
         view.setDescription(item.getDescription());
-        view.setUnitOfMeasure(item.getBaseUom().getCode());
+        var baseUom = item.getBaseUom();
+
+        if (baseUom == null || !baseUom.isActive()) {
+            throw new BusinessException(
+                    "L'articolo non dispone di un'unità di misura base attiva."
+            );
+        }
+
+        view.setUnitOfMeasure(baseUom.getCode());
+        view.setBaseUomId(baseUom.getId());
+
+        // L'unità base è sempre disponibile per gli acquisti
+        // quando è attiva e correttamente configurata.
+        PurchaseUomOptionView baseOption = new PurchaseUomOptionView();
+        baseOption.setUomId(baseUom.getId());
+        baseOption.setCode(baseUom.getCode());
+        baseOption.setName(baseUom.getName());
+        baseOption.setConversionFactor(
+                BigDecimal.ONE.setScale(6)
+        );
+        baseOption.setDecimalPlaces(baseUom.getDecimalPlaces());
+
+        java.util.List<PurchaseUomOptionView> purchaseOptions =
+                new java.util.ArrayList<>();
+
+        purchaseOptions.add(baseOption);
+
+        var alternatives =
+                itemUomRepository.findByTenantIdAndItemIdOrderByIdAsc(
+                        tenantId,
+                        item.getId()
+                );
+
+        for (var alternative : alternatives) {
+            if (!alternative.isActive()
+                    || !alternative.isPurchaseUom()) {
+                continue;
+            }
+
+            var alternativeUom = alternative.getUom();
+
+            if (alternativeUom == null
+                    || !alternativeUom.isActive()
+                    || alternativeUom.getDimension()
+                            != baseUom.getDimension()) {
+                continue;
+            }
+
+            // Evita di duplicare l'unità base.
+            if (alternativeUom.getId().equals(baseUom.getId())) {
+                continue;
+            }
+
+            BigDecimal factor = alternative.getConversionFactor();
+
+            if (factor == null
+                    || factor.compareTo(BigDecimal.ZERO) <= 0
+                    || factor.stripTrailingZeros().scale() > 6
+                    || factor.precision() - factor.scale() > 13) {
+                continue;
+            }
+
+            PurchaseUomOptionView option =
+                    new PurchaseUomOptionView();
+
+            option.setUomId(alternativeUom.getId());
+            option.setCode(alternativeUom.getCode());
+            option.setName(alternativeUom.getName());
+            option.setConversionFactor(
+                    factor.setScale(
+                            6,
+                            java.math.RoundingMode.UNNECESSARY
+                    )
+            );
+            option.setDecimalPlaces(
+                    alternativeUom.getDecimalPlaces()
+            );
+
+            purchaseOptions.add(option);
+        }
+
+        view.setPurchaseUomOptions(purchaseOptions);
         view.setItemType(item.getItemType().toString());
         view.setBasePrice(item.getBasePrice());
         view.setPurchasePrice(item.getPurchasePrice());

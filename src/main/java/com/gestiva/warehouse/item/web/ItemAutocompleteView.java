@@ -1,6 +1,7 @@
 package com.gestiva.warehouse.item.web;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public class ItemAutocompleteView {
 
@@ -13,6 +14,7 @@ public class ItemAutocompleteView {
     private String itemType;
     private BigDecimal basePrice;
     private BigDecimal purchasePrice;
+    private List<PurchaseUomOptionView> purchaseUomOptions = List.of();
     private BigDecimal defaultTaxPct;
 
     public Long getId() {
@@ -85,6 +87,19 @@ public class ItemAutocompleteView {
 
     public void setPurchasePrice(BigDecimal purchasePrice) {
         this.purchasePrice = purchasePrice;
+    }
+
+    public List<PurchaseUomOptionView> getPurchaseUomOptions() {
+        return purchaseUomOptions;
+    }
+
+    public void setPurchaseUomOptions(
+            List<PurchaseUomOptionView> purchaseUomOptions
+    ) {
+        this.purchaseUomOptions =
+                purchaseUomOptions != null
+                        ? List.copyOf(purchaseUomOptions)
+                        : List.of();
     }
 
     public BigDecimal getDefaultTaxPct() {
