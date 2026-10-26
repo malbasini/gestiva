@@ -16,6 +16,8 @@ import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 
 @Service
@@ -142,9 +144,85 @@ public class GoodsReceiptService {
             receiptLine.setPurchaseOrderLineId(poLine.getId());
             receiptLine.setItemId(poLine.getItemId());
             receiptLine.setDescription(poLine.getDescription());
-            receiptLine.setQuantityReceived(poLine.getQuantity());
-            receiptLine.setUnitCost(poLine.getUnitPrice());
-            receiptLine.setTotalCost(poLine.getUnitPrice().multiply(poLine.getQuantity()));
+            // Gestiva V2 - Conversione UOM e costo netto FIFO.
+            // Utilizziamo esclusivamente lo snapshot storico dell'ordine.
+            BigDecimal commercialQty = poLine.getQuantity();
+            BigDecimal conversionFactor = poLine.getConversionFactor();
+            BigDecimal netSubtotal = poLine.getLineSubtotal();
+
+            if (poLine.getUomId() == null || conversionFactor == null) {
+                throw new BusinessException(
+                        "Ricevimento non consentito: snapshot UOM "
+                        + "assente o incompleto nella riga ordine."
+                );
+            }
+
+            if (commercialQty == null
+                    || commercialQty.compareTo(BigDecimal.ZERO) <= 0
+                    || conversionFactor.compareTo(BigDecimal.ZERO) <= 0
+                    || netSubtotal == null
+                    || netSubtotal.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new BusinessException(
+                        "Quantità, conversione o costo netto non validi "
+                        + "nella riga ordine."
+                );
+            }
+
+            BigDecimal baseQty;
+            try {
+                baseQty = commercialQty.multiply(conversionFactor)
+                        .setScale(3, RoundingMode.UNNECESSARY);
+            } catch (ArithmeticException ex) {
+                throw new BusinessException(
+                        "La quantità commerciale non è convertibile "
+                        + "esattamente nell'unità base."
+                );
+            }
+
+            if (baseQty.precision() - baseQty.scale() > 12) {
+                throw new BusinessException(
+                        "La quantità base supera la capacità del magazzino."
+                );
+            }
+
+            BigDecimal unitCost = netSubtotal.divide(
+                    baseQty, 4, RoundingMode.HALF_UP
+            );
+
+            if (unitCost.compareTo(BigDecimal.ZERO) <= 0
+                    || unitCost.precision() - unitCost.scale() > 11) {
+                throw new BusinessException(
+                        "Costo unitario FIFO non rappresentabile."
+                );
+            }
+
+            BigDecimal totalCost = netSubtotal.setScale(
+                    4, RoundingMode.UNNECESSARY
+            );
+
+            if (totalCost.precision() - totalCost.scale() > 11) {
+                throw new BusinessException(
+                        "Costo totale netto non rappresentabile."
+                );
+            }
+
+            // Il movimento FIFO ricalcola il totale come
+            // quantità base × costo unitario arrotondato.
+            // Verifichiamo anche la capacità di DECIMAL(15,4).
+            BigDecimal movementTotalCost = baseQty.multiply(unitCost)
+                    .setScale(4, RoundingMode.HALF_UP);
+
+            if (movementTotalCost.precision()
+                    - movementTotalCost.scale() > 11) {
+                throw new BusinessException(
+                        "Costo totale del movimento FIFO "
+                        + "non rappresentabile."
+                );
+            }
+
+            receiptLine.setQuantityReceived(baseQty);
+            receiptLine.setUnitCost(unitCost);
+            receiptLine.setTotalCost(totalCost);
             goodsReceiptLineRepository.save(receiptLine);
             if (poLine.getItemId() == null) {
                 continue;

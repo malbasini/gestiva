@@ -210,6 +210,33 @@ public class PurchaseOrderWebService {
         return form;
     }
 
+    public PurchaseOrderTotalsPreviewView calculatePreviewTotals(
+            PurchaseOrderForm form
+    ) {
+        if (form == null) {
+            throw new BusinessException("Ordine fornitore non valido");
+        }
+
+        validateLines(form.getLines());
+
+        Totals totals = calculateTotals(form.getLines());
+
+        PurchaseOrderTotalsPreviewView view =
+                new PurchaseOrderTotalsPreviewView();
+
+        view.setFormattedSubtotalAmount(
+                PdfFormatUtils.formatMoney(totals.subtotal())
+        );
+        view.setFormattedTaxAmount(
+                PdfFormatUtils.formatMoney(totals.tax())
+        );
+        view.setFormattedTotalAmount(
+                PdfFormatUtils.formatMoney(totals.total())
+        );
+
+        return view;
+    }
+
     public void validateLines(List<PurchaseOrderLineForm> lines) {
         if (lines == null || lines.isEmpty()) {
             throw new BusinessException("L'ordine deve contenere almeno una riga");

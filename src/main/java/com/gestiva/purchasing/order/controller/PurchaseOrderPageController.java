@@ -143,6 +143,59 @@ public class PurchaseOrderPageController {
         }
         return "redirect:/purchase-orders/" + id;
     }
+    @PostMapping(params = "recalculate")
+    public String recalculateCreate(
+            @ModelAttribute("purchaseOrderForm") PurchaseOrderForm form,
+            Model model
+    ) {
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        model.addAttribute("supplierOptions", supplierWebService.findOptions(tenantId));
+        model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
+        model.addAttribute("formMode", "create");
+        model.addAttribute("activeMenu", "purchaseOrders");
+
+        try {
+            model.addAttribute(
+                    "totalsPreview",
+                    purchaseOrderWebService.calculatePreviewTotals(form)
+            );
+        } catch (Exception ex) {
+            model.addAttribute("errorMessage", ex.getMessage());
+        }
+
+        return "purchasing/order/purchase-order-form";
+    }
+
+    @PostMapping(value = "/{id}", params = "recalculate")
+    public String recalculateEdit(
+            @PathVariable Long id,
+            @ModelAttribute("purchaseOrderForm") PurchaseOrderForm form,
+            Model model
+    ) {
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        // Verifica che l'ordine appartenga al contesto corrente.
+        purchaseOrderWebService.getForm(tenantId, id);
+
+        model.addAttribute("supplierOptions", supplierWebService.findOptions(tenantId));
+        model.addAttribute("itemOptions", itemWebService.findOptions(tenantId));
+        model.addAttribute("purchaseOrderId", id);
+        model.addAttribute("formMode", "edit");
+        model.addAttribute("activeMenu", "purchaseOrders");
+
+        try {
+            model.addAttribute(
+                    "totalsPreview",
+                    purchaseOrderWebService.calculatePreviewTotals(form)
+            );
+        } catch (Exception ex) {
+            model.addAttribute("errorMessage", ex.getMessage());
+        }
+
+        return "purchasing/order/purchase-order-form";
+    }
+
     @PostMapping(params = "addLine")
     public String addLineCreate(@ModelAttribute("purchaseOrderForm") PurchaseOrderForm form,
                                 Model model) {

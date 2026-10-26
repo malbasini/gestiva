@@ -215,6 +215,45 @@
               </div>
           </div>
           </div>
+          <div class="page-header" style="margin-top:24px;">
+            <div class="page-header-left">
+              <h2 class="section-title">Anteprima totali</h2>
+              <div class="muted">Calcolo basato sui valori correnti del form</div>
+            </div>
+            <div class="page-header-right">
+              <button type="submit"
+                      name="recalculate"
+                      value="true"
+                      class="btn btn-outline-warning">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span>Ricalcola</span>
+              </button>
+            </div>
+          </div>
+
+          <table class="totals" th:if="${totalsPreview != null}">
+            <tr>
+              <td>Imponibile</td>
+              <td class="text-right"
+                  th:text="${totalsPreview.formattedSubtotalAmount}">0,00 €</td>
+            </tr>
+            <tr>
+              <td>IVA</td>
+              <td class="text-right"
+                  th:text="${totalsPreview.formattedTaxAmount}">0,00 €</td>
+            </tr>
+            <tr class="grand-total">
+              <td>Totale</td>
+              <td class="text-right"
+                  th:text="${totalsPreview.formattedTotalAmount}">0,00 €</td>
+            </tr>
+          </table>
+
+          <div class="muted"
+               th:if="${totalsPreview == null}">
+            Anteprima non disponibile. Completa le righe e premi Ricalcola.
+          </div>
+
           <div class="actions" style="margin-top:24px;">
             <button type="submit" class="btn btn-outline-primary">
               <i class="bi bi-floppy"></i>
