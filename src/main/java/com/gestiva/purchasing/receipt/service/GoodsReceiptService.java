@@ -13,6 +13,7 @@ import com.gestiva.purchasing.receipt.repository.GoodsReceiptLineRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
 import com.gestiva.warehouse.item.repository.ItemRepository;
 import com.gestiva.settings.sequence.service.DocumentSequenceService;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +35,7 @@ public class GoodsReceiptService {
     private final DocumentSequenceService documentSequenceService;
     private final CompanyContext companyContext;
     private final WarehouseRepository warehouseRepository;
+    private final Environment environment;
 
 
     public GoodsReceiptService(PurchaseOrderRepository purchaseOrderRepository,
@@ -45,7 +47,8 @@ public class GoodsReceiptService {
                                InventoryMovementRepository inventoryMovementRepository,
                                DocumentSequenceService documentSequenceService,
                                CompanyContext companyContext,
-                               WarehouseRepository warehouseRepository) {
+                               WarehouseRepository warehouseRepository,
+                               Environment environment) {
 
 
         this.purchaseOrderRepository = purchaseOrderRepository;
@@ -58,6 +61,7 @@ public class GoodsReceiptService {
         this.documentSequenceService = documentSequenceService;
         this.companyContext = companyContext;
         this.warehouseRepository = warehouseRepository;
+        this.environment = environment;
     }
 
     public Long createFromPurchaseOrder(
@@ -65,12 +69,21 @@ public class GoodsReceiptService {
             Long purchaseOrderId,
             Long warehouseId) {
 
-        // Gestiva V2 - Blocco temporaneo della ricezione merci.
-        // La funzionalità sarà riattivata dopo l'adeguamento
-        // multi-società, multi-magazzino e FIFO V2.
-        if (true) {
+        // Ricezione merci abilitabile esclusivamente nei collaudi.
+        // In tutti gli altri ambienti resta disabilitata.
+        boolean testProfileActive = java.util.Arrays.asList(
+                environment.getActiveProfiles()
+        ).contains("test");
+
+        boolean receiptEnabled = environment.getProperty(
+                "gestiva.purchasing.goods-receipt.enabled",
+                Boolean.class,
+                false
+        );
+
+        if (!testProfileActive || !receiptEnabled) {
             throw new BusinessException(
-                    "Ricezione merci temporaneamente non disponibile: migrazione Gestiva V2 in corso."
+                    "Ricezione merci temporaneamente non disponibile."
             );
         }
 
@@ -99,7 +112,7 @@ public class GoodsReceiptService {
             );
         }
 
-        var po = purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
+        var po = purchaseOrderRepository.findLockedByTenantIdAndCompanyIdAndId(
                 tenantId,
                 companyId,
                 purchaseOrderId

@@ -25,6 +25,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
+import com.gestiva.accounting.v2.account.entity.Account;
 @ExtendWith(MockitoExtension.class)
 class JournalAutoPostingServiceTest {
 
@@ -382,6 +383,474 @@ class JournalAutoPostingServiceTest {
         verifyNoInteractions(
                 journalEntryLineRepository,
                 accountRepository,
+                documentSequenceService
+        );
+    }
+
+
+    @Test
+    void postSupplierInvoice_shouldRejectUnbalancedAmounts() {
+
+        when(companyContext.resolveCurrentCompanyId())
+                .thenReturn(COMPANY_ID);
+
+        var invoice = createInvoiceFixture();
+
+        invoice.setTotalAmount(new BigDecimal("123.00"));
+
+        when(supplierInvoiceRepository.findByTenantIdAndCompanyIdAndId(
+                TENANT_ID,
+                COMPANY_ID,
+                SUPPLIER_INVOICE_ID
+        )).thenReturn(Optional.of(invoice));
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> service.postSupplierInvoice(
+                        TENANT_ID,
+                        LocalDate.of(2026, 10, 27),
+                        "SF-TEST-001",
+                        new BigDecimal("100.00"),
+                        new BigDecimal("22.00"),
+                        new BigDecimal("123.00"),
+                        "EUR",
+                        SUPPLIER_INVOICE_ID,
+                        "Test quadratura contabile"
+                )
+        );
+
+        org.junit.jupiter.api.Assertions.assertTrue(
+                exception.getMessage().contains(
+                        "non è quadrata"
+                )
+        );
+
+        verify(journalEntryRepository)
+                .existsByTenantIdAndCompanyIdAndReferenceTypeAndReferenceId(
+                        TENANT_ID,
+                        COMPANY_ID,
+                        "SUPPLIER_INVOICE",
+                        SUPPLIER_INVOICE_ID
+                );
+
+        verifyNoMoreInteractions(journalEntryRepository);
+
+        verifyNoInteractions(
+                journalEntryLineRepository,
+                accountRepository,
+                documentSequenceService
+        );
+    }
+
+
+    @Test
+    void postSupplierInvoice_shouldAcceptEquivalentDecimalScale() {
+
+        configureExistingInvoice();
+
+        com.gestiva.accounting.v2.account.entity.Account purchase =
+                new com.gestiva.accounting.v2.account.entity.Account();
+        purchase.setId(5100L);
+        purchase.setTenantId(TENANT_ID);
+        purchase.setCompanyId(COMPANY_ID);
+        purchase.setCode("5100");
+        purchase.setActive(true);
+        purchase.setLeafAccount(true);
+
+        com.gestiva.accounting.v2.account.entity.Account vat =
+                new com.gestiva.accounting.v2.account.entity.Account();
+        vat.setId(2220L);
+        vat.setTenantId(TENANT_ID);
+        vat.setCompanyId(COMPANY_ID);
+        vat.setCode("2220");
+        vat.setActive(true);
+        vat.setLeafAccount(true);
+
+        com.gestiva.accounting.v2.account.entity.Account payable =
+                new com.gestiva.accounting.v2.account.entity.Account();
+        payable.setId(2110L);
+        payable.setTenantId(TENANT_ID);
+        payable.setCompanyId(COMPANY_ID);
+        payable.setCode("2110");
+        payable.setActive(true);
+        payable.setLeafAccount(true);
+
+        when(accountRepository.findByTenantIdAndCompanyIdAndCode(
+                TENANT_ID, COMPANY_ID, "5100"
+        )).thenReturn(Optional.of(purchase));
+
+        when(accountRepository.findByTenantIdAndCompanyIdAndCode(
+                TENANT_ID, COMPANY_ID, "2220"
+        )).thenReturn(Optional.of(vat));
+
+        when(accountRepository.findByTenantIdAndCompanyIdAndCode(
+                TENANT_ID, COMPANY_ID, "2110"
+        )).thenReturn(Optional.of(payable));
+
+        when(documentSequenceService.nextJournalEntryNumber(
+                TENANT_ID, COMPANY_ID
+        )).thenReturn("JE-TEST-001");
+
+        when(journalEntryRepository.save(
+                any(com.gestiva.accounting.v2.journal.entity.JournalEntry.class)
+        )).thenAnswer(invocation -> {
+            com.gestiva.accounting.v2.journal.entity.JournalEntry entry =
+                    invocation.getArgument(0);
+            entry.setId(900L);
+            return entry;
+        });
+
+        Long result = service.postSupplierInvoice(
+                TENANT_ID,
+                LocalDate.of(2026, 10, 27),
+                "SF-TEST-001",
+                new BigDecimal("100.0"),
+                new BigDecimal("22.0"),
+                new BigDecimal("122.0"),
+                "EUR",
+                SUPPLIER_INVOICE_ID,
+                "Test scale decimali differenti"
+        );
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                900L, result
+        );
+
+        org.mockito.ArgumentCaptor<
+                com.gestiva.accounting.v2.journal.entity.JournalEntry
+        > entryCaptor = org.mockito.ArgumentCaptor.forClass(
+                com.gestiva.accounting.v2.journal.entity.JournalEntry.class
+        );
+
+        verify(journalEntryRepository).save(entryCaptor.capture());
+
+        var entry = entryCaptor.getValue();
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                TENANT_ID, entry.getTenantId()
+        );
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                COMPANY_ID, entry.getCompanyId()
+        );
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "SUPPLIER_INVOICE", entry.getReferenceType()
+        );
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                SUPPLIER_INVOICE_ID, entry.getReferenceId()
+        );
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "JE-TEST-001", entry.getEntryNumber()
+        );
+
+        org.junit.jupiter.api.Assertions.assertTrue(
+                entry.isPosted()
+        );
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                new BigDecimal("122.00"), entry.getTotalDebit()
+        );
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                new BigDecimal("122.00"), entry.getTotalCredit()
+        );
+
+        org.mockito.ArgumentCaptor<
+                com.gestiva.accounting.v2.journal.entity.JournalEntryLine
+        > lineCaptor = org.mockito.ArgumentCaptor.forClass(
+                com.gestiva.accounting.v2.journal.entity.JournalEntryLine.class
+        );
+
+        verify(journalEntryLineRepository, times(3))
+                .save(lineCaptor.capture());
+
+        var lines = lineCaptor.getAllValues();
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                3, lines.size()
+        );
+
+        Long[] accountIds = {5100L, 2220L, 2110L};
+
+        BigDecimal[] debits = {
+                new BigDecimal("100.00"),
+                new BigDecimal("22.00"),
+                new BigDecimal("0.00")
+        };
+
+        BigDecimal[] credits = {
+                new BigDecimal("0.00"),
+                new BigDecimal("0.00"),
+                new BigDecimal("122.00")
+        };
+
+        for (int i = 0; i < 3; i++) {
+
+            var line = lines.get(i);
+
+            org.junit.jupiter.api.Assertions.assertEquals(
+                    TENANT_ID, line.getTenantId()
+            );
+
+            org.junit.jupiter.api.Assertions.assertEquals(
+                    COMPANY_ID, line.getCompanyId()
+            );
+
+            org.junit.jupiter.api.Assertions.assertEquals(
+                    900L, line.getJournalEntryId()
+            );
+
+            org.junit.jupiter.api.Assertions.assertEquals(
+                    i + 1, line.getLineNo()
+            );
+
+            org.junit.jupiter.api.Assertions.assertEquals(
+                    accountIds[i], line.getAccountId()
+            );
+
+            org.junit.jupiter.api.Assertions.assertEquals(
+                    debits[i], line.getDebitAmount()
+            );
+
+            org.junit.jupiter.api.Assertions.assertEquals(
+                    credits[i], line.getCreditAmount()
+            );
+        }
+
+        verify(journalEntryRepository)
+                .existsByTenantIdAndCompanyIdAndReferenceTypeAndReferenceId(
+                        TENANT_ID,
+                        COMPANY_ID,
+                        "SUPPLIER_INVOICE",
+                        SUPPLIER_INVOICE_ID
+                );
+
+        verify(accountRepository)
+                .findByTenantIdAndCompanyIdAndCode(
+                        TENANT_ID, COMPANY_ID, "5100"
+                );
+
+        verify(accountRepository)
+                .findByTenantIdAndCompanyIdAndCode(
+                        TENANT_ID, COMPANY_ID, "2220"
+                );
+
+        verify(accountRepository)
+                .findByTenantIdAndCompanyIdAndCode(
+                        TENANT_ID, COMPANY_ID, "2110"
+                );
+
+        verify(documentSequenceService)
+                .nextJournalEntryNumber(TENANT_ID, COMPANY_ID);
+
+        verifyNoMoreInteractions(
+                journalEntryRepository,
+                journalEntryLineRepository,
+                accountRepository,
+                documentSequenceService
+        );
+    }
+
+
+    @Test
+    void postSupplierInvoice_shouldRejectAlreadyPostedInvoice() {
+
+        configureExistingInvoice();
+
+        when(journalEntryRepository
+                .existsByTenantIdAndCompanyIdAndReferenceTypeAndReferenceId(
+                        TENANT_ID,
+                        COMPANY_ID,
+                        "SUPPLIER_INVOICE",
+                        SUPPLIER_INVOICE_ID
+                )).thenReturn(true);
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> service.postSupplierInvoice(
+                        TENANT_ID,
+                        LocalDate.of(2026, 10, 27),
+                        "SF-TEST-001",
+                        new BigDecimal("100.00"),
+                        new BigDecimal("22.00"),
+                        new BigDecimal("122.00"),
+                        "EUR",
+                        SUPPLIER_INVOICE_ID,
+                        "Test doppia contabilizzazione"
+                )
+        );
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "La fattura fornitore è già stata contabilizzata.",
+                exception.getMessage()
+        );
+
+        verify(supplierInvoiceRepository)
+                .findByTenantIdAndCompanyIdAndId(
+                        TENANT_ID,
+                        COMPANY_ID,
+                        SUPPLIER_INVOICE_ID
+                );
+
+        verify(journalEntryRepository)
+                .existsByTenantIdAndCompanyIdAndReferenceTypeAndReferenceId(
+                        TENANT_ID,
+                        COMPANY_ID,
+                        "SUPPLIER_INVOICE",
+                        SUPPLIER_INVOICE_ID
+                );
+
+        verifyNoMoreInteractions(
+                journalEntryRepository,
+                supplierInvoiceRepository
+        );
+
+        verifyNoInteractions(
+                journalEntryLineRepository,
+                accountRepository,
+                documentSequenceService
+        );
+    }
+
+
+    @Test
+    void postSupplierInvoice_shouldRejectMissingAccount() {
+
+        configureExistingInvoice();
+
+        when(accountRepository.findByTenantIdAndCompanyIdAndCode(
+                TENANT_ID,
+                COMPANY_ID,
+                "5100"
+        )).thenReturn(Optional.empty());
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> service.postSupplierInvoice(
+                        TENANT_ID,
+                        LocalDate.of(2026, 10, 27),
+                        "SF-TEST-001",
+                        new BigDecimal("100.00"),
+                        new BigDecimal("22.00"),
+                        new BigDecimal("122.00"),
+                        "EUR",
+                        SUPPLIER_INVOICE_ID,
+                        "Test conto contabile inesistente"
+                )
+        );
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "Conto contabile non trovato nella società attiva: 5100",
+                exception.getMessage()
+        );
+
+        verify(supplierInvoiceRepository)
+                .findByTenantIdAndCompanyIdAndId(
+                        TENANT_ID,
+                        COMPANY_ID,
+                        SUPPLIER_INVOICE_ID
+                );
+
+        verify(journalEntryRepository)
+                .existsByTenantIdAndCompanyIdAndReferenceTypeAndReferenceId(
+                        TENANT_ID,
+                        COMPANY_ID,
+                        "SUPPLIER_INVOICE",
+                        SUPPLIER_INVOICE_ID
+                );
+
+        verify(accountRepository)
+                .findByTenantIdAndCompanyIdAndCode(
+                        TENANT_ID,
+                        COMPANY_ID,
+                        "5100"
+                );
+
+        verifyNoMoreInteractions(
+                supplierInvoiceRepository,
+                journalEntryRepository,
+                accountRepository
+        );
+
+        verifyNoInteractions(
+                journalEntryLineRepository,
+                documentSequenceService
+        );
+    }
+
+
+    @Test
+    void postSupplierInvoice_shouldRejectInactiveAccount() {
+
+        configureExistingInvoice();
+
+        Account inactiveAccount = new Account();
+        inactiveAccount.setId(5100L);
+        inactiveAccount.setTenantId(TENANT_ID);
+        inactiveAccount.setCompanyId(COMPANY_ID);
+        inactiveAccount.setCode("5100");
+        inactiveAccount.setActive(false);
+        inactiveAccount.setLeafAccount(true);
+
+        when(accountRepository.findByTenantIdAndCompanyIdAndCode(
+                TENANT_ID,
+                COMPANY_ID,
+                "5100"
+        )).thenReturn(Optional.of(inactiveAccount));
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> service.postSupplierInvoice(
+                        TENANT_ID,
+                        LocalDate.of(2026, 10, 27),
+                        "SF-TEST-001",
+                        new BigDecimal("100.00"),
+                        new BigDecimal("22.00"),
+                        new BigDecimal("122.00"),
+                        "EUR",
+                        SUPPLIER_INVOICE_ID,
+                        "Test conto contabile disattivato"
+                )
+        );
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "Il conto contabile 5100 è disattivato.",
+                exception.getMessage()
+        );
+
+        verify(supplierInvoiceRepository)
+                .findByTenantIdAndCompanyIdAndId(
+                        TENANT_ID,
+                        COMPANY_ID,
+                        SUPPLIER_INVOICE_ID
+                );
+
+        verify(journalEntryRepository)
+                .existsByTenantIdAndCompanyIdAndReferenceTypeAndReferenceId(
+                        TENANT_ID,
+                        COMPANY_ID,
+                        "SUPPLIER_INVOICE",
+                        SUPPLIER_INVOICE_ID
+                );
+
+        verify(accountRepository)
+                .findByTenantIdAndCompanyIdAndCode(
+                        TENANT_ID,
+                        COMPANY_ID,
+                        "5100"
+                );
+
+        verifyNoMoreInteractions(
+                supplierInvoiceRepository,
+                journalEntryRepository,
+                accountRepository
+        );
+
+        verifyNoInteractions(
+                journalEntryLineRepository,
                 documentSequenceService
         );
     }

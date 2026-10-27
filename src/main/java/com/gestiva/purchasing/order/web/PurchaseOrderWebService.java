@@ -135,7 +135,7 @@ public class PurchaseOrderWebService {
         v.setFormattedSubtotalAmount(PdfFormatUtils.formatMoney(po.getSubtotalAmount()));
         v.setFormattedTaxAmount(PdfFormatUtils.formatMoney(po.getTaxAmount()));
         v.setFormattedTotalAmount(PdfFormatUtils.formatMoney(po.getTotalAmount()));
-        var receiptOpt = goodsReceiptRepository.findFirstByTenantIdAndPurchaseOrderId(tenantId, po.getId());
+        var receiptOpt = goodsReceiptRepository.findFirstByTenantIdAndCompanyIdAndPurchaseOrderId(tenantId, companyId, po.getId());
         v.setHasGoodsReceipt(receiptOpt.isPresent());
         v.setCanReceiveGoods("CONFIRMED".equalsIgnoreCase(po.getStatus()) && receiptOpt.isEmpty());
         v.setCanEdit(!"CONFIRMED".equalsIgnoreCase(po.getStatus()) && !"CANCELLED".equalsIgnoreCase(po.getStatus()));
