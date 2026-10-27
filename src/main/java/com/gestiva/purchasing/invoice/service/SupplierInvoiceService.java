@@ -139,9 +139,35 @@ public class SupplierInvoiceService {
                 );
             }
 
-            if (receiptLine.getQuantityReceived().compareTo(poLine.getQuantity()) > 0) {
+            // Gestiva V2: il ricevimento memorizza quantità base,
+            // mentre l'ordine conserva quantità commerciali.
+            if (poLine.getUomId() == null
+                    || poLine.getConversionFactor() == null
+                    || poLine.getConversionFactor().signum() <= 0) {
                 throw new BusinessException(
-                        "La quantità ricevuta supera la quantità ordinata."
+                        "Snapshot UOM dell'ordine assente o non valido."
+                );
+            }
+
+            BigDecimal expectedBaseQuantity;
+            try {
+                expectedBaseQuantity = poLine.getQuantity()
+                        .multiply(poLine.getConversionFactor())
+                        .setScale(3, java.math.RoundingMode.UNNECESSARY);
+            } catch (ArithmeticException ex) {
+                throw new BusinessException(
+                        "Quantità ordinata non convertibile "
+                        + "esattamente nell'unità base."
+                );
+            }
+
+            // Il flusso attuale ammette soltanto ricevimenti completi.
+            if (receiptLine.getQuantityReceived()
+                    .compareTo(expectedBaseQuantity) != 0) {
+                throw new BusinessException(
+                        "La quantità ricevuta non corrisponde "
+                        + "alla quantità ordinata convertita "
+                        + "nell'unità base."
                 );
             }
 
@@ -159,16 +185,110 @@ public class SupplierInvoiceService {
             line.setLineNo(lineNo++);
             line.setItemId(poLine.getItemId());
             line.setDescription(poLine.getDescription());
-            line.setQuantity(receiptLine.getQuantityReceived());
+            // La fattura utilizza la quantità commerciale
+            // coerente con il prezzo unitario dell'ordine.
+            line.setQuantity(poLine.getQuantity());
             line.setUnitPrice(poLine.getUnitPrice());
             line.setDiscountPct(poLine.getDiscountPct());
             line.setTaxPct(poLine.getTaxPct());
 
-            BigDecimal lineGross = receiptLine.getQuantityReceived().multiply(poLine.getUnitPrice());
-            BigDecimal discountAmount = lineGross.multiply(poLine.getDiscountPct()).divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
-            BigDecimal lineSubtotal = lineGross.subtract(discountAmount).setScale(2, java.math.RoundingMode.HALF_UP);
-            BigDecimal lineTax = lineSubtotal.multiply(poLine.getTaxPct()).divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
-            BigDecimal lineTotal = lineSubtotal.add(lineTax).setScale(2, java.math.RoundingMode.HALF_UP);
+            // Ricevimento completo: conserviamo gli importi
+            // commerciali già determinati nell'ordine fornitore.
+            BigDecimal lineSubtotal = poLine.getLineSubtotal();
+            BigDecimal lineTax = poLine.getTaxAmount();
+            BigDecimal lineTotal = poLine.getLineTotal();
+
+            if (lineSubtotal == null || lineTax == null
+                    || lineTotal == null) {
+                throw new BusinessException(
+                        "Importi economici della riga ordine mancanti."
+                );
+            }
+
+            try {
+                lineSubtotal = lineSubtotal.setScale(
+                        2, java.math.RoundingMode.UNNECESSARY);
+                lineTax = lineTax.setScale(
+                        2, java.math.RoundingMode.UNNECESSARY);
+                lineTotal = lineTotal.setScale(
+                        2, java.math.RoundingMode.UNNECESSARY);
+            } catch (ArithmeticException ex) {
+                throw new BusinessException(
+                        "Importi della riga ordine non rappresentabili "
+                        + "con due decimali."
+                );
+            }
+
+            if (lineSubtotal.signum() < 0
+                    || lineTax.signum() < 0
+                    || lineTotal.compareTo(lineSubtotal.add(lineTax)) != 0
+                    || lineSubtotal.precision() - lineSubtotal.scale() > 13
+                    || lineTax.precision() - lineTax.scale() > 13
+                    || lineTotal.precision() - lineTotal.scale() > 13) {
+                throw new BusinessException(
+                        "Importi economici della riga ordine non coerenti "
+                        + "o non rappresentabili."
+                );
+            }
+
+            // Verifica di coerenza con le regole economiche
+            // dell'ordine fornitore. Gli importi originali
+            // rimangono quelli utilizzati nella fattura.
+            if (poLine.getUnitPrice() == null
+                    || poLine.getDiscountPct() == null
+                    || poLine.getTaxPct() == null
+                    || poLine.getUnitPrice().signum() < 0
+                    || poLine.getDiscountPct().signum() < 0
+                    || poLine.getDiscountPct().compareTo(
+                            new BigDecimal("100")) > 0
+                    || poLine.getTaxPct().signum() < 0) {
+                throw new BusinessException(
+                        "Prezzo, sconto o aliquota IVA "
+                        + "della riga ordine non validi."
+                );
+            }
+
+            BigDecimal expectedGross = poLine.getQuantity()
+                    .multiply(poLine.getUnitPrice());
+
+            BigDecimal expectedDiscount = expectedGross
+                    .multiply(poLine.getDiscountPct())
+                    .divide(
+                            new BigDecimal("100"),
+                            2,
+                            java.math.RoundingMode.HALF_UP
+                    );
+
+            BigDecimal expectedSubtotal = expectedGross
+                    .subtract(expectedDiscount)
+                    .setScale(
+                            2,
+                            java.math.RoundingMode.HALF_UP
+                    );
+
+            BigDecimal expectedTax = expectedSubtotal
+                    .multiply(poLine.getTaxPct())
+                    .divide(
+                            new BigDecimal("100"),
+                            2,
+                            java.math.RoundingMode.HALF_UP
+                    );
+
+            BigDecimal expectedTotal = expectedSubtotal
+                    .add(expectedTax)
+                    .setScale(
+                            2,
+                            java.math.RoundingMode.HALF_UP
+                    );
+
+            if (lineSubtotal.compareTo(expectedSubtotal) != 0
+                    || lineTax.compareTo(expectedTax) != 0
+                    || lineTotal.compareTo(expectedTotal) != 0) {
+                throw new BusinessException(
+                        "Gli importi della riga ordine non coincidono "
+                        + "con quantità, prezzo, sconto e IVA."
+                );
+            }
 
             line.setLineSubtotal(lineSubtotal);
             line.setTaxAmount(lineTax);
@@ -179,6 +299,23 @@ public class SupplierInvoiceService {
             subtotal = subtotal.add(lineSubtotal);
             tax = tax.add(lineTax);
             total = total.add(lineTotal);
+        }
+
+        // Capacità massima DECIMAL(15,2) dei totali fattura.
+        BigDecimal maxInvoiceAmount =
+                new BigDecimal("9999999999999.99");
+
+        if (subtotal.signum() < 0
+                || tax.signum() < 0
+                || total.signum() < 0
+                || subtotal.compareTo(maxInvoiceAmount) > 0
+                || tax.compareTo(maxInvoiceAmount) > 0
+                || total.compareTo(maxInvoiceAmount) > 0
+                || total.compareTo(subtotal.add(tax)) != 0) {
+            throw new BusinessException(
+                    "Totali fattura fornitore non coerenti "
+                    + "o superiori alla capacità DECIMAL(15,2)."
+            );
         }
 
         saved.setSubtotalAmount(subtotal.setScale(2, java.math.RoundingMode.HALF_UP));

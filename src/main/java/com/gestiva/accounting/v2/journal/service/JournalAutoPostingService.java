@@ -8,6 +8,7 @@ import com.gestiva.accounting.v2.journal.repository.JournalEntryLineRepository;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryRepository;
 import com.gestiva.billing.invoice.entity.Invoice;
 import com.gestiva.billing.invoice.repository.InvoiceRepository;
+import com.gestiva.purchasing.invoice.repository.SupplierInvoiceRepository;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class JournalAutoPostingService {
     private final AccountRepository accountRepository;
     private final DocumentSequenceService documentSequenceService;
     private final InvoiceRepository invoiceRepository;
+    private final SupplierInvoiceRepository supplierInvoiceRepository;
     private final CompanyContext companyContext;
 
     public JournalAutoPostingService(JournalEntryRepository journalEntryRepository,
@@ -33,6 +35,7 @@ public class JournalAutoPostingService {
                                      AccountRepository accountRepository,
                                      DocumentSequenceService documentSequenceService,
                                      InvoiceRepository invoiceRepository,
+                                     SupplierInvoiceRepository supplierInvoiceRepository,
                                      CompanyContext companyContext) {
 
         this.journalEntryRepository = journalEntryRepository;
@@ -40,6 +43,7 @@ public class JournalAutoPostingService {
         this.accountRepository = accountRepository;
         this.documentSequenceService = documentSequenceService;
         this.invoiceRepository = invoiceRepository;
+        this.supplierInvoiceRepository = supplierInvoiceRepository;
         this.companyContext = companyContext;
     }
 
@@ -297,6 +301,49 @@ public class JournalAutoPostingService {
         if (supplierInvoiceId == null) {
             throw new BusinessException(
                     "Identificativo della fattura fornitore mancante."
+            );
+        }
+
+        var supplierInvoice = supplierInvoiceRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        supplierInvoiceId
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "Fattura fornitore non trovata nella società corrente."
+                ));
+
+        if (!java.util.Objects.equals(
+                    supplierInvoice.getInvoiceNumber(), documentNumber)
+                || !java.util.Objects.equals(
+                    supplierInvoice.getInvoiceDate(), entryDate)
+                || !java.util.Objects.equals(
+                    supplierInvoice.getCurrencyCode(), currencyCode)) {
+            throw new BusinessException(
+                    "Dati documentali non coerenti con la fattura fornitore."
+            );
+        }
+
+        if (taxableAmount == null
+                || taxAmount == null
+                || totalAmount == null
+                || supplierInvoice.getSubtotalAmount() == null
+                || supplierInvoice.getTaxAmount() == null
+                || supplierInvoice.getTotalAmount() == null) {
+            throw new BusinessException(
+                    "Importi della fattura fornitore non disponibili."
+            );
+        }
+
+        if (taxableAmount.compareTo(
+                    supplierInvoice.getSubtotalAmount()) != 0
+                || taxAmount.compareTo(
+                    supplierInvoice.getTaxAmount()) != 0
+                || totalAmount.compareTo(
+                    supplierInvoice.getTotalAmount()) != 0) {
+            throw new BusinessException(
+                    "Importi contabili non coerenti con la fattura fornitore."
             );
         }
 
