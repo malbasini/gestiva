@@ -13,6 +13,7 @@ import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
 import com.gestiva.purchasing.supplier.repository.SupplierRepository;
 import com.gestiva.warehouse.item.repository.ItemRepository;
 import com.gestiva.warehouse.item.repository.ItemUomRepository;
+import com.gestiva.warehouse.uom.repository.UnitOfMeasureRepository;
 import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import com.gestiva.security.company.context.CompanyContext;
 import jakarta.persistence.criteria.Join;
@@ -39,6 +40,7 @@ public class PurchaseOrderWebService {
     private final SupplierRepository supplierRepository;
     private final ItemRepository itemRepository;
     private final ItemUomRepository itemUomRepository;
+    private final UnitOfMeasureRepository unitOfMeasureRepository;
     private final GoodsReceiptRepository goodsReceiptRepository;
     private final GoodsReceiptLineRepository goodsReceiptLineRepository;
     private final DocumentSequenceService documentSequenceService;
@@ -51,6 +53,7 @@ public class PurchaseOrderWebService {
                                    SupplierRepository supplierRepository,
                                    ItemRepository itemRepository,
                                    ItemUomRepository itemUomRepository,
+                                   UnitOfMeasureRepository unitOfMeasureRepository,
                                    GoodsReceiptRepository goodsReceiptRepository,
                                    GoodsReceiptLineRepository goodsReceiptLineRepository,
                                    DocumentSequenceService documentSequenceService,
@@ -61,6 +64,7 @@ public class PurchaseOrderWebService {
         this.supplierRepository = supplierRepository;
         this.itemRepository = itemRepository;
         this.itemUomRepository = itemUomRepository;
+        this.unitOfMeasureRepository = unitOfMeasureRepository;
         this.goodsReceiptRepository = goodsReceiptRepository;
         this.goodsReceiptLineRepository = goodsReceiptLineRepository;
         this.documentSequenceService = documentSequenceService;
@@ -148,6 +152,14 @@ public class PurchaseOrderWebService {
             lv.setLineNo(line.getLineNo());
             lv.setDescription(line.getDescription());
             lv.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),3));
+            lv.setUnitOfMeasureCode(
+                    line.getUomId() == null
+                            ? "-"
+                            : unitOfMeasureRepository
+                                    .findByTenantIdAndId(tenantId, line.getUomId())
+                                    .map(uom -> uom.getCode())
+                                    .orElse("-")
+            );
             lv.setFormattedUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
             lv.setFormattedDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct()) + "%");
             lv.setFormattedTaxPct(PdfFormatUtils.formatDecimalTrimmed(line.getTaxPct(),2) + "%");

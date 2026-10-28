@@ -26,6 +26,12 @@
           </a>
           </div>
         </div>
+        <div th:if="${dateRangeError != null}"
+             class="alert alert-danger"
+             role="alert"
+             th:text="${dateRangeError}">
+          La data iniziale non può essere successiva alla data finale.
+        </div>
         <form method="get" class="row g-3 align-items-end">
           <div class="col-md-4">
             <label for="q" class="form-label">Cerca</label>
@@ -87,7 +93,7 @@
           </tr>
           </thead>
           <tbody>
-          <tr th:if="${#lists.isEmpty(goodsReceipts)}">
+          <tr th:if="${page.empty}">
             <td colspan="6" class="muted">Nessuna ricezione merci trovata.</td>
           </tr>
           <tr th:each="receipt : ${goodsReceipts}">

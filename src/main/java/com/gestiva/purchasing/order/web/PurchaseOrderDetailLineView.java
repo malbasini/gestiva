@@ -5,10 +5,19 @@ public class PurchaseOrderDetailLineView {
     private Integer lineNo;
     private String description;
     private String formattedQuantity;
+    private String unitOfMeasureCode;
     private String formattedUnitPrice;
     private String formattedDiscountPct;
     private String formattedTaxPct;
     private String formattedLineTotal;
+
+    public String getUnitOfMeasureCode() {
+        return unitOfMeasureCode;
+    }
+
+    public void setUnitOfMeasureCode(String unitOfMeasureCode) {
+        this.unitOfMeasureCode = unitOfMeasureCode;
+    }
 
     public Integer getLineNo() {
         return lineNo;

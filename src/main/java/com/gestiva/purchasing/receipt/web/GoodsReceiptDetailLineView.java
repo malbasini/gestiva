@@ -5,6 +5,15 @@ public class GoodsReceiptDetailLineView {
     private Integer lineNo;
     private String description;
     private String formattedQuantityReceived;
+    private String unitOfMeasureCode;
+
+    public String getUnitOfMeasureCode() {
+        return unitOfMeasureCode;
+    }
+
+    public void setUnitOfMeasureCode(String unitOfMeasureCode) {
+        this.unitOfMeasureCode = unitOfMeasureCode;
+    }
 
     public Integer getLineNo() {
         return lineNo;

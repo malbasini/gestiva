@@ -59,7 +59,30 @@ public class GoodsReceiptViewController {
                        Model model) {
 
         Long tenantId = tenantContext.getCurrentTenantId();
-        var resultPage = goodsReceiptWebService.findPage(tenantId, page, size, q, dateFrom, dateTo);
+
+        boolean invalidDateRange = dateFrom != null
+                && dateTo != null
+                && dateFrom.isAfter(dateTo);
+
+        org.springframework.data.domain.Page<?> resultPage;
+
+        if (invalidDateRange) {
+            model.addAttribute(
+                    "dateRangeError",
+                    "La data iniziale non può essere successiva alla data finale."
+            );
+            resultPage = org.springframework.data.domain.Page.empty(
+                    org.springframework.data.domain.PageRequest.of(
+                            Math.max(0, page),
+                            size > 0 ? size : 10
+                    )
+            );
+        } else {
+            resultPage = goodsReceiptWebService.findPage(
+                    tenantId, page, size, q, dateFrom, dateTo
+            );
+        }
+
         model.addAttribute("goodsReceipts", resultPage);
         model.addAttribute("page", resultPage);
         model.addAttribute("q", q);

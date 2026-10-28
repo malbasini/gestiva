@@ -80,6 +80,7 @@
             <th>#</th>
             <th>Descrizione</th>
             <th class="text-right">Quantità</th>
+            <th>U.M.</th>
             <th class="text-right">Prezzo</th>
             <th class="text-right">Sconto</th>
             <th class="text-right">IVA</th>
@@ -91,6 +92,7 @@
             <td th:text="${line.lineNo}">1</td>
             <td th:text="${line.description}">Articolo</td>
             <td class="text-right" th:text="${line.formattedQuantity}">1,000</td>
+            <td th:text="${line.unitOfMeasureCode}">PZ</td>
             <td class="text-right" th:text="${line.formattedUnitPrice}">10,00 €</td>
             <td class="text-right" th:text="${line.formattedDiscountPct}">0,00%</td>
             <td class="text-right" th:text="${line.formattedTaxPct}">22,00%</td>

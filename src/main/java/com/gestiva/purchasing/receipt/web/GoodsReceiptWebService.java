@@ -9,6 +9,7 @@ import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
 import com.gestiva.purchasing.receipt.entity.GoodsReceipt;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptLineRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
+import com.gestiva.warehouse.item.repository.ItemRepository;
 import com.gestiva.purchasing.supplier.entity.Supplier;
 import com.gestiva.purchasing.supplier.repository.SupplierRepository;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,7 @@ public class GoodsReceiptWebService {
 
     private final GoodsReceiptRepository goodsReceiptRepository;
     private final GoodsReceiptLineRepository goodsReceiptLineRepository;
+    private final ItemRepository itemRepository;
     private final SupplierRepository supplierRepository;
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final SupplierInvoiceRepository supplierInvoiceRepository;
@@ -38,12 +40,14 @@ public class GoodsReceiptWebService {
 
     public GoodsReceiptWebService(GoodsReceiptRepository goodsReceiptRepository,
                                   GoodsReceiptLineRepository goodsReceiptLineRepository,
+                                  ItemRepository itemRepository,
                                   SupplierRepository supplierRepository,
                                   PurchaseOrderRepository purchaseOrderRepository,
                                   SupplierInvoiceRepository supplierInvoiceRepository,
                                   CompanyContext companyContext) {
         this.goodsReceiptRepository = goodsReceiptRepository;
         this.goodsReceiptLineRepository = goodsReceiptLineRepository;
+        this.itemRepository = itemRepository;
         this.supplierRepository = supplierRepository;
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.supplierInvoiceRepository = supplierInvoiceRepository;
@@ -135,6 +139,15 @@ public class GoodsReceiptWebService {
             lv.setLineNo(line.getLineNo());
             lv.setDescription(line.getDescription());
             lv.setFormattedQuantityReceived(PdfFormatUtils.formatDecimalTrimmed(line.getQuantityReceived(), 3));
+            lv.setUnitOfMeasureCode(
+                    line.getItemId() == null
+                            ? "-"
+                            : itemRepository
+                                    .findWithBaseUomByTenantIdAndId(tenantId, line.getItemId())
+                                    .map(item -> item.getBaseUom())
+                                    .map(uom -> uom.getCode())
+                                    .orElse("-")
+            );
             v.getLines().add(lv);
         }
 
