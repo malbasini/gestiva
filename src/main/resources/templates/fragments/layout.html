@@ -155,10 +155,6 @@
                                 sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')">
                                 <a class="dropdown-item" th:href="@{/inventory-valuations/consistency-check}">Controllo coerenza</a>
                             </li>
-                            <li th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL')}"
-                                sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
-                                <a class="dropdown-item" th:href="@{/tenant-settings/inventory-valuation}">Metodo valorizzazione</a>
-                            </li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown" th:if="${tenantSubscriptionActive and tenantSubscriptionPlan == 'PROFESSIONAL'}"
