@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Errore interno - Gestiva</title>
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css">
+
+    <style>
+        body {
+            min-height: 100vh;
+            background: #f5f7fb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .error-card {
+            width: 100%;
+            max-width: 560px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 48px 36px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .error-code {
+            font-size: 72px;
+            font-weight: 700;
+            line-height: 1;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+
+        .error-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 16px;
+        }
+
+        .error-message {
+            color: #6b7280;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+
+<main class="error-card">
+
+    <div class="error-code">500</div>
+
+    <h1 class="error-title">Si è verificato un problema</h1>
+
+    <p class="error-message mb-4">
+        Non è stato possibile completare l'operazione.
+        Riprova tra qualche istante.
+    </p>
+
+    <div class="d-flex justify-content-center gap-2 flex-wrap">
+        <a th:href="@{/}" href="/" class="btn btn-primary">
+            Torna alla pagina iniziale
+        </a>
+
+        <button type="button"
+                class="btn btn-outline-secondary"
+                onclick="history.back()">
+            Indietro
+        </button>
+    </div>
+
+</main>
+
+</body>
+</html>

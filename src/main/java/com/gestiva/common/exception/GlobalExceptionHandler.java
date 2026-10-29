@@ -1,6 +1,8 @@
 package com.gestiva.common.exception;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,7 +16,7 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleNotFound(NotFoundException ex) {
         ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
         pd.setTitle("Resource not found");
-        pd.setDetail(ex.getMessage());
+        pd.setDetail("La risorsa richiesta non è stata trovata.");
         return pd;
     }
 
@@ -35,7 +37,12 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ProblemDetail handleGeneric(Exception ex) {
+    public ProblemDetail handleGeneric(Exception ex) throws Exception {
+        if (ex instanceof AccessDeniedException
+                || ex instanceof AuthenticationException) {
+            throw ex;
+        }
+
         ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         pd.setTitle("Internal server error");
         pd.setDetail("Si è verificato un errore interno. Riprova più tardi.");

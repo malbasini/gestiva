@@ -465,8 +465,164 @@ class GlobalExceptionHandlerTest {
         );
     }
 
+    @Test
+    void shouldHandleCsvBusinessExceptionWithCsvAccept()
+            throws Exception {
+
+        var result = mockMvc.perform(
+                    get("/test/pages/export-business.csv")
+                            .accept(new MediaType("text", "csv"))
+                )
+                .andReturn();
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                400,
+                result.getResponse().getStatus()
+        );
+
+        org.junit.jupiter.api.Assertions.assertNull(
+                result.getModelAndView()
+        );
+
+        System.out.println(
+                "DIAGNOSTICA_CSV_BUSINESS_STATUS="
+                + result.getResponse().getStatus()
+        );
+
+        System.out.println(
+                "DIAGNOSTICA_CSV_BUSINESS_CONTENT_TYPE="
+                + result.getResponse().getContentType()
+        );
+
+        System.out.println(
+                "DIAGNOSTICA_CSV_BUSINESS_HAS_VIEW="
+                + (result.getModelAndView() != null)
+        );
+
+        System.out.println(
+                "DIAGNOSTICA_CSV_BUSINESS_BODY="
+                + result.getResponse().getContentAsString()
+        );
+
+        String body = result.getResponse().getContentAsString();
+
+        org.junit.jupiter.api.Assertions.assertFalse(
+                body.contains("Dettaglio tecnico interno")
+        );
+    }
+
+
+    @Test
+    void shouldHandleXlsxNotFoundExceptionWithXlsxAccept()
+            throws Exception {
+
+        var result = mockMvc.perform(
+                    get("/test/pages/export-not-found.xlsx")
+                            .accept(MediaType.parseMediaType(
+                                    "application/vnd.openxmlformats-officedocument."
+                                    + "spreadsheetml.sheet"
+                            ))
+                )
+                .andReturn();
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                404,
+                result.getResponse().getStatus()
+        );
+
+        org.junit.jupiter.api.Assertions.assertNull(
+                result.getModelAndView()
+        );
+
+        System.out.println(
+                "DIAGNOSTICA_XLSX_NOT_FOUND_STATUS="
+                + result.getResponse().getStatus()
+        );
+
+        System.out.println(
+                "DIAGNOSTICA_XLSX_NOT_FOUND_CONTENT_TYPE="
+                + result.getResponse().getContentType()
+        );
+
+        System.out.println(
+                "DIAGNOSTICA_XLSX_NOT_FOUND_HAS_VIEW="
+                + (result.getModelAndView() != null)
+        );
+
+        System.out.println(
+                "DIAGNOSTICA_XLSX_NOT_FOUND_BODY="
+                + result.getResponse().getContentAsString()
+        );
+
+        String body = result.getResponse().getContentAsString();
+
+        org.junit.jupiter.api.Assertions.assertFalse(
+                body.contains("Dettaglio tecnico interno")
+        );
+    }
+
+
+    @Test
+    void shouldPropagateAccessDeniedExceptionFromRestController()
+            throws Exception {
+
+        var exception = org.junit.jupiter.api.Assertions.assertThrows(
+                jakarta.servlet.ServletException.class,
+                () -> mockMvc.perform(
+                        get("/test/errors/rest-access-denied")
+                                .accept(MediaType.APPLICATION_JSON)
+                ).andReturn()
+        );
+
+        org.junit.jupiter.api.Assertions.assertInstanceOf(
+                org.springframework.security.access.AccessDeniedException.class,
+                exception.getCause()
+        );
+    }
+
+    @Test
+    void shouldNotExposeTechnicalDetailsForRestNotFoundException()
+            throws Exception {
+
+        mockMvc.perform(
+                    get("/test/errors/rest-not-found")
+                            .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_PROBLEM_JSON
+                ))
+                .andExpect(jsonPath("$.detail").value(
+                        "La risorsa richiesta non è stata trovata."
+                ))
+                .andExpect(result ->
+                        org.junit.jupiter.api.Assertions.assertFalse(
+                                result.getResponse()
+                                        .getContentAsString()
+                                        .contains(
+                                            "Dettaglio tecnico interno riservato"
+                                        )
+                        )
+                );
+    }
+
     @RestController
     static class TestRestController {
+
+        @GetMapping("/test/errors/rest-not-found")
+        public String restNotFound() {
+            throw new NotFoundException(
+                    "Dettaglio tecnico interno riservato"
+            );
+        }
+
+
+        @GetMapping("/test/errors/rest-access-denied")
+        public String restAccessDenied() {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Dettaglio autorizzazione interno"
+            );
+        }
 
         @GetMapping("/test/errors/business")
         public String businessError() {

@@ -38,10 +38,10 @@
   </style>
 </head>
 <body>
-<div class="error-403-container">
+<main class="error-403-container">
   <div class="error-403-card">
     <div class="error-code">403</div>
-    <div class="error-title">Accesso negato</div>
+    <h1 class="error-title">Accesso negato</h1>
 
     <!-- Messaggio “standard”, se non passi nulla dal controller -->
     <p class="error-message" th:if="${message == null}">
@@ -57,6 +57,6 @@
       </button>
     </div>
   </div>
-</div>
+</main>
 </body>
 </html>
