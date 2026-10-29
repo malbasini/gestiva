@@ -4,9 +4,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice
+@RestControllerAdvice(annotations = RestController.class)
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(NotFoundException.class)
@@ -37,7 +38,7 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleGeneric(Exception ex) {
         ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         pd.setTitle("Internal server error");
-        pd.setDetail(ex.getMessage());
+        pd.setDetail("Si è verificato un errore interno. Riprova più tardi.");
         return pd;
     }
 }

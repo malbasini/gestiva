@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <title>Operazione non completata - Gestiva</title>
+
+    <link rel="stylesheet"
+          href="/webjars/bootstrap/5.3.3/css/bootstrap.min.css">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .error-card {
+            max-width: 560px;
+            width: 100%;
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+        }
+
+        .error-title {
+            color: #343a40;
+            font-weight: 600;
+        }
+
+        .error-message {
+            color: #6c757d;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+
+<main class="container py-4">
+
+    <div class="card error-card mx-auto">
+        <div class="card-body p-4 p-md-5 text-center">
+
+            <h1 class="h3 error-title mb-3">
+                Operazione non completata
+            </h1>
+
+            <p class="error-message mb-4"
+               th:text="${errorMessage} ?: 'Non è stato possibile completare l’operazione richiesta.'">
+                Non è stato possibile completare l’operazione richiesta.
+            </p>
+
+            <a href="/"
+               class="btn btn-primary px-4">
+                Torna alla pagina iniziale
+            </a>
+
+            <button type="button"
+                    class="btn btn-outline-secondary ms-2"
+                    onclick="history.back()">
+                Indietro
+            </button>
+
+        </div>
+    </div>
+
+</main>
+
+</body>
+</html>
