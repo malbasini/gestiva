@@ -149,6 +149,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)
                 )
+                .exceptionHandling(exceptions -> exceptions
+                        .accessDeniedHandler(new GestivaAccessDeniedHandler())
+                )
                 .formLogin(form -> form
                         .loginPage("/login")
                         .usernameParameter("email")
