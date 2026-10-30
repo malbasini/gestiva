@@ -41,7 +41,7 @@ public class GoodsReceiptViewController {
             model.addAttribute("activeMenu", "goodsReceipts");
             return "redirect:/goods-receipts/" + id;
         }
-        catch (Exception e) {
+        catch (com.gestiva.common.exception.BusinessException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/goods-receipts/" + id;
         }

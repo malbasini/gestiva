@@ -119,6 +119,10 @@ public class SecurityConfig {
                         // ciclo passivo
                         .requestMatchers("/suppliers/**").hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
                         .requestMatchers("/purchase-orders/**").hasAnyRole("ADMIN", "PURCHASING")
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.POST,
+                                "/goods-receipts/{id}/invoice"
+                        ).hasAnyRole("ADMIN", "PURCHASING")
                         .requestMatchers("/goods-receipts/**").hasAnyRole("ADMIN", "PURCHASING", "WAREHOUSE")
                         .requestMatchers("/supplier-invoices/**").hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
 
