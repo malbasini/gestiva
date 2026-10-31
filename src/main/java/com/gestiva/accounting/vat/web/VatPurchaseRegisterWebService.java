@@ -29,13 +29,40 @@ public class VatPurchaseRegisterWebService {
         this.supplierRepository = supplierRepository;
     }
 
-    public List<VatPurchaseRegisterRowView> findRows(Long tenantId, LocalDate dateFrom, LocalDate dateTo) {
+    @Deprecated
+    public List<VatPurchaseRegisterRowView> findRows(
+            Long tenantId,
+            LocalDate dateFrom,
+            LocalDate dateTo) {
+
+        throw new IllegalStateException(
+                "Registro IVA acquisti: companyId obbligatorio."
+        );
+    }
+
+    public List<VatPurchaseRegisterRowView> findRows(
+            Long tenantId,
+            Long companyId,
+            LocalDate dateFrom,
+            LocalDate dateTo) {
+
+        if (tenantId == null || companyId == null) {
+            throw new IllegalStateException(
+                    "Tenant e società obbligatori per il registro IVA acquisti."
+            );
+        }
+
         List<SupplierInvoice> invoices = supplierInvoiceRepository
-                .findByTenantIdAndInvoiceDateBetweenOrderByInvoiceDateAscInvoiceNumberAsc(tenantId, dateFrom, dateTo);
+                .findByTenantIdAndCompanyIdAndInvoiceDateBetweenOrderByInvoiceDateAscInvoiceNumberAsc(tenantId, companyId, dateFrom, dateTo);
 
         List<VatPurchaseRegisterRowView> rows = new ArrayList<>();
 
         for (SupplierInvoice invoice : invoices) {
+            // Solo le fatture registrate producono effetti IVA.
+            if (!"REGISTERED".equals(invoice.getStatus())) {
+                continue;
+            }
+
             String supplierName = supplierRepository.findByTenantIdAndId(tenantId, invoice.getSupplierId())
                     .map(s -> s.getName() != null ? s.getName() : "Fornitore #" + invoice.getSupplierId())
                     .orElse("Fornitore #" + invoice.getSupplierId());

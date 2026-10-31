@@ -30,13 +30,37 @@ public class VatSalesRegisterWebService {
         this.customerRepository = customerRepository;
     }
 
-    public List<VatSalesRegisterRowView> findRows(Long tenantId, LocalDate dateFrom, LocalDate dateTo) {
+    @Deprecated
+    public List<VatSalesRegisterRowView> findRows(
+            Long tenantId,
+            LocalDate dateFrom,
+            LocalDate dateTo) {
+
+        throw new IllegalStateException(
+                "Registro IVA vendite: companyId obbligatorio."
+        );
+    }
+
+    public List<VatSalesRegisterRowView> findRows(
+            Long tenantId,
+            Long companyId,
+            LocalDate dateFrom,
+            LocalDate dateTo) {
+
+        if (tenantId == null || companyId == null) {
+            throw new IllegalStateException(
+                    "Tenant e società obbligatori per il registro IVA vendite."
+            );
+        }
         List<Invoice> invoices = invoiceRepository
-                .findByTenantIdAndInvoiceDateBetweenOrderByInvoiceDateAscInvoiceNumberAsc(tenantId, dateFrom, dateTo);
+                .findByTenantIdAndCompanyIdAndInvoiceDateBetweenOrderByInvoiceDateAscInvoiceNumberAsc(tenantId, companyId, dateFrom, dateTo);
 
         List<VatSalesRegisterRowView> rows = new ArrayList<>();
 
         for (Invoice invoice : invoices) {
+            if (!"ISSUED".equals(invoice.getStatus())) {
+                continue;
+            }
             String customerName = customerRepository.findByTenantIdAndId(tenantId, invoice.getCustomerId())
                     .map(c -> c.getName() != null ? c.getName() : "Cliente #" + invoice.getCustomerId())
                     .orElse("Cliente #" + invoice.getCustomerId());
@@ -48,7 +72,27 @@ public class VatSalesRegisterWebService {
                 BigDecimal taxPct = pct(line.getTaxPct());
                 VatBucket bucket = bucketsByTaxPct.computeIfAbsent(taxPct, k -> new VatBucket());
 
-                BigDecimal taxable = money(line.getLineTotal());
+                // lineTotal non è omogeneo tra i percorsi di vendita.
+                // Ricostruiamo l'imponibile da quantità, prezzo e sconto.
+                BigDecimal gross = line.getQuantity()
+                        .multiply(line.getUnitPrice());
+
+                BigDecimal discountPct =
+                        line.getDiscountPct() == null
+                                ? BigDecimal.ZERO
+                                : line.getDiscountPct();
+
+                BigDecimal discountAmount = gross
+                        .multiply(discountPct)
+                        .divide(
+                                new BigDecimal("100"),
+                                2,
+                                RoundingMode.HALF_UP
+                        );
+
+                BigDecimal taxable = money(
+                        gross.subtract(discountAmount)
+                );
                 BigDecimal tax = money(line.getTaxAmount());
 
                 bucket.taxableAmount = money(bucket.taxableAmount.add(taxable));

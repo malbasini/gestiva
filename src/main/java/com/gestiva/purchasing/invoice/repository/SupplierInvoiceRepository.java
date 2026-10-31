@@ -73,4 +73,26 @@ public interface SupplierInvoiceRepository extends JpaRepository<SupplierInvoice
             Long companyId
     );
 
+
+    // Gestiva V2 - Lettura esclusiva per registrazione fattura.
+    // Utilizzare all'interno di una transazione attiva.
+    @org.springframework.data.jpa.repository.Lock(
+            jakarta.persistence.LockModeType.PESSIMISTIC_WRITE
+    )
+    @org.springframework.data.jpa.repository.Query(
+            "SELECT s FROM SupplierInvoice s "
+                    + "WHERE s.tenantId = :tenantId "
+                    + "AND s.companyId = :companyId "
+                    + "AND s.id = :id"
+    )
+    java.util.Optional<SupplierInvoice>
+    findByTenantIdAndCompanyIdAndIdForUpdate(
+            @org.springframework.data.repository.query.Param("tenantId")
+            Long tenantId,
+            @org.springframework.data.repository.query.Param("companyId")
+            Long companyId,
+            @org.springframework.data.repository.query.Param("id")
+            Long id
+    );
+
 }

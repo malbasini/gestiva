@@ -98,11 +98,39 @@ public class VatSettlementWebService {
                 );
 
         for (Invoice invoice : salesInvoices) {
+            if (!"ISSUED".equals(invoice.getStatus())) {
+                continue;
+            }
             List<InvoiceLine> lines =
                     invoiceLineRepository.findByTenantIdAndInvoiceIdOrderByLineNoAsc(tenantId, invoice.getId());
 
             for (InvoiceLine line : lines) {
-                salesTaxable = money(salesTaxable.add(money(line.getLineTotal())));
+                // L'imponibile deve essere indipendente da lineTotal:
+                // nei diversi percorsi di vendita lineTotal
+                // può rappresentare il netto oppure il lordo IVA.
+                BigDecimal gross = line.getQuantity()
+                        .multiply(line.getUnitPrice());
+
+                BigDecimal discountPct =
+                        line.getDiscountPct() == null
+                                ? BigDecimal.ZERO
+                                : line.getDiscountPct();
+
+                BigDecimal discountAmount = gross
+                        .multiply(discountPct)
+                        .divide(
+                                new BigDecimal("100"),
+                                2,
+                                RoundingMode.HALF_UP
+                        );
+
+                BigDecimal taxable = gross
+                        .subtract(discountAmount)
+                        .setScale(2, RoundingMode.HALF_UP);
+
+                salesTaxable = money(
+                        salesTaxable.add(taxable)
+                );
                 salesTax = money(salesTax.add(money(line.getTaxAmount())));
             }
         }
@@ -116,6 +144,12 @@ public class VatSettlementWebService {
                 );
 
         for (SupplierInvoice invoice : purchaseInvoices) {
+            // Solo le fatture fornitori registrate
+            // concorrono alla liquidazione IVA.
+            if (!"REGISTERED".equals(invoice.getStatus())) {
+                continue;
+            }
+
             List<SupplierInvoiceLine> lines =
                     supplierInvoiceLineRepository.findByTenantIdAndSupplierInvoiceIdOrderByLineNoAsc(tenantId, invoice.getId());
 

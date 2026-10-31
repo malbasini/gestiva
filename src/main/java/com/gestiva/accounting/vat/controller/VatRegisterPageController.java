@@ -16,6 +16,7 @@ import java.time.LocalDate;
 public class VatRegisterPageController {
 
     private final TenantContext tenantContext;
+    private final com.gestiva.security.company.context.CompanyContext companyContext;
     private final VatSalesRegisterWebService vatSalesRegisterWebService;
     private final VatPurchaseRegisterWebService vatPurchaseRegisterWebService;
     private final VatSettlementWebService vatSettlementWebService;
@@ -36,9 +37,11 @@ public class VatRegisterPageController {
                                      VatSettlementCsvExportService vatSettlementCsvExportService,
                                      VatSalesRegisterXlsxExportService vatSalesRegisterXlsxExportService,
                                      VatPurchaseRegisterXlsxExportService vatPurchaseRegisterXlsxExportService,
-                                     VatSettlementXlsxExportService vatSettlementXlsxExportService) {
+                                     VatSettlementXlsxExportService vatSettlementXlsxExportService,
+            com.gestiva.security.company.context.CompanyContext companyContext) {
 
         this.tenantContext = tenantContext;
+        this.companyContext = companyContext;
         this.vatSalesRegisterWebService = vatSalesRegisterWebService;
         this.vatPurchaseRegisterWebService = vatPurchaseRegisterWebService;
         this.vatSettlementWebService = vatSettlementWebService;
@@ -65,7 +68,13 @@ public class VatRegisterPageController {
         LocalDate from = dateFrom != null ? dateFrom : LocalDate.now().withDayOfMonth(1);
         LocalDate to = dateTo != null ? dateTo : LocalDate.now();
 
-        model.addAttribute("rows", vatSalesRegisterWebService.findRows(tenantId, from, to));
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new com.gestiva.common.exception.BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        model.addAttribute("rows", vatSalesRegisterWebService.findRows(tenantId, companyId, from, to));
         model.addAttribute("dateFrom", from);
         model.addAttribute("dateTo", to);
         model.addAttribute("activeMenu", "accounting");
@@ -88,7 +97,13 @@ public class VatRegisterPageController {
         LocalDate from = dateFrom != null ? dateFrom : LocalDate.now().withDayOfMonth(1);
         LocalDate to = dateTo != null ? dateTo : LocalDate.now();
 
-        model.addAttribute("rows", vatPurchaseRegisterWebService.findRows(tenantId, from, to));
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new com.gestiva.common.exception.BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        model.addAttribute("rows", vatPurchaseRegisterWebService.findRows(tenantId, companyId, from, to));
         model.addAttribute("dateFrom", from);
         model.addAttribute("dateTo", to);
         model.addAttribute("activeMenu", "accounting");
@@ -111,7 +126,13 @@ public class VatRegisterPageController {
         java.time.LocalDate from = dateFrom != null ? dateFrom : java.time.LocalDate.now().withDayOfMonth(1);
         java.time.LocalDate to = dateTo != null ? dateTo : java.time.LocalDate.now();
 
-        model.addAttribute("settlement", vatSettlementWebService.calculateSettlement(tenantId, from, to));
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new com.gestiva.common.exception.BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        model.addAttribute("settlement", vatSettlementWebService.calculateSettlement(tenantId, companyId, from, to));
         model.addAttribute("dateFrom", from);
         model.addAttribute("dateTo", to);
         model.addAttribute("activeMenu", "accounting");
@@ -133,7 +154,13 @@ public class VatRegisterPageController {
         java.time.LocalDate from = dateFrom != null ? dateFrom : java.time.LocalDate.now().withDayOfMonth(1);
         java.time.LocalDate to = dateTo != null ? dateTo : java.time.LocalDate.now();
 
-        var rows = vatSalesRegisterWebService.findRows(tenantId, from, to);
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new com.gestiva.common.exception.BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        var rows = vatSalesRegisterWebService.findRows(tenantId, companyId, from, to);
         byte[] content = vatSalesRegisterCsvExportService.export(rows);
 
         return org.springframework.http.ResponseEntity.ok()
@@ -157,7 +184,13 @@ public class VatRegisterPageController {
         java.time.LocalDate from = dateFrom != null ? dateFrom : java.time.LocalDate.now().withDayOfMonth(1);
         java.time.LocalDate to = dateTo != null ? dateTo : java.time.LocalDate.now();
 
-        var rows = vatPurchaseRegisterWebService.findRows(tenantId, from, to);
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new com.gestiva.common.exception.BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        var rows = vatPurchaseRegisterWebService.findRows(tenantId, companyId, from, to);
         byte[] content = vatPurchaseRegisterCsvExportService.export(rows);
 
         return org.springframework.http.ResponseEntity.ok()
@@ -181,7 +214,13 @@ public class VatRegisterPageController {
         java.time.LocalDate from = dateFrom != null ? dateFrom : java.time.LocalDate.now().withDayOfMonth(1);
         java.time.LocalDate to = dateTo != null ? dateTo : java.time.LocalDate.now();
 
-        VatSettlementView settlement = vatSettlementWebService.calculateSettlement(tenantId, from, to);
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new com.gestiva.common.exception.BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        VatSettlementView settlement = vatSettlementWebService.calculateSettlement(tenantId, companyId, from, to);
         byte[] content = vatSettlementCsvExportService.export(settlement);
 
         return org.springframework.http.ResponseEntity.ok()
@@ -205,7 +244,13 @@ public class VatRegisterPageController {
         java.time.LocalDate from = dateFrom != null ? dateFrom : java.time.LocalDate.now().withDayOfMonth(1);
         java.time.LocalDate to = dateTo != null ? dateTo : java.time.LocalDate.now();
 
-        var rows = vatSalesRegisterWebService.findRows(tenantId, from, to);
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new com.gestiva.common.exception.BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        var rows = vatSalesRegisterWebService.findRows(tenantId, companyId, from, to);
         byte[] content = vatSalesRegisterXlsxExportService.export(rows);
 
         return org.springframework.http.ResponseEntity.ok()
@@ -230,7 +275,13 @@ public class VatRegisterPageController {
         java.time.LocalDate from = dateFrom != null ? dateFrom : java.time.LocalDate.now().withDayOfMonth(1);
         java.time.LocalDate to = dateTo != null ? dateTo : java.time.LocalDate.now();
 
-        VatSettlementView settlement = vatSettlementWebService.calculateSettlement(tenantId, from, to);
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new com.gestiva.common.exception.BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        VatSettlementView settlement = vatSettlementWebService.calculateSettlement(tenantId, companyId, from, to);
         byte[] content = vatSettlementXlsxExportService.export(settlement);
 
         return org.springframework.http.ResponseEntity.ok()
@@ -255,7 +306,13 @@ public class VatRegisterPageController {
         java.time.LocalDate from = dateFrom != null ? dateFrom : java.time.LocalDate.now().withDayOfMonth(1);
         java.time.LocalDate to = dateTo != null ? dateTo : java.time.LocalDate.now();
 
-        var rows = vatPurchaseRegisterWebService.findRows(tenantId, from, to);
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new com.gestiva.common.exception.BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        var rows = vatPurchaseRegisterWebService.findRows(tenantId, companyId, from, to);
         byte[] content = vatPurchaseRegisterXlsxExportService.export(rows);
 
         return org.springframework.http.ResponseEntity.ok()

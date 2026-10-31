@@ -321,28 +321,114 @@ public class SupplierInvoiceService {
         saved.setSubtotalAmount(subtotal.setScale(2, java.math.RoundingMode.HALF_UP));
         saved.setTaxAmount(tax.setScale(2, java.math.RoundingMode.HALF_UP));
         saved.setTotalAmount(total.setScale(2, java.math.RoundingMode.HALF_UP));
+        // Gestiva V2 - La creazione produce esclusivamente
+        // una fattura DRAFT, senza effetti contabili.
+        // Scadenza e prima nota saranno generate
+        // dalla futura registrazione definitiva.
         supplierInvoiceRepository.save(saved);
-        paymentDueService.createPayableFromSupplierInvoice(
-                tenantId,
-                saved.getSupplierId(),
-                saved.getInvoiceNumber(),
-                saved.getInvoiceDate(),
-                saved.getCurrencyCode(),
-                saved.getTotalAmount(),
-                saved.getId()
-        );
+
+        return saved.getId();
+    }
+
+
+    /**
+     * Registra definitivamente una fattura fornitore.
+     * Transizione DRAFT -> REGISTERED.
+     */
+    @org.springframework.transaction.annotation.Transactional(
+            rollbackFor = Exception.class
+    )
+    public Long registerSupplierInvoice(
+            Long tenantId,
+            Long supplierInvoiceId) {
+
+        if (tenantId == null || supplierInvoiceId == null) {
+            throw new BusinessException(
+                    "Tenant o identificativo fattura fornitore mancante."
+            );
+        }
+
+        Long companyId = companyContext.requireCurrentCompanyId();
+
+        var invoice = supplierInvoiceRepository
+                .findByTenantIdAndCompanyIdAndIdForUpdate(
+                        tenantId,
+                        companyId,
+                        supplierInvoiceId
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "Fattura fornitore non trovata nella società corrente."
+                ));
+
+        if (!"DRAFT".equals(invoice.getStatus())) {
+            throw new BusinessException(
+                    "Registrazione non consentita: "
+                            + "la fattura fornitore non è in stato DRAFT."
+            );
+        }
+
+        if (invoice.getSupplierId() == null
+                || invoice.getInvoiceNumber() == null
+                || invoice.getInvoiceNumber().isBlank()
+                || invoice.getInvoiceDate() == null
+                || invoice.getCurrencyCode() == null
+                || invoice.getCurrencyCode().isBlank()) {
+            throw new BusinessException(
+                    "Dati obbligatori della fattura fornitore incompleti."
+            );
+        }
+
+        java.math.BigDecimal subtotal = invoice.getSubtotalAmount();
+        java.math.BigDecimal tax = invoice.getTaxAmount();
+        java.math.BigDecimal total = invoice.getTotalAmount();
+
+        java.math.BigDecimal maxAmount =
+                new java.math.BigDecimal("9999999999999.99");
+
+        if (subtotal == null
+                || tax == null
+                || total == null
+                || subtotal.signum() < 0
+                || tax.signum() < 0
+                || total.signum() <= 0
+                || subtotal.compareTo(maxAmount) > 0
+                || tax.compareTo(maxAmount) > 0
+                || total.compareTo(maxAmount) > 0
+                || subtotal.add(tax).compareTo(total) != 0) {
+            throw new BusinessException(
+                    "Importi della fattura fornitore non validi "
+                            + "o non quadrati."
+            );
+        }
+
+        // Il cambio di stato e gli effetti contabili
+        // partecipano alla stessa transazione Spring.
+        invoice.setStatus("REGISTERED");
+        supplierInvoiceRepository.save(invoice);
+
         journalAutoPostingService.postSupplierInvoice(
                 tenantId,
-                saved.getInvoiceDate(),
-                saved.getInvoiceNumber(),
-                saved.getSubtotalAmount(),
-                saved.getTaxAmount(),
-                saved.getTotalAmount(),
-                saved.getCurrencyCode(),
-                saved.getId(),
-                saved.getNotes()
+                invoice.getInvoiceDate(),
+                invoice.getInvoiceNumber(),
+                subtotal,
+                tax,
+                total,
+                invoice.getCurrencyCode(),
+                invoice.getId(),
+                invoice.getNotes()
         );
-        return saved.getId();
+
+        paymentDueService.createPayableFromSupplierInvoice(
+                tenantId,
+                invoice.getSupplierId(),
+                invoice.getInvoiceNumber(),
+                invoice.getInvoiceDate(),
+                invoice.getCurrencyCode(),
+                total,
+                invoice.getId()
+        );
+
+        return invoice.getId();
     }
 
     private String nextInvoiceNumber(Long tenantId, Long companyId) {

@@ -314,6 +314,16 @@ public class JournalAutoPostingService {
                         "Fattura fornitore non trovata nella società corrente."
                 ));
 
+        // Gestiva V2 - Contabilizzazione consentita solo
+        // per fatture fornitori registrate.
+        if (!"REGISTERED".equals(supplierInvoice.getStatus())) {
+            throw new BusinessException(
+                    "Contabilizzazione fattura fornitore non consentita: "
+                            + "stato diverso da REGISTERED."
+            );
+        }
+
+
         if (!java.util.Objects.equals(
                     supplierInvoice.getInvoiceNumber(), documentNumber)
                 || !java.util.Objects.equals(

@@ -99,8 +99,65 @@ class JournalAutoPostingServiceTest {
         );
     }
 
+
+    @ParameterizedTest
+    @ValueSource(strings = {"DRAFT", "CANCELLED"})
+    void postSupplierInvoice_shouldRejectNonRegisteredStatus(
+            String status) {
+
+        when(companyContext.resolveCurrentCompanyId())
+                .thenReturn(COMPANY_ID);
+
+        SupplierInvoice invoice = createInvoiceFixture();
+        invoice.setStatus(status);
+
+        when(supplierInvoiceRepository.findByTenantIdAndCompanyIdAndId(
+                TENANT_ID,
+                COMPANY_ID,
+                SUPPLIER_INVOICE_ID
+        )).thenReturn(Optional.of(invoice));
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> service.postSupplierInvoice(
+                        TENANT_ID,
+                        LocalDate.of(2026, 10, 27),
+                        "SF-TEST-001",
+                        new BigDecimal("100.00"),
+                        new BigDecimal("22.00"),
+                        new BigDecimal("122.00"),
+                        "EUR",
+                        SUPPLIER_INVOICE_ID,
+                        "Test stato fattura fornitore"
+                )
+        );
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "Contabilizzazione fattura fornitore non consentita: "
+                        + "stato diverso da REGISTERED.",
+                exception.getMessage()
+        );
+
+        verify(supplierInvoiceRepository)
+                .findByTenantIdAndCompanyIdAndId(
+                        TENANT_ID,
+                        COMPANY_ID,
+                        SUPPLIER_INVOICE_ID
+                );
+
+        verifyNoMoreInteractions(supplierInvoiceRepository);
+
+        verifyNoInteractions(
+                journalEntryRepository,
+                journalEntryLineRepository,
+                accountRepository,
+                documentSequenceService
+        );
+    }
+
     private SupplierInvoice createInvoiceFixture() {
         SupplierInvoice invoice = new SupplierInvoice();
+        invoice.setStatus("REGISTERED");
         invoice.setInvoiceNumber("SF-TEST-001");
         invoice.setInvoiceDate(LocalDate.of(2026, 10, 27));
         invoice.setCurrencyCode("EUR");
