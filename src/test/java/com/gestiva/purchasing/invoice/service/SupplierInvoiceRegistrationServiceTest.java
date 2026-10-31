@@ -50,8 +50,30 @@ class SupplierInvoiceRegistrationServiceTest {
     @Mock
     private PaymentDueService paymentDueService;
 
+    @Mock
+    private org.springframework.core.env.Environment environment;
+
     @InjectMocks
     private SupplierInvoiceService service;
+
+    @org.junit.jupiter.api.BeforeEach
+    void enableSupplierInvoiceRegistrationForUnitTests() {
+        org.springframework.test.util.ReflectionTestUtils.setField(
+                service, "environment", environment
+        );
+
+        org.mockito.Mockito.lenient()
+                .when(environment.getActiveProfiles())
+                .thenReturn(new String[]{"test"});
+
+        org.mockito.Mockito.lenient()
+                .when(environment.getProperty(
+                        "gestiva.purchasing.supplier-invoice.enabled",
+                        Boolean.class,
+                        false
+                ))
+                .thenReturn(true);
+    }
 
     private SupplierInvoice createInvoice(String status) {
 

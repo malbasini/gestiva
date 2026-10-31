@@ -26,6 +26,19 @@ public class SupplierInvoiceLine extends TenantAwareEntity {
     @Column(name = "description", nullable = false, length = 500)
     private String description;
 
+    // Snapshot UOM al momento della generazione della fattura.
+    @Column(name = "uom_id")
+    private Long uomId;
+
+    @Column(name = "uom_code", length = 20)
+    private String uomCode;
+
+    @Column(name = "base_uom_code", length = 20)
+    private String baseUomCode;
+
+    @Column(name = "conversion_factor", precision = 19, scale = 6)
+    private BigDecimal conversionFactor;
+
     @Column(name = "quantity", nullable = false, precision = 15, scale = 3)
     private BigDecimal quantity;
 
@@ -77,6 +90,38 @@ public class SupplierInvoiceLine extends TenantAwareEntity {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Long getUomId() {
+        return uomId;
+    }
+
+    public void setUomId(Long uomId) {
+        this.uomId = uomId;
+    }
+
+    public String getUomCode() {
+        return uomCode;
+    }
+
+    public void setUomCode(String uomCode) {
+        this.uomCode = uomCode;
+    }
+
+    public String getBaseUomCode() {
+        return baseUomCode;
+    }
+
+    public void setBaseUomCode(String baseUomCode) {
+        this.baseUomCode = baseUomCode;
+    }
+
+    public BigDecimal getConversionFactor() {
+        return conversionFactor;
+    }
+
+    public void setConversionFactor(BigDecimal conversionFactor) {
+        this.conversionFactor = conversionFactor;
     }
 
     public BigDecimal getQuantity() {

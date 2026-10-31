@@ -15,6 +15,7 @@ public class ItemAutocompleteView {
     private BigDecimal basePrice;
     private BigDecimal purchasePrice;
     private List<PurchaseUomOptionView> purchaseUomOptions = List.of();
+    private List<SalesUomOptionView> salesUomOptions = List.of();
     private BigDecimal defaultTaxPct;
 
     public Long getId() {
@@ -99,6 +100,19 @@ public class ItemAutocompleteView {
         this.purchaseUomOptions =
                 purchaseUomOptions != null
                         ? List.copyOf(purchaseUomOptions)
+                        : List.of();
+    }
+
+    public List<SalesUomOptionView> getSalesUomOptions() {
+        return salesUomOptions;
+    }
+
+    public void setSalesUomOptions(
+            List<SalesUomOptionView> salesUomOptions
+    ) {
+        this.salesUomOptions =
+                salesUomOptions != null
+                        ? List.copyOf(salesUomOptions)
                         : List.of();
     }
 

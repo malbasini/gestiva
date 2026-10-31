@@ -259,6 +259,9 @@ public class InvoiceService {
                 line.setDescription(deliveryNoteLine.getDescription());
                 line.setQuantity(deliveryNoteLine.getQuantity());
                 line.setUnitOfMeasure(deliveryNoteLine.getUnitOfMeasure());
+                line.setUomId(deliveryNoteLine.getUomId());
+                line.setBaseUomCode(deliveryNoteLine.getBaseUomCode());
+                line.setConversionFactor(deliveryNoteLine.getConversionFactor());
                 line.setUnitPrice(deliveryNoteLine.getUnitPrice());
                 line.setDiscountPct(defaultZero(deliveryNoteLine.getDiscountPct()));
                 line.setTaxPct(defaultZero(deliveryNoteLine.getTaxPct()));
@@ -271,6 +274,9 @@ public class InvoiceService {
                 line.setDescription(orderLine.getDescription());
                 line.setQuantity(orderLine.getQuantity());
                 line.setUnitOfMeasure(orderLine.getUnitOfMeasure());
+                line.setUomId(orderLine.getUomId());
+                line.setBaseUomCode(orderLine.getBaseUomCode());
+                line.setConversionFactor(orderLine.getConversionFactor());
                 line.setUnitPrice(orderLine.getUnitPrice());
                 line.setDiscountPct(defaultZero(orderLine.getDiscountPct()));
                 line.setTaxPct(defaultZero(orderLine.getTaxPct()));
@@ -397,6 +403,9 @@ public class InvoiceService {
             line.setDescription(orderLine.getDescription());
             line.setQuantity(orderLine.getQuantity());
             line.setUnitOfMeasure(orderLine.getUnitOfMeasure());
+            line.setUomId(orderLine.getUomId());
+            line.setBaseUomCode(orderLine.getBaseUomCode());
+            line.setConversionFactor(orderLine.getConversionFactor());
             line.setUnitPrice(orderLine.getUnitPrice());
             line.setDiscountPct(defaultZero(orderLine.getDiscountPct()));
             line.setTaxPct(defaultZero(orderLine.getTaxPct()));

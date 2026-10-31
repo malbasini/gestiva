@@ -264,4 +264,38 @@ class SupplierInvoiceEndpointAuthorizationTest {
     void warehouseCanAccessGoodsReceiptDetail() throws Exception {
         verifyRequest("WAREHOUSE", "GET", RECEIPT_PATH, false, true);
     }
+
+    private static final String REGISTER_PATH =
+            "/supplier-invoices/1/register";
+
+    @Test
+    void adminCanRegisterSupplierInvoice() throws Exception {
+        verifyRequest("ADMIN", "POST", REGISTER_PATH, true, true);
+    }
+
+    @Test
+    void accountingCanRegisterSupplierInvoice() throws Exception {
+        verifyRequest("ACCOUNTING", "POST", REGISTER_PATH, true, true);
+    }
+
+    @Test
+    void purchasingCannotRegisterSupplierInvoice() throws Exception {
+        verifyRequest("PURCHASING", "POST", REGISTER_PATH, true, false);
+    }
+
+    @Test
+    void warehouseCannotRegisterSupplierInvoice() throws Exception {
+        verifyRequest("WAREHOUSE", "POST", REGISTER_PATH, true, false);
+    }
+
+    @Test
+    void salesCannotRegisterSupplierInvoice() throws Exception {
+        verifyRequest("SALES", "POST", REGISTER_PATH, true, false);
+    }
+
+    @Test
+    void registerWithoutCsrfMustBeRejected() throws Exception {
+        verifyRequest("ADMIN", "POST", REGISTER_PATH, false, false);
+    }
+
 }

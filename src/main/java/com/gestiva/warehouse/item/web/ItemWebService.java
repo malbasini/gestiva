@@ -436,6 +436,61 @@ public class ItemWebService {
         }
 
         view.setPurchaseUomOptions(purchaseOptions);
+
+        // UOM disponibili per le vendite:
+        // unità base + sole alternative attive abilitate alla vendita.
+        java.util.List<SalesUomOptionView> salesOptions =
+                new java.util.ArrayList<>();
+
+        SalesUomOptionView salesBaseOption = new SalesUomOptionView();
+        salesBaseOption.setUomId(baseUom.getId());
+        salesBaseOption.setCode(baseUom.getCode());
+        salesBaseOption.setName(baseUom.getName());
+        salesBaseOption.setConversionFactor(
+                BigDecimal.ONE.setScale(6)
+        );
+        salesBaseOption.setDecimalPlaces(baseUom.getDecimalPlaces());
+        salesOptions.add(salesBaseOption);
+
+        for (var alternative : alternatives) {
+            if (!alternative.isActive() || !alternative.isSalesUom()) {
+                continue;
+            }
+
+            var salesUom = alternative.getUom();
+
+            if (salesUom == null
+                    || !salesUom.isActive()
+                    || baseUom.getId().equals(salesUom.getId())) {
+                continue;
+            }
+
+            BigDecimal salesFactor = alternative.getConversionFactor();
+
+            if (salesFactor == null
+                    || salesFactor.compareTo(BigDecimal.ZERO) <= 0
+                    || salesFactor.stripTrailingZeros().scale() > 6
+                    || salesFactor.precision() - salesFactor.scale() > 13) {
+                continue;
+            }
+
+            SalesUomOptionView salesOption = new SalesUomOptionView();
+            salesOption.setUomId(salesUom.getId());
+            salesOption.setCode(salesUom.getCode());
+            salesOption.setName(salesUom.getName());
+            salesOption.setConversionFactor(
+                    salesFactor.setScale(
+                            6,
+                            java.math.RoundingMode.UNNECESSARY
+                    )
+            );
+            salesOption.setDecimalPlaces(salesUom.getDecimalPlaces());
+
+            salesOptions.add(salesOption);
+        }
+
+        view.setSalesUomOptions(salesOptions);
+
         view.setItemType(item.getItemType().toString());
         view.setBasePrice(item.getBasePrice());
         view.setPurchasePrice(item.getPurchasePrice());

@@ -36,6 +36,9 @@ public class GoodsReceiptWebService {
     private final SupplierInvoiceRepository supplierInvoiceRepository;
     private final CompanyContext companyContext;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.core.env.Environment environment;
+
 
 
     public GoodsReceiptWebService(GoodsReceiptRepository goodsReceiptRepository,
@@ -128,7 +131,41 @@ public class GoodsReceiptWebService {
                         receipt.getId()
                 );
         v.setHasSupplierInvoice(invoiceOpt.isPresent());
-        v.setCanCreateSupplierInvoice(false);
+
+        // Gestiva V2: il pulsante deve rispettare la stessa
+        // protezione applicata alla generazione nel backend.
+        boolean testProfileActive = environment != null
+                && java.util.Arrays.asList(
+                        environment.getActiveProfiles()
+                ).contains("test");
+
+        boolean invoiceGenerationEnabled = environment != null
+                && environment.getProperty(
+                        "gestiva.purchasing.supplier-invoice.enabled",
+                        Boolean.class,
+                        false
+                );
+
+        boolean canCreateInvoice = false;
+
+        if (testProfileActive
+                && invoiceGenerationEnabled
+                && invoiceOpt.isEmpty()) {
+
+            canCreateInvoice = purchaseOrderRepository
+                    .findByTenantIdAndCompanyIdAndId(
+                            tenantId,
+                            receipt.getCompanyId(),
+                            receipt.getPurchaseOrderId()
+                    )
+                    .map(po -> "CONFIRMED".equalsIgnoreCase(
+                            po.getStatus()
+                    ))
+                    .orElse(false);
+        }
+
+        v.setCanCreateSupplierInvoice(canCreateInvoice);
+
         invoiceOpt.ifPresent(invoice -> {
             v.setSupplierInvoiceId(invoice.getId());
             v.setSupplierInvoiceNumber(invoice.getInvoiceNumber());

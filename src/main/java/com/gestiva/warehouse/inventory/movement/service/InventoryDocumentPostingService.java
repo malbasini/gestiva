@@ -167,6 +167,41 @@ public class InventoryDocumentPostingService {
                 continue;
             }
 
+            // Quantità commerciale DDT -> quantità base di magazzino.
+            // Il fattore proviene dallo snapshot della riga DDT.
+            BigDecimal conversionFactor = line.getConversionFactor();
+
+            if (conversionFactor == null) {
+                // Compatibilità con righe prive di snapshot UOM.
+                conversionFactor = BigDecimal.ONE;
+            }
+
+            if (conversionFactor.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new BusinessException(
+                        "Fattore UOM non valido nella riga DDT "
+                                + line.getLineNo()
+                );
+            }
+
+            BigDecimal baseQuantity = line.getQuantity().multiply(
+                    conversionFactor
+            );
+
+            if (baseQuantity.stripTrailingZeros().scale() > 3
+                    || baseQuantity.compareTo(BigDecimal.ZERO) <= 0
+                    || baseQuantity.precision()
+                       - baseQuantity.scale() > 12) {
+                throw new BusinessException(
+                        "Quantità base non valida nella riga DDT "
+                                + line.getLineNo()
+                );
+            }
+
+            baseQuantity = baseQuantity.setScale(
+                    3,
+                    java.math.RoundingMode.UNNECESSARY
+            );
+
             // 5. Verifica disponibilità per società e magazzino
             inventoryAvailabilityService
                     .validateAvailabilityByCompanyAndWarehouse(
@@ -175,7 +210,7 @@ public class InventoryDocumentPostingService {
                             warehouseId,
                             line.getItemId(),
                             locationId,
-                            line.getQuantity()
+                            baseQuantity
                     );
 
             // 6. Registrazione movimento V2
@@ -188,7 +223,7 @@ public class InventoryDocumentPostingService {
                     deliveryNote.getDdtDate(),
                     "OUT",
                     "SALES_DELIVERY",
-                    line.getQuantity(),
+                    baseQuantity,
                     null,
                     "DELIVERY_NOTE",
                     deliveryNoteId,

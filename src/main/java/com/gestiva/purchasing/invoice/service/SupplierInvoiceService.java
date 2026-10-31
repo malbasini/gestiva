@@ -33,6 +33,18 @@ public class SupplierInvoiceService {
     private final DocumentSequenceService documentSequenceService;
     private final CompanyContext companyContext;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.core.env.Environment environment;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.gestiva.warehouse.uom.repository.UnitOfMeasureRepository
+            unitOfMeasureRepository;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.gestiva.warehouse.item.repository.ItemRepository
+            itemRepository;
+
+
 
     public SupplierInvoiceService(SupplierInvoiceRepository supplierInvoiceRepository,
                                   SupplierInvoiceLineRepository supplierInvoiceLineRepository,
@@ -60,14 +72,24 @@ public class SupplierInvoiceService {
 
     public Long createFromGoodsReceipt(Long tenantId, Long goodsReceiptId) {
 
-        // Gestiva V2 - BLOCCO TEMPORANEO DI SICUREZZA.
-        // Non rimuovere prima del completamento della migrazione
-        // multi-company delle fatture fornitori e della verifica
-        // delle relative scadenze e registrazioni contabili.
-        if (true) {
+        // Gestiva V2: generazione consentita esclusivamente
+        // nel profilo test e con abilitazione esplicita.
+        // Negli altri ambienti la funzione resta disabilitata.
+        boolean testProfileActive = environment != null
+                && java.util.Arrays.asList(
+                        environment.getActiveProfiles()
+                ).contains("test");
+
+        boolean invoiceGenerationEnabled = environment != null
+                && environment.getProperty(
+                        "gestiva.purchasing.supplier-invoice.enabled",
+                        Boolean.class,
+                        false
+                );
+
+        if (!testProfileActive || !invoiceGenerationEnabled) {
             throw new BusinessException(
-                    "Generazione fatture fornitori temporaneamente non disponibile: "
-                            + "migrazione multi-company Gestiva V2 in corso."
+                    "Generazione fatture fornitori temporaneamente non disponibile."
             );
         }
 
@@ -82,6 +104,13 @@ public class SupplierInvoiceService {
 
         var purchaseOrder = purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(tenantId, companyId, receipt.getPurchaseOrderId())
                 .orElseThrow(() -> new BusinessException("Ordine fornitore non trovato."));
+
+        if (!"CONFIRMED".equalsIgnoreCase(purchaseOrder.getStatus())) {
+            throw new BusinessException(
+                    "La fattura fornitore può essere generata "
+                            + "solo da un ordine confermato."
+            );
+        }
 
         if (!java.util.Objects.equals(purchaseOrder.getSupplierId(), receipt.getSupplierId())) {
             throw new BusinessException(
@@ -187,6 +216,30 @@ public class SupplierInvoiceService {
             line.setDescription(poLine.getDescription());
             // La fattura utilizza la quantità commerciale
             // coerente con il prezzo unitario dell'ordine.
+            // Snapshot delle unità di misura al momento della fattura.
+            var commercialUom = unitOfMeasureRepository
+                    .findByTenantIdAndId(tenantId, poLine.getUomId())
+                    .orElseThrow(() -> new BusinessException(
+                            "Unità di misura commerciale non trovata."
+                    ));
+
+            var item = itemRepository
+                    .findByTenantIdAndId(tenantId, poLine.getItemId())
+                    .orElseThrow(() -> new BusinessException(
+                            "Articolo della fattura fornitore non trovato."
+                    ));
+
+            if (item.getBaseUom() == null) {
+                throw new BusinessException(
+                        "Unità di misura base dell'articolo mancante."
+                );
+            }
+
+            line.setUomId(poLine.getUomId());
+            line.setUomCode(commercialUom.getCode());
+            line.setBaseUomCode(item.getBaseUom().getCode());
+            line.setConversionFactor(poLine.getConversionFactor());
+
             line.setQuantity(poLine.getQuantity());
             line.setUnitPrice(poLine.getUnitPrice());
             line.setDiscountPct(poLine.getDiscountPct());
@@ -341,6 +394,26 @@ public class SupplierInvoiceService {
     public Long registerSupplierInvoice(
             Long tenantId,
             Long supplierInvoiceId) {
+
+        // Gestiva V2: registrazione contabile consentita soltanto
+        // nel profilo test con abilitazione esplicita.
+        boolean testProfileActive = environment != null
+                && java.util.Arrays.asList(
+                        environment.getActiveProfiles()
+                ).contains("test");
+
+        boolean invoiceRegistrationEnabled = environment != null
+                && environment.getProperty(
+                        "gestiva.purchasing.supplier-invoice.enabled",
+                        Boolean.class,
+                        false
+                );
+
+        if (!testProfileActive || !invoiceRegistrationEnabled) {
+            throw new BusinessException(
+                    "Registrazione fatture fornitori temporaneamente non disponibile."
+            );
+        }
 
         if (tenantId == null || supplierInvoiceId == null) {
             throw new BusinessException(

@@ -1,5 +1,7 @@
 package com.gestiva.sales.quote.pdf;
 
+import com.gestiva.sales.quote.service.QuoteUomFormatter;
+
 import com.gestiva.common.exception.NotFoundException;
 import com.gestiva.crm.contact.entity.Customer;
 import com.gestiva.crm.contact.repository.CustomerRepository;
@@ -162,7 +164,7 @@ public class QuotePdfDataService {
             l.setTaxPct(line.getTaxPct());
             l.setLineTotal(line.getLineTotal());
 
-            l.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),2));
+            l.setFormattedQuantity(QuoteUomFormatter.format(line));
             l.setFormattedUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
             l.setFormattedDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct()));
             l.setFormattedTaxPct(PdfFormatUtils.formatDecimalTrimmed(line.getTaxPct(),2));

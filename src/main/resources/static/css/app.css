@@ -1166,3 +1166,49 @@ a:hover {
 }
 
 /* Sotto 901px rimane attivo il layout responsive esistente. */
+
+
+/* =========================================================
+   Gestiva V2 - Griglia righe preventivo
+   Override esclusivo del form preventivo.
+   ========================================================= */
+
+.quote-lines-grid {
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.quote-lines-grid .line-grid-header,
+.quote-lines-grid .line-grid-row {
+    grid-template-columns:
+        38px
+        minmax(280px, 2fr)
+        76px
+        126px
+        105px
+        88px
+        minmax(210px, 1.4fr)
+        78px
+        48px;
+    gap: 10px;
+    min-width: 1140px;
+}
+
+.quote-lines-grid .line-grid-row > div {
+    min-width: 0;
+}
+
+.quote-lines-grid .js-line-uom-select {
+    font-size: 14px;
+}
+
+@media (max-width: 900px) {
+    .quote-lines-grid .line-grid-row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        min-width: 0;
+    }
+
+    .quote-lines-grid .line-grid-header {
+        display: none;
+    }
+}

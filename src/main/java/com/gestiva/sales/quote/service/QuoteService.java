@@ -14,6 +14,12 @@ import com.gestiva.sales.quote.mapper.QuoteMapper;
 import com.gestiva.sales.quote.repository.QuoteLineRepository;
 import com.gestiva.sales.quote.repository.QuoteRepository;
 import com.gestiva.sales.quote.web.QuoteLineForm;
+import com.gestiva.warehouse.item.entity.Item;
+import com.gestiva.warehouse.item.entity.ItemUom;
+import com.gestiva.warehouse.item.repository.ItemRepository;
+import com.gestiva.warehouse.item.repository.ItemUomRepository;
+import com.gestiva.warehouse.uom.entity.UnitOfMeasure;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.gestiva.settings.sequence.repository.DocumentSequenceRepository;
 import com.gestiva.settings.sequence.service.DocumentSequenceService;
 import org.springframework.stereotype.Service;
@@ -44,6 +50,12 @@ public class QuoteService {
     private final QuoteMapper quoteMapper;
     private final DocumentSequenceService documentSequenceService;
     private final CompanyContext companyContext;
+
+    @Autowired
+    private ItemRepository itemRepository;
+
+    @Autowired
+    private ItemUomRepository itemUomRepository;
 
     public QuoteService(QuoteRepository quoteRepository,
                         QuoteLineRepository quoteLineRepository,
@@ -377,12 +389,7 @@ public class QuoteService {
             line.setLineNo(i + 1);
             line.setDescription(request.getDescription().trim());
             line.setQuantity(quantity);
-            line.setUnitOfMeasure(
-                    request.getUnitOfMeasure() == null
-                            || request.getUnitOfMeasure().isBlank()
-                            ? null
-                            : request.getUnitOfMeasure().trim()
-            );
+            applyUomSnapshot(tenantId, request, line);
             line.setUnitPrice(unitPrice);
             line.setDiscountPct(discountPct);
             line.setTaxPct(taxPct);
@@ -392,6 +399,107 @@ public class QuoteService {
         }
 
         return quoteLineRepository.saveAll(entities);
+    }
+
+    private void applyUomSnapshot(
+            Long tenantId,
+            QuoteLineRequest request,
+            QuoteLine line) {
+
+        if (request.getItemId() == null) {
+            if (request.getUomId() != null) {
+                throw new BusinessException(
+                        "Non è possibile selezionare un'UOM senza articolo."
+                );
+            }
+
+            line.setUnitOfMeasure(
+                    request.getUnitOfMeasure() == null
+                            || request.getUnitOfMeasure().isBlank()
+                            ? null
+                            : request.getUnitOfMeasure().trim()
+            );
+            return;
+        }
+
+        Item item = itemRepository
+                .findByTenantIdAndId(tenantId, request.getItemId())
+                .orElseThrow(() -> new BusinessException(
+                        "Articolo non trovato per la riga del preventivo."
+                ));
+
+        UnitOfMeasure baseUom = item.getBaseUom();
+
+        if (baseUom == null || !baseUom.isActive()) {
+            throw new BusinessException(
+                    "Unità di misura base dell'articolo non disponibile."
+            );
+        }
+
+        Long selectedUomId = request.getUomId() == null
+                ? baseUom.getId()
+                : request.getUomId();
+
+        String commercialCode;
+        BigDecimal factor;
+
+        if (baseUom.getId().equals(selectedUomId)) {
+            commercialCode = baseUom.getCode();
+            factor = BigDecimal.ONE;
+        } else {
+            ItemUom association = itemUomRepository
+                    .findByTenantIdAndItemIdAndUomId(
+                            tenantId,
+                            item.getId(),
+                            selectedUomId
+                    )
+                    .orElseThrow(() -> new BusinessException(
+                            "Unità di misura non associata all'articolo."
+                    ));
+
+            UnitOfMeasure alternativeUom = association.getUom();
+
+            if (!association.isActive()
+                    || !association.isSalesUom()
+                    || alternativeUom == null
+                    || !alternativeUom.isActive()) {
+                throw new BusinessException(
+                        "Unità di misura non abilitata alla vendita."
+                );
+            }
+
+            commercialCode = alternativeUom.getCode();
+            factor = association.getConversionFactor();
+
+            if (factor == null || factor.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new BusinessException(
+                        "Fattore di conversione UOM non valido."
+                );
+            }
+        }
+
+        if (request.getUomId() == null
+                && request.getUnitOfMeasure() != null
+                && !request.getUnitOfMeasure().isBlank()
+                && !commercialCode.equalsIgnoreCase(
+                        request.getUnitOfMeasure().trim())) {
+            throw new BusinessException(
+                    "Selezionare l'unità di misura dall'elenco dell'articolo."
+            );
+        }
+
+        BigDecimal baseQuantity = line.getQuantity().multiply(factor);
+
+        if (baseQuantity.stripTrailingZeros().scale() > 3) {
+            throw new BusinessException(
+                    "La quantità convertita supera i tre decimali consentiti."
+            );
+        }
+
+        line.setUomId(selectedUomId);
+        line.setUnitOfMeasure(commercialCode);
+        line.setBaseUomCode(baseUom.getCode());
+        line.setConversionFactor(factor);
     }
 
     private String nextQuoteNumber(Long tenantId) {

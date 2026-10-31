@@ -46,6 +46,30 @@ public class SupplierInvoicePageController {
         return "redirect:/goods-receipts/" + id;
     }
 
+    @org.springframework.web.bind.annotation.PostMapping("/{id}/register")
+    public String registerSupplierInvoice(
+            @PathVariable Long id,
+            RedirectAttributes redirectAttributes) {
+
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        try {
+            supplierInvoiceService.registerSupplierInvoice(tenantId, id);
+
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "Fattura fornitore registrata e contabilizzata correttamente."
+            );
+        } catch (BusinessException ex) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    ex.getMessage()
+            );
+        }
+
+        return "redirect:/supplier-invoices/" + id;
+    }
+
     @GetMapping
     public String list(@RequestParam(name = "page", defaultValue = "0") int page,
                        @RequestParam(name = "size", defaultValue = "10") int size,

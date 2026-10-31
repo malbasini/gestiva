@@ -123,7 +123,35 @@ public class SupplierInvoiceWebService {
             SupplierInvoiceDetailLineView lv = new SupplierInvoiceDetailLineView();
             lv.setLineNo(line.getLineNo());
             lv.setDescription(line.getDescription());
-            lv.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(), 3));
+            String formattedQuantity =
+                    PdfFormatUtils.formatDecimalTrimmed(
+                            line.getQuantity(), 3
+                    );
+
+            if (line.getUomCode() != null
+                    && !line.getUomCode().isBlank()) {
+
+                formattedQuantity += " " + line.getUomCode();
+
+                if (line.getConversionFactor() != null
+                        && line.getConversionFactor().signum() > 0
+                        && line.getBaseUomCode() != null
+                        && !line.getBaseUomCode().isBlank()) {
+
+                    java.math.BigDecimal baseQuantity =
+                            line.getQuantity().multiply(
+                                    line.getConversionFactor()
+                            );
+
+                    formattedQuantity += " ("
+                            + PdfFormatUtils.formatDecimalTrimmed(
+                                    baseQuantity, 3
+                            )
+                            + " " + line.getBaseUomCode() + ")";
+                }
+            }
+
+            lv.setFormattedQuantity(formattedQuantity);
             lv.setFormattedUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
             lv.setFormattedDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct()) + "%");
             lv.setFormattedTaxPct(PdfFormatUtils.formatDecimalTrimmed(line.getTaxPct(),2) + "%");

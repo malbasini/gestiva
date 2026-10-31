@@ -124,6 +124,10 @@ public class SecurityConfig {
                                 "/goods-receipts/{id}/invoice"
                         ).hasAnyRole("ADMIN", "PURCHASING")
                         .requestMatchers("/goods-receipts/**").hasAnyRole("ADMIN", "PURCHASING", "WAREHOUSE")
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.POST,
+                                "/supplier-invoices/{id}/register"
+                        ).hasAnyRole("ADMIN", "ACCOUNTING")
                         .requestMatchers("/supplier-invoices/**").hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
 
                         // magazzino

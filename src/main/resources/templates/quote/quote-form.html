@@ -108,7 +108,7 @@
               </button>
             </div>
           </div>
-          <div class="lines-grid">
+          <div class="lines-grid quote-lines-grid">
             <div class="line-grid-header">
               <div>#</div>
               <div>Descrizione</div>
@@ -138,12 +138,21 @@
               </div>
 
               <div>
-                    <input type="text"
-                           class="form-control js-line-uom"
-                           maxlength="20"
-                           th:attr="data-row-index=${stat.index}"
-                           th:field="*{lines[__${stat.index}__].unitOfMeasure}"
-                           placeholder="U.M."/>
+                <!-- UOM manuale per righe senza articolo -->
+                <input type="text"
+                       class="form-control js-line-uom"
+                       maxlength="20"
+                       th:attr="data-row-index=${stat.index}"
+                       th:field="*{lines[__${stat.index}__].unitOfMeasure}"
+                       placeholder="U.M."/>
+
+                <!-- UOM strutturata per righe con articolo -->
+                <select class="form-select js-line-uom-select"
+                        style="display:none"
+                        th:attr="data-row-index=${stat.index},data-selected-uom-id=${line.uomId}"
+                        th:field="*{lines[__${stat.index}__].uomId}">
+                  <option value="">-- U.M. --</option>
+                </select>
               </div>
 
               <div>
@@ -231,7 +240,90 @@
     const selects = document.querySelectorAll('.js-item-select');
 
     function findRowField(selector, rowIndex) {
-      return document.querySelector(selector + '[data-row-index="' + rowIndex + '"]');
+      return document.querySelector(
+        selector + '[data-row-index="' + rowIndex + '"]'
+      );
+    }
+
+    function showManualUom(rowIndex, clearValue) {
+      const input = findRowField('.js-line-uom', rowIndex);
+      const select = findRowField('.js-line-uom-select', rowIndex);
+
+      if (select) {
+        select.replaceChildren();
+        select.value = '';
+        select.style.display = 'none';
+        select.disabled = true;
+        delete select.dataset.selectedUomId;
+      }
+
+      if (input) {
+        input.style.display = '';
+        input.disabled = false;
+        if (clearValue) input.value = '';
+      }
+    }
+
+    function fillRowUom(rowIndex, item, preserveSelection) {
+      const input = findRowField('.js-line-uom', rowIndex);
+      const select = findRowField('.js-line-uom-select', rowIndex);
+
+      if (!input || !select) return;
+
+      const options = Array.isArray(item.salesUomOptions)
+        ? item.salesUomOptions
+        : [];
+
+      const previouslySelected = preserveSelection
+        ? select.dataset.selectedUomId
+        : null;
+
+      select.replaceChildren();
+
+      options.forEach(function (uom) {
+        const option = document.createElement('option');
+        option.value = String(uom.uomId);
+        option.textContent = uom.code +
+          (uom.conversionFactor != null
+            ? ' (x' + uom.conversionFactor + ')'
+            : '');
+        option.dataset.code = uom.code;
+        select.appendChild(option);
+      });
+
+      if (options.length === 0) {
+        showManualUom(rowIndex, false);
+        return;
+      }
+
+      const availableIds = options.map(
+        function (uom) { return String(uom.uomId); }
+      );
+
+      const baseId = String(item.baseUomId);
+
+      const selectedId =
+        previouslySelected && availableIds.includes(previouslySelected)
+          ? previouslySelected
+          : availableIds.includes(baseId)
+            ? baseId
+            : availableIds[0];
+
+      select.value = selectedId;
+      select.disabled = false;
+      select.style.display = '';
+      delete select.dataset.selectedUomId;
+
+      input.style.display = 'none';
+      input.disabled = false;
+
+      function syncCode() {
+        const chosen = select.selectedOptions[0];
+        input.value = chosen ? (chosen.dataset.code || '') : '';
+      }
+
+      select.onchange = syncCode;
+      syncCode();
     }
 
     function fillRowFromItem(rowIndex, item) {
@@ -240,9 +332,10 @@
       const taxPctInput = findRowField('.js-line-tax-pct', rowIndex);
 
       if (descriptionInput) {
-        descriptionInput.value = item.description && item.description.trim() !== ''
-                ? item.description
-                : item.name || '';
+        descriptionInput.value =
+          item.description && item.description.trim() !== ''
+            ? item.description
+            : item.name || '';
       }
 
       if (unitPriceInput) {
@@ -250,7 +343,8 @@
       }
 
       if (taxPctInput) {
-        taxPctInput.value = item.defaultTaxPct != null ? item.defaultTaxPct : 0;
+        taxPctInput.value =
+          item.defaultTaxPct != null ? item.defaultTaxPct : 0;
       }
     }
 
@@ -259,46 +353,68 @@
       const unitPriceInput = findRowField('.js-line-unit-price', rowIndex);
       const taxPctInput = findRowField('.js-line-tax-pct', rowIndex);
 
-      if (descriptionInput) {
-        descriptionInput.value = '';
-      }
+      if (descriptionInput) descriptionInput.value = '';
+      if (unitPriceInput) unitPriceInput.value = '';
+      if (taxPctInput) taxPctInput.value = '';
 
-      if (unitPriceInput) {
-        unitPriceInput.value = '';
-      }
-
-      if (taxPctInput) {
-        taxPctInput.value = '';
-      }
+      showManualUom(rowIndex, true);
     }
 
-    selects.forEach(function (select) {
-      select.addEventListener('change', function () {
+    function fetchItem(itemId) {
+      return fetch('/api/items/' + encodeURIComponent(itemId) + '/autocomplete', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      }).then(function (response) {
+        if (!response.ok) {
+          throw new Error('Errore nel recupero dati articolo');
+        }
+        return response.json();
+      });
+    }
+
+    selects.forEach(function (itemSelect) {
+      const rowIndex = itemSelect.dataset.rowIndex;
+      let requestNumber = 0;
+
+      if (itemSelect.value) {
+        const currentRequest = ++requestNumber;
+        fetchItem(itemSelect.value)
+          .then(function (item) {
+            if (currentRequest !== requestNumber) return;
+            fillRowUom(rowIndex, item, true);
+          })
+          .catch(function (error) {
+            console.error(error);
+          });
+      } else {
+        showManualUom(rowIndex, false);
+      }
+
+      itemSelect.addEventListener('change', function () {
         const itemId = this.value;
-        const rowIndex = this.dataset.rowIndex;
+        const currentRequest = ++requestNumber;
 
         if (!itemId) {
           clearRowItemData(rowIndex);
           return;
         }
 
-        fetch('/api/items/' + itemId + '/autocomplete', {
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        })
-                .then(function (response) {
-                  if (!response.ok) {
-                    throw new Error('Errore nel recupero dati articolo');
-                  }
-                  return response.json();
-                })
-                .then(function (item) {
-                  fillRowFromItem(rowIndex, item);
-                })
-                .catch(function (error) {
-                  console.error(error);
-                });
+        const uomSelect = findRowField('.js-line-uom-select', rowIndex);
+        if (uomSelect) {
+          delete uomSelect.dataset.selectedUomId;
+          uomSelect.disabled = true;
+          uomSelect.style.display = 'none';
+        }
+
+        fetchItem(itemId)
+          .then(function (item) {
+            if (currentRequest !== requestNumber) return;
+            fillRowFromItem(rowIndex, item);
+            fillRowUom(rowIndex, item, false);
+          })
+          .catch(function (error) {
+            console.error(error);
+            showManualUom(rowIndex, true);
+          });
       });
     });
   });

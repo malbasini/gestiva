@@ -21,6 +21,8 @@ public class QuoteLineRequest {
 
     private String unitOfMeasure;
 
+    private Long uomId;
+
     private BigDecimal discountPct;
     private BigDecimal taxPct;
 
@@ -50,4 +52,13 @@ public class QuoteLineRequest {
     public void setUnitOfMeasure(String unitOfMeasure) {
         this.unitOfMeasure = unitOfMeasure;
     }
+
+    public Long getUomId() {
+        return uomId;
+    }
+
+    public void setUomId(Long uomId) {
+        this.uomId = uomId;
+    }
+
 }

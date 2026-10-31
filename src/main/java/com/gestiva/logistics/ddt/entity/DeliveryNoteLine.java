@@ -35,6 +35,16 @@ public class DeliveryNoteLine {
     @Column(name = "unit_of_measure", length = 20)
     private String unitOfMeasure;
 
+    @Column(name = "uom_id")
+    private Long uomId;
+
+    @Column(name = "base_uom_code", length = 20)
+    private String baseUomCode;
+
+    @Column(name = "conversion_factor", precision = 19, scale = 6)
+    private BigDecimal conversionFactor;
+
+
     @Column(name = "unit_price", nullable = false, precision = 15, scale = 2)
     private BigDecimal unitPrice;
 
@@ -181,4 +191,29 @@ public class DeliveryNoteLine {
     public void setCompanyId(Long companyId) {
         this.companyId = companyId;
     }
+
+    public Long getUomId() {
+        return uomId;
+    }
+
+    public void setUomId(Long uomId) {
+        this.uomId = uomId;
+    }
+
+    public String getBaseUomCode() {
+        return baseUomCode;
+    }
+
+    public void setBaseUomCode(String baseUomCode) {
+        this.baseUomCode = baseUomCode;
+    }
+
+    public BigDecimal getConversionFactor() {
+        return conversionFactor;
+    }
+
+    public void setConversionFactor(BigDecimal conversionFactor) {
+        this.conversionFactor = conversionFactor;
+    }
+
 }

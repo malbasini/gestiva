@@ -211,6 +211,9 @@ public class DeliveryNoteService {
             line.setDescription(orderLine.getDescription());
             line.setQuantity(orderLine.getQuantity());
             line.setUnitOfMeasure(orderLine.getUnitOfMeasure());
+            line.setUomId(orderLine.getUomId());
+            line.setBaseUomCode(orderLine.getBaseUomCode());
+            line.setConversionFactor(orderLine.getConversionFactor());
             line.setUnitPrice(orderLine.getUnitPrice());
             line.setDiscountPct(defaultZero(orderLine.getDiscountPct()));
             line.setTaxPct(defaultZero(orderLine.getTaxPct()));

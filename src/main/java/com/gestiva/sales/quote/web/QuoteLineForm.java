@@ -16,6 +16,8 @@ public class QuoteLineForm {
     @Size(max = 20, message = "L'unità di misura non può superare 20 caratteri")
     private String unitOfMeasure;
 
+    private Long uomId;
+
     @NotNull(message = "Il prezzo unitario è obbligatorio")
     private String unitPrice;
 
@@ -82,4 +84,13 @@ public class QuoteLineForm {
     public void setUnitOfMeasure(String unitOfMeasure) {
         this.unitOfMeasure = unitOfMeasure;
     }
+
+    public Long getUomId() {
+        return uomId;
+    }
+
+    public void setUomId(Long uomId) {
+        this.uomId = uomId;
+    }
+
 }

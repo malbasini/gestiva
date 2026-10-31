@@ -217,6 +217,9 @@ public class SalesOrderService {
             orderLine.setDescription(quoteLine.getDescription());
             orderLine.setQuantity(quoteLine.getQuantity());
             orderLine.setUnitOfMeasure(quoteLine.getUnitOfMeasure());
+            orderLine.setUomId(quoteLine.getUomId());
+            orderLine.setBaseUomCode(quoteLine.getBaseUomCode());
+            orderLine.setConversionFactor(quoteLine.getConversionFactor());
             orderLine.setUnitPrice(quoteLine.getUnitPrice());
             orderLine.setDiscountPct(quoteLine.getDiscountPct());
             orderLine.setTaxPct(quoteLine.getTaxPct());
