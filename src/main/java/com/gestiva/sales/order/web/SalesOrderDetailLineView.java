@@ -6,6 +6,7 @@ public class SalesOrderDetailLineView {
     private String description;
     private String itemType;
     private String formattedQuantity;
+    private String unitOfMeasure;
     private String formattedUnitPrice;
     private String formattedDiscountPct;
     private String formattedTaxPct;
@@ -33,6 +34,14 @@ public class SalesOrderDetailLineView {
 
     public void setFormattedQuantity(String formattedQuantity) {
         this.formattedQuantity = formattedQuantity;
+    }
+
+    public String getUnitOfMeasure() {
+        return unitOfMeasure;
+    }
+
+    public void setUnitOfMeasure(String unitOfMeasure) {
+        this.unitOfMeasure = unitOfMeasure;
     }
 
     public String getFormattedUnitPrice() {

@@ -109,6 +109,7 @@ public class SalesOrderDetailWebService {
                 l.setItemType(itemType);
             }
             l.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),2));
+            l.setUnitOfMeasure(line.getUnitOfMeasure());
             l.setFormattedUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
             l.setFormattedDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct()));
             l.setFormattedTaxPct(PdfFormatUtils.formatDecimalTrimmed(line.getTaxPct(),2));

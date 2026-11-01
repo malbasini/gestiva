@@ -163,7 +163,7 @@ public class PurchaseOrderWebService {
             lv.setFormattedUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
             lv.setFormattedDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct()) + "%");
             lv.setFormattedTaxPct(PdfFormatUtils.formatDecimalTrimmed(line.getTaxPct(),2) + "%");
-            lv.setFormattedLineTotal(PdfFormatUtils.formatMoney(line.getLineTotal()));
+            lv.setFormattedLineTotal(PdfFormatUtils.formatMoney(line.getLineSubtotal()));
             v.getLines().add(lv);
         }
 

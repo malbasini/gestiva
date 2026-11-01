@@ -1,6 +1,5 @@
 package com.gestiva.accounting.v2.account.controller;
 
-import com.gestiva.accounting.v2.account.service.AccountChartBootstrapService;
 import com.gestiva.accounting.v2.account.web.AccountWebService;
 import com.gestiva.security.usercontext.TenantContext;
 import org.springframework.stereotype.Controller;
@@ -12,14 +11,11 @@ import org.springframework.web.bind.annotation.*;
 public class AccountPageController {
 
     private final AccountWebService accountWebService;
-    private final AccountChartBootstrapService accountChartBootstrapService;
     private final TenantContext tenantContext;
 
     public AccountPageController(AccountWebService accountWebService,
-                                 AccountChartBootstrapService accountChartBootstrapService,
                                  TenantContext tenantContext) {
         this.accountWebService = accountWebService;
-        this.accountChartBootstrapService = accountChartBootstrapService;
         this.tenantContext = tenantContext;
     }
 
@@ -27,7 +23,6 @@ public class AccountPageController {
     public String list(Model model) {
         Long tenantId = tenantContext.getCurrentTenantId();
 
-        accountChartBootstrapService.initializeDefaultChartOfAccounts(tenantId);
 
         model.addAttribute("accounts", accountWebService.findAll(tenantId));
         model.addAttribute("activeMenu", "v2Accounts");
@@ -38,7 +33,6 @@ public class AccountPageController {
     public String ledger(@PathVariable Long id, Model model) {
         Long tenantId = tenantContext.getCurrentTenantId();
 
-        accountChartBootstrapService.initializeDefaultChartOfAccounts(tenantId);
 
         model.addAttribute("ledger", accountWebService.getLedger(tenantId, id));
         model.addAttribute("activeMenu", "v2Accounts");

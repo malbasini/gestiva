@@ -94,7 +94,10 @@ public class QuoteDetailWebService {
             QuoteDetailLineView l = new QuoteDetailLineView();
             l.setLineNo(line.getLineNo());
             l.setDescription(line.getDescription());
-            l.setFormattedQuantity(QuoteUomFormatter.format(line));
+            l.setFormattedQuantity(
+                    PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(), 2)
+            );
+            l.setUnitOfMeasure(line.getUnitOfMeasure());
             l.setFormattedUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
             l.setFormattedDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct()));
             l.setFormattedTaxPct(PdfFormatUtils.formatDecimalTrimmed(line.getTaxPct(),2));

@@ -5,6 +5,7 @@ public class QuoteDetailLineView {
     private Integer lineNo;
     private String description;
     private String formattedQuantity;
+    private String unitOfMeasure;
     private String formattedUnitPrice;
     private String formattedDiscountPct;
     private String formattedTaxPct;
@@ -32,6 +33,14 @@ public class QuoteDetailLineView {
 
     public void setFormattedQuantity(String formattedQuantity) {
         this.formattedQuantity = formattedQuantity;
+    }
+
+    public String getUnitOfMeasure() {
+        return unitOfMeasure;
+    }
+
+    public void setUnitOfMeasure(String unitOfMeasure) {
+        this.unitOfMeasure = unitOfMeasure;
     }
 
     public String getFormattedUnitPrice() {

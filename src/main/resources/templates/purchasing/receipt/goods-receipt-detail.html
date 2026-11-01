@@ -75,18 +75,18 @@
           <tr>
             <th>#</th>
             <th>Descrizione</th>
-            <th class="text-right">Quantità ricevuta</th>
+            <th class="text-end">Quantità ricevuta</th>
             <th>U.M.</th>
           </tr>
           </thead>
           <tbody>
           <tr th:if="${#lists.isEmpty(goodsReceipt.lines)}">
-            <td colspan="3" class="muted">Nessuna riga trovata.</td>
+            <td colspan="4" class="muted">Nessuna riga trovata.</td>
           </tr>
           <tr th:each="line : ${goodsReceipt.lines}">
             <td th:text="${line.lineNo}">1</td>
             <td th:text="${line.description}">Articolo</td>
-            <td class="text-right" th:text="${line.formattedQuantityReceived}">10,000</td>
+            <td class="text-end" th:text="${line.formattedQuantityReceived}">10,000</td>
             <td th:text="${line.unitOfMeasureCode}">PZ</td>
           </tr>
           </tbody>

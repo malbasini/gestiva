@@ -123,39 +123,36 @@ public class SupplierInvoiceWebService {
             SupplierInvoiceDetailLineView lv = new SupplierInvoiceDetailLineView();
             lv.setLineNo(line.getLineNo());
             lv.setDescription(line.getDescription());
-            String formattedQuantity =
+            lv.setFormattedQuantity(
                     PdfFormatUtils.formatDecimalTrimmed(
                             line.getQuantity(), 3
-                    );
+                    )
+            );
 
-            if (line.getUomCode() != null
-                    && !line.getUomCode().isBlank()) {
+            lv.setUnitOfMeasureCode(line.getUomCode());
 
-                formattedQuantity += " " + line.getUomCode();
+            if (line.getQuantity() != null
+                    && line.getConversionFactor() != null
+                    && line.getConversionFactor().signum() > 0
+                    && line.getBaseUomCode() != null
+                    && !line.getBaseUomCode().isBlank()) {
 
-                if (line.getConversionFactor() != null
-                        && line.getConversionFactor().signum() > 0
-                        && line.getBaseUomCode() != null
-                        && !line.getBaseUomCode().isBlank()) {
+                java.math.BigDecimal baseQuantity =
+                        line.getQuantity().multiply(
+                                line.getConversionFactor()
+                        );
 
-                    java.math.BigDecimal baseQuantity =
-                            line.getQuantity().multiply(
-                                    line.getConversionFactor()
-                            );
-
-                    formattedQuantity += " ("
-                            + PdfFormatUtils.formatDecimalTrimmed(
-                                    baseQuantity, 3
-                            )
-                            + " " + line.getBaseUomCode() + ")";
-                }
+                lv.setFormattedBaseQuantity(
+                        PdfFormatUtils.formatDecimalTrimmed(
+                                baseQuantity, 3
+                        ) + " " + line.getBaseUomCode()
+                );
             }
 
-            lv.setFormattedQuantity(formattedQuantity);
             lv.setFormattedUnitPrice(PdfFormatUtils.formatMoney(line.getUnitPrice()));
             lv.setFormattedDiscountPct(PdfFormatUtils.formatDecimal(line.getDiscountPct()) + "%");
             lv.setFormattedTaxPct(PdfFormatUtils.formatDecimalTrimmed(line.getTaxPct(),2) + "%");
-            lv.setFormattedLineTotal(PdfFormatUtils.formatMoney(line.getLineTotal()));
+            lv.setFormattedLineTotal(PdfFormatUtils.formatMoney(line.getLineSubtotal()));
             v.getLines().add(lv);
         }
 

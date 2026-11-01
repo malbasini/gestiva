@@ -283,10 +283,7 @@
       options.forEach(function (uom) {
         const option = document.createElement('option');
         option.value = String(uom.uomId);
-        option.textContent = uom.code +
-          (uom.conversionFactor != null
-            ? ' (x' + uom.conversionFactor + ')'
-            : '');
+        option.textContent = uom.code;
         option.dataset.code = uom.code;
         select.appendChild(option);
       });

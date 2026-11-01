@@ -97,7 +97,7 @@
                       onclick="openConfirmModal(this)"
                       data-confirm-title="Evadi Ordine"
                       data-confirm-textContent="Sei sicuro di voler evadere questo ordine?"
-                      data-confirm-message="Confermi di voler evadere questo ordine?"
+                      data-confirm-message="Confermi l&#39;evasione di questo ordine? L&#39;ordine passerà allo stato FULFILLED e sarà possibile generare il DDT. Lo scarico di magazzino avverrà soltanto con la creazione del DDT."
                       data-confirm-submit="Conferma evasione"
                       data-confirm-submit-class="btn btn-primary"
                       th:attr="data-confirm-action=@{/orders/{id}/fulfill(id=${order.id})}">
@@ -178,11 +178,12 @@
             <th>#</th>
             <th>Descrizione</th>
             <th>Tipo</th>
-            <th class="text-right">Qtà</th>
-            <th class="text-right">Prezzo</th>
-            <th class="text-right">Sconto %</th>
-            <th class="text-right">IVA %</th>
-            <th class="text-right">Totale</th>
+            <th class="text-end">Qtà</th>
+            <th>U.M.</th>
+            <th class="text-end">Prezzo</th>
+            <th class="text-end">Sconto %</th>
+            <th class="text-end">IVA %</th>
+            <th class="text-end">Totale</th>
           </tr>
           </thead>
           <tbody>
@@ -203,14 +204,15 @@
                          Non disponibile
                  </span>
               </td>
-              <td class="text-right"
+              <td class="text-end"
                   th:text="${line.formattedQuantity}">
                   1,00
               </td>
-            <td class="text-right" th:text="${line.formattedUnitPrice}">500,00 €</td>
-            <td class="text-right" th:text="${line.formattedDiscountPct + '%'}">0,00%</td>
-            <td class="text-right" th:text="${line.formattedTaxPct + '%'}">22,00%</td>
-            <td class="text-right" th:text="${line.formattedLineTotal}">610,00 €</td>
+               <td th:text="${line.unitOfMeasure}">PZ</td>
+            <td class="text-end" th:text="${line.formattedUnitPrice}">500,00 €</td>
+            <td class="text-end" th:text="${line.formattedDiscountPct + '%'}">0,00%</td>
+            <td class="text-end" th:text="${line.formattedTaxPct + '%'}">22,00%</td>
+            <td class="text-end" th:text="${line.formattedLineTotal}">610,00 €</td>
           </tr>
           </tbody>
         </table>
@@ -218,15 +220,15 @@
         <table class="totals">
           <tr>
             <td>Imponibile</td>
-            <td class="text-right" th:text="${order.formattedSubtotalAmount}">500,00 €</td>
+            <td class="text-end" th:text="${order.formattedSubtotalAmount}">500,00 €</td>
           </tr>
           <tr>
             <td>IVA</td>
-            <td class="text-right" th:text="${order.formattedTaxAmount}">110,00 €</td>
+            <td class="text-end" th:text="${order.formattedTaxAmount}">110,00 €</td>
           </tr>
           <tr class="grand-total">
             <td>Totale ordine</td>
-            <td class="text-right" th:text="${order.formattedTotalAmount}">610,00 €</td>
+            <td class="text-end" th:text="${order.formattedTotalAmount}">610,00 €</td>
           </tr>
         </table>
 
@@ -261,7 +263,8 @@
                 <div class="modal-header">
                     <h5 class="modal-title"
                         id="createDeliveryNoteModalLabel">
-                        Crea documento di trasporto
+                        <i class="bi bi-truck text-success me-2"></i>
+                         Crea documento di trasporto
                     </h5>
 
                     <button type="button"
@@ -295,6 +298,10 @@
                         Seleziona il magazzino da cui verrà
                         prelevata la merce.
                     </p>
+                     <p class="text-muted">
+                         La conferma creerà il documento di trasporto
+                         e registrerà il relativo scarico di magazzino.
+                     </p>
                     <div class="mb-3">
                         <label for="deliveryNoteWarehouse"
                                class="form-label">
@@ -330,15 +337,16 @@
                 <div class="modal-footer">
 
                     <button type="button"
-                            class="btn btn-secondary"
+                            class="btn btn-outline-secondary"
                             data-bs-dismiss="modal">
                         Annulla
                     </button>
 
                     <button type="submit"
-                            class="btn btn-primary"
+                            class="btn btn-success"
                             th:disabled="${#lists.isEmpty(warehouses)}">
-                        Conferma creazione DDT
+                        <i class="bi bi-check-circle me-1"></i>
+                         Conferma creazione DDT
                     </button>
 
                 </div>

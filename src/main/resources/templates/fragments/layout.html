@@ -228,8 +228,21 @@
         const submitClass = button.dataset.confirmSubmitClass || 'btn-danger';
         const method = button.dataset.confirmMethod || 'post';
 
-        document.getElementById('confirmActionModalLabel').textContent = title;
+        document.getElementById('confirmActionModalTitle').textContent = title;
         document.getElementById('confirmActionModalMessage').textContent = message;
+
+        const titleIcon = document.getElementById('confirmActionModalIcon');
+        const buttonStyle = submitClass.split(/\s+/);
+
+        if (buttonStyle.includes('btn-danger') ||
+            buttonStyle.includes('btn-outline-danger')) {
+            titleIcon.className = 'bi bi-exclamation-triangle text-danger me-2';
+        } else if (buttonStyle.includes('btn-success') ||
+                   buttonStyle.includes('btn-outline-success')) {
+            titleIcon.className = 'bi bi-check-circle text-success me-2';
+        } else {
+            titleIcon.className = 'bi bi-check-circle text-primary me-2';
+        }
 
         const form = document.getElementById('confirmActionModalForm');
         form.setAttribute('action', action);
@@ -247,14 +260,14 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="confirmActionModalLabel">Conferma operazione</h5>
+                <h5 class="modal-title" id="confirmActionModalLabel"><i id="confirmActionModalIcon" class="bi bi-check-circle text-primary me-2" aria-hidden="true"></i><span id="confirmActionModalTitle">Conferma operazione</span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
             </div>
             <div class="modal-body">
                 <p id="confirmActionModalMessage" class="mb-0">Confermi questa operazione?</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annulla</button>
 
                 <form id="confirmActionModalForm" method="post" class="m-0">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>

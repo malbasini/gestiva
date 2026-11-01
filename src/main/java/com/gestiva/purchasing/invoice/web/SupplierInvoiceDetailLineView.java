@@ -5,10 +5,28 @@ public class SupplierInvoiceDetailLineView {
     private Integer lineNo;
     private String description;
     private String formattedQuantity;
+    private String unitOfMeasureCode;
+    private String formattedBaseQuantity;
     private String formattedUnitPrice;
     private String formattedDiscountPct;
     private String formattedTaxPct;
     private String formattedLineTotal;
+
+    public String getUnitOfMeasureCode() {
+        return unitOfMeasureCode;
+    }
+
+    public void setUnitOfMeasureCode(String unitOfMeasureCode) {
+        this.unitOfMeasureCode = unitOfMeasureCode;
+    }
+
+    public String getFormattedBaseQuantity() {
+        return formattedBaseQuantity;
+    }
+
+    public void setFormattedBaseQuantity(String formattedBaseQuantity) {
+        this.formattedBaseQuantity = formattedBaseQuantity;
+    }
 
     public Integer getLineNo() {
         return lineNo;

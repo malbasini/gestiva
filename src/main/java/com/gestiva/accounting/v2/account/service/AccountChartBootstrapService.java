@@ -25,13 +25,6 @@ public class AccountChartBootstrapService {
             );
         }
 
-        if (!accountRepository
-                .findByTenantIdAndCompanyIdOrderByCodeAsc(
-                        tenantId, companyId
-                ).isEmpty()) {
-            return;
-        }
-
         createDefaultChart(tenantId, companyId);
     }
     public void initializeDefaultChartOfAccounts(Long tenantId) {
@@ -124,6 +117,12 @@ public class AccountChartBootstrapService {
         };
 
         for (String[] row : accounts) {
+
+            if (accountRepository.existsByTenantIdAndCompanyIdAndCode(
+                    tenantId, companyId, row[0])) {
+                continue;
+            }
+
             Account account = new Account();
             account.setTenantId(tenantId);
             account.setCompanyId(companyId);

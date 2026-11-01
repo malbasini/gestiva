@@ -79,24 +79,24 @@
           <tr>
             <th>#</th>
             <th>Descrizione</th>
-            <th class="text-right">Quantità</th>
+            <th class="text-end">Quantità</th>
             <th>U.M.</th>
-            <th class="text-right">Prezzo</th>
-            <th class="text-right">Sconto</th>
-            <th class="text-right">IVA</th>
-            <th class="text-right">Totale</th>
+            <th class="text-end">Prezzo</th>
+            <th class="text-end">Sconto</th>
+            <th class="text-end">IVA</th>
+            <th class="text-end">Totale</th>
           </tr>
           </thead>
           <tbody>
           <tr th:each="line : ${purchaseOrder.lines}">
             <td th:text="${line.lineNo}">1</td>
             <td th:text="${line.description}">Articolo</td>
-            <td class="text-right" th:text="${line.formattedQuantity}">1,000</td>
+            <td class="text-end" th:text="${line.formattedQuantity}">1,000</td>
             <td th:text="${line.unitOfMeasureCode}">PZ</td>
-            <td class="text-right" th:text="${line.formattedUnitPrice}">10,00 €</td>
-            <td class="text-right" th:text="${line.formattedDiscountPct}">0,00%</td>
-            <td class="text-right" th:text="${line.formattedTaxPct}">22,00%</td>
-            <td class="text-right" th:text="${line.formattedLineTotal}">12,20 €</td>
+            <td class="text-end" th:text="${line.formattedUnitPrice}">10,00 €</td>
+            <td class="text-end" th:text="${line.formattedDiscountPct}">0,00%</td>
+            <td class="text-end" th:text="${line.formattedTaxPct}">22,00%</td>
+            <td class="text-end" th:text="${line.formattedLineTotal}">12,20 €</td>
           </tr>
           </tbody>
         </table>
@@ -104,15 +104,15 @@
         <table class="totals">
           <tr>
             <td>Imponibile</td>
-            <td class="text-right" th:text="${purchaseOrder.formattedSubtotalAmount}">100,00 €</td>
+            <td class="text-end" th:text="${purchaseOrder.formattedSubtotalAmount}">100,00 €</td>
           </tr>
           <tr>
             <td>IVA</td>
-            <td class="text-right" th:text="${purchaseOrder.formattedTaxAmount}">22,00 €</td>
+            <td class="text-end" th:text="${purchaseOrder.formattedTaxAmount}">22,00 €</td>
           </tr>
           <tr class="grand-total">
             <td>Totale</td>
-            <td class="text-right" th:text="${purchaseOrder.formattedTotalAmount}">122,00 €</td>
+            <td class="text-end" th:text="${purchaseOrder.formattedTotalAmount}">122,00 €</td>
           </tr>
         </table>
 
@@ -147,6 +147,7 @@
 
         <div class="modal-header">
           <h5 class="modal-title" id="receiveGoodsModalLabel">
+            <i class="bi bi-box-arrow-in-down text-success me-2"></i>
             Ricevimento merci
           </h5>
           <button type="button"
@@ -160,6 +161,10 @@
           <p>
             Seleziona il magazzino nel quale ricevere la merce
             relativa a questo ordine fornitore.
+          </p>
+          <p class="text-muted">
+            La conferma registrerà il ricevimento merci
+            e il relativo carico di magazzino.
           </p>
 
           <div class="mb-3">
@@ -194,14 +199,15 @@
         <div class="modal-footer">
 
           <button type="button"
-                  class="btn btn-secondary"
+                  class="btn btn-outline-secondary"
                   data-bs-dismiss="modal">
             Annulla
           </button>
 
           <button type="submit"
-                  class="btn btn-primary"
+                  class="btn btn-success"
                   th:disabled="${#lists.isEmpty(warehouseOptions)}">
+            <i class="bi bi-check-circle me-1"></i>
             Conferma ricezione
           </button>
 

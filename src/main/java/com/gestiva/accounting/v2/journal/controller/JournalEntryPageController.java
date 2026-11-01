@@ -1,6 +1,5 @@
 package com.gestiva.accounting.v2.journal.controller;
 
-import com.gestiva.accounting.v2.account.service.AccountChartBootstrapService;
 import com.gestiva.accounting.v2.account.web.AccountWebService;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryRepository;
 import com.gestiva.accounting.v2.journal.service.JournalEntryService;
@@ -26,7 +25,6 @@ public class JournalEntryPageController {
     private final JournalEntryService journalEntryService;
     private final JournalEntryWebService journalEntryWebService;
     private final AccountWebService accountWebService;
-    private final AccountChartBootstrapService accountChartBootstrapService;
     private final TenantContext tenantContext;
     private final JournalEntryRepository journalEntryRepository;
     private final CompanyContext companyContext;
@@ -34,14 +32,12 @@ public class JournalEntryPageController {
     public JournalEntryPageController(JournalEntryService journalEntryService,
                                       JournalEntryWebService journalEntryWebService,
                                       AccountWebService accountWebService,
-                                      AccountChartBootstrapService accountChartBootstrapService,
                                       TenantContext tenantContext,
                                       JournalEntryRepository journalEntryRepository,
                                       CompanyContext companyContext) {
         this.journalEntryService = journalEntryService;
         this.journalEntryWebService = journalEntryWebService;
         this.accountWebService = accountWebService;
-        this.accountChartBootstrapService = accountChartBootstrapService;
         this.tenantContext = tenantContext;
         this.journalEntryRepository = journalEntryRepository;
         this.companyContext = companyContext;
@@ -50,7 +46,6 @@ public class JournalEntryPageController {
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         Long tenantId = tenantContext.getCurrentTenantId();
-        accountChartBootstrapService.initializeDefaultChartOfAccounts(tenantId);
 
         model.addAttribute("entry", journalEntryWebService.getDetail(tenantId, id));
         model.addAttribute("activeMenu", "v2JournalEntries");
@@ -60,7 +55,6 @@ public class JournalEntryPageController {
     @GetMapping("/new")
     public String createForm(Model model) {
         Long tenantId = tenantContext.getCurrentTenantId();
-        accountChartBootstrapService.initializeDefaultChartOfAccounts(tenantId);
 
         JournalEntryForm form = new JournalEntryForm();
         form.setEntryDate(LocalDate.now());
@@ -78,7 +72,6 @@ public class JournalEntryPageController {
     @PostMapping(params = "addLine")
     public String addLine(@ModelAttribute("journalEntryForm") JournalEntryForm form, Model model) {
         Long tenantId = tenantContext.getCurrentTenantId();
-        accountChartBootstrapService.initializeDefaultChartOfAccounts(tenantId);
 
         form.getLines().add(defaultLine());
 
@@ -92,7 +85,6 @@ public class JournalEntryPageController {
                              @RequestParam("removeLine") int index,
                              Model model) {
         Long tenantId = tenantContext.getCurrentTenantId();
-        accountChartBootstrapService.initializeDefaultChartOfAccounts(tenantId);
 
         if (form.getLines() != null && index >= 0 && index < form.getLines().size()) {
             form.getLines().remove(index);
@@ -115,7 +107,6 @@ public class JournalEntryPageController {
                          Model model,
                          RedirectAttributes redirectAttributes) {
         Long tenantId = tenantContext.getCurrentTenantId();
-        accountChartBootstrapService.initializeDefaultChartOfAccounts(tenantId);
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("accountOptions", accountWebService.findLeafOptions(tenantId));
@@ -156,7 +147,6 @@ public class JournalEntryPageController {
                        Model model) {
 
         Long tenantId = tenantContext.getCurrentTenantId();
-        accountChartBootstrapService.initializeDefaultChartOfAccounts(tenantId);
         var resultPage = journalEntryWebService.findPage(tenantId, page, size, causalCode, q, dateFrom, dateTo);
         model.addAttribute("entries", resultPage);
         model.addAttribute("causalOptions",findCausalOptions(tenantId));

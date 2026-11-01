@@ -1,5 +1,8 @@
 package com.gestiva.security.service;
 
+import com.gestiva.platform.company.entity.Company;
+import com.gestiva.platform.company.repository.CompanyRepository;
+import com.gestiva.platform.company.service.CompanyBootstrapService;
 import com.gestiva.accounting.v2.account.entity.Account;
 import com.gestiva.accounting.v2.account.repository.AccountRepository;
 import com.gestiva.common.exception.BusinessException;
@@ -35,6 +38,8 @@ public class RegistrationService {
     private final PasswordEncoder passwordEncoder;
     private final AccountRepository accountRepository;
     private final UnitOfMeasureInitializer unitOfMeasureInitializer;
+    private final CompanyRepository companyRepository;
+    private final CompanyBootstrapService companyBootstrapService;
 
 
 
@@ -44,7 +49,9 @@ public class RegistrationService {
                                UserRoleRepository userRoleRepository,
                                PasswordEncoder passwordEncoder,
                                AccountRepository accountRepository,
-                               UnitOfMeasureInitializer unitOfMeasureInitializer) {
+                               UnitOfMeasureInitializer unitOfMeasureInitializer,
+                               CompanyRepository companyRepository,
+                               CompanyBootstrapService companyBootstrapService) {
 
         this.tenantRepository = tenantRepository;
         this.appUserRepository = appUserRepository;
@@ -53,6 +60,8 @@ public class RegistrationService {
         this.passwordEncoder = passwordEncoder;
         this.accountRepository = accountRepository;
         this.unitOfMeasureInitializer = unitOfMeasureInitializer;
+        this.companyRepository = companyRepository;
+        this.companyBootstrapService = companyBootstrapService;
     }
 
     public RegistrationResult register(RegistrationForm form) {
@@ -76,6 +85,23 @@ public class RegistrationService {
         tenant.setSubscriptionPlan(null);
         Tenant savedTenant = tenantRepository.save(tenant);
         unitOfMeasureInitializer.initializeForTenant(savedTenant.getId());
+
+        Company mainCompany = new Company();
+        mainCompany.setTenantId(savedTenant.getId());
+        mainCompany.setCode("MAIN");
+        mainCompany.setLegalName(savedTenant.getName());
+        mainCompany.setCountryCode("IT");
+        mainCompany.setCurrencyCode("EUR");
+        mainCompany.setLocaleCode("it");
+        mainCompany.setActive(true);
+
+        Company savedCompany = companyRepository.saveAndFlush(mainCompany);
+
+        companyBootstrapService.initializeCompany(
+                savedTenant.getId(),
+                savedCompany.getId()
+        );
+
         AppUser user = new AppUser();
         user.setTenantId(savedTenant.getId());
         user.setFirstName(form.getFirstName().trim());

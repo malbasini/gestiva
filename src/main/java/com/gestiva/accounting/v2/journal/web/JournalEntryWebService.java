@@ -80,7 +80,7 @@ public class JournalEntryWebService {
                             new NotFoundException("Scrittura contabile V2 non trovata")
                     );
 
-        var lines = journalEntryLineRepository.findByTenantIdAndJournalEntryIdOrderByLineNoAsc(tenantId, id);
+        var lines = journalEntryLineRepository.findByTenantIdAndCompanyIdAndJournalEntryIdOrderByLineNoAsc(tenantId, companyId, id);
         Map<Long, com.gestiva.accounting.v2.account.entity.Account> accountsById = new HashMap<>();
         for (var line : lines) {
             accountRepository

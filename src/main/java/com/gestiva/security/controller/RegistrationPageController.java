@@ -37,7 +37,6 @@ public class RegistrationPageController {
 
         try {
             var result = registrationService.register(form);
-            registrationService.registerAccount(result.getTenantId());
             redirectAttributes.addFlashAttribute(
                     "successMessage",
                     "Registrazione completata. Ora puoi accedere con tenant '" + result.getTenantSlug() + "'."

@@ -115,24 +115,24 @@
           <tr>
             <th>#</th>
             <th>Descrizione</th>
-            <th class="text-right">Qtà</th>
+            <th class="text-end">Qtà</th>
             <th>UM</th>
-            <th class="text-right">Prezzo</th>
-            <th class="text-right">Sconto %</th>
-            <th class="text-right">IVA %</th>
-            <th class="text-right">Totale</th>
+            <th class="text-end">Prezzo</th>
+            <th class="text-end">Sconto %</th>
+            <th class="text-end">IVA %</th>
+            <th class="text-end">Totale</th>
           </tr>
           </thead>
           <tbody>
           <tr th:each="line : ${invoice.lines}">
             <td th:text="${line.lineNo}">1</td>
             <td th:text="${line.description}">RIGA 1</td>
-            <td class="text-right" th:text="${line.formattedQuantity}">1,00</td>
+            <td class="text-end" th:text="${line.formattedQuantity}">1,00</td>
             <td th:text="${line.unitOfMeasure != null and !#strings.isEmpty(line.unitOfMeasure) ? line.unitOfMeasure : '-'}">pz</td>
-            <td class="text-right" th:text="${line.formattedUnitPrice}">100,00 €</td>
-            <td class="text-right" th:text="${line.formattedDiscountPct + '%'}">10,00%</td>
-            <td class="text-right" th:text="${line.formattedTaxPct + '%'}">22,00%</td>
-            <td class="text-right" th:text="${line.formattedLineTotal}">90,00 €</td>
+            <td class="text-end" th:text="${line.formattedUnitPrice}">100,00 €</td>
+            <td class="text-end" th:text="${line.formattedDiscountPct + '%'}">10,00%</td>
+            <td class="text-end" th:text="${line.formattedTaxPct + '%'}">22,00%</td>
+            <td class="text-end" th:text="${line.formattedLineTotal}">90,00 €</td>
           </tr>
           </tbody>
         </table>
@@ -140,15 +140,15 @@
         <table class="totals">
           <tr>
             <td>Imponibile</td>
-            <td class="text-right" th:text="${invoice.formattedSubtotalAmount}">140,00 €</td>
+            <td class="text-end" th:text="${invoice.formattedSubtotalAmount}">140,00 €</td>
           </tr>
           <tr>
             <td>IVA</td>
-            <td class="text-right" th:text="${invoice.formattedTaxAmount}">30,80 €</td>
+            <td class="text-end" th:text="${invoice.formattedTaxAmount}">30,80 €</td>
           </tr>
           <tr class="grand-total">
             <td>Totale fattura</td>
-            <td class="text-right" th:text="${invoice.formattedTotalAmount}">170,80 €</td>
+            <td class="text-end" th:text="${invoice.formattedTotalAmount}">170,80 €</td>
           </tr>
         </table>
 
