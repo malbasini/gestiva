@@ -241,51 +241,12 @@ public class InventoryDocumentPostingService {
     }
 
     public void postSalesDeliveryFromDeliveryNote(Long tenantId, DeliveryNote deliveryNote) {
-        if (deliveryNote == null) {
-            throw new BusinessException("DDT non valido.");
-        }
-
-        if (inventoryMovementRepository.existsByTenantIdAndReferenceTypeAndReferenceIdAndCausalCode(
-                tenantId, "DELIVERY_NOTE", deliveryNote.getId(), "SALES_DELIVERY")) {
-            return;
-        }
-
-        var lines = deliveryNoteLineRepository.findByTenantIdAndDeliveryNoteIdOrderByLineNoAsc(tenantId, deliveryNote.getId());
-
-        if (lines.isEmpty()) {
-            return;
-        }
-
-        for (DeliveryNoteLine line : lines) {
-            if (line.getItemId() == null || isZeroOrNegative(line.getQuantity())) {
-                continue;
-            }
-
-            var item = itemRepository.findByTenantIdAndId(tenantId, line.getItemId())
-                    .orElseThrow(() -> new BusinessException("Articolo non trovato: " + line.getItemId()));
-
-            if (!item.isTrackStock()) {
-                continue;
-            }
-            inventoryAvailabilityService.validateAvailability(
-                    tenantId,
-                    line.getItemId(),
-                    line.getQuantity()
-            );
-            Long idMovement = inventoryMovementService.registerMovement(
-                    tenantId,
-                    line.getItemId(),
-                    deliveryNote.getDdtDate(),
-                    "OUT",
-                    "SALES_DELIVERY",
-                    line.getQuantity(),
-                    null,
-                    "DELIVERY_NOTE",
-                    deliveryNote.getId(),
-                    "Scarico da DDT " + deliveryNote.getDdtNumber()
-            );
-            inventoryValuationService.applyOutboundValuation(tenantId, idMovement);
-        }
+        // Gestiva V2 - Percorso legacy disabilitato.
+        // Utilizzare esclusivamente il posting multi-società V2.
+        throw new BusinessException(
+                "Posting documentale legacy disabilitato: "
+                + "utilizzare il percorso multi-società V2."
+        );
     }
 
     // =====================================================
@@ -431,41 +392,12 @@ public class InventoryDocumentPostingService {
     }
 
     public void postPurchaseReceiptFromGoodsReceipt(Long tenantId, GoodsReceipt goodsReceipt) {
-        if (goodsReceipt == null) {
-            throw new BusinessException("Ricezione merci non valida.");
-        }
-
-        var lines = goodsReceiptLineRepository.findByTenantIdAndGoodsReceiptIdOrderByLineNoAsc(tenantId, goodsReceipt.getId());
-        if (lines.isEmpty()) {
-            return;
-        }
-
-        for (GoodsReceiptLine line : lines) {
-            if (line.getItemId() == null || line.getQuantityReceived() == null || line.getQuantityReceived().signum() <= 0) {
-                continue;
-            }
-
-            var item = itemRepository.findByTenantIdAndId(tenantId, line.getItemId())
-                    .orElseThrow(() -> new BusinessException("Articolo non trovato: " + line.getItemId()));
-
-            if (!item.isTrackStock()) {
-                continue;
-            }
-
-            Long idMovement = inventoryMovementService.registerMovement(
-                    tenantId,
-                    line.getItemId(),
-                    goodsReceipt.getReceiptDate(),
-                    "IN",
-                    "PURCHASE_RECEIPT",
-                    line.getQuantityReceived(),
-                    line.getUnitCost(),
-                    "GOODS_RECEIPT",
-                    goodsReceipt.getId(),
-                    "Carico da ricezione merci " + goodsReceipt.getReceiptNumber()
-            );
-            inventoryValuationService.applyInboundValuation(tenantId, idMovement);
-        }
+        // Gestiva V2 - Percorso legacy disabilitato.
+        // Utilizzare esclusivamente il posting multi-società V2.
+        throw new BusinessException(
+                "Posting documentale legacy disabilitato: "
+                + "utilizzare il percorso multi-società V2."
+        );
     }
 
     // =====================================================

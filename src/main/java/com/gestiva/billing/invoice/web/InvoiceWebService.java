@@ -5,6 +5,7 @@ import com.gestiva.billing.invoice.entity.Invoice;
 import com.gestiva.billing.invoice.repository.InvoiceRepository;
 import com.gestiva.billing.invoice.repository.InvoiceSpecifications;
 import com.gestiva.common.dto.PageResponse;
+import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.crm.contact.entity.Customer;
 import com.gestiva.crm.contact.repository.CustomerRepository;
 import com.gestiva.documents.pdf.PdfFormatUtils;
@@ -26,18 +27,24 @@ public class InvoiceWebService {
 
     private final InvoiceRepository invoiceRepository;
     private final CustomerRepository customerRepository;
+    private final CompanyContext companyContext;
 
     public InvoiceWebService(InvoiceRepository invoiceRepository,
-                             CustomerRepository customerRepository) {
+                             CustomerRepository customerRepository,
+                             CompanyContext companyContext) {
         this.invoiceRepository = invoiceRepository;
         this.customerRepository = customerRepository;
+        this.companyContext = companyContext;
     }
 
     public PageResponse<InvoiceListItemView> search(Long tenantId,
                                                     InvoiceSearchRequest request,
                                                     Pageable pageable) {
 
+        Long companyId = companyContext.requireCurrentCompanyId();
+
         var specification = InvoiceSpecifications.hasTenantId(tenantId)
+                .and(byCompany(companyId))
                 .and(InvoiceSpecifications.matchesSearch(request.getSearch()))
                 .and(InvoiceSpecifications.hasStatus(request.getStatus()))
                 .and(InvoiceSpecifications.hasCustomerId(request.getCustomerId()))
@@ -87,7 +94,10 @@ public class InvoiceWebService {
                 size,
                 Sort.by(Sort.Order.desc("invoiceDate"), Sort.Order.desc("id"))
         );
+        Long companyId = companyContext.requireCurrentCompanyId();
+
         Specification<Invoice> spec = Specification.where(byTenant(tenantId))
+                .and(byCompany(companyId))
                 .and(bySearch(q))
                 .and(byStatus(status))
                 .and(byDateFrom(dateFrom))
@@ -97,6 +107,10 @@ public class InvoiceWebService {
     }
     private Specification<Invoice> byTenant(Long tenantId) {
         return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
+    }
+
+    private Specification<Invoice> byCompany(Long companyId) {
+        return (root, query, cb) -> cb.equal(root.get("companyId"), companyId);
     }
     private Specification<Invoice> bySearch(String q) {
         if (q == null || q.trim().isEmpty()) {
