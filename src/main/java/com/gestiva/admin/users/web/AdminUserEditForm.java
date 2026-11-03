@@ -12,6 +12,7 @@ public class AdminUserEditForm {
     private boolean active = true;
     private boolean admin;
     private List<String> roles = new ArrayList<>();
+    private List<Long> companyIds = new ArrayList<>();
     private String password;
 
     public Long getId() {
@@ -68,6 +69,16 @@ public class AdminUserEditForm {
 
     public void setRoles(List<String> roles) {
         this.roles = roles;
+    }
+
+    public List<Long> getCompanyIds() {
+        return companyIds;
+    }
+
+    public void setCompanyIds(List<Long> companyIds) {
+        this.companyIds = companyIds == null
+                ? new ArrayList<>()
+                : new ArrayList<>(companyIds);
     }
 
     public String getPassword() {

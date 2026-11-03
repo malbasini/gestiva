@@ -66,6 +66,14 @@ public class CustomUserDetailsService implements UserDetailsService {
             var roles = roleRepository.findAllById(roleIds);
 
             for (var role : roles) {
+
+                // Sicurezza multi-tenant:
+                // nessun ruolo esterno al tenant autenticato
+                // deve generare autorità o permessi.
+                if (!tenant.getId().equals(role.getTenantId())) {
+                    continue;
+                }
+
                 authorities.add(new SimpleGrantedAuthority(role.getCode()));
 
                 var rolePermissions = rolePermissionRepository.findByTenantIdAndRoleId(tenant.getId(), role.getId());

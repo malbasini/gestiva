@@ -1,6 +1,7 @@
 package com.gestiva.admin.users.controller;
 
 import com.gestiva.admin.users.service.AdminUserService;
+import com.gestiva.common.exception.BusinessException;
 import com.gestiva.admin.users.web.AdminUserEditForm;
 import com.gestiva.security.usercontext.TenantContext;
 import jakarta.validation.Valid;
@@ -50,6 +51,10 @@ public class AdminUserPageController {
             return "admin/users/user-list";
         }
 
+        // Il form Settings non consente promozioni admin.
+        // Ignoriamo sempre il parametro HTTP manipolabile.
+        form.setAdmin(false);
+
         try {
             adminUserService.createUser(tenantId, form);
             redirectAttributes.addFlashAttribute("successMessage", "Utente creato con successo.");
@@ -64,8 +69,17 @@ public class AdminUserPageController {
     public String edit(@PathVariable Long id, Model model) {
         Long tenantId = tenantContext.getCurrentTenantId();
 
+        AdminUserEditForm existing =
+                adminUserService.loadEditForm(tenantId, id);
+
+        if (existing.isAdmin()) {
+            throw new BusinessException(
+                    "La modifica degli amministratori non è consentita da questa schermata."
+            );
+        }
+
         model.addAttribute("pageView", adminUserService.buildPage(tenantId));
-        model.addAttribute("userForm", adminUserService.loadEditForm(tenantId, id));
+        model.addAttribute("userForm", existing);
         model.addAttribute("editMode", true);
         model.addAttribute("activeMenu", "settings");
 
@@ -87,6 +101,20 @@ public class AdminUserPageController {
             model.addAttribute("activeMenu", "settings");
             return "admin/users/user-list";
         }
+
+        // Il flag amministrativo non proviene dal browser.
+        // Preserviamo i privilegi effettivi già registrati.
+        AdminUserEditForm existing =
+                adminUserService.loadEditForm(tenantId, id);
+
+        if (existing.isAdmin()) {
+            throw new BusinessException(
+                    "La modifica degli amministratori non è consentita da questa schermata."
+            );
+        }
+
+        // Il browser non può promuovere un utente ordinario.
+        form.setAdmin(false);
 
         adminUserService.updateUser(tenantId, form);
         redirectAttributes.addFlashAttribute("successMessage", "Utente aggiornato con successo.");

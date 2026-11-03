@@ -1,6 +1,8 @@
 package com.gestiva.admin.users.service;
 
 import com.gestiva.admin.users.web.AdminUserEditForm;
+import com.gestiva.admin.users.web.AdminUserCompanyOptionView;
+import com.gestiva.platform.company.repository.CompanyRepository;
 import com.gestiva.admin.users.web.AdminUserPageView;
 import com.gestiva.admin.users.web.AdminUserRowView;
 import com.gestiva.common.exception.BusinessException;
@@ -31,15 +33,27 @@ public class AdminUserService {
     private final UserRoleRepository userRoleRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CompanyRepository companyRepository;
+    private final AdminUserCompanyAssignmentService companyAssignmentService;
 
     public AdminUserService(AppUserRepository appUserRepository,
                             UserRoleRepository userRoleRepository,
                             RoleRepository roleRepository,
-                            PasswordEncoder passwordEncoder) {
+                            PasswordEncoder passwordEncoder,
+                            AdminUserCompanyAssignmentService companyAssignmentService,
+                            CompanyRepository companyRepository) {
         this.appUserRepository = appUserRepository;
         this.userRoleRepository = userRoleRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.companyRepository = java.util.Objects.requireNonNull(
+                companyRepository,
+                "CompanyRepository obbligatorio"
+        );
+        this.companyAssignmentService = java.util.Objects.requireNonNull(
+                companyAssignmentService,
+                "Company assignment service obbligatorio"
+        );
     }
 
     @Transactional(readOnly = true)
@@ -47,13 +61,39 @@ public class AdminUserService {
         AdminUserPageView page = new AdminUserPageView();
         page.setAvailableRoles(AVAILABLE_ROLES);
 
+        // Recuperiamo soltanto le società attive del tenant.
+        // La seconda verifica protegge anche da risultati
+        // incoerenti restituiti dal livello di persistenza.
+        var availableCompanies = companyRepository
+                .findByTenantIdAndActiveTrueOrderByLegalNameAsc(tenantId)
+                .stream()
+                .filter(company ->
+                        tenantId.equals(company.getTenantId())
+                        && company.isActive()
+                )
+                .map(company -> new AdminUserCompanyOptionView(
+                        company.getId(),
+                        company.getLegalName()
+                ))
+                .toList();
+
+        page.setAvailableCompanies(availableCompanies);
+
         List<AppUser> users = appUserRepository.findByTenantIdOrderByLastNameAscFirstNameAsc(tenantId);
 
         Map<Long, List<UserRole>> rolesByUserId = userRoleRepository.findByTenantId(tenantId).stream()
                 .collect(Collectors.groupingBy(UserRole::getUserId));
 
-        Map<Long, String> roleNameById = roleRepository.findAll().stream()
-                .collect(Collectors.toMap(Role::getId, Role::getName));
+        // Recupera esclusivamente i ruoli del tenant corrente.
+        Map<Long, Role> roleById = roleRepository
+                .findByTenantId(tenantId)
+                .stream()
+                // Protezione aggiuntiva contro ruoli di altri tenant.
+                .filter(role -> tenantId.equals(role.getTenantId()))
+                .collect(Collectors.toMap(
+                        Role::getId,
+                        role -> role
+                ));
 
         List<AdminUserRowView> rows = users.stream().map(user -> {
             AdminUserRowView row = new AdminUserRowView();
@@ -63,16 +103,33 @@ public class AdminUserService {
             row.setActive("ACTIVE".equalsIgnoreCase(user.getStatus()));
             row.setAdmin(user.isAdmin());
 
-            List<String> roleNames = rolesByUserId.getOrDefault(user.getId(), List.of()).stream()
+            // Le associazioni sono tenant-scoped.
+            // Anche le entita Role sono filtrate per tenant.
+            List<Role> assignedRoles = rolesByUserId
+                    .getOrDefault(user.getId(), List.of())
+                    .stream()
                     .map(UserRole::getRoleId)
-                    .map(roleNameById::get)
+                    .map(roleById::get)
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            // Nell'interfaccia mostriamo i nomi descrittivi.
+            List<String> roleNames = assignedRoles.stream()
+                    .map(Role::getName)
                     .filter(Objects::nonNull)
                     .sorted()
                     .toList();
 
             row.setRoles(roleNames);
-            if(roleNames.contains("Amministratore"))
-                row.setAdmin(true);
+
+            // I privilegi amministrativi dipendono dal codice
+            // tecnico, mai dal nome descrittivo del ruolo.
+            boolean hasAdminRole = assignedRoles.stream()
+                    .anyMatch(role ->
+                            "ROLE_ADMIN".equals(role.getCode())
+                    );
+
+            row.setAdmin(user.isAdmin() || hasAdminRole);
             return row;
         }).toList();
 
@@ -104,6 +161,13 @@ public class AdminUserService {
         AppUser saved = appUserRepository.save(user);
 
         saveUserRoles(tenantId, saved.getId(), form.getRoles(), form.isAdmin());
+
+        companyAssignmentService.replaceAccess(
+                tenantId,
+                saved.getId(),
+                form.getCompanyIds(),
+                form.isAdmin()
+        );
     }
 
     public void updateUser(Long tenantId, AdminUserEditForm form) {
@@ -122,12 +186,26 @@ public class AdminUserService {
 
         appUserRepository.save(user);
 
-        List<UserRole> roleNames = userRoleRepository.findByTenantIdAndUserId(tenantId,user.getId());
-        for(UserRole ur:roleNames){
-            userRoleRepository.deleteByTenantIdAndUserId(tenantId, ur.getUserId());
-        }
-        userRoleRepository.deleteByTenantIdAndUserId(tenantId, user.getId());
-        saveUserRoles(tenantId, user.getId(), form.getRoles(), form.isAdmin());
+        // Sostituisce le associazioni del solo utente corrente.
+        // Una cancellazione tenant-scoped è sufficiente.
+        userRoleRepository.deleteByTenantIdAndUserId(
+                tenantId,
+                user.getId()
+        );
+
+        saveUserRoles(
+                tenantId,
+                user.getId(),
+                form.getRoles(),
+                form.isAdmin()
+        );
+
+        companyAssignmentService.replaceAccess(
+                tenantId,
+                user.getId(),
+                form.getCompanyIds(),
+                form.isAdmin()
+        );
     }
 
     @Transactional(readOnly = true)
@@ -135,12 +213,17 @@ public class AdminUserService {
         AppUser user = appUserRepository.findByTenantIdAndId(tenantId, userId)
                 .orElseThrow(() -> new BusinessException("Utente non trovato."));
 
-        Map<Long, String> roleNameById = roleRepository.findAll().stream()
-                .collect(Collectors.toMap(Role::getId, Role::getName));
+        Map<Long, String> roleCodeById = roleRepository
+                .findByTenantId(tenantId)
+                .stream()
+                .collect(Collectors.toMap(
+                        Role::getId,
+                        Role::getCode
+                ));
 
         List<String> roles = userRoleRepository.findByTenantIdAndUserId(tenantId, userId).stream()
                 .map(UserRole::getRoleId)
-                .map(roleNameById::get)
+                .map(roleCodeById::get)
                 .filter(Objects::nonNull)
                 .sorted()
                 .toList();
@@ -151,8 +234,21 @@ public class AdminUserService {
         form.setLastName(user.getLastName());
         form.setEmail(user.getEmail());
         form.setActive("ACTIVE".equalsIgnoreCase(user.getStatus()));
-        form.setAdmin(user.isAdmin());
+        // Il form deve rappresentare i privilegi effettivi:
+        // flag admin oppure associazione al ruolo ROLE_ADMIN.
+        form.setAdmin(
+                user.isAdmin() || roles.contains("ROLE_ADMIN")
+        );
         form.setRoles(new ArrayList<>(roles));
+
+        // Precarica le società già autorizzate.
+        // Il setter del form gestisce anche un elenco nullo.
+        form.setCompanyIds(
+                companyAssignmentService.findAssignedCompanyIds(
+                        tenantId,
+                        userId
+                )
+        );
 
         return form;
     }
@@ -171,7 +267,40 @@ public class AdminUserService {
             normalizedRoles.add("ROLE_ADMIN");
         }
 
-        List<Role> roleEntities = roleRepository.findByNameInOrderByNameAsc(normalizedRoles);
+        // I valori del form sono codici tecnici ROLE_*,
+        // non descrizioni visualizzate nell'interfaccia.
+        List<Role> roleEntities = roleRepository
+                .findByTenantIdAndCodeInOrderByCodeAsc(
+                        tenantId, normalizedRoles
+                );
+
+        Set<String> foundCodes = new HashSet<>();
+
+        // Validazione completa prima di qualsiasi associazione.
+        for (Role role : roleEntities) {
+
+            if (!tenantId.equals(role.getTenantId())) {
+                throw new BusinessException(
+                        "Ruolo non autorizzato per il tenant corrente."
+                );
+            }
+
+            String code = role.getCode();
+
+            if (code == null || !normalizedRoles.contains(code)
+                    || !foundCodes.add(code)) {
+                throw new BusinessException(
+                        "Risultato non valido nella ricerca dei ruoli."
+                );
+            }
+        }
+
+        if (!foundCodes.equals(normalizedRoles)) {
+            throw new BusinessException(
+                    "Uno o più ruoli selezionati non sono disponibili "
+                    + "per il tenant corrente."
+            );
+        }
 
         for (Role role : roleEntities) {
             UserRole ur = new UserRole();

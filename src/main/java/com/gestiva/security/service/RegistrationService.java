@@ -9,6 +9,7 @@ import com.gestiva.common.exception.BusinessException;
 import com.gestiva.security.role.entity.Role;
 import com.gestiva.security.role.entity.UserRole;
 import com.gestiva.security.role.repository.RoleRepository;
+import com.gestiva.security.role.service.StandardRoleBootstrapService;
 import com.gestiva.security.role.repository.UserRoleRepository;
 import com.gestiva.security.tenant.entity.AppUser;
 import com.gestiva.security.tenant.entity.Tenant;
@@ -34,6 +35,7 @@ public class RegistrationService {
     private final TenantRepository tenantRepository;
     private final AppUserRepository appUserRepository;
     private final RoleRepository roleRepository;
+    private final StandardRoleBootstrapService standardRoleBootstrapService;
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
     private final AccountRepository accountRepository;
@@ -46,6 +48,7 @@ public class RegistrationService {
     public RegistrationService(TenantRepository tenantRepository,
                                AppUserRepository appUserRepository,
                                RoleRepository roleRepository,
+                               StandardRoleBootstrapService standardRoleBootstrapService,
                                UserRoleRepository userRoleRepository,
                                PasswordEncoder passwordEncoder,
                                AccountRepository accountRepository,
@@ -56,6 +59,7 @@ public class RegistrationService {
         this.tenantRepository = tenantRepository;
         this.appUserRepository = appUserRepository;
         this.roleRepository = roleRepository;
+        this.standardRoleBootstrapService = standardRoleBootstrapService;
         this.userRoleRepository = userRoleRepository;
         this.passwordEncoder = passwordEncoder;
         this.accountRepository = accountRepository;
@@ -120,8 +124,17 @@ public class RegistrationService {
 
         AppUser savedUser = appUserRepository.save(user);
 
-        Role adminRole = roleRepository.findByTenantIdAndCode(savedTenant.getId(), ROLE_ADMIN)
-                .orElseGet(() -> createAdminRole(savedTenant.getId()));
+        // Inizializza i cinque ruoli standard del nuovo tenant.
+        // L'operazione partecipa alla transazione di register().
+        standardRoleBootstrapService.initializeForTenant(
+                savedTenant.getId()
+        );
+
+        Role adminRole = roleRepository
+                .findByTenantIdAndCode(savedTenant.getId(), ROLE_ADMIN)
+                .orElseThrow(() -> new BusinessException(
+                        "Ruolo amministratore non disponibile."
+                ));
 
         if (!userRoleRepository.existsByTenantIdAndUserIdAndRoleId(savedTenant.getId(), savedUser.getId(), adminRole.getId())) {
             UserRole userRole = new UserRole();

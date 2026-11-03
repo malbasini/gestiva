@@ -9,6 +9,6 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
     Optional<Role> findByTenantIdAndCode(Long tenantId, String code);
     List<Role> findByTenantId(Long tenantId);
     boolean existsByTenantIdAndCode(Long tenantId, String code);
-    List<Role> findByNameInOrderByNameAsc(java.util.Collection<String> names);
+    List<Role> findByTenantIdAndCodeInOrderByCodeAsc(Long tenantId, java.util.Collection<String> codes);
     Optional<Role> findByName(String name);
 }

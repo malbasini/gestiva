@@ -7,6 +7,8 @@ public class AdminUserPageView {
 
     private List<AdminUserRowView> users = new ArrayList<>();
     private List<String> availableRoles = new ArrayList<>();
+    private List<AdminUserCompanyOptionView> availableCompanies =
+            new ArrayList<>();
 
     public List<AdminUserRowView> getUsers() {
         return users;
@@ -22,5 +24,16 @@ public class AdminUserPageView {
 
     public void setAvailableRoles(List<String> availableRoles) {
         this.availableRoles = availableRoles;
+    }
+
+    public List<AdminUserCompanyOptionView> getAvailableCompanies() {
+        return availableCompanies;
+    }
+
+    public void setAvailableCompanies(
+            List<AdminUserCompanyOptionView> availableCompanies) {
+        this.availableCompanies = availableCompanies == null
+                ? new ArrayList<>()
+                : new ArrayList<>(availableCompanies);
     }
 }
