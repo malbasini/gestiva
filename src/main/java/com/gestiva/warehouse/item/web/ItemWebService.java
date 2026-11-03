@@ -14,6 +14,7 @@ import com.gestiva.purchasing.invoice.repository.SupplierInvoiceLineRepository;
 import com.gestiva.sales.order.repository.SalesOrderLineRepository;
 import com.gestiva.sales.quote.repository.QuoteLineRepository;
 import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
+import com.gestiva.warehouse.inventory.movement.web.InventoryLedgerWebService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +34,7 @@ public class ItemWebService {
 
     private final ItemRepository itemRepository;
     private final InventoryMovementRepository inventoryMovementRepository;
+    private final InventoryLedgerWebService inventoryLedgerWebService;
     private final UnitOfMeasureRepository unitOfMeasureRepository;
     private final ItemUomRepository itemUomRepository;
     private final PurchaseOrderLineRepository purchaseOrderLineRepository;
@@ -46,6 +48,7 @@ public class ItemWebService {
     public ItemWebService(
             ItemRepository itemRepository,
             InventoryMovementRepository inventoryMovementRepository,
+            InventoryLedgerWebService inventoryLedgerWebService,
             UnitOfMeasureRepository unitOfMeasureRepository,
             ItemUomRepository itemUomRepository,
             PurchaseOrderLineRepository purchaseOrderLineRepository,
@@ -56,6 +59,7 @@ public class ItemWebService {
 
         this.itemRepository = itemRepository;
         this.inventoryMovementRepository = inventoryMovementRepository;
+        this.inventoryLedgerWebService = inventoryLedgerWebService;
         this.unitOfMeasureRepository = unitOfMeasureRepository;
         this.itemUomRepository = itemUomRepository;
         this.purchaseOrderLineRepository = purchaseOrderLineRepository;
@@ -317,7 +321,7 @@ public class ItemWebService {
         );
         v.setFormattedDefaultTaxPct(item.getDefaultTaxPct() != null ? PdfFormatUtils.formatDecimal(item.getDefaultTaxPct(),0) + "%" : "-");
         if (item.isTrackStock()) {
-            var currentStock = inventoryMovementRepository.calculateInventoryBalance(item.getTenantId(), item.getId());
+            var currentStock = inventoryLedgerWebService.calculateCurrentStock(item.getTenantId(), item.getId());
             v.setFormattedStockBalance(
                     PdfFormatUtils.formatDecimal(currentStock == null ? BigDecimal.ZERO : currentStock, 0)
             );

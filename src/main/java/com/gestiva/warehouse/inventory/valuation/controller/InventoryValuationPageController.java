@@ -4,6 +4,7 @@ import com.gestiva.warehouse.item.web.ItemWebService;
 import com.gestiva.warehouse.inventory.valuation.web.*;
 import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
 import com.gestiva.security.usercontext.TenantContext;
+import com.gestiva.security.company.context.CompanyContext;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ public class InventoryValuationPageController {
 
     private final InventoryConsumptionWebService inventoryConsumptionWebService;
     private final TenantContext tenantContext;
+    private final CompanyContext companyContext;
     private final InventoryMovementRepository inventoryMovementRepository;
     private final OutboundValuationListWebService outboundValuationListWebService;
     private final CostOfGoodsSoldSummaryWebService costOfGoodsSoldSummaryWebService;
@@ -33,6 +35,7 @@ public class InventoryValuationPageController {
 
     public InventoryValuationPageController(InventoryConsumptionWebService inventoryConsumptionWebService,
                                             TenantContext tenantContext,
+                                            CompanyContext companyContext,
                                             InventoryMovementRepository inventoryMovementRepository,
                                             OutboundValuationListWebService outboundValuationListWebService,
                                             CostOfGoodsSoldSummaryWebService costOfGoodsSoldSummaryWebService,
@@ -50,6 +53,7 @@ public class InventoryValuationPageController {
 
         this.inventoryConsumptionWebService = inventoryConsumptionWebService;
         this.tenantContext = tenantContext;
+        this.companyContext = companyContext;
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.outboundValuationListWebService = outboundValuationListWebService;
         this.costOfGoodsSoldSummaryWebService = costOfGoodsSoldSummaryWebService;
@@ -134,8 +138,11 @@ public class InventoryValuationPageController {
         model.addAttribute("dateFrom", dateFrom);
         model.addAttribute("dateTo", dateTo);
         model.addAttribute("size", size);
+        Long companyId = companyContext.requireCurrentCompanyId();
         model.addAttribute("causalOptions",
-                inventoryMovementRepository.findDistinctOutboundCausalCodesByTenantId(tenantId));
+                inventoryMovementRepository.findDistinctOutboundCausalCodesByTenantIdAndCompanyId(
+                        tenantId, companyId
+                ));
         model.addAttribute("activeMenu", "items");
 
         return "warehouse/inventory/inventory-outbound-valuations";

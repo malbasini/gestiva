@@ -15,7 +15,6 @@ public interface PurchaseOrderLineRepository extends JpaRepository<PurchaseOrder
             Long id
     );
 
-    void deleteByTenantIdAndPurchaseOrderId(Long tenantId, Long purchaseOrderId);
 
     /**
      * Elimina esclusivamente una riga appartenente

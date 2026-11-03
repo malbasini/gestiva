@@ -1,6 +1,7 @@
 package com.gestiva.warehouse.inventory.valuation.web;
 
 import com.gestiva.documents.pdf.PdfFormatUtils;
+import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.warehouse.item.entity.Item;
 import com.gestiva.warehouse.item.repository.ItemRepository;
 import com.gestiva.warehouse.inventory.movement.entity.InventoryMovement;
@@ -22,11 +23,13 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class OutboundValuationListWebService {
 
+    private final CompanyContext companyContext;
     private final InventoryMovementRepository inventoryMovementRepository;
     private final ItemRepository itemRepository;
 
-    public OutboundValuationListWebService(InventoryMovementRepository inventoryMovementRepository,
+    public OutboundValuationListWebService(CompanyContext companyContext, InventoryMovementRepository inventoryMovementRepository,
                                            ItemRepository itemRepository) {
+        this.companyContext = companyContext;
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.itemRepository = itemRepository;
     }
@@ -38,12 +41,15 @@ public class OutboundValuationListWebService {
                                                         String causalCode,
                                                         LocalDate dateFrom,
                                                         LocalDate dateTo) {
+        Long companyId = companyContext.requireCurrentCompanyId();
+
         Pageable pageable = PageRequest.of(
                 page,
                 size,
                 Sort.by(Sort.Order.desc("movementDate"), Sort.Order.desc("id"))
         );
         Specification<InventoryMovement> spec = Specification.where(byTenant(tenantId))
+                .and(byCompany(companyId))
                 .and(byOutboundType())
                 .and(bySearch(q, tenantId))
                 .and(byCausalCode(causalCode))
@@ -74,6 +80,11 @@ public class OutboundValuationListWebService {
 
     private Specification<InventoryMovement> byTenant(Long tenantId) {
         return (root, query, cb) -> cb.equal(root.get("tenantId"), tenantId);
+    }
+
+    private Specification<InventoryMovement> byCompany(Long companyId) {
+        return (root, query, cb) ->
+                cb.equal(root.get("companyId"), companyId);
     }
 
     private Specification<InventoryMovement> byOutboundType() {
@@ -157,7 +168,10 @@ public class OutboundValuationListWebService {
                                                        String causalCode,
                                                        LocalDate dateFrom,
                                                        LocalDate dateTo) {
+        Long companyId = companyContext.requireCurrentCompanyId();
+
         Specification<InventoryMovement> spec = Specification.where(byTenant(tenantId))
+                .and(byCompany(companyId))
                 .and(byOutboundType())
                 .and(bySearch(q, tenantId))
                 .and(byCausalCode(causalCode))

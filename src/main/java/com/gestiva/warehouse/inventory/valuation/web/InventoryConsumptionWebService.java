@@ -1,6 +1,8 @@
 package com.gestiva.warehouse.inventory.valuation.web;
 
 import com.gestiva.common.exception.BusinessException;
+import com.gestiva.security.company.context.CompanyContext;
+import java.util.Objects;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.warehouse.item.repository.ItemRepository;
 import com.gestiva.warehouse.inventory.valuation.repository.InventoryLayerConsumptionRepository;
@@ -16,15 +18,17 @@ import java.math.RoundingMode;
 @Transactional(readOnly = true)
 public class InventoryConsumptionWebService {
 
+    private final CompanyContext companyContext;
     private final InventoryMovementRepository inventoryMovementRepository;
     private final InventoryLayerConsumptionRepository inventoryLayerConsumptionRepository;
     private final InventoryLayerRepository inventoryLayerRepository;
     private final ItemRepository itemRepository;
 
-    public InventoryConsumptionWebService(InventoryMovementRepository inventoryMovementRepository,
+    public InventoryConsumptionWebService(CompanyContext companyContext, InventoryMovementRepository inventoryMovementRepository,
                                           InventoryLayerConsumptionRepository inventoryLayerConsumptionRepository,
                                           InventoryLayerRepository inventoryLayerRepository,
                                           ItemRepository itemRepository) {
+        this.companyContext = companyContext;
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.inventoryLayerConsumptionRepository = inventoryLayerConsumptionRepository;
         this.inventoryLayerRepository = inventoryLayerRepository;
@@ -32,7 +36,8 @@ public class InventoryConsumptionWebService {
     }
 
     public OutboundValuationDetailView getOutboundValuationDetail(Long tenantId, Long movementId) {
-        var movement = inventoryMovementRepository.findByTenantIdAndId(tenantId, movementId)
+        Long companyId = companyContext.requireCurrentCompanyId();
+        var movement = inventoryMovementRepository.findByTenantIdAndCompanyIdAndId(tenantId, companyId, movementId)
                 .orElseThrow(() -> new BusinessException("Movimento non trovato."));
 
         if (!"OUT".equalsIgnoreCase(movement.getMovementType())
@@ -43,8 +48,13 @@ public class InventoryConsumptionWebService {
         var item = itemRepository.findByTenantIdAndId(tenantId, movement.getItemId())
                 .orElseThrow(() -> new BusinessException("Articolo non trovato."));
 
+        if (movement.getWarehouseId() == null) {
+            throw new BusinessException("Magazzino del movimento non valorizzato.");
+        }
+
         var consumptions = inventoryLayerConsumptionRepository
-                .findByTenantIdAndOutMovementIdOrderByIdAsc(tenantId, movementId);
+                .findByTenantIdAndCompanyIdAndWarehouseIdAndOutMovementIdOrderByIdAsc(
+                        tenantId, companyId, movement.getWarehouseId(), movementId);
 
         OutboundValuationDetailView view = new OutboundValuationDetailView();
         view.setMovementId(movement.getId());
@@ -59,8 +69,12 @@ public class InventoryConsumptionWebService {
         view.setFormattedTotalCost(formatCost(movement.getTotalCost()));
 
         for (var consumption : consumptions) {
-            var layer = inventoryLayerRepository.findByTenantIdAndId(tenantId, consumption.getLayerId())
+            var layer = inventoryLayerRepository.findByTenantIdAndCompanyIdAndId(tenantId, companyId, consumption.getLayerId())
                     .orElseThrow(() -> new BusinessException("Layer non trovato: " + consumption.getLayerId()));
+
+            if (!Objects.equals(layer.getWarehouseId(), movement.getWarehouseId())) {
+                throw new BusinessException("Layer FIFO appartenente a un magazzino differente.");
+            }
 
             InventoryConsumptionLineView line = new InventoryConsumptionLineView();
             line.setLayerId(layer.getId());

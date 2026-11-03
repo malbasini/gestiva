@@ -58,7 +58,7 @@ public class GoodsReceiptWebService {
     }
 
     public List<GoodsReceiptListItemView> findAll(Long tenantId) {
-        Long companyId = companyContext.resolveCurrentCompanyId();
+        Long companyId = companyContext.requireCurrentCompanyId();
 
         var receipts = goodsReceiptRepository.findAll(
                 org.springframework.data.jpa.domain.Specification
@@ -92,7 +92,7 @@ public class GoodsReceiptWebService {
     }
 
     public GoodsReceiptDetailView getDetail(Long tenantId, Long id) {
-        Long companyId = companyContext.resolveCurrentCompanyId();
+        Long companyId = companyContext.requireCurrentCompanyId();
 
         var receipt = goodsReceiptRepository.findByTenantIdAndCompanyIdAndId(
                         tenantId,
@@ -101,7 +101,7 @@ public class GoodsReceiptWebService {
                 )
                 .orElseThrow(() -> new NotFoundException("Ricezione merci non trovata"));
 
-        var lines = goodsReceiptLineRepository.findByTenantIdAndGoodsReceiptIdOrderByLineNoAsc(tenantId, id);
+        var lines = goodsReceiptLineRepository.findByTenantIdAndCompanyIdAndGoodsReceiptIdOrderByLineNoAsc(tenantId, companyId, id);
 
         GoodsReceiptDetailView v = new GoodsReceiptDetailView();
         v.setId(receipt.getId());
@@ -201,7 +201,7 @@ public class GoodsReceiptWebService {
                 size,
                 Sort.by(Sort.Order.desc("receiptDate"), Sort.Order.desc("id"))
         );
-        Long companyId = companyContext.resolveCurrentCompanyId();
+        Long companyId = companyContext.requireCurrentCompanyId();
 
         Specification<GoodsReceipt> spec = Specification.where(
                         byTenantAndCompany(tenantId, companyId))

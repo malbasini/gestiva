@@ -324,88 +324,10 @@ public class InventoryValuationService {
     }
 
     public InventoryValuationResult applyOutboundValuation(Long tenantId, Long movementId) {
-        InventoryMovement movement = inventoryMovementRepository.findByTenantIdAndId(tenantId, movementId)
-                .orElseThrow(() -> new BusinessException("Movimento di magazzino non trovato."));
-
-        if (!isOutbound(movement.getMovementType())) {
-            throw new BusinessException("Il movimento non è di uscita.");
-        }
-
-        InventoryValuationMethod method = resolveValuationMethod(tenantId);
-
-        if (method == InventoryValuationMethod.AVERAGE) {
-            return applyOutboundAverage(tenantId, movement);
-        }
-
-        List<InventoryLayerConsumption> existingConsumptions =
-                inventoryLayerConsumptionRepository.findByTenantIdAndOutMovementIdOrderByIdAsc(tenantId, movement.getId());
-
-        if (!existingConsumptions.isEmpty()) {
-            return new InventoryValuationResult(
-                    nvlCost(movement.getTotalCost()),
-                    nvlCost(movement.getUnitCost())
-            );
-        }
-
-        List<InventoryLayer> candidateLayers = switch (method) {
-            case FIFO -> inventoryLayerRepository
-                    .findByTenantIdAndItemIdAndClosedFalseOrderByLayerDateAscIdAsc(tenantId, movement.getItemId());
-            case LIFO -> inventoryLayerRepository
-                    .findByTenantIdAndItemIdAndClosedFalseOrderByLayerDateDescIdDesc(tenantId, movement.getItemId());
-            case AVERAGE -> throw new BusinessException("Metodo AVERAGE non gestito in questo ramo.");
-        };
-
-        BigDecimal qtyToConsume = scaleQty(movement.getQuantity());
-        BigDecimal remaining = qtyToConsume;
-        BigDecimal totalCost = zeroCost();
-
-        for (InventoryLayer layer : candidateLayers) {
-            if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
-                break;
-            }
-
-            BigDecimal available = scaleQty(layer.getRemainingQty());
-            if (available.compareTo(BigDecimal.ZERO) <= 0) {
-                layer.setClosed(true);
-                inventoryLayerRepository.save(layer);
-                continue;
-            }
-
-            BigDecimal consumedQty = available.min(remaining).setScale(3, RoundingMode.HALF_UP);
-            BigDecimal unitCost = scaleCost(layer.getUnitCost());
-            BigDecimal consumedTotalCost = scaleCost(consumedQty.multiply(unitCost));
-
-            InventoryLayerConsumption consumption = new InventoryLayerConsumption();
-            consumption.setTenantId(tenantId);
-            consumption.setOutMovementId(movement.getId());
-            consumption.setLayerId(layer.getId());
-            consumption.setConsumedQty(consumedQty);
-            consumption.setUnitCost(unitCost);
-            consumption.setTotalCost(consumedTotalCost);
-            inventoryLayerConsumptionRepository.save(consumption);
-
-            BigDecimal newRemainingQty = scaleQty(layer.getRemainingQty().subtract(consumedQty));
-            layer.setRemainingQty(newRemainingQty);
-            layer.setClosed(newRemainingQty.compareTo(BigDecimal.ZERO) == 0);
-            inventoryLayerRepository.save(layer);
-
-            remaining = scaleQty(remaining.subtract(consumedQty));
-            totalCost = scaleCost(totalCost.add(consumedTotalCost));
-        }
-
-        if (remaining.compareTo(BigDecimal.ZERO) > 0) {
-            throw new BusinessException("Giacenza insufficiente per valorizzare lo scarico di magazzino.");
-        }
-
-        BigDecimal unitCost = qtyToConsume.compareTo(BigDecimal.ZERO) > 0
-                ? scaleCost(totalCost.divide(qtyToConsume, 4, RoundingMode.HALF_UP))
-                : zeroCost();
-
-        movement.setTotalCost(totalCost);
-        movement.setUnitCost(unitCost);
-        inventoryMovementRepository.save(movement);
-
-        return new InventoryValuationResult(totalCost, unitCost);
+        throw new BusinessException(
+                "Percorso legacy di valorizzazione disabilitato. "
+                + "Utilizzare la valorizzazione FIFO V2 per società e magazzino."
+        );
     }
 
     // Gestiva V2 - Controlli preliminari allo storno FIFO
@@ -797,46 +719,10 @@ public class InventoryValuationService {
     }
 
     public void applyInboundValuation(Long tenantId, Long movementId) {
-        InventoryMovement movement = inventoryMovementRepository.findByTenantIdAndId(tenantId, movementId)
-                .orElseThrow(() -> new BusinessException("Movimento di magazzino non trovato."));
-
-        if (!isInbound(movement.getMovementType())) {
-            throw new BusinessException("Il movimento non è di ingresso.");
-        }
-
-        if (movement.getUnitCost() == null || movement.getUnitCost().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessException("Il movimento di ingresso non ha un costo unitario valido.");
-        }
-
-        InventoryValuationMethod method = resolveValuationMethod(tenantId);
-
-        if (method == InventoryValuationMethod.AVERAGE) {
-            applyInboundAverage(tenantId, movement);
-            return;
-        }
-
-        List<InventoryLayer> existingLayers = inventoryLayerRepository
-                .findByTenantIdAndSourceMovementIdOrderByIdAsc(tenantId, movement.getId());
-
-        if (!existingLayers.isEmpty()) {
-            return;
-        }
-
-        InventoryLayer layer = new InventoryLayer();
-        layer.setTenantId(tenantId);
-        layer.setItemId(movement.getItemId());
-        layer.setSourceMovementId(movement.getId());
-        layer.setLayerDate(movement.getMovementDate());
-        layer.setOriginalQty(scaleQty(movement.getQuantity()));
-        layer.setRemainingQty(scaleQty(movement.getQuantity()));
-        layer.setUnitCost(scaleCost(movement.getUnitCost()));
-        layer.setClosed(false);
-
-        inventoryLayerRepository.save(layer);
-
-        BigDecimal totalCost = scaleCost(movement.getUnitCost().multiply(movement.getQuantity()));
-        movement.setTotalCost(totalCost);
-        inventoryMovementRepository.save(movement);
+        throw new BusinessException(
+                "Percorso legacy di valorizzazione disabilitato. "
+                + "Utilizzare la valorizzazione FIFO V2 per società e magazzino."
+        );
     }
     private BigDecimal zeroQty() {
         return BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP);

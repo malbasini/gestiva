@@ -1,6 +1,7 @@
 package com.gestiva.warehouse.item.web;
 
 import com.gestiva.documents.pdf.PdfFormatUtils;
+import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,15 +12,18 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class ItemMovementWebService {
 
+    private final CompanyContext companyContext;
     private final InventoryMovementRepository inventoryMovementRepository;
 
-    public ItemMovementWebService(InventoryMovementRepository inventoryMovementRepository) {
+    public ItemMovementWebService(CompanyContext companyContext, InventoryMovementRepository inventoryMovementRepository) {
+        this.companyContext = companyContext;
         this.inventoryMovementRepository = inventoryMovementRepository;
     }
 
     public List<RecentInventoryMovementView> findRecentMovements(Long tenantId, Long itemId) {
+        Long companyId = companyContext.requireCurrentCompanyId();
         return inventoryMovementRepository
-                .findTop10ByTenantIdAndItemIdOrderByMovementDateDescIdDesc(tenantId, itemId)
+                .findTop10ByTenantIdAndCompanyIdAndItemIdOrderByMovementDateDescIdDesc(tenantId, companyId, itemId)
                 .stream()
                 .map(m -> {
                     RecentInventoryMovementView v = new RecentInventoryMovementView();

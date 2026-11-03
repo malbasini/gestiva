@@ -323,8 +323,9 @@ public class InventoryDocumentPostingService {
         }
 
         var lines = goodsReceiptLineRepository
-                .findByTenantIdAndGoodsReceiptIdOrderByLineNoAsc(
+                .findByTenantIdAndCompanyIdAndGoodsReceiptIdOrderByLineNoAsc(
                         tenantId,
+                        companyId,
                         goodsReceiptId
                 );
 

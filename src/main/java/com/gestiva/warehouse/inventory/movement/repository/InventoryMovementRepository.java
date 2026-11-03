@@ -60,6 +60,23 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
 
     List<InventoryMovement> findByTenantIdAndItemIdOrderByMovementDateAscIdAsc(Long tenantId, Long itemId);
 
+    // Gestiva V2 - Registro movimenti isolato per società
+    List<InventoryMovement>
+    findByTenantIdAndCompanyIdAndItemIdOrderByMovementDateAscIdAsc(
+            Long tenantId,
+            Long companyId,
+            Long itemId
+    );
+
+    // Gestiva V2 - Ultimi dieci movimenti dell'articolo nella società
+    List<InventoryMovement>
+    findTop10ByTenantIdAndCompanyIdAndItemIdOrderByMovementDateDescIdDesc(
+            Long tenantId,
+            Long companyId,
+            Long itemId
+    );
+
+
     List<InventoryMovement> findByTenantIdAndReferenceTypeAndReferenceIdOrderByIdAsc(Long tenantId, String referenceType, Long referenceId);
 
     boolean existsByTenantIdAndReferenceTypeAndReferenceIdAndCausalCode(
@@ -79,6 +96,24 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
     List<String> findDistinctOutboundCausalCodesByTenantId(@Param("tenantId") Long tenantId);
 
     @Query("""
+        select distinct m.causalCode
+        from InventoryMovement m
+        where m.tenantId = :tenantId
+          and m.companyId = :companyId
+          and (
+              upper(m.movementType) = 'OUT'
+              or upper(m.movementType) = 'ADJUSTMENT_OUT'
+          )
+          and m.causalCode is not null
+        order by m.causalCode
+        """)
+    List<String> findDistinctOutboundCausalCodesByTenantIdAndCompanyId(
+            @Param("tenantId") Long tenantId,
+            @Param("companyId") Long companyId
+    );
+
+
+    @Query("""
        select new com.gestiva.warehouse.inventory.valuation.web.CostOfGoodsSoldSummaryRow(
            m.itemId,
            coalesce(sum(m.quantity), 0),
@@ -93,8 +128,39 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
        group by m.itemId
        order by m.itemId
        """)
+
+
+
     List<CostOfGoodsSoldSummaryRow> summarizeCostOfGoodsSoldByItem(
             @Param("tenantId") Long tenantId,
+            @Param("itemId") Long itemId,
+            @Param("dateFrom") java.time.LocalDate dateFrom,
+            @Param("dateTo") java.time.LocalDate dateTo
+    );
+
+    // Gestiva V2 - Costo del venduto isolato per società
+    @Query("""
+        select new com.gestiva.warehouse.inventory.valuation.web.CostOfGoodsSoldSummaryRow(
+            m.itemId,
+            coalesce(sum(m.quantity), 0),
+            coalesce(sum(m.totalCost), 0)
+        )
+        from InventoryMovement m
+        where m.tenantId = :tenantId
+          and m.companyId = :companyId
+          and (
+              upper(m.movementType) = 'OUT'
+              or upper(m.movementType) = 'ADJUSTMENT_OUT'
+          )
+          and (:itemId is null or m.itemId = :itemId)
+          and (:dateFrom is null or m.movementDate >= :dateFrom)
+          and (:dateTo is null or m.movementDate <= :dateTo)
+        group by m.itemId
+        order by m.itemId
+        """)
+    List<CostOfGoodsSoldSummaryRow> summarizeCostOfGoodsSoldByCompanyAndItem(
+            @Param("tenantId") Long tenantId,
+            @Param("companyId") Long companyId,
             @Param("itemId") Long itemId,
             @Param("dateFrom") java.time.LocalDate dateFrom,
             @Param("dateTo") java.time.LocalDate dateTo
@@ -210,4 +276,23 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
             @Param("itemId") Long itemId,
             @Param("movementId") Long movementId
     );
+
+    /**
+     * Identificativi degli articoli movimentati
+     * nella società selezionata.
+     *
+     * Include gli articoli con giacenza finale zero.
+     * Esclude i movimenti delle altre società.
+     */
+    @Query("""
+            select distinct m.itemId
+            from InventoryMovement m
+            where m.tenantId = :tenantId
+              and m.companyId = :companyId
+            """)
+    List<Long> findDistinctItemIdsByTenantIdAndCompanyId(
+            @Param("tenantId") Long tenantId,
+            @Param("companyId") Long companyId
+    );
+
 }

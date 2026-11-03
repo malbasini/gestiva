@@ -106,7 +106,7 @@ class PurchaseOrderWebServiceTest {
         line.setDiscountPct(new BigDecimal(storedDiscount));
         line.setTaxPct(new BigDecimal("22.00"));
 
-        when(companyContext.resolveCurrentCompanyId())
+        when(companyContext.requireCurrentCompanyId())
                 .thenReturn(companyId);
 
         when(purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
@@ -152,7 +152,7 @@ class PurchaseOrderWebServiceTest {
         validLine.setUnitPrice("12,345");
         form.getLines().add(validLine);
 
-        when(companyContext.resolveCurrentCompanyId())
+        when(companyContext.requireCurrentCompanyId())
                 .thenReturn(companyId);
 
         assertThrows(
@@ -188,10 +188,10 @@ class PurchaseOrderWebServiceTest {
         validLine.setUnitPrice("12,345");
         form.getLines().add(validLine);
 
-        when(companyContext.resolveCurrentCompanyId())
+        when(companyContext.requireCurrentCompanyId())
                 .thenReturn(companyId);
 
-        when(purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
+        when(purchaseOrderRepository.findLockedByTenantIdAndCompanyIdAndId(
                 tenantId, companyId, orderId
         )).thenReturn(Optional.of(existingOrder));
 
@@ -200,7 +200,7 @@ class PurchaseOrderWebServiceTest {
                 () -> service.update(tenantId, orderId, form)
         );
 
-        verify(purchaseOrderRepository).findByTenantIdAndCompanyIdAndId(
+        verify(purchaseOrderRepository).findLockedByTenantIdAndCompanyIdAndId(
                 tenantId, companyId, orderId
         );
 
@@ -232,10 +232,10 @@ class PurchaseOrderWebServiceTest {
         form.setCurrencyCode("EUR");
         form.getLines().add(validLine);
 
-        when(companyContext.resolveCurrentCompanyId())
+        when(companyContext.requireCurrentCompanyId())
                 .thenReturn(currentCompanyId);
 
-        when(purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
+        when(purchaseOrderRepository.findLockedByTenantIdAndCompanyIdAndId(
                 tenantId, currentCompanyId, orderId
         )).thenReturn(Optional.empty());
 
@@ -246,7 +246,7 @@ class PurchaseOrderWebServiceTest {
                 () -> service.update(tenantId, orderId, form)
         );
 
-        verify(purchaseOrderRepository).findByTenantIdAndCompanyIdAndId(
+        verify(purchaseOrderRepository).findLockedByTenantIdAndCompanyIdAndId(
                 tenantId, currentCompanyId, orderId
         );
 
@@ -268,7 +268,7 @@ class PurchaseOrderWebServiceTest {
         Long currentCompanyId = 5L;
         Long orderId = 100L;
 
-        when(companyContext.resolveCurrentCompanyId())
+        when(companyContext.requireCurrentCompanyId())
                 .thenReturn(currentCompanyId);
 
         when(purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
@@ -299,7 +299,7 @@ class PurchaseOrderWebServiceTest {
         Long currentCompanyId = 5L;
         Long orderId = 100L;
 
-        when(companyContext.resolveCurrentCompanyId())
+        when(companyContext.requireCurrentCompanyId())
                 .thenReturn(currentCompanyId);
 
         when(purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
@@ -346,7 +346,7 @@ class PurchaseOrderWebServiceTest {
 
         form.getLines().add(validLine);
 
-        when(companyContext.resolveCurrentCompanyId())
+        when(companyContext.requireCurrentCompanyId())
                 .thenReturn(companyId);
 
         when(supplierRepository.findByTenantIdAndId(

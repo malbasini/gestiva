@@ -1,6 +1,7 @@
 package com.gestiva.warehouse.inventory.movement.web;
 
 import com.gestiva.common.exception.BusinessException;
+import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.warehouse.item.repository.ItemRepository;
 import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
@@ -14,16 +15,19 @@ import java.math.RoundingMode;
 @Transactional(readOnly = true)
 public class InventoryLedgerWebService {
 
+    private final CompanyContext companyContext;
     private final ItemRepository itemRepository;
     private final InventoryMovementRepository inventoryMovementRepository;
 
-    public InventoryLedgerWebService(ItemRepository itemRepository,
+    public InventoryLedgerWebService(CompanyContext companyContext, ItemRepository itemRepository,
                                      InventoryMovementRepository inventoryMovementRepository) {
+        this.companyContext = companyContext;
         this.itemRepository = itemRepository;
         this.inventoryMovementRepository = inventoryMovementRepository;
     }
 
     public ItemInventoryLedgerView getLedger(Long tenantId, Long itemId) {
+        Long companyId = companyContext.requireCurrentCompanyId();
         var item = itemRepository.findByTenantIdAndId(tenantId, itemId)
                 .orElseThrow(() -> new BusinessException("Articolo non trovato"));
 
@@ -31,7 +35,7 @@ public class InventoryLedgerWebService {
             throw new BusinessException("L'articolo non è gestito a magazzino.");
         }
 
-        var movements = inventoryMovementRepository.findByTenantIdAndItemIdOrderByMovementDateAscIdAsc(tenantId, itemId);
+        var movements = inventoryMovementRepository.findByTenantIdAndCompanyIdAndItemIdOrderByMovementDateAscIdAsc(tenantId, companyId, itemId);
 
         BigDecimal runningBalance = zeroQty();
 
@@ -67,7 +71,8 @@ public class InventoryLedgerWebService {
     }
 
     public BigDecimal calculateCurrentStock(Long tenantId, Long itemId) {
-        var movements = inventoryMovementRepository.findByTenantIdAndItemIdOrderByMovementDateAscIdAsc(tenantId, itemId);
+        Long companyId = companyContext.requireCurrentCompanyId();
+        var movements = inventoryMovementRepository.findByTenantIdAndCompanyIdAndItemIdOrderByMovementDateAscIdAsc(tenantId, companyId, itemId);
 
         BigDecimal stock = zeroQty();
         for (var movement : movements) {

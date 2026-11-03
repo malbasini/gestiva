@@ -36,25 +36,21 @@ public class InventoryLocationValidationService {
             throw new BusinessException("Il magazzino è obbligatorio.");
         }
 
-        Warehouse warehouse;
-
-        if (companyId != null) {
-            warehouse = warehouseRepository
-                    .findByTenantIdAndCompanyIdAndId(
-                            tenantId,
-                            companyId,
-                            warehouseId
-                    )
-                    .orElseThrow(() -> new BusinessException(
-                            "Magazzino non trovato per l'azienda indicata."
-                    ));
-        } else {
-            warehouse = warehouseRepository
-                    .findByTenantIdAndId(tenantId, warehouseId)
-                    .orElseThrow(() -> new BusinessException(
-                            "Magazzino non trovato."
-                    ));
+        if (companyId == null) {
+            throw new BusinessException(
+                    "La società attiva è obbligatoria per validare il magazzino."
+            );
         }
+
+        Warehouse warehouse = warehouseRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId,
+                        companyId,
+                        warehouseId
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "Magazzino non trovato per l'azienda indicata."
+                ));
 
         if (!warehouse.isActive()) {
             throw new BusinessException(

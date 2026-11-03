@@ -37,20 +37,10 @@ public class InventoryAvailabilityService {
     }
 
     public BigDecimal getAvailableQty(Long tenantId, Long itemId) {
-        InventoryValuationMethod method = resolveValuationMethod(tenantId);
-
-        if (method == InventoryValuationMethod.AVERAGE) {
-            return inventoryAverageBalanceRepository.findByTenantIdAndItemId(tenantId, itemId).filter(balance -> balance.getCurrentQty() != null).map(balance -> balance.getCurrentQty().setScale(3, RoundingMode.HALF_UP)).orElse(BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP));
-        }
-
-        return inventoryLayerRepository
-                .findByTenantIdAndItemIdAndClosedFalseOrderByLayerDateAscIdAsc(tenantId, itemId)
-                .stream()
-                .map(layer -> layer.getRemainingQty() == null
-                        ? BigDecimal.ZERO
-                        : layer.getRemainingQty().setScale(3, RoundingMode.HALF_UP))
-                .reduce(BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP), BigDecimal::add)
-                .setScale(3, RoundingMode.HALF_UP);
+        throw new BusinessException(
+                "Percorso legacy di disponibilità disabilitato. "
+                + "Utilizzare i metodi V2 per società e magazzino."
+        );
     }
     private InventoryValuationMethod resolveValuationMethod(Long tenantId) {
         var tenant = tenantRepository.findById(tenantId)
@@ -62,54 +52,20 @@ public class InventoryAvailabilityService {
         return InventoryValuationMethod.valueOf(value.trim().toUpperCase());
     }
     public void validateAvailability(Long tenantId, Long itemId, BigDecimal requiredQty) {
-        BigDecimal requested = requiredQty == null
-                ? BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP)
-                : requiredQty.setScale(3, RoundingMode.HALF_UP);
-
-        if (requested.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessException("La quantità richiesta deve essere maggiore di zero.");
-        }
-
-        BigDecimal available = getAvailableQty(tenantId, itemId);
-
-        if (requested.compareTo(available) > 0) {
-            var item = itemRepository.findByTenantIdAndId(tenantId, itemId)
-                    .orElseThrow(() -> new BusinessException("Articolo non trovato: " + itemId));
-
-            throw new BusinessException(
-                    "Disponibilità insufficiente per l'articolo "
-                            + item.getCode()
-                            + ". Disponibile: "
-                            + PdfFormatUtils.formatDecimal(available, 0)
-                            + ", richiesta: "
-                            + PdfFormatUtils.formatDecimal(requested, 0)
-                            + "."
-            );
-        }
+        throw new BusinessException(
+                "Percorso legacy di disponibilità disabilitato. "
+                + "Utilizzare i metodi V2 per società e magazzino."
+        );
     }
     public BigDecimal getAvailableQtyByWarehouse(
             Long tenantId,
             Long warehouseId,
             Long itemId,
             Long locationId) {
-
-        if (tenantId == null || warehouseId == null || itemId == null) {
-            throw new BusinessException(
-                    "Tenant, magazzino e articolo sono obbligatori."
-            );
-        }
-
-        BigDecimal balance =
-                inventoryMovementRepository.calculateInventoryBalanceByWarehouse(
-                        tenantId,
-                        warehouseId,
-                        itemId,
-                        locationId
-                );
-
-        return balance == null
-                ? BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP)
-                : balance.setScale(3, RoundingMode.HALF_UP);
+        throw new BusinessException(
+                "Percorso legacy di disponibilità disabilitato. "
+                + "Utilizzare i metodi V2 per società e magazzino."
+        );
     }
 
     public void validateAvailabilityByWarehouse(
@@ -118,35 +74,10 @@ public class InventoryAvailabilityService {
             Long itemId,
             Long locationId,
             BigDecimal requiredQty) {
-
-        if (requiredQty == null ||
-                requiredQty.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessException(
-                    "La quantità richiesta deve essere maggiore di zero."
-            );
-        }
-
-        BigDecimal requested =
-                requiredQty.setScale(3, RoundingMode.HALF_UP);
-
-        BigDecimal available =
-                getAvailableQtyByWarehouse(
-                        tenantId,
-                        warehouseId,
-                        itemId,
-                        locationId
-                );
-
-        if (requested.compareTo(available) > 0) {
-            throw new BusinessException(
-                    "Disponibilità insufficiente nel magazzino selezionato. "
-                            + "Disponibile: "
-                            + PdfFormatUtils.formatDecimal(available, 3)
-                            + ", richiesta: "
-                            + PdfFormatUtils.formatDecimal(requested, 3)
-                            + "."
-            );
-        }
+        throw new BusinessException(
+                "Percorso legacy di disponibilità disabilitato. "
+                + "Utilizzare i metodi V2 per società e magazzino."
+        );
     }
     // Gestiva V2 - Giacenza per società e magazzino
     public BigDecimal getAvailableQtyByCompanyAndWarehouse(

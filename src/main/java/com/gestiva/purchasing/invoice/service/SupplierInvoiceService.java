@@ -118,7 +118,12 @@ public class SupplierInvoiceService {
             );
         }
 
-        var receiptLines = goodsReceiptLineRepository.findByTenantIdAndGoodsReceiptIdOrderByLineNoAsc(tenantId, goodsReceiptId);
+        var receiptLines = goodsReceiptLineRepository
+                .findByTenantIdAndCompanyIdAndGoodsReceiptIdOrderByLineNoAsc(
+                        tenantId,
+                        companyId,
+                        goodsReceiptId
+                );
 
         if (receiptLines.isEmpty()) {
             throw new BusinessException("La ricezione merci non contiene righe.");

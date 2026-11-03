@@ -1,6 +1,7 @@
 package com.gestiva.warehouse.inventory.valuation.web;
 
 import com.gestiva.documents.pdf.PdfFormatUtils;
+import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.warehouse.item.entity.Item;
 import com.gestiva.warehouse.item.repository.ItemRepository;
 import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
@@ -18,11 +19,14 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class CostOfGoodsSoldSummaryWebService {
 
+    private final CompanyContext companyContext;
     private final InventoryMovementRepository inventoryMovementRepository;
     private final ItemRepository itemRepository;
 
-    public CostOfGoodsSoldSummaryWebService(InventoryMovementRepository inventoryMovementRepository,
+    public CostOfGoodsSoldSummaryWebService(CompanyContext companyContext,
+                                            InventoryMovementRepository inventoryMovementRepository,
                                             ItemRepository itemRepository) {
+        this.companyContext = companyContext;
         this.inventoryMovementRepository = inventoryMovementRepository;
         this.itemRepository = itemRepository;
     }
@@ -32,8 +36,12 @@ public class CostOfGoodsSoldSummaryWebService {
                                                           LocalDate dateFrom,
                                                           LocalDate dateTo) {
 
+        Long companyId = companyContext.requireCurrentCompanyId();
+
         List<CostOfGoodsSoldSummaryRow> rows =
-                inventoryMovementRepository.summarizeCostOfGoodsSoldByItem(tenantId, itemId, dateFrom, dateTo);
+                inventoryMovementRepository.summarizeCostOfGoodsSoldByCompanyAndItem(
+                        tenantId, companyId, itemId, dateFrom, dateTo
+                );
 
         Map<Long, Item> itemsById = itemRepository.findByTenantIdOrderByCodeAsc(tenantId)
                 .stream()

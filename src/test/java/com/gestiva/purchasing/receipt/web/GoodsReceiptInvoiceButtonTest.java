@@ -76,7 +76,7 @@ class GoodsReceiptInvoiceButtonTest {
         receipt.setReceiptNumber("GR-JUNIT-001");
         receipt.setReceiptDate(LocalDate.of(2026, 10, 31));
 
-        lenient().when(companyContext.resolveCurrentCompanyId())
+        lenient().when(companyContext.requireCurrentCompanyId())
                 .thenReturn(COMPANY_ID);
 
         lenient().when(goodsReceiptRepository
@@ -86,8 +86,8 @@ class GoodsReceiptInvoiceButtonTest {
                 .thenReturn(Optional.of(receipt));
 
         lenient().when(goodsReceiptLineRepository
-                .findByTenantIdAndGoodsReceiptIdOrderByLineNoAsc(
-                        TENANT_ID, RECEIPT_ID
+                .findByTenantIdAndCompanyIdAndGoodsReceiptIdOrderByLineNoAsc(
+                        TENANT_ID, COMPANY_ID, RECEIPT_ID
                 ))
                 .thenReturn(List.of());
 

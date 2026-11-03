@@ -84,7 +84,7 @@ public class PurchaseOrderWebService {
 
     @Transactional(readOnly = true)
     public List<PurchaseOrderListItemView> findAll(Long tenantId) {
-        Long companyId = companyContext.resolveCurrentCompanyId();
+        Long companyId = companyContext.requireCurrentCompanyId();
 
         var orders = purchaseOrderRepository.findAll(
                 org.springframework.data.jpa.domain.Specification
@@ -112,7 +112,7 @@ public class PurchaseOrderWebService {
 
     @Transactional(readOnly = true)
     public PurchaseOrderDetailView getDetail(Long tenantId, Long id) {
-        Long companyId = companyContext.resolveCurrentCompanyId();
+        Long companyId = companyContext.requireCurrentCompanyId();
 
         var po = purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
                         tenantId,
@@ -172,7 +172,7 @@ public class PurchaseOrderWebService {
 
     @Transactional(readOnly = true)
     public PurchaseOrderForm getForm(Long tenantId, Long id) {
-        Long companyId = companyContext.resolveCurrentCompanyId();
+        Long companyId = companyContext.requireCurrentCompanyId();
 
         var po = purchaseOrderRepository.findByTenantIdAndCompanyIdAndId(
                         tenantId,
@@ -373,7 +373,7 @@ public class PurchaseOrderWebService {
     }
 
     public Long create(Long tenantId, PurchaseOrderForm form) {
-        Long companyId = companyContext.resolveCurrentCompanyId();
+        Long companyId = companyContext.requireCurrentCompanyId();
 
         validateLines(form.getLines());
         validateNewLineIds(form.getLines());
@@ -399,7 +399,7 @@ public class PurchaseOrderWebService {
     }
 
     public void update(Long tenantId, Long id, PurchaseOrderForm form) {
-        Long companyId = companyContext.resolveCurrentCompanyId();
+        Long companyId = companyContext.requireCurrentCompanyId();
 
         var po = purchaseOrderRepository.findLockedByTenantIdAndCompanyIdAndId(
                         tenantId,
@@ -1354,7 +1354,7 @@ public class PurchaseOrderWebService {
                 size,
                 Sort.by(Sort.Order.desc("orderDate"), Sort.Order.desc("id"))
         );
-        Long companyId = companyContext.resolveCurrentCompanyId();
+        Long companyId = companyContext.requireCurrentCompanyId();
 
         Specification<PurchaseOrder> spec = Specification.where(byTenantAndCompany(tenantId, companyId))
                 .and(bySearch(q))

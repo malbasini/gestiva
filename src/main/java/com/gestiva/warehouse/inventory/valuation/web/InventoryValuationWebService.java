@@ -1,6 +1,7 @@
 package com.gestiva.warehouse.inventory.valuation.web;
 
 import com.gestiva.common.exception.BusinessException;
+import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.warehouse.item.repository.ItemRepository;
 import com.gestiva.warehouse.inventory.valuation.repository.InventoryAverageBalanceRepository;
@@ -16,16 +17,18 @@ import java.math.RoundingMode;
 @Transactional(readOnly = true)
 public class InventoryValuationWebService {
 
+    private final CompanyContext companyContext;
     private final ItemRepository itemRepository;
     private final TenantRepository tenantRepository;
     private final InventoryLayerRepository inventoryLayerRepository;
     private final InventoryAverageBalanceRepository inventoryAverageBalanceRepository;
 
-    public InventoryValuationWebService(ItemRepository itemRepository,
+    public InventoryValuationWebService(CompanyContext companyContext, ItemRepository itemRepository,
                                         TenantRepository tenantRepository,
                                         InventoryLayerRepository inventoryLayerRepository,
                                         InventoryAverageBalanceRepository inventoryAverageBalanceRepository) {
 
+        this.companyContext = companyContext;
         this.itemRepository = itemRepository;
         this.tenantRepository = tenantRepository;
         this.inventoryLayerRepository = inventoryLayerRepository;
@@ -33,6 +36,7 @@ public class InventoryValuationWebService {
     }
 
     public ItemInventoryValuationView getItemValuation(Long tenantId, Long itemId) {
+        Long companyId = companyContext.requireCurrentCompanyId();
         var item = itemRepository.findByTenantIdAndId(tenantId, itemId)
                 .orElseThrow(() -> new BusinessException("Articolo non trovato"));
 
@@ -46,6 +50,16 @@ public class InventoryValuationWebService {
         String method = tenant.getInventoryValuationMethod() != null
                 ? String.valueOf(tenant.getInventoryValuationMethod()).trim().toUpperCase()
                 : "FIFO";
+
+        // Gestiva V2 multi-company: soltanto FIFO è supportato.
+        // Il saldo AVERAGE legacy non è isolato per società.
+        if (!"FIFO".equals(method)) {
+            throw new BusinessException(
+                    "Gestiva V2 supporta esclusivamente FIFO. "
+                    + "La valorizzazione legacy non è disponibile in modalità multi-società."
+            );
+        }
+
 
         ItemInventoryValuationView view = new ItemInventoryValuationView();
         view.setItemId(item.getId());
@@ -71,7 +85,7 @@ public class InventoryValuationWebService {
         }
 
         var openLayers = inventoryLayerRepository
-                .findByTenantIdAndItemIdAndClosedFalseOrderByLayerDateAscIdAsc(tenantId, itemId);
+                .findByTenantIdAndCompanyIdAndItemIdAndClosedFalseOrderByLayerDateAscIdAsc(tenantId, companyId, itemId);
 
         BigDecimal totalQty = zeroQty();
         BigDecimal totalValue = zeroCost();

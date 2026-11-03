@@ -1,10 +1,12 @@
 package com.gestiva.warehouse.inventory.valuation.web;
 
 import com.gestiva.common.exception.BusinessException;
+import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.warehouse.item.entity.Item;
 import com.gestiva.warehouse.item.repository.ItemRepository;
 import com.gestiva.warehouse.inventory.valuation.entity.InventoryLayer;
+import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
 import com.gestiva.warehouse.inventory.valuation.repository.InventoryAverageBalanceRepository;
 import com.gestiva.warehouse.inventory.valuation.repository.InventoryLayerRepository;
 import com.gestiva.security.tenant.repository.TenantRepository;
@@ -21,26 +23,29 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class InventoryStockValuationListWebService {
 
+    private final CompanyContext companyContext;
     private final ItemRepository itemRepository;
+    private final InventoryMovementRepository inventoryMovementRepository;
     private final InventoryLayerRepository inventoryLayerRepository;
     private final TenantRepository tenantRepository;
     private final InventoryAverageBalanceRepository inventoryAverageBalanceRepository;
 
 
-    public InventoryStockValuationListWebService(ItemRepository itemRepository,
+    public InventoryStockValuationListWebService(CompanyContext companyContext, ItemRepository itemRepository,
+                                                 InventoryMovementRepository inventoryMovementRepository,
                                                  InventoryLayerRepository inventoryLayerRepository,
                                                  TenantRepository tenantRepository,
                                                  InventoryAverageBalanceRepository inventoryAverageBalanceRepository) {
+        this.companyContext = companyContext;
         this.itemRepository = itemRepository;
+        this.inventoryMovementRepository = inventoryMovementRepository;
         this.inventoryLayerRepository = inventoryLayerRepository;
         this.tenantRepository = tenantRepository;
         this.inventoryAverageBalanceRepository = inventoryAverageBalanceRepository;
     }
 
     public List<InventoryStockValuationListItemView> findAll(Long tenantId, String q) {
-        List<Item> items = itemRepository.findByTenantIdOrderByCodeAsc(tenantId).stream()
-                .filter(Item::isTrackStock)
-                .toList();
+        Long companyId = companyContext.requireCurrentCompanyId();
 
         var tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new BusinessException("Tenant non trovato."));
@@ -48,6 +53,28 @@ public class InventoryStockValuationListWebService {
         String method = tenant.getInventoryValuationMethod() != null
                 ? String.valueOf(tenant.getInventoryValuationMethod()).trim().toUpperCase()
                 : "FIFO";
+
+        // Gestiva V2 multi-company: soltanto FIFO è supportato.
+        // Il saldo AVERAGE legacy non è isolato per società.
+        if (!"FIFO".equals(method)) {
+            throw new BusinessException(
+                    "Gestiva V2 supporta esclusivamente FIFO. "
+                    + "La valorizzazione legacy non è disponibile in modalità multi-società."
+            );
+        }
+
+        Set<Long> companyVisibleItemIds = new HashSet<>(
+                inventoryMovementRepository
+                        .findDistinctItemIdsByTenantIdAndCompanyId(tenantId, companyId));
+        companyVisibleItemIds.addAll(
+                inventoryLayerRepository
+                        .findDistinctItemIdsByTenantIdAndCompanyId(tenantId, companyId));
+
+        List<Item> items = itemRepository.findByTenantIdOrderByCodeAsc(tenantId).stream()
+                .filter(Item::isTrackStock)
+                .filter(item -> companyVisibleItemIds.contains(item.getId()))
+                .toList();
+
 
         String search = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
 
@@ -89,7 +116,7 @@ public class InventoryStockValuationListWebService {
         }
 
         Map<Long, List<InventoryLayer>> layersByItemId = inventoryLayerRepository
-                .findByTenantIdAndClosedFalseOrderByItemIdAscLayerDateAscIdAsc(tenantId)
+                .findByTenantIdAndCompanyIdAndClosedFalseOrderByItemIdAscLayerDateAscIdAsc(tenantId, companyId)
                 .stream()
                 .collect(Collectors.groupingBy(InventoryLayer::getItemId, LinkedHashMap::new, Collectors.toList()));
 
