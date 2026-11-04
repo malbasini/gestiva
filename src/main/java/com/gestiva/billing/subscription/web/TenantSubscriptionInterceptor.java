@@ -64,7 +64,15 @@ public class TenantSubscriptionInterceptor implements HandlerInterceptor {
         return true;
     }
     private boolean isPublicOrAlwaysAllowed(String uri) {
-        return uri.equals("/login")
+        return uri.equals("/")
+                || uri.equals("/products")
+                || uri.startsWith("/products/")
+                || uri.equals("/help/chat")
+                || uri.equals("/actuator/health")
+                || uri.equals("/actuator/info")
+                || uri.equals("/robots.txt")
+                || uri.equals("/sitemap.xml")
+                || uri.equals("/login")
                 || uri.equals("/logout")
                 || uri.equals("/register")
                 || uri.startsWith("/paypal")
@@ -79,7 +87,6 @@ public class TenantSubscriptionInterceptor implements HandlerInterceptor {
                 || uri.startsWith("/webjars/")
                 || uri.startsWith("/favicon.svg")
                 || uri.startsWith("/favicon.ico")
-                || uri.startsWith("/")
                 || uri.equals("/error");
     }
 }

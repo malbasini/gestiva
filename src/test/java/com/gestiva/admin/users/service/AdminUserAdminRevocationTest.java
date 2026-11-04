@@ -75,6 +75,20 @@ class AdminUserAdminRevocationTest {
                 anyCollection()
         )).thenReturn(List.of(salesRole));
 
+        UserRole adminAccess = new UserRole();
+        adminAccess.setTenantId(TENANT_ID);
+        adminAccess.setUserId(USER_ID);
+        adminAccess.setRoleId(200L);
+
+        UserRole salesAccess = new UserRole();
+        salesAccess.setTenantId(TENANT_ID);
+        salesAccess.setUserId(USER_ID);
+        salesAccess.setRoleId(SALES_ROLE_ID);
+
+        when(userRoles.findByTenantIdAndUserId(
+                TENANT_ID, USER_ID
+        )).thenReturn(List.of(adminAccess, salesAccess));
+
         AdminUserEditForm form = new AdminUserEditForm();
 
         form.setId(USER_ID);
@@ -96,17 +110,14 @@ class AdminUserAdminRevocationTest {
 
         verify(appUsers).save(user);
 
-        // Le associazioni precedenti devono essere rimosse
-        // una sola volta, soltanto per questo tenant e utente.
-        verify(userRoles, times(1))
-                .deleteByTenantIdAndUserId(
-                        TENANT_ID, USER_ID
-                );
+        // Revoca soltanto ROLE_ADMIN.
+        verify(userRoles).findByTenantIdAndUserId(
+                TENANT_ID, USER_ID
+        );
+        verify(userRoles).deleteAll(List.of(adminAccess));
 
-        verify(userRoles, times(1))
-                .deleteByTenantIdAndUserId(
-                        anyLong(), anyLong()
-                );
+        // Il ruolo Vendite già assegnato viene conservato.
+        verify(userRoles, never()).save(any(UserRole.class));
 
         // Verifichiamo che ROLE_ADMIN non sia stato richiesto
         // durante la nuova assegnazione.
@@ -124,30 +135,6 @@ class AdminUserAdminRevocationTest {
                 Set.of("ROLE_SALES"),
                 new HashSet<>(requestedCodes.getValue()),
                 "La revoca non deve mantenere ROLE_ADMIN"
-        );
-
-        // Deve essere salvata una sola associazione.
-        ArgumentCaptor<UserRole> savedRoles =
-                ArgumentCaptor.forClass(UserRole.class);
-
-        verify(userRoles, times(1))
-                .save(savedRoles.capture());
-
-        UserRole association = savedRoles.getValue();
-
-        assertEquals(
-                TENANT_ID,
-                association.getTenantId()
-        );
-
-        assertEquals(
-                USER_ID,
-                association.getUserId()
-        );
-
-        assertEquals(
-                SALES_ROLE_ID,
-                association.getRoleId()
         );
 
         verifyNoMoreInteractions(userRoles);

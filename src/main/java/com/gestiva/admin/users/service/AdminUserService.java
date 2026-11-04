@@ -186,14 +186,9 @@ public class AdminUserService {
 
         appUserRepository.save(user);
 
-        // Sostituisce le associazioni del solo utente corrente.
-        // Una cancellazione tenant-scoped è sufficiente.
-        userRoleRepository.deleteByTenantIdAndUserId(
-                tenantId,
-                user.getId()
-        );
-
-        saveUserRoles(
+        // Sincronizza soltanto i ruoli effettivamente cambiati.
+        // Le associazioni confermate rimangono inalterate.
+        syncUserRoles(
                 tenantId,
                 user.getId(),
                 form.getRoles(),
@@ -253,8 +248,13 @@ public class AdminUserService {
         return form;
     }
 
-    private void saveUserRoles(Long tenantId, Long userId, List<String> roles, boolean adminFlag) {
+    private List<Role> resolveRequestedRoles(
+            Long tenantId,
+            List<String> roles,
+            boolean adminFlag) {
+
         Set<String> normalizedRoles = new LinkedHashSet<>();
+
         if (roles != null) {
             normalizedRoles.addAll(
                     roles.stream()
@@ -267,16 +267,14 @@ public class AdminUserService {
             normalizedRoles.add("ROLE_ADMIN");
         }
 
-        // I valori del form sono codici tecnici ROLE_*,
-        // non descrizioni visualizzate nell'interfaccia.
         List<Role> roleEntities = roleRepository
                 .findByTenantIdAndCodeInOrderByCodeAsc(
-                        tenantId, normalizedRoles
+                        tenantId,
+                        normalizedRoles
                 );
 
         Set<String> foundCodes = new HashSet<>();
 
-        // Validazione completa prima di qualsiasi associazione.
         for (Role role : roleEntities) {
 
             if (!tenantId.equals(role.getTenantId())) {
@@ -287,8 +285,10 @@ public class AdminUserService {
 
             String code = role.getCode();
 
-            if (code == null || !normalizedRoles.contains(code)
-                    || !foundCodes.add(code)) {
+            if (code == null
+                    || !normalizedRoles.contains(code)
+                    || !foundCodes.add(code)
+                    || role.getId() == null) {
                 throw new BusinessException(
                         "Risultato non valido nella ricerca dei ruoli."
                 );
@@ -302,12 +302,101 @@ public class AdminUserService {
             );
         }
 
-        for (Role role : roleEntities) {
-            UserRole ur = new UserRole();
-            ur.setTenantId(tenantId);
-            ur.setUserId(userId);
-            ur.setRoleId(role.getId());
-            userRoleRepository.save(ur);
+        return roleEntities;
+    }
+
+    private void saveUserRoles(
+            Long tenantId,
+            Long userId,
+            List<String> roles,
+            boolean adminFlag) {
+
+        // La creazione di un nuovo utente non ha ruoli precedenti.
+        for (Role role :
+                resolveRequestedRoles(tenantId, roles, adminFlag)) {
+
+            UserRole association = new UserRole();
+            association.setTenantId(tenantId);
+            association.setUserId(userId);
+            association.setRoleId(role.getId());
+
+            userRoleRepository.save(association);
+        }
+    }
+
+    private void syncUserRoles(
+            Long tenantId,
+            Long userId,
+            List<String> roles,
+            boolean adminFlag) {
+
+        // Validiamo tutti i ruoli richiesti prima delle
+        // operazioni di cancellazione e inserimento.
+        List<Role> requested = resolveRequestedRoles(
+                tenantId,
+                roles,
+                adminFlag
+        );
+
+        Set<Long> selectedIds = new HashSet<>();
+
+        for (Role role : requested) {
+            if (!selectedIds.add(role.getId())) {
+                throw new BusinessException(
+                        "Ruoli richiesti duplicati."
+                );
+            }
+        }
+
+        List<UserRole> existing = userRoleRepository
+                .findByTenantIdAndUserId(tenantId, userId);
+
+        Set<Long> existingIds = new HashSet<>();
+
+        // Difesa contro associazioni incoerenti.
+        for (UserRole association : existing) {
+
+            if (!tenantId.equals(association.getTenantId())
+                    || !userId.equals(association.getUserId())
+                    || association.getRoleId() == null
+                    || !existingIds.add(association.getRoleId())) {
+
+                throw new BusinessException(
+                        "Associazione ruolo incoerente."
+                );
+            }
+        }
+
+        List<UserRole> toDelete = new ArrayList<>();
+
+        for (UserRole association : existing) {
+            if (!selectedIds.contains(association.getRoleId())) {
+                toDelete.add(association);
+            }
+        }
+
+        List<Role> toCreate = new ArrayList<>();
+
+        for (Role role : requested) {
+            if (!existingIds.contains(role.getId())) {
+                toCreate.add(role);
+            }
+        }
+
+        // Nessuna cancellazione per i ruoli conservati.
+        if (!toDelete.isEmpty()) {
+            userRoleRepository.deleteAll(toDelete);
+        }
+
+        // Inseriamo soltanto associazioni realmente nuove.
+        for (Role role : toCreate) {
+
+            UserRole association = new UserRole();
+            association.setTenantId(tenantId);
+            association.setUserId(userId);
+            association.setRoleId(role.getId());
+
+            userRoleRepository.save(association);
         }
     }
 

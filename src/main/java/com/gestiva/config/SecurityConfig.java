@@ -115,6 +115,7 @@ public class SecurityConfig {
                         .requestMatchers("/sales-orders/**").hasAnyRole("ADMIN", "SALES")
                         .requestMatchers("/delivery-notes/**").hasAnyRole("ADMIN", "SALES", "WAREHOUSE")
                         .requestMatchers("/invoices/**").hasAnyRole("ADMIN", "SALES", "ACCOUNTING")
+                         .requestMatchers("/api/invoices/**").hasAnyRole("ADMIN", "SALES", "ACCOUNTING")
 
                         // ciclo passivo
                         .requestMatchers("/suppliers/**").hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")

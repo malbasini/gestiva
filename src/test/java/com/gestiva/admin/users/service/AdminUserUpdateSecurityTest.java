@@ -61,8 +61,13 @@ class AdminUserUpdateSecurityTest {
         UserRole sales = mock(UserRole.class);
         UserRole warehouse = mock(UserRole.class);
 
+        when(sales.getTenantId()).thenReturn(TENANT_ID);
         when(sales.getUserId()).thenReturn(USER_ID);
+        when(sales.getRoleId()).thenReturn(201L);
+
+        when(warehouse.getTenantId()).thenReturn(TENANT_ID);
         when(warehouse.getUserId()).thenReturn(USER_ID);
+        when(warehouse.getRoleId()).thenReturn(202L);
 
         when(userRoleRepository.findByTenantIdAndUserId(
                 TENANT_ID, USER_ID
@@ -89,15 +94,14 @@ class AdminUserUpdateSecurityTest {
 
         service.updateUser(TENANT_ID, form);
 
-        // La sostituzione delle associazioni deve
-        // effettuare una sola cancellazione.
-        verify(userRoleRepository, times(1))
-                .deleteByTenantIdAndUserId(
-                        TENANT_ID, USER_ID
-                );
-
-        // Non devono verificarsi altre cancellazioni.
-        verify(userRoleRepository, times(1))
+        // Revoca esattamente le due associazioni del tenant.
+        verify(userRoleRepository).findByTenantIdAndUserId(
+                TENANT_ID, USER_ID
+        );
+        verify(userRoleRepository).deleteAll(
+                List.of(sales, warehouse)
+        );
+        verify(userRoleRepository, never())
                 .deleteByTenantIdAndUserId(
                         anyLong(), anyLong()
                 );

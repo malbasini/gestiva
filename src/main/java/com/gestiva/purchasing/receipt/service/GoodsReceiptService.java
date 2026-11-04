@@ -255,6 +255,83 @@ public class GoodsReceiptService {
         return savedReceipt.getId();
     }
 
+
+    /**
+     * Valida le quantità di un ricevimento parziale.
+     *
+     * Deve essere invocato esclusivamente dal workflow
+     * transazionale, dopo aver bloccato l'ordine fornitore
+     * tramite PESSIMISTIC_WRITE.
+     *
+     * Non crea documenti e non registra movimenti.
+     */
+    java.util.Map<Long, BigDecimal> validatePartialQuantitiesForLockedOrder(
+            Long tenantId,
+            Long companyId,
+            Long purchaseOrderId,
+            java.util.List<com.gestiva.purchasing.order.entity.PurchaseOrderLine>
+                    orderLines,
+            java.util.Map<Long, BigDecimal> requestedQuantities) {
+
+        if (tenantId == null || companyId == null
+                || purchaseOrderId == null
+                || orderLines == null
+                || orderLines.isEmpty()) {
+            throw new BusinessException(
+                    "Dati dell'ordine fornitore incompleti."
+            );
+        }
+
+        java.util.Map<Long, BigDecimal> remaining =
+                new java.util.LinkedHashMap<>();
+
+        for (var orderLine : orderLines) {
+
+            if (orderLine == null
+                    || orderLine.getId() == null
+                    || !java.util.Objects.equals(
+                            purchaseOrderId,
+                            orderLine.getPurchaseOrderId())) {
+                throw new BusinessException(
+                        "Riga ordine fornitore non valida."
+                );
+            }
+
+            BigDecimal alreadyReceived =
+                    goodsReceiptLineRepository
+                            .sumReceivedBaseQuantityByOrderLine(
+                                    tenantId,
+                                    companyId,
+                                    purchaseOrderId,
+                                    orderLine.getId()
+                            );
+
+            if (alreadyReceived == null) {
+                alreadyReceived = BigDecimal.ZERO;
+            }
+
+            BigDecimal residual =
+                    GoodsReceiptQuantityCalculator
+                            .remainingBaseQuantity(
+                                    orderLine.getQuantity(),
+                                    orderLine.getConversionFactor(),
+                                    alreadyReceived
+                            );
+
+            if (remaining.putIfAbsent(
+                    orderLine.getId(), residual) != null) {
+                throw new BusinessException(
+                        "Righe ordine duplicate."
+                );
+            }
+        }
+
+        return GoodsReceiptPartialRequestValidator.validate(
+                requestedQuantities,
+                remaining
+        );
+    }
+
     private String nextReceiptNumber(Long tenantId, Long companyId) {
         return documentSequenceService.nextNumber(
                 tenantId,

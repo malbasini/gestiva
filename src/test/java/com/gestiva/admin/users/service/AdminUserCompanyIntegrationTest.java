@@ -127,6 +127,21 @@ class AdminUserCompanyIntegrationTest {
                 eq(TENANT), anyCollection()
         )).thenReturn(List.of(sales, warehouse));
 
+        com.gestiva.security.role.entity.UserRole salesAccess =
+                new com.gestiva.security.role.entity.UserRole();
+        salesAccess.setTenantId(TENANT);
+        salesAccess.setUserId(USER);
+        salesAccess.setRoleId(11L);
+
+        com.gestiva.security.role.entity.UserRole warehouseAccess =
+                new com.gestiva.security.role.entity.UserRole();
+        warehouseAccess.setTenantId(TENANT);
+        warehouseAccess.setUserId(USER);
+        warehouseAccess.setRoleId(12L);
+
+        when(userRoles.findByTenantIdAndUserId(TENANT, USER))
+                .thenReturn(List.of(salesAccess, warehouseAccess));
+
         AdminUserEditForm form = form();
         form.setPassword("");
         form.setRoles(List.of(
@@ -136,12 +151,11 @@ class AdminUserCompanyIntegrationTest {
 
         service.updateUser(TENANT, form);
 
-        verify(userRoles).deleteByTenantIdAndUserId(
+        verify(userRoles).findByTenantIdAndUserId(
                 TENANT, USER
         );
-
-        verify(userRoles, times(2))
-                .save(any());
+        verify(userRoles, never()).deleteAll(any());
+        verify(userRoles, never()).save(any());
 
         verify(assignments).replaceAccess(
                 TENANT,

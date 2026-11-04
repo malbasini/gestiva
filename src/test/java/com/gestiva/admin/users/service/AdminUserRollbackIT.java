@@ -186,10 +186,10 @@ class AdminUserRollbackIT extends AbstractMySqlIntegrationTest {
                         );
 
                 assertEquals(
-                        0,
+                        1,
                         previousRoles,
-                        "Le associazioni precedenti "
-                        + "devono essere già state eliminate"
+                        "ROLE_ADMIN deve rimanere assegnato "
+                        + "durante il tentativo di aggiungere SALES"
                 );
 
                 failureReached.set(true);
@@ -211,7 +211,9 @@ class AdminUserRollbackIT extends AbstractMySqlIntegrationTest {
             form.setPassword("changed-test-only");
             form.setActive(false);
             form.setAdmin(true);
-            form.setRoles(List.of());
+            // ROLE_ADMIN rimane assegnato;
+            // ROLE_SALES richiede un nuovo INSERT.
+            form.setRoles(List.of("ROLE_SALES"));
 
             IllegalStateException error =
                     assertThrows(
