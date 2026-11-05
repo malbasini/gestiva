@@ -17,6 +17,9 @@ public class PurchaseOrderDetailView {
     private String formattedTaxAmount;
     private String formattedTotalAmount;
     private List<PurchaseOrderDetailLineView> lines = new ArrayList<>();
+    private boolean canReceivePartialGoods;
+    private List<GoodsReceiptLink> goodsReceipts = new ArrayList<>();
+
     private boolean canReceiveGoods;
     private boolean hasGoodsReceipt;
     private Long goodsReceiptId;
@@ -138,4 +141,26 @@ public class PurchaseOrderDetailView {
     public void setCanEdit(boolean canEdit) {
         this.canEdit = canEdit;
     }
+
+    public record GoodsReceiptLink(Long id, String number) {
+    }
+
+    public boolean isCanReceivePartialGoods() {
+        return canReceivePartialGoods;
+    }
+
+    public void setCanReceivePartialGoods(
+            boolean canReceivePartialGoods) {
+        this.canReceivePartialGoods = canReceivePartialGoods;
+    }
+
+    public List<GoodsReceiptLink> getGoodsReceipts() {
+        return goodsReceipts;
+    }
+
+    public void setGoodsReceipts(
+            List<GoodsReceiptLink> goodsReceipts) {
+        this.goodsReceipts = goodsReceipts;
+    }
+
 }

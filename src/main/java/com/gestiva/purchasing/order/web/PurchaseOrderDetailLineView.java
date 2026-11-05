@@ -2,6 +2,11 @@ package com.gestiva.purchasing.order.web;
 
 public class PurchaseOrderDetailLineView {
 
+    private Long lineId;
+    private String formattedOrderedBaseQuantity;
+    private String formattedReceivedBaseQuantity;
+    private String formattedRemainingBaseQuantity;
+
     private Integer lineNo;
     private String description;
     private String formattedQuantity;
@@ -62,4 +67,40 @@ public class PurchaseOrderDetailLineView {
     public void setFormattedLineTotal(String formattedLineTotal) {
         this.formattedLineTotal = formattedLineTotal;
     }
+
+    public Long getLineId() {
+        return lineId;
+    }
+
+    public void setLineId(Long lineId) {
+        this.lineId = lineId;
+    }
+
+    public String getFormattedOrderedBaseQuantity() {
+        return formattedOrderedBaseQuantity;
+    }
+
+    public void setFormattedOrderedBaseQuantity(
+            String formattedOrderedBaseQuantity) {
+        this.formattedOrderedBaseQuantity = formattedOrderedBaseQuantity;
+    }
+
+    public String getFormattedReceivedBaseQuantity() {
+        return formattedReceivedBaseQuantity;
+    }
+
+    public void setFormattedReceivedBaseQuantity(
+            String formattedReceivedBaseQuantity) {
+        this.formattedReceivedBaseQuantity = formattedReceivedBaseQuantity;
+    }
+
+    public String getFormattedRemainingBaseQuantity() {
+        return formattedRemainingBaseQuantity;
+    }
+
+    public void setFormattedRemainingBaseQuantity(
+            String formattedRemainingBaseQuantity) {
+        this.formattedRemainingBaseQuantity = formattedRemainingBaseQuantity;
+    }
+
 }

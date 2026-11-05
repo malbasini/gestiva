@@ -9,6 +9,8 @@ import com.gestiva.purchasing.order.entity.PurchaseOrderLine;
 import com.gestiva.purchasing.order.repository.PurchaseOrderLineRepository;
 import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptLineRepository;
+import com.gestiva.purchasing.receipt.service.GoodsReceiptQuantityCalculator;
+
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
 import com.gestiva.purchasing.supplier.repository.SupplierRepository;
 import com.gestiva.warehouse.item.repository.ItemRepository;
@@ -139,17 +141,92 @@ public class PurchaseOrderWebService {
         v.setFormattedSubtotalAmount(PdfFormatUtils.formatMoney(po.getSubtotalAmount()));
         v.setFormattedTaxAmount(PdfFormatUtils.formatMoney(po.getTaxAmount()));
         v.setFormattedTotalAmount(PdfFormatUtils.formatMoney(po.getTotalAmount()));
-        var receiptOpt = goodsReceiptRepository.findFirstByTenantIdAndCompanyIdAndPurchaseOrderId(tenantId, companyId, po.getId());
-        v.setHasGoodsReceipt(receiptOpt.isPresent());
-        v.setCanReceiveGoods("CONFIRMED".equalsIgnoreCase(po.getStatus()) && receiptOpt.isEmpty());
-        v.setCanEdit(!"CONFIRMED".equalsIgnoreCase(po.getStatus()) && !"CANCELLED".equalsIgnoreCase(po.getStatus()));
-        receiptOpt.ifPresent(receipt -> {
-            v.setGoodsReceiptId(receipt.getId());
-            v.setGoodsReceiptNumber(receipt.getReceiptNumber());
-        });
+        // Ricevimenti dell'ordine, isolati per tenant e società.
+        var receipts = goodsReceiptRepository
+                .findByTenantIdAndCompanyIdAndPurchaseOrderIdOrderByIdAsc(
+                        tenantId, companyId, po.getId());
+
+        v.setGoodsReceipts(
+                receipts.stream()
+                        .map(receipt ->
+                                new PurchaseOrderDetailView.GoodsReceiptLink(
+                                        receipt.getId(),
+                                        receipt.getReceiptNumber()
+                                ))
+                        .toList()
+        );
+
+        v.setHasGoodsReceipt(!receipts.isEmpty());
+
+        // Compatibilità con il ricevimento completo tradizionale.
+        v.setCanReceiveGoods(
+                "CONFIRMED".equalsIgnoreCase(po.getStatus())
+                        && receipts.isEmpty()
+        );
+
+        v.setCanEdit(
+                !"CONFIRMED".equalsIgnoreCase(po.getStatus())
+                        && !"CANCELLED".equalsIgnoreCase(po.getStatus())
+        );
+
+        // Il nuovo workflow rimane disattivato nella UI.
+        v.setCanReceivePartialGoods(false);
+
+        if (!receipts.isEmpty()) {
+            var firstReceipt = receipts.get(0);
+            v.setGoodsReceiptId(firstReceipt.getId());
+            v.setGoodsReceiptNumber(firstReceipt.getReceiptNumber());
+        }
         for (var line : lines) {
             PurchaseOrderDetailLineView lv = new PurchaseOrderDetailLineView();
             lv.setLineNo(line.getLineNo());
+            lv.setLineId(line.getId());
+
+            // Quantità già ricevuta, sempre in UOM base.
+            BigDecimal receivedBase =
+                    goodsReceiptLineRepository
+                            .sumReceivedBaseQuantityByOrderLine(
+                                    tenantId,
+                                    companyId,
+                                    po.getId(),
+                                    line.getId()
+                            );
+
+            if (receivedBase == null) {
+                receivedBase = BigDecimal.ZERO;
+            }
+
+            // Riutilizza le stesse regole del workflow
+            // di ricevimento parziale.
+            BigDecimal remainingBase =
+                    GoodsReceiptQuantityCalculator
+                            .remainingBaseQuantity(
+                                    line.getQuantity(),
+                                    line.getConversionFactor(),
+                                    receivedBase
+                            );
+
+            BigDecimal orderedBase =
+                    receivedBase.add(remainingBase);
+
+            lv.setFormattedOrderedBaseQuantity(
+                    PdfFormatUtils.formatDecimalTrimmed(
+                            orderedBase, 3
+                    )
+            );
+
+            lv.setFormattedReceivedBaseQuantity(
+                    PdfFormatUtils.formatDecimalTrimmed(
+                            receivedBase, 3
+                    )
+            );
+
+            lv.setFormattedRemainingBaseQuantity(
+                    PdfFormatUtils.formatDecimalTrimmed(
+                            remainingBase, 3
+                    )
+            );
+
             lv.setDescription(line.getDescription());
             lv.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),3));
             lv.setUnitOfMeasureCode(

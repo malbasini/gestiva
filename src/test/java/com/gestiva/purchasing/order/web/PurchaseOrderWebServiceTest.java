@@ -54,6 +54,19 @@ class PurchaseOrderWebServiceTest {
     private GoodsReceiptRepository goodsReceiptRepository;
 
     @Mock
+    private com.gestiva.purchasing.receipt.repository.GoodsReceiptLineRepository
+            goodsReceiptLineRepository;
+
+    @Mock
+    private com.gestiva.warehouse.item.repository.ItemUomRepository
+            itemUomRepository;
+
+    @Mock
+    private com.gestiva.warehouse.uom.repository.UnitOfMeasureRepository
+            unitOfMeasureRepository;
+
+
+    @Mock
     private DocumentSequenceService documentSequenceService;
 
     @Mock
@@ -642,4 +655,125 @@ class PurchaseOrderWebServiceTest {
             () -> service.validateLines(null)
         );
     }
+
+    @Test
+    void shouldShowPartialReceiptQuantitiesAndAllReceipts() {
+
+        Long tenantId = 2L;
+        Long companyId = 5L;
+        Long orderId = 100L;
+        Long lineId = 200L;
+
+        PurchaseOrder order = new PurchaseOrder();
+        order.setId(orderId);
+        order.setTenantId(tenantId);
+        order.setCompanyId(companyId);
+        order.setSupplierId(10L);
+        order.setOrderNumber("PO-TEST-100");
+        order.setOrderDate(LocalDate.of(2026, 11, 5));
+        order.setStatus("CONFIRMED");
+        order.setCurrencyCode("EUR");
+        order.setSubtotalAmount(new BigDecimal("144.00"));
+        order.setTaxAmount(new BigDecimal("31.68"));
+        order.setTotalAmount(new BigDecimal("175.68"));
+
+        PurchaseOrderLine line = new PurchaseOrderLine();
+        line.setId(lineId);
+        line.setTenantId(tenantId);
+        line.setPurchaseOrderId(orderId);
+        line.setLineNo(1);
+        line.setDescription("Prodotto ordinato in BOX");
+        line.setQuantity(new BigDecimal("2.000"));
+        line.setConversionFactor(new BigDecimal("10.000000"));
+        line.setUomId(1L);
+        line.setUnitPrice(new BigDecimal("72.00"));
+        line.setDiscountPct(BigDecimal.ZERO);
+        line.setTaxPct(new BigDecimal("22.00"));
+        line.setLineSubtotal(new BigDecimal("144.00"));
+
+        com.gestiva.purchasing.receipt.entity.GoodsReceipt first =
+                new com.gestiva.purchasing.receipt.entity.GoodsReceipt();
+        first.setId(301L);
+        first.setReceiptNumber("GR-001");
+
+        com.gestiva.purchasing.receipt.entity.GoodsReceipt second =
+                new com.gestiva.purchasing.receipt.entity.GoodsReceipt();
+        second.setId(302L);
+        second.setReceiptNumber("GR-002");
+
+        when(companyContext.requireCurrentCompanyId())
+                .thenReturn(companyId);
+
+        when(purchaseOrderRepository
+                .findByTenantIdAndCompanyIdAndId(
+                        tenantId, companyId, orderId
+                )).thenReturn(Optional.of(order));
+
+        when(purchaseOrderLineRepository
+                .findByTenantIdAndPurchaseOrderIdOrderByLineNoAsc(
+                        tenantId, orderId
+                )).thenReturn(List.of(line));
+
+        when(goodsReceiptRepository
+                .findByTenantIdAndCompanyIdAndPurchaseOrderIdOrderByIdAsc(
+                        tenantId, companyId, orderId
+                )).thenReturn(List.of(first, second));
+
+        when(goodsReceiptLineRepository
+                .sumReceivedBaseQuantityByOrderLine(
+                        tenantId, companyId, orderId, lineId
+                )).thenReturn(new BigDecimal("8.000"));
+
+        PurchaseOrderDetailView detail =
+                service.getDetail(tenantId, orderId);
+
+        assertTrue(detail.isHasGoodsReceipt());
+        assertFalse(detail.isCanReceiveGoods());
+        assertFalse(detail.isCanReceivePartialGoods());
+
+        assertEquals(2, detail.getGoodsReceipts().size());
+        assertEquals(301L, detail.getGoodsReceipts().get(0).id());
+        assertEquals("GR-001",
+                detail.getGoodsReceipts().get(0).number());
+        assertEquals(302L, detail.getGoodsReceipts().get(1).id());
+        assertEquals("GR-002",
+                detail.getGoodsReceipts().get(1).number());
+
+        assertEquals(301L, detail.getGoodsReceiptId());
+        assertEquals("GR-001", detail.getGoodsReceiptNumber());
+
+        assertEquals(1, detail.getLines().size());
+
+        var viewLine = detail.getLines().get(0);
+        assertEquals(lineId, viewLine.getLineId());
+
+        assertEquals("20",
+                viewLine.getFormattedOrderedBaseQuantity());
+        assertEquals("8",
+                viewLine.getFormattedReceivedBaseQuantity());
+        assertEquals("12",
+                viewLine.getFormattedRemainingBaseQuantity());
+
+        verify(goodsReceiptLineRepository)
+                .sumReceivedBaseQuantityByOrderLine(
+                        tenantId, companyId, orderId, lineId
+                );
+
+        System.out.println(
+                "PO DETAIL: 2 BOX x 10 = 20 PZ"
+        );
+        System.out.println(
+                "PO DETAIL: ricevuti 8 PZ, residui 12 PZ"
+        );
+        System.out.println(
+                "PO DETAIL: due GR visibili nel modello"
+        );
+        System.out.println(
+                "PO DETAIL: ricevimento completo non disponibile"
+        );
+        System.out.println(
+                "PO DETAIL: ricevimento parziale UI disattivato"
+        );
+    }
+
 }

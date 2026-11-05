@@ -35,6 +35,16 @@ public interface GoodsReceiptRepository extends JpaRepository<GoodsReceipt, Long
             Long companyId,
             Long purchaseOrderId
     );
+
+    // Gestiva V2 - Tutti i ricevimenti dello stesso ordine,
+    // isolati per tenant e società, ordinati per ID.
+    java.util.List<GoodsReceipt>
+    findByTenantIdAndCompanyIdAndPurchaseOrderIdOrderByIdAsc(
+            Long tenantId,
+            Long companyId,
+            Long purchaseOrderId
+    );
+
     boolean existsByTenantIdAndReceiptNumber(Long tenantId, String receiptNumber);
     boolean existsByTenantIdAndPurchaseOrderId(Long tenantId, Long purchaseOrderId);
     java.util.Optional<com.gestiva.purchasing.receipt.entity.GoodsReceipt> findFirstByTenantIdAndPurchaseOrderId(Long tenantId, Long purchaseOrderId);
