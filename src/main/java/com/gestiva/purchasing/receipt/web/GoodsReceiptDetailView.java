@@ -14,6 +14,11 @@ public class GoodsReceiptDetailView {
     private List<GoodsReceiptDetailLineView> lines = new ArrayList<>();
 
     private boolean canCreateSupplierInvoice;
+
+    // Nuove azioni separate; disabilitate di default.
+    // La logica di eleggibilità sarà introdotta in seguito.
+    private boolean canCreateTraditionalSupplierInvoice;
+    private boolean canCreatePartialSupplierInvoice;
     private boolean hasSupplierInvoice;
     private Long supplierInvoiceId;
     private String supplierInvoiceNumber;
@@ -102,4 +107,25 @@ public class GoodsReceiptDetailView {
     public void setSupplierInvoiceNumber(String supplierInvoiceNumber) {
         this.supplierInvoiceNumber = supplierInvoiceNumber;
     }
+
+    public boolean isCanCreateTraditionalSupplierInvoice() {
+        return canCreateTraditionalSupplierInvoice;
+    }
+
+    public void setCanCreateTraditionalSupplierInvoice(
+            boolean canCreateTraditionalSupplierInvoice) {
+        this.canCreateTraditionalSupplierInvoice =
+                canCreateTraditionalSupplierInvoice;
+    }
+
+    public boolean isCanCreatePartialSupplierInvoice() {
+        return canCreatePartialSupplierInvoice;
+    }
+
+    public void setCanCreatePartialSupplierInvoice(
+            boolean canCreatePartialSupplierInvoice) {
+        this.canCreatePartialSupplierInvoice =
+                canCreatePartialSupplierInvoice;
+    }
+
 }

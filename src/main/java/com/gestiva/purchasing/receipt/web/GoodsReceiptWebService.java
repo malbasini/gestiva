@@ -6,6 +6,7 @@ import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.purchasing.invoice.repository.SupplierInvoiceRepository;
 import com.gestiva.purchasing.order.entity.PurchaseOrder;
 import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
+import com.gestiva.purchasing.order.repository.PurchaseOrderLineRepository;
 import com.gestiva.purchasing.receipt.entity.GoodsReceipt;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptLineRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
@@ -33,6 +34,7 @@ public class GoodsReceiptWebService {
     private final ItemRepository itemRepository;
     private final SupplierRepository supplierRepository;
     private final PurchaseOrderRepository purchaseOrderRepository;
+    private final PurchaseOrderLineRepository purchaseOrderLineRepository;
     private final SupplierInvoiceRepository supplierInvoiceRepository;
     private final CompanyContext companyContext;
 
@@ -46,6 +48,7 @@ public class GoodsReceiptWebService {
                                   ItemRepository itemRepository,
                                   SupplierRepository supplierRepository,
                                   PurchaseOrderRepository purchaseOrderRepository,
+                                  PurchaseOrderLineRepository purchaseOrderLineRepository,
                                   SupplierInvoiceRepository supplierInvoiceRepository,
                                   CompanyContext companyContext) {
         this.goodsReceiptRepository = goodsReceiptRepository;
@@ -53,6 +56,7 @@ public class GoodsReceiptWebService {
         this.itemRepository = itemRepository;
         this.supplierRepository = supplierRepository;
         this.purchaseOrderRepository = purchaseOrderRepository;
+        this.purchaseOrderLineRepository = purchaseOrderLineRepository;
         this.supplierInvoiceRepository = supplierInvoiceRepository;
         this.companyContext = companyContext;
     }
@@ -132,39 +136,107 @@ public class GoodsReceiptWebService {
                 );
         v.setHasSupplierInvoice(invoiceOpt.isPresent());
 
-        // Gestiva V2: il pulsante deve rispettare la stessa
-        // protezione applicata alla generazione nel backend.
+        // Classificazione per la sola presentazione UI.
         boolean testProfileActive = environment != null
                 && java.util.Arrays.asList(
                         environment.getActiveProfiles()
                 ).contains("test");
 
-        boolean invoiceGenerationEnabled = environment != null
+        boolean generalEnabled = environment != null
                 && environment.getProperty(
                         "gestiva.purchasing.supplier-invoice.enabled",
                         Boolean.class,
                         false
                 );
 
-        boolean canCreateInvoice = false;
+        boolean partialEnabled = environment != null
+                && environment.getProperty(
+                        "gestiva.purchasing.supplier-invoice.partial.enabled",
+                        Boolean.class,
+                        false
+                );
+
+        var authentication =
+                org.springframework.security.core.context
+                        .SecurityContextHolder.getContext()
+                        .getAuthentication();
+
+        boolean authorizedRole = authentication != null
+                && authentication.isAuthenticated()
+                && authentication.getAuthorities() != null
+                && authentication.getAuthorities().stream()
+                        .anyMatch(authority ->
+                                "ROLE_ADMIN".equals(authority.getAuthority())
+                                || "ROLE_PURCHASING".equals(
+                                        authority.getAuthority()
+                                )
+                        );
+
+        var classification =
+                GoodsReceiptInvoiceQuantityClassifier.Result.INVALID;
+
+        boolean confirmedOrder = false;
 
         if (testProfileActive
-                && invoiceGenerationEnabled
+                && generalEnabled
+                && authorizedRole
                 && invoiceOpt.isEmpty()) {
 
-            canCreateInvoice = purchaseOrderRepository
+            var orderOpt = purchaseOrderRepository
                     .findByTenantIdAndCompanyIdAndId(
                             tenantId,
-                            receipt.getCompanyId(),
+                            companyId,
                             receipt.getPurchaseOrderId()
-                    )
-                    .map(po -> "CONFIRMED".equalsIgnoreCase(
-                            po.getStatus()
-                    ))
-                    .orElse(false);
+                    );
+
+            if (orderOpt.isPresent()) {
+                var order = orderOpt.get();
+
+                confirmedOrder =
+                        "CONFIRMED".equalsIgnoreCase(order.getStatus())
+                        && java.util.Objects.equals(
+                                order.getSupplierId(),
+                                receipt.getSupplierId()
+                        );
+
+                if (confirmedOrder) {
+                    var orderLines = purchaseOrderLineRepository
+                            .findByTenantIdAndPurchaseOrderIdOrderByLineNoAsc(
+                                    tenantId,
+                                    order.getId()
+                            );
+
+                    classification =
+                            GoodsReceiptInvoiceQuantityClassifier.classify(
+                                    orderLines,
+                                    lines
+                            );
+                }
+            }
         }
 
-        v.setCanCreateSupplierInvoice(canCreateInvoice);
+        var actions = GoodsReceiptInvoiceActionPolicy.evaluate(
+                classification,
+                confirmedOrder,
+                invoiceOpt.isPresent(),
+                authorizedRole,
+                testProfileActive,
+                generalEnabled,
+                partialEnabled
+        );
+
+        v.setCanCreateTraditionalSupplierInvoice(
+                actions.traditional()
+        );
+
+        v.setCanCreatePartialSupplierInvoice(
+                actions.partial()
+        );
+
+        // Il template legacy continua a leggere questo campo.
+        v.setCanCreateSupplierInvoice(
+                actions.traditional()
+        );
 
         invoiceOpt.ifPresent(invoice -> {
             v.setSupplierInvoiceId(invoice.getId());

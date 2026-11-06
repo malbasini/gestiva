@@ -26,6 +26,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.security.core.context.SecurityContextHolder;
+import java.util.Arrays;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -47,6 +51,9 @@ public class PurchaseOrderWebService {
     private final GoodsReceiptLineRepository goodsReceiptLineRepository;
     private final DocumentSequenceService documentSequenceService;
     private final CompanyContext companyContext;
+
+    @Autowired(required = false)
+    private Environment partialReceiptEnvironment;
 
 
 
@@ -169,8 +176,31 @@ public class PurchaseOrderWebService {
                         && !"CANCELLED".equalsIgnoreCase(po.getStatus())
         );
 
-        // Il nuovo workflow rimane disattivato nella UI.
+        // L'azione viene valutata dopo il calcolo dei residui.
         v.setCanReceivePartialGoods(false);
+        boolean partialReceiptTestProfile =
+                partialReceiptEnvironment != null
+                && Arrays.asList(
+                        partialReceiptEnvironment.getActiveProfiles()
+                ).contains("test");
+
+        var partialReceiptAuthentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        boolean partialReceiptAuthorized =
+                partialReceiptAuthentication != null
+                && partialReceiptAuthentication.getAuthorities().stream()
+                        .anyMatch(authority ->
+                                "ROLE_ADMIN".equals(authority.getAuthority())
+                                || "ROLE_PURCHASING".equals(
+                                        authority.getAuthority()
+                                )
+                                || "ROLE_WAREHOUSE".equals(
+                                        authority.getAuthority()
+                                )
+                        );
+
+        boolean partialReceiptHasRemaining = false;
 
         if (!receipts.isEmpty()) {
             var firstReceipt = receipts.get(0);
@@ -226,6 +256,10 @@ public class PurchaseOrderWebService {
                             remainingBase, 3
                     )
             );
+            lv.setRemainingBaseQuantity(remainingBase);
+            if (remainingBase.signum() > 0) {
+                partialReceiptHasRemaining = true;
+            }
 
             lv.setDescription(line.getDescription());
             lv.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),3));
@@ -243,6 +277,13 @@ public class PurchaseOrderWebService {
             lv.setFormattedLineTotal(PdfFormatUtils.formatMoney(line.getLineSubtotal()));
             v.getLines().add(lv);
         }
+
+        v.setCanReceivePartialGoods(
+                partialReceiptTestProfile
+                        && partialReceiptAuthorized
+                        && "CONFIRMED".equalsIgnoreCase(po.getStatus())
+                        && partialReceiptHasRemaining
+        );
 
         return v;
     }

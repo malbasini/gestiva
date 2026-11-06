@@ -124,6 +124,13 @@ public class SecurityConfig {
                                 org.springframework.http.HttpMethod.POST,
                                 "/goods-receipts/{id}/invoice"
                         ).hasAnyRole("ADMIN", "PURCHASING")
+                        // Futura creazione fattura parziale:
+                        // POST riservato ad ADMIN e PURCHASING.
+                        // Nessun endpoint applicativo attivato.
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.POST,
+                                "/goods-receipts/{id}/invoice-partial"
+                        ).hasAnyRole("ADMIN", "PURCHASING")
                         .requestMatchers("/goods-receipts/**").hasAnyRole("ADMIN", "PURCHASING", "WAREHOUSE")
                         .requestMatchers(
                                 org.springframework.http.HttpMethod.POST,

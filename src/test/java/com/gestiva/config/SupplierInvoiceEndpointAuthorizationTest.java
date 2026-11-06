@@ -298,4 +298,56 @@ class SupplierInvoiceEndpointAuthorizationTest {
         verifyRequest("ADMIN", "POST", REGISTER_PATH, false, false);
     }
 
+
+    private static final String PARTIAL_INVOICE_PATH =
+            "/goods-receipts/1/invoice-partial";
+
+    @Test
+    void partialInvoiceAdminCanPassSecurity() throws Exception {
+        verifyRequest(
+                "ADMIN", "POST",
+                PARTIAL_INVOICE_PATH, true, true
+        );
+    }
+
+    @Test
+    void partialInvoicePurchasingCanPassSecurity() throws Exception {
+        verifyRequest(
+                "PURCHASING", "POST",
+                PARTIAL_INVOICE_PATH, true, true
+        );
+    }
+
+    @Test
+    void partialInvoiceWarehouseIsForbidden() throws Exception {
+        verifyRequest(
+                "WAREHOUSE", "POST",
+                PARTIAL_INVOICE_PATH, true, false
+        );
+    }
+
+    @Test
+    void partialInvoiceAccountingIsForbidden() throws Exception {
+        verifyRequest(
+                "ACCOUNTING", "POST",
+                PARTIAL_INVOICE_PATH, true, false
+        );
+    }
+
+    @Test
+    void partialInvoiceSalesIsForbidden() throws Exception {
+        verifyRequest(
+                "SALES", "POST",
+                PARTIAL_INVOICE_PATH, true, false
+        );
+    }
+
+    @Test
+    void partialInvoiceWithoutCsrfIsForbidden() throws Exception {
+        verifyRequest(
+                "ADMIN", "POST",
+                PARTIAL_INVOICE_PATH, false, false
+        );
+    }
+
 }

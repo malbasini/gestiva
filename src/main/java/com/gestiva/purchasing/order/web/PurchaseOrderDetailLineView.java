@@ -6,6 +6,16 @@ public class PurchaseOrderDetailLineView {
     private String formattedOrderedBaseQuantity;
     private String formattedReceivedBaseQuantity;
     private String formattedRemainingBaseQuantity;
+    private java.math.BigDecimal remainingBaseQuantity;
+
+    public java.math.BigDecimal getRemainingBaseQuantity() {
+        return remainingBaseQuantity;
+    }
+
+    public void setRemainingBaseQuantity(
+            java.math.BigDecimal remainingBaseQuantity) {
+        this.remainingBaseQuantity = remainingBaseQuantity;
+    }
 
     private Integer lineNo;
     private String description;

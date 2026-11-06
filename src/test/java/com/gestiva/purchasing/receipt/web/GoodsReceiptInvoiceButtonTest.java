@@ -4,6 +4,14 @@ import com.gestiva.purchasing.receipt.entity.GoodsReceipt;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptRepository;
 import com.gestiva.purchasing.receipt.repository.GoodsReceiptLineRepository;
 import com.gestiva.purchasing.order.entity.PurchaseOrder;
+import com.gestiva.purchasing.order.entity.PurchaseOrderLine;
+import com.gestiva.purchasing.order.repository.PurchaseOrderLineRepository;
+import com.gestiva.purchasing.receipt.entity.GoodsReceiptLine;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.junit.jupiter.api.AfterEach;
+import java.math.BigDecimal;
 import com.gestiva.purchasing.order.repository.PurchaseOrderRepository;
 import com.gestiva.purchasing.invoice.entity.SupplierInvoice;
 import com.gestiva.purchasing.invoice.repository.SupplierInvoiceRepository;
@@ -52,6 +60,9 @@ class GoodsReceiptInvoiceButtonTest {
 
     @Mock
     private SupplierInvoiceRepository supplierInvoiceRepository;
+
+    @Mock
+    private PurchaseOrderLineRepository purchaseOrderLineRepository;
 
     @Mock
     private CompanyContext companyContext;
@@ -111,10 +122,20 @@ class GoodsReceiptInvoiceButtonTest {
                 Boolean.class,
                 false
         )).thenReturn(enabled);
+
+        // Il nuovo flag è sempre letto dal Web Service.
+        // Default esplicito per il mock Mockito legacy.
+        lenient().when(environment.getProperty(
+                "gestiva.purchasing.supplier-invoice.partial.enabled",
+                Boolean.class,
+                false
+        )).thenReturn(false);
     }
 
     private void configureOrder(String status) {
         PurchaseOrder order = new PurchaseOrder();
+        ReflectionTestUtils.setField(order, "id", ORDER_ID);
+        order.setSupplierId(30L);
         order.setStatus(status);
 
         when(purchaseOrderRepository
@@ -126,6 +147,11 @@ class GoodsReceiptInvoiceButtonTest {
 
     private GoodsReceiptDetailView loadDetail() {
         return service.getDetail(TENANT_ID, RECEIPT_ID);
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -147,7 +173,49 @@ class GoodsReceiptInvoiceButtonTest {
         configureEnvironment("test", true);
         configureOrder("CONFIRMED");
 
-        assertTrue(loadDetail().isCanCreateSupplierInvoice());
+        var authentication = new UsernamePasswordAuthenticationToken(
+                "test-admin",
+                "test-password",
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+        );
+
+        SecurityContextHolder.getContext()
+                .setAuthentication(authentication);
+
+        GoodsReceiptLine receivedLine = mock(GoodsReceiptLine.class);
+        when(receivedLine.getPurchaseOrderLineId())
+                .thenReturn(200L);
+        when(receivedLine.getItemId())
+                .thenReturn(10L);
+        when(receivedLine.getQuantityReceived())
+                .thenReturn(new BigDecimal("20.000"));
+
+        when(goodsReceiptLineRepository
+                .findByTenantIdAndCompanyIdAndGoodsReceiptIdOrderByLineNoAsc(
+                        TENANT_ID, COMPANY_ID, RECEIPT_ID
+                ))
+                .thenReturn(List.of(receivedLine));
+
+        PurchaseOrderLine orderLine = mock(PurchaseOrderLine.class);
+        when(orderLine.getId()).thenReturn(200L);
+        when(orderLine.getItemId()).thenReturn(10L);
+        when(orderLine.getUomId()).thenReturn(9L);
+        when(orderLine.getQuantity())
+                .thenReturn(new BigDecimal("2"));
+        when(orderLine.getConversionFactor())
+                .thenReturn(new BigDecimal("10"));
+
+        when(purchaseOrderLineRepository
+                .findByTenantIdAndPurchaseOrderIdOrderByLineNoAsc(
+                        TENANT_ID, ORDER_ID
+                ))
+                .thenReturn(List.of(orderLine));
+
+        var detail = loadDetail();
+
+        assertTrue(detail.isCanCreateSupplierInvoice());
+        assertTrue(detail.isCanCreateTraditionalSupplierInvoice());
+        assertFalse(detail.isCanCreatePartialSupplierInvoice());
     }
 
     @Test

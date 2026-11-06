@@ -49,6 +49,22 @@
                 <span>Genera fattura</span>
               </button>
             </th:block>
+            <!-- Fatturazione del singolo ricevimento parziale.
+                 La disponibilità è calcolata dal Web Service.
+                 Il backend applica nuovamente le protezioni. -->
+            <th:block th:if="${goodsReceipt.canCreatePartialSupplierInvoice}">
+              <button type="button"
+                      class="btn btn-outline-primary"
+                      onclick="openConfirmModal(this)"
+                      data-confirm-title="Genera fattura fornitore parziale"
+                      data-confirm-message="Confermi di voler generare una fattura DRAFT per le quantità di questa ricezione?"
+                      data-confirm-submit="Conferma generazione fattura parziale"
+                      data-confirm-submit-class="btn btn-primary"
+                      th:attr="data-confirm-action=@{/goods-receipts/{id}/invoice-partial(id=${goodsReceipt.id})}">
+                <i class="bi bi-receipt"></i>
+                <span>Genera fattura parziale</span>
+              </button>
+            </th:block>
           </div>
         </div>
         <div class="info-grid">

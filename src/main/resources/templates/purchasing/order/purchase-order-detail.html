@@ -55,6 +55,15 @@
                 <span>Ricevi merce</span>
               </button>
             </th:block>
+            <th:block th:if="${purchaseOrder.canReceivePartialGoods}">
+              <button type="button"
+                      class="btn btn-outline-primary"
+                      data-bs-toggle="modal"
+                      data-bs-target="#receivePartialGoodsModal">
+                <i class="bi bi-box-arrow-in-down"></i>
+                <span>Ricevi merce parziale</span>
+              </button>
+            </th:block>
           </div>
         </div>
         </div>
@@ -84,9 +93,9 @@
             <th>Descrizione</th>
             <th class="text-end">Quantità</th>
             <th>U.M.</th>
-              <th class="text-end">Ordinato (base)</th>
-              <th class="text-end">Ricevuto (base)</th>
-              <th class="text-end">Residuo (base)</th>
+              <th class="text-end">Ordinato</th>
+              <th class="text-end">Ricevuto</th>
+              <th class="text-end">Residuo</th>
               <th class="text-end">Prezzo</th>
             <th class="text-end">Sconto</th>
             <th class="text-end">IVA</th>
@@ -227,6 +236,113 @@
 
       </form>
 
+    </div>
+  </div>
+</div>
+
+
+<!-- Gestiva V2 - Ricevimento parziale con quantità esplicite -->
+<div class="modal fade"
+     id="receivePartialGoodsModal"
+     tabindex="-1"
+     aria-labelledby="receivePartialGoodsModalLabel"
+     aria-hidden="true"
+     th:if="${purchaseOrder.canReceivePartialGoods}">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post"
+            th:action="@{/purchase-orders/{id}/receive-partial(id=${purchaseOrder.id})}">
+
+        <input type="hidden"
+               th:name="${_csrf.parameterName}"
+               th:value="${_csrf.token}"/>
+
+        <div class="modal-header">
+          <h5 class="modal-title" id="receivePartialGoodsModalLabel">
+            Ricevimento parziale merci
+          </h5>
+          <button type="button" class="btn-close"
+                  data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="partialWarehouseId" class="form-label">
+              Magazzino di destinazione
+            </label>
+            <select id="partialWarehouseId"
+                    name="warehouseId"
+                    class="form-select"
+                    required>
+              <option value="">Seleziona un magazzino</option>
+              <option th:each="warehouse : ${warehouseOptions}"
+                      th:value="${warehouse.id}"
+                      th:text="${warehouse.code + ' - ' + warehouse.name}">
+                Magazzino
+              </option>
+            </select>
+          </div>
+
+          <p class="text-muted">
+            Inserisci le quantità effettivamente ricevute
+            nell'unità di magazzino. Lascia 0 per le righe
+            non ricevute.
+          </p>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Articolo</th>
+                  <th class="text-end">Ordinato</th>
+                  <th class="text-end">Già ricevuto</th>
+                  <th class="text-end">Residuo</th>
+                  <th>Da ricevere</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="line : ${purchaseOrder.lines}"
+                    th:if="${line.remainingBaseQuantity != null
+                             and line.remainingBaseQuantity > 0}">
+                  <td th:text="${line.description}">Articolo</td>
+                  <td class="text-end"
+                      th:text="${line.formattedOrderedBaseQuantity}">20</td>
+                  <td class="text-end"
+                      th:text="${line.formattedReceivedBaseQuantity}">0</td>
+                  <td class="text-end"
+                      th:text="${line.formattedRemainingBaseQuantity}">20</td>
+                  <td>
+                    <input type="number"
+                           class="form-control"
+                           th:name="|quantity_${line.lineId}|"
+                           th:attr="max=${line.remainingBaseQuantity}"
+                           min="0"
+                           step="0.001"
+                           value="0"
+                           inputmode="decimal"
+                           required/>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alert alert-warning"
+               th:if="${#lists.isEmpty(warehouseOptions)}">
+            Non sono disponibili magazzini attivi
+            per la società corrente.
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary"
+                  data-bs-dismiss="modal">Annulla</button>
+          <button type="submit" class="btn btn-success"
+                  th:disabled="${#lists.isEmpty(warehouseOptions)}">
+            Conferma ricevimento parziale
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>

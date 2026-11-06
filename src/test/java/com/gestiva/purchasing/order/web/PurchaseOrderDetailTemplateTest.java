@@ -275,9 +275,9 @@ class PurchaseOrderDetailTemplateTest {
             assertTrue(html.contains("Ricezione GR-001"));
             assertTrue(html.contains("Ricezione GR-002"));
 
-            assertTrue(html.contains("Ordinato (base)"));
-            assertTrue(html.contains("Ricevuto (base)"));
-            assertTrue(html.contains("Residuo (base)"));
+            assertTrue(html.contains(">Ordinato</th>"));
+            assertTrue(html.contains(">Ricevuto</th>"));
+            assertTrue(html.contains(">Residuo</th>"));
 
             assertTrue(
                     html.matches("(?s).*"
