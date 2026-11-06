@@ -96,8 +96,8 @@ public class PaymentAccountingService {
         return journalEntryService.createEntry(
                 tenantId,
                 form,
-                due.getReferenceType(),
-                due.getReferenceId()
+                "PAYMENT_DUE",
+                due.getId()
         );
     }
 
