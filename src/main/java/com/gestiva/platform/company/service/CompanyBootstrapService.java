@@ -84,7 +84,9 @@ public class CompanyBootstrapService {
             "PURCHASE_ORDER",
             "GOODS_RECEIPT",
             "SUPPLIER_INVOICE",
-            "JOURNAL_ENTRY"
+            "JOURNAL_ENTRY",
+            "SUPPLIER_CREDIT_NOTE",
+            "CUSTOMER_CREDIT_NOTE"
     );
 
     public void initializeDefaultSequences(Long tenantId, Long companyId) {
@@ -126,6 +128,8 @@ public class CompanyBootstrapService {
             case "GOODS_RECEIPT" -> "GR-";
             case "SUPPLIER_INVOICE" -> "SI-";
             case "JOURNAL_ENTRY" -> "JE-";
+            case "SUPPLIER_CREDIT_NOTE" -> "SCN-";
+            case "CUSTOMER_CREDIT_NOTE" -> "CCN-";
             default -> throw new IllegalArgumentException(
                     "Tipo documento non supportato: " + type);
         };

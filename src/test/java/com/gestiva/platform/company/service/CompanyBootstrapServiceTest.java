@@ -89,7 +89,9 @@ class CompanyBootstrapServiceTest {
                 "PURCHASE_ORDER",
                 "GOODS_RECEIPT",
                 "SUPPLIER_INVOICE",
-                "JOURNAL_ENTRY"
+                "JOURNAL_ENTRY",
+                "SUPPLIER_CREDIT_NOTE",
+                "CUSTOMER_CREDIT_NOTE"
         );
 
         List<DocumentSequence> sequences = types.stream()
@@ -194,7 +196,7 @@ class CompanyBootstrapServiceTest {
         org.mockito.ArgumentCaptor<DocumentSequence> captor =
                 org.mockito.ArgumentCaptor.forClass(DocumentSequence.class);
 
-        verify(documentSequenceRepository, times(6))
+        verify(documentSequenceRepository, times(8))
                 .save(captor.capture());
 
         java.util.Map<String, String> expectedPrefixes =
@@ -204,7 +206,9 @@ class CompanyBootstrapServiceTest {
                         "PURCHASE_ORDER", "PO-",
                         "GOODS_RECEIPT", "GR-",
                         "SUPPLIER_INVOICE", "SI-",
-                        "JOURNAL_ENTRY", "JE-"
+                        "JOURNAL_ENTRY", "JE-",
+                        "SUPPLIER_CREDIT_NOTE", "SCN-",
+                        "CUSTOMER_CREDIT_NOTE", "CCN-"
                 );
 
         org.junit.jupiter.api.Assertions.assertEquals(
@@ -322,7 +326,7 @@ void initializeCompany_shouldPropagateAccountingBootstrapFailure() {
             exception.getMessage()
     );
 
-    verify(documentSequenceRepository, times(8))
+    verify(documentSequenceRepository, times(10))
             .save(any(DocumentSequence.class));
 
     verify(companySettingsRepository, never())

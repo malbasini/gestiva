@@ -31,7 +31,9 @@ public class CompanySettingsService {
             "PURCHASE_ORDER",
             "GOODS_RECEIPT",
             "SUPPLIER_INVOICE",
-            "JOURNAL_ENTRY"
+            "JOURNAL_ENTRY",
+            "SUPPLIER_CREDIT_NOTE",
+            "CUSTOMER_CREDIT_NOTE"
     );
 
     private final CompanySettingsRepository companySettingsRepository;
@@ -267,6 +269,8 @@ public class CompanySettingsService {
             case "GOODS_RECEIPT" -> "GR-";
             case "SUPPLIER_INVOICE" -> "SI-";
             case "JOURNAL_ENTRY" -> "JE-";
+            case "SUPPLIER_CREDIT_NOTE" -> "SCN-";
+            case "CUSTOMER_CREDIT_NOTE" -> "CCN-";
             default -> "";
         };
     }

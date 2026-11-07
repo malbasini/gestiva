@@ -18,6 +18,8 @@ public class DocumentSequenceService {
     public static final String GOODS_RECEIPT = "GOODS_RECEIPT";
     public static final String SUPPLIER_INVOICE = "SUPPLIER_INVOICE";
     public static final String JOURNAL_ENTRY = "JOURNAL_ENTRY";
+    public static final String SUPPLIER_CREDIT_NOTE = "SUPPLIER_CREDIT_NOTE";
+    public static final String CUSTOMER_CREDIT_NOTE = "CUSTOMER_CREDIT_NOTE";
 
     private final DocumentSequenceRepository documentSequenceRepository;
 
@@ -127,6 +129,16 @@ public class DocumentSequenceService {
 
     public String nextJournalEntryNumber(Long tenantId, Long companyId) {
         return nextNumber(tenantId, companyId, JOURNAL_ENTRY);
+    }
+
+    public String nextSupplierCreditNoteNumber(
+            Long tenantId, Long companyId) {
+        return nextNumber(tenantId, companyId, SUPPLIER_CREDIT_NOTE);
+    }
+
+    public String nextCustomerCreditNoteNumber(
+            Long tenantId, Long companyId) {
+        return nextNumber(tenantId, companyId, CUSTOMER_CREDIT_NOTE);
     }
 
     private String leftPad(long value, int paddingSize) {

@@ -222,3 +222,48 @@ CREATE TABLE credit_note_financial_position (
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- =====================================================
+-- GESTIVA_CREDIT_NOTE_SEQUENCE_BOOTSTRAP_V9
+-- =====================================================
+-- Inizializzazione per società già presenti.
+-- Le sequenze esistenti non vengono modificate.
+-- Le nuove società sono gestite da CompanySettingsService.
+
+INSERT INTO document_sequence (
+    tenant_id,
+    company_id,
+    document_type,
+    prefix,
+    next_number,
+    padding_size,
+    created_at,
+    updated_at
+)
+SELECT
+    c.tenant_id,
+    c.id,
+    t.document_type,
+    t.prefix,
+    1,
+    5,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+FROM company c
+CROSS JOIN (
+    SELECT
+        'SUPPLIER_CREDIT_NOTE' AS document_type,
+        'SCN-' AS prefix
+    UNION ALL
+    SELECT
+        'CUSTOMER_CREDIT_NOTE' AS document_type,
+        'CCN-' AS prefix
+) t
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM document_sequence ds
+    WHERE ds.tenant_id = c.tenant_id
+      AND ds.company_id = c.id
+      AND ds.document_type = t.document_type
+);
