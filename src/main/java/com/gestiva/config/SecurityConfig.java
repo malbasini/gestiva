@@ -138,6 +138,21 @@ public class SecurityConfig {
                         ).hasAnyRole("ADMIN", "ACCOUNTING")
                         .requestMatchers("/supplier-invoices/**").hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
 
+                        // Gestiva V2 — SCN: autorizzazioni HTTP.
+                        // Nessun controller SCN attivato in questa fase.
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.POST,
+                                "/supplier-credit-notes/{id}/register"
+                        ).hasAnyRole("ADMIN", "ACCOUNTING")
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.POST,
+                                "/supplier-credit-notes"
+                        ).hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
+                        .requestMatchers(
+                                "/supplier-credit-notes",
+                                "/supplier-credit-notes/**"
+                        ).hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
+
                         // magazzino
                         .requestMatchers("/warehouse/uoms/**").hasAnyRole("ADMIN", "WAREHOUSE")
                         .requestMatchers("/items/*/uoms", "/items/*/uoms/**").hasAnyRole("ADMIN", "WAREHOUSE")

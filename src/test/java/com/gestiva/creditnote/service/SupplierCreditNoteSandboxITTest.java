@@ -420,7 +420,19 @@ class SupplierCreditNoteSandboxITTest {
         );
 
         System.out.println("SCN_REAL_FINANCIAL_OPEN: OK");
+
         System.out.println("SCN_REAL_REGISTRATION: OK");
+
+        // Seconda registrazione della stessa nota:
+        // deve essere rifiutata prima di ulteriori scritture.
+        var duplicateFailure = assertThrows(
+                com.gestiva.common.exception.BusinessException.class,
+                () -> registrations.register(tenantId, noteId)
+        );
+
+        assertNotNull(duplicateFailure.getMessage());
+
+        System.out.println("SCN_REAL_DUPLICATE_REJECTED: OK");
     }
 
     @AfterTransaction
