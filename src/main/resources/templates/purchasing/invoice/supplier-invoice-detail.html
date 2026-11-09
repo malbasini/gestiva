@@ -192,7 +192,252 @@
                     </tr>
                 </table>
 
-                <div class="notes" th:if="${supplierInvoice.notes != null and !#strings.isEmpty(supplierInvoice.notes)}">
+
+                <!-- Gestiva V2: nota credito fornitore parziale -->
+                <section th:if="${canCreateSupplierCreditNote}"
+                         class="mt-4"
+                         aria-labelledby="scn-partial-title">
+
+                    <h2 id="scn-partial-title" class="h5 mb-3">
+                        <i class="bi bi-file-earmark-minus"></i>
+                        Nuova nota di credito parziale
+                    </h2>
+
+                    <p class="muted">
+                        Seleziona le righe da stornare e indica
+                        le quantità. Il sistema verificherà gli
+                        storni già registrati.
+                    </p>
+
+                    <form id="scn-partial-form"
+                          method="post"
+                          th:action="@{/supplier-credit-notes/partial}">
+
+                        <input type="hidden"
+                               th:name="${_csrf.parameterName}"
+                               th:value="${_csrf.token}"/>
+
+                        <input type="hidden"
+                               name="supplierInvoiceId"
+                               th:value="${supplierInvoice.id}"/>
+
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th>Seleziona</th>
+                                    <th>Riga</th>
+                                    <th>Descrizione</th>
+                                    <th>Quantità fatturata</th>
+                                    <th>U.M.</th>
+                                    <th>Quantità da stornare</th>
+                                </tr>
+                                </thead>
+
+                                <tbody>
+                                <tr th:each="line : ${supplierInvoice.lines}"
+                                    data-scn-partial-row>
+
+                                    <td>
+                                        <input type="checkbox"
+                                               class="form-check-input"
+                                               data-scn-line-toggle
+                                               aria-label="Seleziona riga"
+                                               th:attr="aria-label=|Seleziona riga ${line.lineNo}|"/>
+                                        <input type="hidden"
+                                               name="lineIds"
+                                               th:value="${line.id}"
+                                               disabled/>
+                                    </td>
+
+                                    <td th:text="${line.lineNo}">1</td>
+
+                                    <td th:text="${line.description}">
+                                        Articolo
+                                    </td>
+
+                                    <td th:text="${line.formattedQuantity}">
+                                        1,000
+                                    </td>
+
+                                    <td th:text="${line.unitOfMeasureCode}">
+                                        PZ
+                                    </td>
+
+                                    <td>
+                                        <input type="number"
+                                               name="quantities"
+                                               class="form-control"
+                                               min="0.001"
+                                               step="0.001"
+                                               th:max="${line.quantity}"
+                                               placeholder="0,000"
+                                               aria-label="Quantità da stornare"
+                                               disabled/>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="scn-partial-reason"
+                                   class="form-label">
+                                Causale
+                            </label>
+
+                            <textarea id="scn-partial-reason"
+                                      name="reason"
+                                      class="form-control"
+                                      rows="3"
+                                      maxlength="500"
+                                      required
+                                      placeholder="Motivo dello storno parziale"></textarea>
+                        </div>
+
+                        <button type="submit"
+                                class="btn btn-outline-primary">
+                            <i class="bi bi-file-earmark-plus"></i>
+                            Crea nota di credito parziale DRAFT
+                        </button>
+                    </form>
+                </section>
+
+                <script>
+                (function () {
+                    "use strict";
+
+                    const form = document.getElementById(
+                        "scn-partial-form"
+                    );
+
+                    if (!form) {
+                        return;
+                    }
+
+                    const rows = Array.from(
+                        form.querySelectorAll(
+                            "[data-scn-partial-row]"
+                        )
+                    );
+
+                    rows.forEach(function (row) {
+                        const checkbox = row.querySelector(
+                            "[data-scn-line-toggle]"
+                        );
+                        const lineId = row.querySelector(
+                            'input[name="lineIds"]'
+                        );
+                        const quantity = row.querySelector(
+                            'input[name="quantities"]'
+                        );
+
+                        if (!checkbox || !lineId || !quantity) {
+                            return;
+                        }
+
+                        function synchronize() {
+                            const selected = checkbox.checked;
+
+                            lineId.disabled = !selected;
+                            quantity.disabled = !selected;
+                            quantity.required = selected;
+
+                            if (!selected) {
+                                quantity.value = "";
+                            }
+                        }
+
+                        checkbox.addEventListener(
+                            "change", synchronize
+                        );
+
+                        synchronize();
+                    });
+
+                    form.addEventListener(
+                        "submit",
+                        function (event) {
+                            const selected = rows.some(
+                                function (row) {
+                                    const checkbox =
+                                        row.querySelector(
+                                            "[data-scn-line-toggle]"
+                                        );
+                                    return checkbox
+                                        && checkbox.checked;
+                                }
+                            );
+
+                            if (!selected) {
+                                event.preventDefault();
+                                window.alert(
+                                    "Selezionare almeno una riga."
+                                );
+                            }
+                        }
+                    );
+                })();
+                </script>
+
+<!-- Gestiva V2: note di credito associate alla fattura -->
+                <section class="mt-4"
+                         aria-labelledby="supplier-credit-notes-title">
+                    <h2 id="supplier-credit-notes-title" class="h5 mb-3">
+                        <i class="bi bi-receipt"></i>
+                        Note di credito collegate
+                    </h2>
+
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th>Numero</th>
+                                <th>Data</th>
+                                <th>Stato</th>
+                                <th class="text-end">Totale</th>
+                                <th>Dettaglio</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:if="${#lists.isEmpty(supplierCreditNotes)}">
+                                <td colspan="5" class="muted">
+                                    Nessuna nota di credito collegata.
+                                </td>
+                            </tr>
+
+                            <tr th:each="note : ${supplierCreditNotes}">
+                                <td th:text="${note.creditNoteNumber}">
+                                    SCN-00001
+                                </td>
+
+                                <td th:text="${note.creditNoteDate != null ? #temporals.format(note.creditNoteDate, 'dd/MM/yyyy') : '-'}">
+                                    -
+                                </td>
+
+                                <td th:text="${note.status}">
+                                    DRAFT
+                                </td>
+
+                                <td class="text-end">
+                                    <span th:text="${note.totalAmount}">0.00</span>
+                                    <span th:text="${note.currencyCode}">EUR</span>
+                                </td>
+
+                                <td>
+                                    <a class="btn btn-outline-primary btn-sm"
+                                       th:href="@{/supplier-credit-notes/{id}(id=${note.id})}">
+                                        <i class="bi bi-eye"></i>
+                                        Apri
+                                    </a>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                                <div class="notes" th:if="${supplierInvoice.notes != null and !#strings.isEmpty(supplierInvoice.notes)}">
                     <strong>Note</strong><br/>
                     <span th:text="${supplierInvoice.notes}">Note fattura fornitore</span>
                 </div>

@@ -2,6 +2,29 @@ package com.gestiva.purchasing.invoice.web;
 
 public class SupplierInvoiceDetailLineView {
 
+    // Identificativo reale della riga fattura.
+    private Long id;
+
+    // Quantita' commerciale per il modulo SCN parziale.
+    private java.math.BigDecimal quantity;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public java.math.BigDecimal getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(java.math.BigDecimal quantity) {
+        this.quantity = quantity;
+    }
+
+
     private Integer lineNo;
     private String description;
     private String formattedQuantity;

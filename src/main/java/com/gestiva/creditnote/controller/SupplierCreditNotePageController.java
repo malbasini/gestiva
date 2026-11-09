@@ -6,6 +6,11 @@ import com.gestiva.creditnote.service.SupplierCreditNoteRegistrationService;
 import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.security.usercontext.TenantContext;
 
+import java.math.BigDecimal;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -88,6 +93,8 @@ public class SupplierCreditNotePageController {
                             + "ID: " + creditNoteId
             );
 
+            return "redirect:/supplier-credit-notes/" + creditNoteId;
+
         } catch (BusinessException ex) {
 
             redirectAttributes.addFlashAttribute(
@@ -97,6 +104,103 @@ public class SupplierCreditNotePageController {
         }
 
         return redirect;
+    }
+
+    /**
+     * Crea una nota di credito fornitore parziale in DRAFT.
+     *
+     * Le liste lineIds e quantities devono essere allineate.
+     * Ogni identificativo riga deve essere univoco.
+     *
+     * Il servizio applicativo verifica la fattura,
+     * l'appartenenza delle righe, i limiti cumulativi
+     * e gli importi.
+     */
+    @PostMapping("/partial")
+    public String createPartialDraft(
+            @RequestParam("supplierInvoiceId") Long supplierInvoiceId,
+            @RequestParam("reason") String reason,
+            @RequestParam("lineIds") List<Long> lineIds,
+            @RequestParam("quantities") List<BigDecimal> quantities,
+            RedirectAttributes redirectAttributes) {
+
+        Long tenantId = tenantContext.getCurrentTenantId();
+
+        // Il controllo deve avvenire anche per richieste
+        // inviate direttamente, senza passare dalla UI.
+        companyContext.requireCurrentCompanyId();
+
+        if (supplierInvoiceId == null || supplierInvoiceId <= 0) {
+            throw new BusinessException(
+                    "Identificativo fattura fornitore non valido.");
+        }
+
+        String invoiceRedirect =
+                "redirect:/supplier-invoices/" + supplierInvoiceId;
+
+        try {
+            if (reason == null || reason.isBlank()
+                    || reason.length() > 500) {
+                throw new BusinessException(
+                        "Indicare una causale valida (massimo 500 caratteri).");
+            }
+
+            if (lineIds == null || quantities == null
+                    || lineIds.isEmpty()
+                    || lineIds.size() != quantities.size()
+                    || lineIds.size() > 500) {
+                throw new BusinessException(
+                        "Righe o quantita' della nota non valide.");
+            }
+
+            Map<Long, BigDecimal> selected = new LinkedHashMap<>();
+
+            for (int index = 0; index < lineIds.size(); index++) {
+                Long lineId = lineIds.get(index);
+                BigDecimal quantity = quantities.get(index);
+
+                if (lineId == null || lineId <= 0
+                        || quantity == null
+                        || quantity.signum() <= 0
+                        || quantity.scale() > 3) {
+                    throw new BusinessException(
+                            "Identificativo riga o quantita' non valido.");
+                }
+
+                if (selected.putIfAbsent(lineId, quantity) != null) {
+                    throw new BusinessException(
+                            "La stessa riga non puo' essere selezionata due volte.");
+                }
+            }
+
+            Long creditNoteId = draftService.createPartialDraft(
+                    tenantId,
+                    supplierInvoiceId,
+                    selected,
+                    reason
+            );
+
+            if (creditNoteId == null || creditNoteId <= 0) {
+                throw new IllegalStateException(
+                        "Creazione nota parziale senza ID valido.");
+            }
+
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "Nota di credito fornitore parziale DRAFT creata."
+            );
+
+            return "redirect:/supplier-credit-notes/" + creditNoteId;
+
+        } catch (BusinessException ex) {
+
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    ex.getMessage()
+            );
+
+            return invoiceRedirect;
+        }
     }
 
     /**
@@ -144,8 +248,8 @@ public class SupplierCreditNotePageController {
             );
         }
 
-        // Il dettaglio SCN sara' introdotto con
-        // la successiva integrazione Thymeleaf.
-        return "redirect:/supplier-invoices";
+        // Mantiene l'utente sul dettaglio della nota,
+        // sia dopo la registrazione sia in caso di errore.
+        return "redirect:/supplier-credit-notes/" + id;
     }
 }

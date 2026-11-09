@@ -1,6 +1,7 @@
 package com.gestiva.purchasing.invoice.controller;
 
 import com.gestiva.purchasing.invoice.web.SupplierInvoiceWebService;
+import com.gestiva.creditnote.service.SupplierCreditNoteDetailService;
 import com.gestiva.security.usercontext.TenantContext;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,11 +16,15 @@ public class SupplierInvoiceViewController {
 
     private final SupplierInvoiceWebService supplierInvoiceWebService;
     private final TenantContext tenantContext;
+    private final SupplierCreditNoteDetailService supplierCreditNoteDetailService;
 
-    public SupplierInvoiceViewController(SupplierInvoiceWebService supplierInvoiceWebService,
-                                         TenantContext tenantContext) {
+    public SupplierInvoiceViewController(
+            SupplierInvoiceWebService supplierInvoiceWebService,
+            TenantContext tenantContext,
+            SupplierCreditNoteDetailService supplierCreditNoteDetailService) {
         this.supplierInvoiceWebService = supplierInvoiceWebService;
         this.tenantContext = tenantContext;
+        this.supplierCreditNoteDetailService = supplierCreditNoteDetailService;
     }
 
     @GetMapping("/{id}")
@@ -30,6 +35,12 @@ public class SupplierInvoiceViewController {
         Long tenantId = tenantContext.getCurrentTenantId();
         var invoice = supplierInvoiceWebService.getDetail(tenantId, id);
         model.addAttribute("supplierInvoice", invoice);
+
+        model.addAttribute(
+                "supplierCreditNotes",
+                supplierCreditNoteDetailService.findSupplierNotesForInvoice(
+                        tenantId, id)
+        );
 
         boolean testProfileActive =
                 java.util.Arrays.asList(environment.getActiveProfiles())

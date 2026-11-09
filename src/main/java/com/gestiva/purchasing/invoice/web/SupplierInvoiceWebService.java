@@ -121,6 +121,8 @@ public class SupplierInvoiceWebService {
 
         for (var line : lines) {
             SupplierInvoiceDetailLineView lv = new SupplierInvoiceDetailLineView();
+            lv.setId(line.getId());
+            lv.setQuantity(line.getQuantity());
             lv.setLineNo(line.getLineNo());
             lv.setDescription(line.getDescription());
             lv.setFormattedQuantity(
