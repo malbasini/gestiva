@@ -56,6 +56,21 @@ public class SupplierInvoiceViewController {
                         && "DRAFT".equals(invoice.getStatus())
         );
 
+        boolean canCreateSupplierCreditNote =
+                authentication != null
+                        && authentication.isAuthenticated()
+                        && authentication.getAuthorities().stream()
+                        .anyMatch(authority ->
+                                "ROLE_ADMIN".equals(authority.getAuthority())
+                                        || "ROLE_PURCHASING".equals(authority.getAuthority())
+                                        || "ROLE_ACCOUNTING".equals(authority.getAuthority()))
+                        && "REGISTERED".equals(invoice.getStatus());
+
+        model.addAttribute(
+                "canCreateSupplierCreditNote",
+                canCreateSupplierCreditNote
+        );
+
         model.addAttribute("activeMenu", "supplierInvoices");
         return "purchasing/invoice/supplier-invoice-detail";
     }

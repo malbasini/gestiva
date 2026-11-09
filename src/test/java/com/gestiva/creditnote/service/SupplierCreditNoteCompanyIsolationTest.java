@@ -37,6 +37,7 @@ class SupplierCreditNoteCompanyIsolationTest {
     private DocumentSequenceService sequences;
     private SupplierCreditNoteRegisteredCreditsService credits;
     private SupplierCreditNoteRegistrationPreparationService preparation;
+    private SupplierCreditNoteRegistrationPreparationService registrationPreparation;
     private SupplierCreditNoteAccountingService accounting;
     private SupplierCreditNoteFinancialPositionService finance;
 
@@ -62,8 +63,11 @@ class SupplierCreditNoteCompanyIsolationTest {
         preparation = new SupplierCreditNoteRegistrationPreparationService(
                 companies, invoices, invoiceLines, notes, noteLines, credits);
 
+        registrationPreparation = mock(
+                SupplierCreditNoteRegistrationPreparationService.class);
+
         registration = new SupplierCreditNoteRegistrationService(
-                companies, notes, preparation, accounting, finance);
+                companies, notes, registrationPreparation, accounting, finance);
     }
 
     private void rejectFullDraft(Long tenant, Long activeCompany) {
@@ -130,12 +134,12 @@ class SupplierCreditNoteCompanyIsolationTest {
         // Simula il rifiuto ottenuto dalla preparazione sotto lock.
         // Non sostituisce un test di integrazione del repository reale.
         doThrow(new BusinessException("Nota non accessibile"))
-                .when(preparation).validateUnderLock(tenant, NOTE);
+                .when(registrationPreparation).validateUnderLock(tenant, NOTE);
 
         assertThrows(BusinessException.class,
                 () -> registration.register(tenant, NOTE));
 
-        verify(preparation).validateUnderLock(tenant, NOTE);
+        verify(registrationPreparation).validateUnderLock(tenant, NOTE);
 
         verifyNoInteractions(notes, accounting, finance);
     }
@@ -154,7 +158,7 @@ class SupplierCreditNoteCompanyIsolationTest {
         assertThrows(BusinessException.class,
                 () -> registration.register(tenant, NOTE));
 
-        verify(preparation).validateUnderLock(tenant, NOTE);
+        verify(registrationPreparation).validateUnderLock(tenant, NOTE);
 
         verify(notes).findByTenantIdAndCompanyIdAndId(
                 tenant, activeCompany, NOTE);
