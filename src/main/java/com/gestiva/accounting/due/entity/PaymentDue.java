@@ -70,6 +70,10 @@ public class PaymentDue extends TenantAwareEntity {
     @Column(name = "paid_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal paidAmount;
 
+    @Column(name = "compensated_amount",
+            nullable = false, precision = 15, scale = 2)
+    private BigDecimal compensatedAmount = new BigDecimal("0.00");
+
     @Column(name = "open_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal openAmount;
 
@@ -165,6 +169,14 @@ public class PaymentDue extends TenantAwareEntity {
 
     public void setPaidAmount(BigDecimal paidAmount) {
         this.paidAmount = paidAmount;
+    }
+
+    public BigDecimal getCompensatedAmount() {
+        return compensatedAmount;
+    }
+
+    public void setCompensatedAmount(BigDecimal compensatedAmount) {
+        this.compensatedAmount = compensatedAmount;
     }
 
     public BigDecimal getOpenAmount() {

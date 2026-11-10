@@ -121,16 +121,16 @@
                             <td th:text="${line.lineNo}">1</td>
                             <td th:text="${line.description}">Articolo</td>
                             <td class="text-end"
-                                th:text="${line.quantity != null ? line.quantity : '-'}">-</td>
+                                th:text="${line.quantity != null ? #numbers.formatDecimal(line.quantity, 1, 'POINT', 3, 'COMMA') : '-'}">-</td>
                             <td th:text="${line.uomCode != null ? line.uomCode : line.unitOfMeasure}">PZ</td>
                             <td class="text-end"
-                                th:text="${line.unitPrice != null ? line.unitPrice : '-'}">-</td>
+                                th:text="${line.unitPrice != null ? #numbers.formatDecimal(line.unitPrice, 1, 'POINT', 2, 'COMMA') : '-'}">-</td>
                             <td class="text-end"
-                                th:text="${line.discountPct != null ? line.discountPct : '-'}">-</td>
+                                th:text="${line.discountPct != null ? #numbers.formatDecimal(line.discountPct, 1, 'POINT', 2, 'COMMA') : '-'}">-</td>
                             <td class="text-end"
-                                th:text="${line.taxPct}">22</td>
+                                th:text="${line.taxPct != null ? #numbers.formatDecimal(line.taxPct, 1, 'POINT', 2, 'COMMA') : '-'}">22</td>
                             <td class="text-end"
-                                th:text="${line.lineTotal}">0.00</td>
+                                th:text="${line.lineTotal != null ? #numbers.formatDecimal(line.lineTotal, 1, 'POINT', 2, 'COMMA') : '-'}">0.00</td>
                         </tr>
                         </tbody>
                     </table>
@@ -143,17 +143,17 @@
                         <tr>
                             <th>Imponibile</th>
                             <td class="text-end"
-                                th:text="${creditNote.subtotalAmount}">0.00</td>
+                                th:text="${creditNote.subtotalAmount != null ? #numbers.formatDecimal(creditNote.subtotalAmount, 1, 'POINT', 2, 'COMMA') : '-'}">0.00</td>
                         </tr>
                         <tr>
                             <th>IVA</th>
                             <td class="text-end"
-                                th:text="${creditNote.taxAmount}">0.00</td>
+                                th:text="${creditNote.taxAmount != null ? #numbers.formatDecimal(creditNote.taxAmount, 1, 'POINT', 2, 'COMMA') : '-'}">0.00</td>
                         </tr>
                         <tr>
                             <th>Totale nota di credito</th>
                             <td class="text-end">
-                                <strong th:text="${creditNote.totalAmount}">
+                                <strong th:text="${creditNote.totalAmount != null ? #numbers.formatDecimal(creditNote.totalAmount, 1, 'POINT', 2, 'COMMA') : '-'}">
                                     0.00
                                 </strong>
                                 <span th:text="${creditNote.currencyCode}">EUR</span>

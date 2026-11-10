@@ -30,6 +30,7 @@ public class SupplierCreditNoteDraftService {
     private final CreditNoteLineRepository creditNoteLineRepository;
     private final DocumentSequenceService sequences;
     private final CompanyContext companyContext;
+    private final SupplierCreditNoteRegisteredCreditsService registeredCredits;
 
     public SupplierCreditNoteDraftService(
             SupplierInvoiceRepository invoiceRepository,
@@ -37,7 +38,8 @@ public class SupplierCreditNoteDraftService {
             CreditNoteRepository creditNoteRepository,
             CreditNoteLineRepository creditNoteLineRepository,
             DocumentSequenceService sequences,
-            CompanyContext companyContext) {
+            CompanyContext companyContext,
+            SupplierCreditNoteRegisteredCreditsService registeredCredits) {
 
         this.invoiceRepository = invoiceRepository;
         this.invoiceLineRepository = invoiceLineRepository;
@@ -45,6 +47,7 @@ public class SupplierCreditNoteDraftService {
         this.creditNoteLineRepository = creditNoteLineRepository;
         this.sequences = sequences;
         this.companyContext = companyContext;
+        this.registeredCredits = registeredCredits;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -191,9 +194,9 @@ public class SupplierCreditNoteDraftService {
     /**
      * Prepara una bozza di rettifica parziale per quantità.
      *
-     * Non utilizza le precedenti note registrate per il calcolo:
-     * i residui cumulativi saranno rivalidati sotto lock
-     * esclusivamente nella futura operazione di registrazione.
+     * Controlla preventivamente gli storni REGISTERED sotto lock.
+     * La registrazione ripete la validazione nella propria
+     * transazione. Le altre bozze DRAFT non consumano residuo.
      */
     @Transactional(rollbackFor = Exception.class)
     public Long createPartialDraft(
@@ -246,6 +249,11 @@ public class SupplierCreditNoteDraftService {
                     "Fattura senza righe rettificabili.");
         }
 
+        // Prevalidazione cumulativa prima del numeratore.
+        // Il lock è mantenuto dalla transazione corrente.
+        var previousCredits = registeredCredits.loadRegisteredCredits(
+                tenantId, companyId, supplierInvoiceId);
+
         Set<Long> foundIds = new HashSet<>();
         List<CreditNoteLine> prepared = new ArrayList<>();
 
@@ -267,9 +275,16 @@ public class SupplierCreditNoteDraftService {
 
             BigDecimal requested = quantitiesByLineId.get(originalId);
 
+            var previous = previousCredits.getOrDefault(
+                    originalId,
+                    new SupplierCreditNoteCumulativeCalculator.PreviousCredits(
+                            BigDecimal.ZERO,
+                            BigDecimal.ZERO,
+                            BigDecimal.ZERO));
+
             var amounts =
-                    SupplierCreditNotePartialCalculator.calculate(
-                            original, requested);
+                    SupplierCreditNoteCumulativeCalculator.calculate(
+                            original, previous, requested);
 
             if (original.getLineNo() == null
                     || original.getDescription() == null

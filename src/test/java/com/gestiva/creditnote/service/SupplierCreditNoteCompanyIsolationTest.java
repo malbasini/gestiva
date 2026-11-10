@@ -58,7 +58,7 @@ class SupplierCreditNoteCompanyIsolationTest {
 
         drafts = new SupplierCreditNoteDraftService(
                 invoices, invoiceLines, notes, noteLines,
-                sequences, companies);
+                sequences, companies, credits);
 
         preparation = new SupplierCreditNoteRegistrationPreparationService(
                 companies, invoices, invoiceLines, notes, noteLines, credits);

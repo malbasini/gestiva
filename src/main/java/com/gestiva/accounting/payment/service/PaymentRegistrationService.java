@@ -65,7 +65,16 @@ public class PaymentRegistrationService {
 
         BigDecimal grossAmount = nvlMoney(due.getGrossAmount());
         BigDecimal paidAmount = nvlMoney(due.getPaidAmount());
+        BigDecimal compensatedAmount =
+                nvlMoney(due.getCompensatedAmount());
         BigDecimal openAmount = nvlMoney(due.getOpenAmount());
+
+        if (grossAmount.compareTo(
+                paidAmount.add(compensatedAmount).add(openAmount)) != 0) {
+            throw new BusinessException(
+                    "Scadenza non quadrata: importi pagati, "
+                    + "compensati e residui incoerenti.");
+        }
 
         if (openAmount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException("La scadenza non ha importo residuo aperto.");
@@ -105,8 +114,12 @@ public class PaymentRegistrationService {
         saved.setJournalEntryId(journalEntryId);
         paymentTransactionRepository.save(saved);
 
-        BigDecimal newPaidAmount = paidAmount.add(amount).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal newOpenAmount = grossAmount.subtract(newPaidAmount).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal newPaidAmount = paidAmount.add(amount)
+                .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal newOpenAmount = grossAmount
+                .subtract(newPaidAmount)
+                .subtract(compensatedAmount)
+                .setScale(2, RoundingMode.HALF_UP);
 
         if (newOpenAmount.compareTo(BigDecimal.ZERO) < 0) {
             newOpenAmount = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
@@ -114,7 +127,8 @@ public class PaymentRegistrationService {
 
         due.setPaidAmount(newPaidAmount);
         due.setOpenAmount(newOpenAmount);
-        due.setStatus(resolveDueStatus(newOpenAmount, grossAmount));
+        due.setStatus(resolveDueStatus(
+                newOpenAmount, grossAmount));
 
         paymentDueRepository.save(due);
 

@@ -33,6 +33,7 @@ class SupplierCreditNoteDraftServiceTest {
     private CreditNoteLineRepository noteLines;
     private DocumentSequenceService sequences;
     private CompanyContext companies;
+    private SupplierCreditNoteRegisteredCreditsService registeredCredits;
     private SupplierCreditNoteDraftService service;
 
     @BeforeEach
@@ -43,12 +44,17 @@ class SupplierCreditNoteDraftServiceTest {
         noteLines = mock(CreditNoteLineRepository.class);
         sequences = mock(DocumentSequenceService.class);
         companies = mock(CompanyContext.class);
+        registeredCredits = mock(
+                SupplierCreditNoteRegisteredCreditsService.class);
 
         service = new SupplierCreditNoteDraftService(
                 invoices, invoiceLines, notes, noteLines,
-                sequences, companies);
+                sequences, companies, registeredCredits);
 
         when(companies.resolveCurrentCompanyId()).thenReturn(3L);
+        lenient().when(registeredCredits.loadRegisteredCredits(
+                anyLong(), anyLong(), anyLong()))
+                .thenReturn(Map.of());
     }
 
     private SupplierInvoice invoice(String status) {
@@ -371,6 +377,108 @@ class SupplierCreditNoteDraftServiceTest {
                         2L, 35L, requested, "Rettifica"));
 
         verifyNoInteractions(notes, noteLines, sequences);
+    }
+
+
+    private SupplierInvoiceLine cumulativeOriginalLine() {
+        SupplierInvoiceLine line = new SupplierInvoiceLine();
+        line.setId(501L);
+        line.setLineNo(1);
+        line.setDescription("Radiatore test");
+        line.setQuantity(new BigDecimal("0.700"));
+        line.setUomCode("BOX");
+        line.setBaseUomCode("PZ");
+        line.setConversionFactor(new BigDecimal("10.000000"));
+        line.setUnitPrice(new BigDecimal("72.00"));
+        line.setDiscountPct(new BigDecimal("10.00"));
+        line.setTaxPct(new BigDecimal("22.00"));
+        line.setLineSubtotal(new BigDecimal("45.36"));
+        line.setTaxAmount(new BigDecimal("9.98"));
+        line.setLineTotal(new BigDecimal("55.34"));
+        return line;
+    }
+
+    private void setupCumulativePartialInvoice() {
+        SupplierInvoice original = invoice("REGISTERED");
+        original.setId(36L);
+        original.setSubtotalAmount(new BigDecimal("45.36"));
+        original.setTaxAmount(new BigDecimal("9.98"));
+        original.setTotalAmount(new BigDecimal("55.34"));
+
+        when(invoices.findByTenantIdAndCompanyIdAndId(2L, 3L, 36L))
+                .thenReturn(Optional.of(original));
+
+        when(invoiceLines.findByTenantIdAndSupplierInvoiceIdOrderByLineNoAsc(
+                2L, 36L))
+                .thenReturn(List.of(cumulativeOriginalLine()));
+
+        when(registeredCredits.loadRegisteredCredits(2L, 3L, 36L))
+                .thenReturn(Map.of(
+                        501L,
+                        new SupplierCreditNoteCumulativeCalculator.PreviousCredits(
+                                new BigDecimal("0.300"),
+                                new BigDecimal("19.44"),
+                                new BigDecimal("4.28"))));
+    }
+
+    @Test
+    void rejectsCumulativeOverCreditDuringDraftCreation() {
+        setupCumulativePartialInvoice();
+
+        BusinessException error = assertThrows(
+                BusinessException.class,
+                () -> service.createPartialDraft(
+                        2L, 36L,
+                        Map.of(501L, new BigDecimal("0.500")),
+                        "Storno eccedente"));
+
+        assertTrue(error.getMessage().contains(
+                "Quantità cumulativa superiore alla fattura."));
+
+        verify(registeredCredits).loadRegisteredCredits(2L, 3L, 36L);
+        verifyNoInteractions(notes, noteLines, sequences);
+    }
+
+    @Test
+    void createsDraftForExactRemainingQuantity() {
+        setupCumulativePartialInvoice();
+
+        when(sequences.nextNumber(2L, 3L, "SUPPLIER_CREDIT_NOTE"))
+                .thenReturn("SCN-TEST-RESIDUO");
+
+        CreditNote saved = mock(CreditNote.class);
+        when(saved.getId()).thenReturn(100L);
+        when(notes.save(any(CreditNote.class))).thenReturn(saved);
+
+        Long id = service.createPartialDraft(
+                2L, 36L,
+                Map.of(501L, new BigDecimal("0.400")),
+                "Storno residuo esatto");
+
+        assertEquals(100L, id);
+
+        ArgumentCaptor<CreditNote> header =
+                ArgumentCaptor.forClass(CreditNote.class);
+        verify(notes).save(header.capture());
+
+        assertEquals("DRAFT", header.getValue().getStatus());
+        assertEquals(0, header.getValue().getSubtotalAmount()
+                .compareTo(new BigDecimal("25.92")));
+        assertEquals(0, header.getValue().getTaxAmount()
+                .compareTo(new BigDecimal("5.70")));
+        assertEquals(0, header.getValue().getTotalAmount()
+                .compareTo(new BigDecimal("31.62")));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<CreditNoteLine>> rows =
+                ArgumentCaptor.forClass(List.class);
+
+        verify(noteLines).saveAll(rows.capture());
+        assertEquals(1, rows.getValue().size());
+        assertEquals(0, rows.getValue().getFirst().getQuantity()
+                .compareTo(new BigDecimal("0.400")));
+        assertEquals(0, rows.getValue().getFirst().getLineTotal()
+                .compareTo(new BigDecimal("31.62")));
     }
 
 }
