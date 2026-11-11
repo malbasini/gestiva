@@ -8,9 +8,9 @@ import com.gestiva.creditnote.entity.CreditNoteFinancialPosition;
 import com.gestiva.creditnote.entity.SupplierCreditNoteCompensation;
 import com.gestiva.purchasing.supplier.entity.Supplier;
 import com.gestiva.security.company.context.CompanyContext;
-
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import jakarta.persistence.EntityManager;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,40 +22,41 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.annotation.Rollback;
-
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.time.LocalDate;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @EnabledIfEnvironmentVariable(
-    named = "GESTIVA_V10_SANDBOX_TEST",
-    matches = "enabled"
+        named = "GESTIVA_V10_SANDBOX_TEST",
+        matches = "enabled"
 )
 @SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.MOCK,
-    properties = {
-        "spring.flyway.enabled=false",
-        "spring.jpa.hibernate.ddl-auto=validate",
-        "spring.sql.init.mode=never",
-        "spring.task.scheduling.enabled=false",
-        "spring.batch.job.enabled=false"
-    }
+        webEnvironment = SpringBootTest.WebEnvironment.MOCK,
+        properties = {
+                "spring.flyway.enabled=false",
+                "spring.jpa.hibernate.ddl-auto=validate",
+                "spring.sql.init.mode=never",
+                "spring.task.scheduling.enabled=false",
+                "spring.batch.job.enabled=false"
+        }
 )
 @ActiveProfiles("test")
 class SupplierCreditNoteCompensationV10SandboxITTest {
 
     private static final String DATABASE =
-        "gestiva_scn_collaudo";
+            "gestiva_scn_collaudo";
 
     private static final String URL =
-        "jdbc:mysql://127.0.0.1:33308/"
-        + DATABASE
-        + "?sslMode=DISABLED&allowPublicKeyRetrieval=true";
+            "jdbc:mysql://127.0.0.1:33308/"
+                    + DATABASE
+                    + "?sslMode=DISABLED&allowPublicKeyRetrieval=true";
 
     private static final Long TENANT_ID = 2L;
     private static final Long COMPANY_ID = 1L;
@@ -63,6 +64,8 @@ class SupplierCreditNoteCompensationV10SandboxITTest {
     @Autowired EntityManager em;
     @Autowired JdbcTemplate jdbc;
     @Autowired SupplierCreditNoteCompensationService service;
+    @Autowired PlatformTransactionManager transactionManager;
+
 
     @MockitoBean CompanyContext companyContext;
 
@@ -70,7 +73,7 @@ class SupplierCreditNoteCompensationV10SandboxITTest {
         String value = System.getenv(name);
         if (value == null || value.isBlank()) {
             throw new IllegalStateException(
-                "Variabile richiesta assente: " + name);
+                    "Variabile richiesta assente: " + name);
         }
         return value;
     }
@@ -90,51 +93,51 @@ class SupplierCreditNoteCompensationV10SandboxITTest {
                 || !DATABASE.equals(database)
                 || !"gestiva_scn_migrator".equals(user)) {
             throw new IllegalStateException(
-                "STOP: configurazione sandbox non autorizzata");
+                    "STOP: configurazione sandbox non autorizzata");
         }
 
         // Verifica fisica PRIMA del datasource Spring.
         try (var connection =
-                DriverManager.getConnection(URL, user, password)) {
+                     DriverManager.getConnection(URL, user, password)) {
 
             connection.setReadOnly(true);
 
             try (var statement = connection.createStatement();
                  var rs = statement.executeQuery(
-                     "SELECT VERSION(), @@port, DATABASE(), "
-                     + "CURRENT_USER(), @@datadir, @@socket")) {
+                         "SELECT VERSION(), @@port, DATABASE(), "
+                                 + "CURRENT_USER(), @@datadir, @@socket")) {
 
                 if (!rs.next()) {
                     throw new IllegalStateException(
-                        "Identita MySQL non disponibile");
+                            "Identita MySQL non disponibile");
                 }
 
                 Path expectedDatadir = Path.of(
-                    System.getProperty("user.home"),
-                    ".gestiva/mysql-v9-restore/data"
+                        System.getProperty("user.home"),
+                        ".gestiva/mysql-v9-restore/data"
                 ).toRealPath();
 
                 Path actualDatadir =
-                    Path.of(rs.getString(5)).toRealPath();
+                        Path.of(rs.getString(5)).toRealPath();
 
                 Path expectedSocket = Path.of(
-                    System.getProperty("user.home"),
-                    ".gestiva/mysql-v9-restore/mysql.sock"
+                        System.getProperty("user.home"),
+                        ".gestiva/mysql-v9-restore/mysql.sock"
                 ).toAbsolutePath().normalize();
 
                 Path actualSocket =
-                    Path.of(rs.getString(6))
-                        .toAbsolutePath().normalize();
+                        Path.of(rs.getString(6))
+                                .toAbsolutePath().normalize();
 
                 if (!"8.0.45".equals(rs.getString(1))
                         || rs.getInt(2) != 33308
                         || !DATABASE.equals(rs.getString(3))
                         || !"gestiva_scn_migrator@127.0.0.1"
-                            .equals(rs.getString(4))
+                        .equals(rs.getString(4))
                         || !expectedDatadir.equals(actualDatadir)
                         || !expectedSocket.equals(actualSocket)) {
                     throw new IllegalStateException(
-                        "STOP: identita fisica MySQL non conforme");
+                            "STOP: identita fisica MySQL non conforme");
                 }
             }
         }
@@ -150,7 +153,7 @@ class SupplierCreditNoteCompensationV10SandboxITTest {
 
     private long count(String table) {
         Long result = jdbc.queryForObject(
-            "SELECT COUNT(*) FROM " + table, Long.class);
+                "SELECT COUNT(*) FROM " + table, Long.class);
         assertNotNull(result);
         return result;
     }
@@ -162,9 +165,9 @@ class SupplierCreditNoteCompensationV10SandboxITTest {
 
         // Verifica ulteriore prima della prima scrittura.
         assertEquals(DATABASE,
-            jdbc.queryForObject("SELECT DATABASE()", String.class));
+                jdbc.queryForObject("SELECT DATABASE()", String.class));
         assertEquals(33308,
-            jdbc.queryForObject("SELECT @@port", Integer.class));
+                jdbc.queryForObject("SELECT @@port", Integer.class));
 
         for (String table : new String[] {
                 "supplier",
@@ -174,15 +177,15 @@ class SupplierCreditNoteCompensationV10SandboxITTest {
                 "supplier_credit_note_compensation"
         }) {
             assertEquals(0L, count(table),
-                "Sandbox non vuoto: " + table);
+                    "Sandbox non vuoto: " + table);
         }
 
         when(companyContext.requireCurrentCompanyId())
-            .thenReturn(COMPANY_ID);
+                .thenReturn(COMPANY_ID);
 
         LocalDate date = LocalDate.of(2026, 11, 10);
         String suffix = UUID.randomUUID().toString()
-            .substring(0, 8);
+                .substring(0, 8);
 
         Supplier supplier = new Supplier();
         supplier.setTenantId(TENANT_ID);
@@ -210,7 +213,7 @@ class SupplierCreditNoteCompensationV10SandboxITTest {
         em.flush();
 
         CreditNoteFinancialPosition position =
-            new CreditNoteFinancialPosition();
+                new CreditNoteFinancialPosition();
 
         position.setTenantId(TENANT_ID);
         position.setCompanyId(COMPANY_ID);
@@ -247,13 +250,13 @@ class SupplierCreditNoteCompensationV10SandboxITTest {
 
         // Prima compensazione parziale: 50 euro.
         Long compensationId = service.compensate(
-            TENANT_ID,
-            position.getId(),
-            due.getId(),
-            money("50.00"),
-            date,
-            "V10-OP-" + suffix,
-            "Test compensazione parziale"
+                TENANT_ID,
+                position.getId(),
+                due.getId(),
+                money("50.00"),
+                date,
+                "V10-OP-" + suffix,
+                "Test compensazione parziale"
         );
 
         assertNotNull(compensationId);
@@ -262,59 +265,1096 @@ class SupplierCreditNoteCompensationV10SandboxITTest {
         em.clear();
 
         CreditNoteFinancialPosition updatedPosition =
-            em.find(CreditNoteFinancialPosition.class,
-                position.getId());
+                em.find(CreditNoteFinancialPosition.class,
+                        position.getId());
 
         PaymentDue updatedDue =
-            em.find(PaymentDue.class, due.getId());
+                em.find(PaymentDue.class, due.getId());
 
         SupplierCreditNoteCompensation saved =
-            em.find(SupplierCreditNoteCompensation.class,
-                compensationId);
+                em.find(SupplierCreditNoteCompensation.class,
+                        compensationId);
 
         assertNotNull(updatedPosition);
         assertNotNull(updatedDue);
         assertNotNull(saved);
 
         assertEquals(0, money("50.00").compareTo(
-            updatedPosition.getCompensatedAmount()));
+                updatedPosition.getCompensatedAmount()));
 
         assertEquals(0, money("72.00").compareTo(
-            updatedPosition.getAvailableAmount()));
+                updatedPosition.getAvailableAmount()));
 
         assertEquals("PARTIALLY_SETTLED",
-            updatedPosition.getStatus());
+                updatedPosition.getStatus());
 
         assertEquals(0, money("50.00").compareTo(
-            updatedDue.getCompensatedAmount()));
+                updatedDue.getCompensatedAmount()));
 
         assertEquals(0, money("150.00").compareTo(
-            updatedDue.getOpenAmount()));
+                updatedDue.getOpenAmount()));
 
         assertEquals("PARTIALLY_PAID",
-            updatedDue.getStatus());
+                updatedDue.getStatus());
 
         assertEquals(0, money("50.00").compareTo(
-            saved.getAmount()));
+                saved.getAmount()));
 
         assertEquals(0, updatedDue.getGrossAmount()
-            .compareTo(
-                updatedDue.getPaidAmount()
-                    .add(updatedDue.getCompensatedAmount())
-                    .add(updatedDue.getOpenAmount())
-            ));
+                .compareTo(
+                        updatedDue.getPaidAmount()
+                                .add(updatedDue.getCompensatedAmount())
+                                .add(updatedDue.getOpenAmount())
+                ));
 
         assertEquals(0, updatedPosition.getOriginalAmount()
-            .compareTo(
-                updatedPosition.getCompensatedAmount()
-                    .add(updatedPosition.getRefundedAmount())
-                    .add(updatedPosition.getAvailableAmount())
-            ));
+                .compareTo(
+                        updatedPosition.getCompensatedAmount()
+                                .add(updatedPosition.getRefundedAmount())
+                                .add(updatedPosition.getAvailableAmount())
+                ));
 
         assertNotNull(saved.getCreatedAt());
         assertNotNull(saved.getUpdatedAt());
 
+
+        // PASSO 5.13.2384 - Idempotenza V10
+
+        String operationKey = "V10-OP-" + suffix;
+
+        // 1. Ripetizione identica: stesso ID.
+        Long repeatedId = service.compensate(
+                TENANT_ID,
+                position.getId(),
+                due.getId(),
+                money("50.00"),
+                date,
+                operationKey,
+                "Test compensazione parziale"
+        );
+
+        assertEquals(compensationId, repeatedId,
+                "La ripetizione deve restituire lo stesso ID");
+
+        // 2. Stessa chiave con importo differente:
+        //    operazione non consentita.
+        assertThrows(
+                com.gestiva.common.exception.BusinessException.class,
+                () -> service.compensate(
+                        TENANT_ID,
+                        position.getId(),
+                        due.getId(),
+                        money("60.00"),
+                        date,
+                        operationKey,
+                        "Test compensazione parziale"
+                )
+        );
+
+        em.flush();
+        em.clear();
+
+        // 3. Nessuna compensazione duplicata.
+        Long compensationCount = jdbc.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM supplier_credit_note_compensation
+                WHERE tenant_id = ?
+                  AND company_id = ?
+                  AND operation_key = ?
+                """,
+                Long.class,
+                TENANT_ID,
+                COMPANY_ID,
+                operationKey
+        );
+
+        assertEquals(1L, compensationCount);
+
+        // 4. Importi invariati dopo i tentativi.
+        CreditNoteFinancialPosition finalPosition =
+                em.find(CreditNoteFinancialPosition.class,
+                        position.getId());
+
+        PaymentDue finalDue =
+                em.find(PaymentDue.class, due.getId());
+
+        assertEquals(0, money("50.00").compareTo(
+                finalPosition.getCompensatedAmount()));
+
+        assertEquals(0, money("72.00").compareTo(
+                finalPosition.getAvailableAmount()));
+
+        assertEquals(0, money("50.00").compareTo(
+                finalDue.getCompensatedAmount()));
+
+        assertEquals(0, money("150.00").compareTo(
+                finalDue.getOpenAmount()));
+
         // @Rollback annulla automaticamente tutte le fixture
         // e la compensazione al termine del test.
     }
+
+
+    // GESTIVA V2 - PASSO 5.13.2385
+    // Collaudo compensazione V10 con COMMIT reale.
+
+    private record CommittedFixture(
+            Long supplierId,
+            Long noteId,
+            Long positionId,
+            Long dueId
+    ) {}
+
+    @Test
+    void compensationSurvivesCommitAndCleanup() throws InterruptedException {
+
+        // Identità e stato iniziale del sandbox.
+        assertEquals(DATABASE,
+                jdbc.queryForObject(
+                        "SELECT DATABASE()", String.class));
+
+        assertEquals(33308,
+                jdbc.queryForObject(
+                        "SELECT @@port", Integer.class));
+
+        assertEquals(
+                "gestiva_scn_migrator@127.0.0.1",
+                jdbc.queryForObject(
+                        "SELECT CURRENT_USER()", String.class));
+
+        for (String table : new String[] {
+                "supplier",
+                "credit_note",
+                "credit_note_financial_position",
+                "payment_due",
+                "supplier_credit_note_compensation"
+        }) {
+            assertEquals(0L, count(table),
+                    "Sandbox non vuoto: " + table);
+        }
+
+        long paymentsBefore = count("payment_transaction");
+        long journalsBefore = count("journal_entry");
+
+        when(companyContext.requireCurrentCompanyId())
+                .thenReturn(COMPANY_ID);
+
+        LocalDate date = LocalDate.of(2026, 11, 11);
+        String suffix = UUID.randomUUID()
+                .toString().substring(0, 8);
+
+        TransactionTemplate tx =
+                new TransactionTemplate(transactionManager);
+
+        CommittedFixture fixture = null;
+        // PASSO 5.13.2388 - Coordinamento concorrenza V10.
+        java.util.concurrent.ExecutorService concurrencyExecutor = null;
+        java.util.concurrent.CountDownLatch aCompensated =
+                new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.CountDownLatch releaseA =
+                new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.CountDownLatch bReady =
+                new java.util.concurrent.CountDownLatch(1);
+        try {
+            // TRANSAZIONE 1: creazione fixture con commit.
+            fixture = tx.execute(status -> {
+
+                Supplier supplier = new Supplier();
+                supplier.setTenantId(TENANT_ID);
+                supplier.setCode("V10C-" + suffix);
+                supplier.setName("Fornitore commit V10");
+                supplier.setActive(true);
+                em.persist(supplier);
+                em.flush();
+
+                CreditNote note = new CreditNote();
+                note.setTenantId(TENANT_ID);
+                note.setCompanyId(COMPANY_ID);
+                note.setCreditNoteType("SUPPLIER");
+                note.setCreditNoteNumber("SCN-C-" + suffix);
+                note.setCreditNoteDate(date);
+                note.setOriginalInvoiceId(900002L);
+                note.setPartyId(supplier.getId());
+                note.setStatus("REGISTERED");
+                note.setCurrencyCode("EUR");
+                note.setReason("Collaudo commit V10");
+                note.setSubtotalAmount(money("100.00"));
+                note.setTaxAmount(money("22.00"));
+                note.setTotalAmount(money("122.00"));
+                em.persist(note);
+                em.flush();
+
+                CreditNoteFinancialPosition position =
+                        new CreditNoteFinancialPosition();
+
+                position.setTenantId(TENANT_ID);
+                position.setCompanyId(COMPANY_ID);
+                position.setCreditNoteId(note.getId());
+                position.setPositionType("SUPPLIER");
+                position.setCurrencyCode("EUR");
+                position.setOriginalAmount(money("122.00"));
+                position.setCompensatedAmount(money("0.00"));
+                position.setRefundedAmount(money("0.00"));
+                position.setAvailableAmount(money("122.00"));
+                position.setStatus("OPEN");
+                em.persist(position);
+                em.flush();
+
+                PaymentDue due = new PaymentDue();
+                due.setTenantId(TENANT_ID);
+                due.setCompanyId(COMPANY_ID);
+                due.setDirection("PAYABLE");
+                due.setPartyType("SUPPLIER");
+                due.setPartyId(supplier.getId());
+                due.setDocumentNumber("SI-C-" + suffix);
+                due.setDocumentDate(date);
+                due.setDueDate(date.plusDays(30));
+                due.setReferenceType("SUPPLIER_INVOICE");
+                due.setReferenceId(900002L);
+                due.setCurrencyCode("EUR");
+                due.setGrossAmount(money("200.00"));
+                due.setPaidAmount(money("0.00"));
+                due.setCompensatedAmount(money("0.00"));
+                due.setOpenAmount(money("200.00"));
+                due.setStatus("OPEN");
+                em.persist(due);
+                em.flush();
+
+                return new CommittedFixture(
+                        supplier.getId(),
+                        note.getId(),
+                        position.getId(),
+                        due.getId()
+                );
+            });
+
+            assertNotNull(fixture);
+
+            // TRANSAZIONE 2: servizio V10.
+            // Il servizio apre e committa la propria
+            // transazione Spring.
+            Long compensationId = service.compensate(
+                    TENANT_ID,
+                    fixture.positionId(),
+                    fixture.dueId(),
+                    money("50.00"),
+                    date,
+                    "V10-COMMIT-" + suffix,
+                    "Compensazione con commit reale"
+            );
+
+            assertNotNull(compensationId);
+
+            // LETTURA INDIPENDENTE DAL COMMIT.
+            BigDecimal creditAvailable =
+                    jdbc.queryForObject(
+                            """
+                            SELECT available_amount
+                            FROM credit_note_financial_position
+                            WHERE id = ?
+                              AND tenant_id = ?
+                              AND company_id = ?
+                            """,
+                            BigDecimal.class,
+                            fixture.positionId(),
+                            TENANT_ID,
+                            COMPANY_ID
+                    );
+
+            BigDecimal dueOpen =
+                    jdbc.queryForObject(
+                            """
+                            SELECT open_amount
+                            FROM payment_due
+                            WHERE id = ?
+                              AND tenant_id = ?
+                              AND company_id = ?
+                            """,
+                            BigDecimal.class,
+                            fixture.dueId(),
+                            TENANT_ID,
+                            COMPANY_ID
+                    );
+
+            assertNotNull(creditAvailable);
+            assertNotNull(dueOpen);
+
+            assertEquals(0,
+                    money("72.00").compareTo(creditAvailable));
+
+            assertEquals(0,
+                    money("150.00").compareTo(dueOpen));
+
+            Long compensationCount =
+                    jdbc.queryForObject(
+                            """
+                            SELECT COUNT(*)
+                            FROM supplier_credit_note_compensation
+                            WHERE id = ?
+                              AND tenant_id = ?
+                              AND company_id = ?
+                              AND amount = 50.00
+                            """,
+                            Long.class,
+                            compensationId,
+                            TENANT_ID,
+                            COMPANY_ID
+                    );
+
+            assertEquals(1L, compensationCount);
+
+            Long creditQuadratureErrors =
+                    jdbc.queryForObject(
+                            """
+                            SELECT COUNT(*)
+                            FROM credit_note_financial_position
+                            WHERE id = ?
+                              AND original_amount <>
+                                  compensated_amount
+                                  + refunded_amount
+                                  + available_amount
+                            """,
+                            Long.class,
+                            fixture.positionId()
+                    );
+
+            Long dueQuadratureErrors =
+                    jdbc.queryForObject(
+                            """
+                            SELECT COUNT(*)
+                            FROM payment_due
+                            WHERE id = ?
+                              AND gross_amount <>
+                                  paid_amount
+                                  + compensated_amount
+                                  + open_amount
+                            """,
+                            Long.class,
+                            fixture.dueId()
+                    );
+
+            assertEquals(0L, creditQuadratureErrors);
+            assertEquals(0L, dueQuadratureErrors);
+
+            assertEquals(paymentsBefore,
+                    count("payment_transaction"));
+
+            assertEquals(journalsBefore,
+                    count("journal_entry"));
+
+
+            // PASSO 5.13.2386
+            // Rollback applicativo dopo compensazione V10.
+            //
+            // Prima compensazione: 50.00, già committata.
+            // Seconda compensazione: 20.00, da annullare.
+
+            CommittedFixture rollbackFixture = fixture;
+
+            IllegalStateException failure = assertThrows(
+                    IllegalStateException.class,
+                    () -> tx.executeWithoutResult(status -> {
+
+                        Long secondCompensationId = service.compensate(
+                                TENANT_ID,
+                                rollbackFixture.positionId(),
+                                rollbackFixture.dueId(),
+                                money("20.00"),
+                                date,
+                                "V10-ROLLBACK-" + suffix,
+                                "Compensazione da annullare"
+                        );
+
+                        assertNotNull(secondCompensationId);
+
+                        // Forziamo un errore applicativo DOPO
+                        // la persistenza JPA ma PRIMA del commit.
+                        throw new IllegalStateException(
+                                "V10_FORCED_ROLLBACK_2386"
+                        );
+                    })
+            );
+
+            assertEquals(
+                    "V10_FORCED_ROLLBACK_2386",
+                    failure.getMessage()
+            );
+
+            // Verifica con connessione indipendente:
+            // la seconda compensazione non deve esistere.
+            Long rolledBackRecords = jdbc.queryForObject(
+                    """
+                    SELECT COUNT(*)
+                    FROM supplier_credit_note_compensation
+                    WHERE tenant_id = ?
+                      AND company_id = ?
+                      AND operation_key = ?
+                    """,
+                    Long.class,
+                    TENANT_ID,
+                    COMPANY_ID,
+                    "V10-ROLLBACK-" + suffix
+            );
+
+            assertEquals(0L, rolledBackRecords);
+
+            // La prima compensazione deve essere preservata.
+            Long committedRecords = jdbc.queryForObject(
+                    """
+                    SELECT COUNT(*)
+                    FROM supplier_credit_note_compensation
+                    WHERE tenant_id = ?
+                      AND company_id = ?
+                      AND operation_key = ?
+                    """,
+                    Long.class,
+                    TENANT_ID,
+                    COMPANY_ID,
+                    "V10-COMMIT-" + suffix
+            );
+
+            assertEquals(1L, committedRecords);
+
+            // Verifica importi dopo il rollback.
+            BigDecimal creditAfterRollback =
+                    jdbc.queryForObject(
+                            """
+                            SELECT available_amount
+                            FROM credit_note_financial_position
+                            WHERE id = ?
+                              AND tenant_id = ?
+                              AND company_id = ?
+                            """,
+                            BigDecimal.class,
+                            rollbackFixture.positionId(),
+                            TENANT_ID,
+                            COMPANY_ID
+                    );
+
+            BigDecimal dueAfterRollback =
+                    jdbc.queryForObject(
+                            """
+                            SELECT open_amount
+                            FROM payment_due
+                            WHERE id = ?
+                              AND tenant_id = ?
+                              AND company_id = ?
+                            """,
+                            BigDecimal.class,
+                            rollbackFixture.dueId(),
+                            TENANT_ID,
+                            COMPANY_ID
+                    );
+
+            assertNotNull(creditAfterRollback);
+            assertNotNull(dueAfterRollback);
+
+            assertEquals(
+                    0,
+                    money("72.00").compareTo(creditAfterRollback)
+            );
+
+            assertEquals(
+                    0,
+                    money("150.00").compareTo(dueAfterRollback)
+            );
+
+            // La compensazione annullata non deve
+            // generare movimenti contabili o pagamenti.
+            assertEquals(
+                    paymentsBefore,
+                    count("payment_transaction")
+            );
+
+            assertEquals(
+                    journalsBefore,
+                    count("journal_entry")
+            );
+
+
+            // PASSO 5.13.2387
+            // Rollback MySQL per violazione UNIQUE.
+
+            CommittedFixture uniqueFixture = fixture;
+
+            org.hibernate.exception.ConstraintViolationException uniqueError =
+                    assertThrows(
+                            org.hibernate.exception.ConstraintViolationException.class,
+                            () -> tx.executeWithoutResult(status -> {
+
+
+                                CreditNoteFinancialPosition p =
+                                        em.find(
+                                                CreditNoteFinancialPosition.class,
+                                                uniqueFixture.positionId()
+                                        );
+
+
+                                PaymentDue d =
+                                        em.find(
+                                                PaymentDue.class,
+                                                uniqueFixture.dueId()
+                                        );
+
+                                assertNotNull(p);
+                                assertNotNull(d);
+
+                                // Modifiche transazionali da annullare.
+                                p.setCompensatedAmount(money("70.00"));
+                                p.setAvailableAmount(money("52.00"));
+
+                                d.setCompensatedAmount(money("70.00"));
+                                d.setOpenAmount(money("130.00"));
+
+                                em.flush();
+
+                                // Inserimento duplicato intenzionale.
+                                SupplierCreditNoteCompensation duplicate =
+                                        new SupplierCreditNoteCompensation();
+
+                                duplicate.setTenantId(TENANT_ID);
+                                duplicate.setCompanyId(COMPANY_ID);
+                                duplicate.setCreditNoteFinancialPositionId(
+                                        uniqueFixture.positionId()
+                                );
+                                duplicate.setPaymentDueId(
+                                        uniqueFixture.dueId()
+                                );
+
+                                duplicate.setOperationKey(
+                                        "V10-COMMIT-" + suffix
+                                );
+
+                                duplicate.setCompensationDate(date);
+                                duplicate.setAmount(money("20.00"));
+                                duplicate.setNotes(
+                                        "Violazione UNIQUE controllata"
+                                );
+
+                                em.persist(duplicate);
+
+                                // MySQL deve rifiutare il duplicato.
+                                em.flush();
+                            })
+                    );
+
+            // MySQL: 1062 = Duplicate entry.
+            assertNotNull(uniqueError.getSQLException());
+
+            assertEquals(
+                    1062,
+                    uniqueError.getSQLException().getErrorCode(),
+                    "Attesa violazione UNIQUE MySQL 1062"
+            );
+
+            assertEquals(
+                    "23000",
+                    uniqueError.getSQLState(),
+                    "Atteso SQLSTATE di violazione vincolo"
+            );
+
+            // Verifica dopo il rollback della transazione.
+            BigDecimal creditAfterUniqueFailure =
+                    jdbc.queryForObject(
+                            """
+                            SELECT available_amount
+                            FROM credit_note_financial_position
+                            WHERE id = ?
+                              AND tenant_id = ?
+                              AND company_id = ?
+                            """,
+                            BigDecimal.class,
+                            uniqueFixture.positionId(),
+                            TENANT_ID,
+                            COMPANY_ID
+                    );
+
+            BigDecimal dueAfterUniqueFailure =
+                    jdbc.queryForObject(
+                            """
+                            SELECT open_amount
+                            FROM payment_due
+                            WHERE id = ?
+                              AND tenant_id = ?
+                              AND company_id = ?
+                            """,
+                            BigDecimal.class,
+                            uniqueFixture.dueId(),
+                            TENANT_ID,
+                            COMPANY_ID
+                    );
+
+            assertNotNull(creditAfterUniqueFailure);
+            assertNotNull(dueAfterUniqueFailure);
+
+            assertEquals(
+                    0,
+                    money("72.00").compareTo(
+                            creditAfterUniqueFailure
+                    )
+            );
+
+            assertEquals(
+                    0,
+                    money("150.00").compareTo(
+                            dueAfterUniqueFailure
+                    )
+            );
+
+            Long recordsAfterUniqueFailure =
+                    jdbc.queryForObject(
+                            """
+                            SELECT COUNT(*)
+                            FROM supplier_credit_note_compensation
+                            WHERE tenant_id = ?
+                              AND company_id = ?
+                              AND operation_key = ?
+                            """,
+                            Long.class,
+                            TENANT_ID,
+                            COMPANY_ID,
+                            "V10-COMMIT-" + suffix
+                    );
+
+            assertEquals(1L, recordsAfterUniqueFailure);
+
+            // PASSO 5.13.2388
+            // Due compensazioni concorrenti da 60.00 EUR.
+            // Credito disponibile iniziale: 72.00 EUR.
+
+            CommittedFixture concurrentFixture = fixture;
+
+            concurrencyExecutor =
+                    java.util.concurrent.Executors.newFixedThreadPool(2);
+
+            // TRANSAZIONE A
+            java.util.concurrent.Future<Long> futureA =
+                    concurrencyExecutor.submit(() -> {
+
+                        TransactionTemplate workerTx =
+                                new TransactionTemplate(transactionManager);
+
+                        workerTx.setIsolationLevel(
+                                org.springframework.transaction.TransactionDefinition
+                                        .ISOLATION_READ_COMMITTED
+                        );
+
+                        return workerTx.execute(status -> {
+
+                            Long connectionId = jdbc.queryForObject(
+                                    "SELECT CONNECTION_ID()", Long.class
+                            );
+
+                            assertNotNull(connectionId);
+
+                            Long id = service.compensate(
+                                    TENANT_ID,
+                                    concurrentFixture.positionId(),
+                                    concurrentFixture.dueId(),
+                                    money("60.00"),
+                                    date,
+                                    "V10-CONCURRENT-A-" + suffix,
+                                    "Compensazione concorrente A"
+                            );
+
+                            assertNotNull(id);
+
+                            // A ha aggiornato gli importi,
+                            // ma mantiene il lock fino al commit.
+                            aCompensated.countDown();
+
+                            try {
+                                if (!releaseA.await(
+                                        20,
+                                        java.util.concurrent.TimeUnit.SECONDS
+                                )) {
+                                    throw new IllegalStateException(
+                                            "Timeout rilascio transazione A"
+                                    );
+                                }
+                            } catch (InterruptedException ex) {
+                                Thread.currentThread().interrupt();
+                                throw new IllegalStateException(ex);
+                            }
+
+                            return connectionId;
+                        });
+                    });
+
+            assertTrue(
+                    aCompensated.await(
+                            20,
+                            java.util.concurrent.TimeUnit.SECONDS
+                    ),
+                    "A non ha completato la compensazione"
+            );
+
+            // TRANSAZIONE B
+            java.util.concurrent.atomic.AtomicReference<Long>
+                    connectionB = new java.util.concurrent
+                    .atomic.AtomicReference<>();
+
+            java.util.concurrent.Future<
+                    com.gestiva.common.exception.BusinessException
+                    > futureB = concurrencyExecutor.submit(() -> {
+
+                TransactionTemplate workerTx =
+                        new TransactionTemplate(transactionManager);
+
+                workerTx.setIsolationLevel(
+                        org.springframework.transaction.TransactionDefinition
+                                .ISOLATION_READ_COMMITTED
+                );
+
+                return assertThrows(
+                        com.gestiva.common.exception.BusinessException.class,
+                        () -> workerTx.execute(status -> {
+
+                            connectionB.set(
+                                    jdbc.queryForObject(
+                                            "SELECT CONNECTION_ID()", Long.class
+                                    )
+                            );
+
+                            bReady.countDown();
+
+                            return service.compensate(
+                                    TENANT_ID,
+                                    concurrentFixture.positionId(),
+                                    concurrentFixture.dueId(),
+                                    money("60.00"),
+                                    date,
+                                    "V10-CONCURRENT-B-" + suffix,
+                                    "Compensazione concorrente B"
+                            );
+                        })
+                );
+            });
+
+            assertTrue(
+                    bReady.await(
+                            20,
+                            java.util.concurrent.TimeUnit.SECONDS
+                    ),
+                    "B non ha avviato la propria transazione"
+            );
+
+            // B non deve terminare mentre A detiene il lock.
+            assertThrows(
+                    java.util.concurrent.TimeoutException.class,
+                    () -> futureB.get(
+                            500,
+                            java.util.concurrent.TimeUnit.MILLISECONDS
+                    )
+            );
+
+            // Autorizziamo il commit della transazione A.
+            releaseA.countDown();
+
+            Long connectionA = futureA.get(
+                    20,
+                    java.util.concurrent.TimeUnit.SECONDS
+            );
+
+            var rejected = futureB.get(
+                    20,
+                    java.util.concurrent.TimeUnit.SECONDS
+            );
+
+            assertNotNull(connectionA);
+            assertNotNull(connectionB.get());
+            assertNotNull(rejected);
+            assertNotEquals(connectionA, connectionB.get());
+
+            // Verifica post-commit.
+            BigDecimal finalCredit = jdbc.queryForObject(
+                    """
+                    SELECT available_amount
+                    FROM credit_note_financial_position
+                    WHERE id = ?
+                      AND tenant_id = ?
+                      AND company_id = ?
+                    """,
+                    BigDecimal.class,
+                    concurrentFixture.positionId(),
+                    TENANT_ID,
+                    COMPANY_ID
+            );
+
+            BigDecimal finalDue = jdbc.queryForObject(
+                    """
+                    SELECT open_amount
+                    FROM payment_due
+                    WHERE id = ?
+                      AND tenant_id = ?
+                      AND company_id = ?
+                    """,
+                    BigDecimal.class,
+                    concurrentFixture.dueId(),
+                    TENANT_ID,
+                    COMPANY_ID
+            );
+
+            assertNotNull(finalCredit);
+            assertNotNull(finalDue);
+
+            assertEquals(
+                    0, money("12.00").compareTo(finalCredit)
+            );
+
+            assertEquals(
+                    0, money("90.00").compareTo(finalDue)
+            );
+
+            Long acceptedA = jdbc.queryForObject(
+                    """
+                    SELECT COUNT(*)
+                    FROM supplier_credit_note_compensation
+                    WHERE tenant_id = ?
+                      AND company_id = ?
+                      AND operation_key = ?
+                    """,
+                    Long.class,
+                    TENANT_ID,
+                    COMPANY_ID,
+                    "V10-CONCURRENT-A-" + suffix
+            );
+
+            Long rejectedB = jdbc.queryForObject(
+                    """
+                    SELECT COUNT(*)
+                    FROM supplier_credit_note_compensation
+                    WHERE tenant_id = ?
+                      AND company_id = ?
+                      AND operation_key = ?
+                    """,
+                    Long.class,
+                    TENANT_ID,
+                    COMPANY_ID,
+                    "V10-CONCURRENT-B-" + suffix
+            );
+
+            assertEquals(1L, acceptedA);
+            assertEquals(0L, rejectedB);
+
+            assertEquals(paymentsBefore,
+                    count("payment_transaction"));
+
+            assertEquals(journalsBefore,
+                    count("journal_entry"));
+
+            System.out.println(
+                    "V10_CONCURRENT_LOCKS: OK"
+            );
+
+            System.out.println(
+                    "V10_CONCURRENT_EXCESS_REJECTED: OK"
+            );
+
+            CommittedFixture isolationFixture = fixture;
+
+            // PASSO 5.13.2389C
+            // Isolamento multi-company:
+            // company 2 tenta di utilizzare documenti company 1.
+            try {
+                when(companyContext.requireCurrentCompanyId())
+                        .thenReturn(2L);
+
+
+                assertThrows(
+                        com.gestiva.common.exception.BusinessException.class,
+                        () -> service.compensate(
+                                TENANT_ID,
+                                isolationFixture.positionId(),
+                                isolationFixture.dueId(),
+                                money("5.00"),
+                                date,
+                                "V10-CROSS-COMPANY-" + suffix,
+                                "Tentativo accesso da societa estranea"
+                        )
+                );
+
+
+            } finally {
+                // Ripristino della società attiva del test.
+                when(companyContext.requireCurrentCompanyId())
+                        .thenReturn(COMPANY_ID);
+            }
+
+            // Verifica che i saldi company 1 siano invariati.
+
+            BigDecimal creditAfterIsolation =
+                    jdbc.queryForObject(
+                            """
+                            SELECT available_amount
+                            FROM credit_note_financial_position
+                            WHERE id = ?
+                              AND tenant_id = ?
+                              AND company_id = ?
+                            """,
+                            BigDecimal.class,
+                            fixture.positionId(),
+                            TENANT_ID,
+                            COMPANY_ID
+                    );
+
+            BigDecimal dueAfterIsolation =
+                    jdbc.queryForObject(
+                            """
+                            SELECT open_amount
+                            FROM payment_due
+                            WHERE id = ?
+                              AND tenant_id = ?
+                              AND company_id = ?
+                            """,
+                            BigDecimal.class,
+                            fixture.dueId(),
+                            TENANT_ID,
+                            COMPANY_ID
+                    );
+
+            assertNotNull(creditAfterIsolation);
+            assertNotNull(dueAfterIsolation);
+
+            assertEquals(
+                    0,
+                    money("12.00").compareTo(creditAfterIsolation)
+            );
+
+            assertEquals(
+                    0,
+                    money("90.00").compareTo(dueAfterIsolation)
+            );
+
+            Long crossCompanyRows =
+                    jdbc.queryForObject(
+                            """
+                            SELECT COUNT(*)
+                            FROM supplier_credit_note_compensation
+                            WHERE tenant_id = ?
+                              AND operation_key = ?
+                            """,
+                            Long.class,
+                            TENANT_ID,
+                            "V10-CROSS-COMPANY-" + suffix
+                    );
+
+            assertEquals(0L, crossCompanyRows);
+
+            System.out.println(
+                    "V10_MULTI_COMPANY_ACCESS_DENIED: OK"
+            );
+
+            System.out.println(
+                    "V10_MULTI_COMPANY_BALANCES_UNCHANGED: OK"
+            );
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        } finally {
+            // Garantisce il rilascio del thread A
+            // anche in caso di fallimento del test.
+            releaseA.countDown();
+
+            if (concurrencyExecutor != null) {
+                concurrencyExecutor.shutdownNow();
+
+                boolean stopped =
+                        concurrencyExecutor.awaitTermination(
+                                20,
+                                java.util.concurrent.TimeUnit.SECONDS
+                        );
+
+                if (!stopped) {
+                    throw new IllegalStateException(
+                            "STOP: worker concorrenti ancora attivi. "
+                                    + "Pulizia automatica non sicura."
+                    );
+                }
+            }
+
+
+            // Pulizia delle sole fixture create.
+            // Nessun tenant o società viene eliminato.
+            if (fixture != null) {
+
+                CommittedFixture f = fixture;
+
+                assertEquals(DATABASE,
+                        jdbc.queryForObject(
+                                "SELECT DATABASE()", String.class));
+
+                assertEquals(33308,
+                        jdbc.queryForObject(
+                                "SELECT @@port", Integer.class));
+
+                tx.executeWithoutResult(status -> {
+
+                    jdbc.update(
+                            """
+                            DELETE FROM supplier_credit_note_compensation
+                            WHERE tenant_id = ?
+                              AND company_id = ?
+                              AND credit_note_financial_position_id = ?
+                              AND payment_due_id = ?
+                            """,
+                            TENANT_ID,
+                            COMPANY_ID,
+                            f.positionId(),
+                            f.dueId()
+                    );
+
+                    jdbc.update(
+                            """
+                            DELETE FROM credit_note_financial_position
+                            WHERE id = ?
+                              AND tenant_id = ?
+                              AND company_id = ?
+                            """,
+                            f.positionId(),
+                            TENANT_ID,
+                            COMPANY_ID
+                    );
+
+                    jdbc.update(
+                            """
+                            DELETE FROM payment_due
+                            WHERE id = ?
+                              AND tenant_id = ?
+                              AND company_id = ?
+                            """,
+                            f.dueId(),
+                            TENANT_ID,
+                            COMPANY_ID
+                    );
+
+                    jdbc.update(
+                            """
+                            DELETE FROM credit_note
+                            WHERE id = ?
+                              AND tenant_id = ?
+                              AND company_id = ?
+                            """,
+                            f.noteId(),
+                            TENANT_ID,
+                            COMPANY_ID
+                    );
+
+                    jdbc.update(
+                            """
+                            DELETE FROM supplier
+                            WHERE id = ?
+                              AND tenant_id = ?
+                            """,
+                            f.supplierId(),
+                            TENANT_ID
+                    );
+                });
+            }
+        }
+    }
+
+
 }
