@@ -103,4 +103,30 @@ public interface InvoiceRepository
             Long companyId,
             Long salesOrderId
     );
+
+    // GESTIVA V2 - PASSO 5.13.2394K
+    // Lock della fattura cliente per la registrazione
+    // concorrente delle note di credito CUSTOMER.
+    //
+    // Il lock deve essere acquisito all'interno
+    // di una transazione attiva.
+
+    @org.springframework.data.jpa.repository.Lock(
+            jakarta.persistence.LockModeType.PESSIMISTIC_WRITE
+    )
+    @org.springframework.data.jpa.repository.Query("""
+        select i
+        from Invoice i
+        where i.tenantId = :tenantId
+          and i.companyId = :companyId
+          and i.id = :invoiceId
+        """)
+    Optional<Invoice> findByTenantIdAndCompanyIdAndIdForUpdate(
+            @org.springframework.data.repository.query.Param("tenantId")
+            Long tenantId,
+            @org.springframework.data.repository.query.Param("companyId")
+            Long companyId,
+            @org.springframework.data.repository.query.Param("invoiceId")
+            Long invoiceId
+    );
 }
