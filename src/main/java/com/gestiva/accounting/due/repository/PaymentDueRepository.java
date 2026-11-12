@@ -142,4 +142,35 @@ public interface PaymentDueRepository extends JpaRepository<PaymentDue, Long>, J
             java.util.List<String> statuses,
             java.time.LocalDate today
     );
+
+
+    // GESTIVA V2 - PASSO 5.13.2392G
+    // Scadenze fornitore eleggibili per compensazione V10.
+    // Lettura filtrata per tenant, societa, fornitore e valuta.
+
+    @org.springframework.data.jpa.repository.Query("""
+        select p
+        from PaymentDue p
+        where p.tenantId = :tenantId
+          and p.companyId = :companyId
+          and p.partyType = 'SUPPLIER'
+          and p.partyId = :supplierId
+          and p.direction = 'PAYABLE'
+          and p.referenceType = 'SUPPLIER_INVOICE'
+          and p.currencyCode = :currencyCode
+          and p.status in ('OPEN', 'PARTIALLY_PAID')
+          and p.openAmount > 0
+        order by p.dueDate asc, p.id asc
+        """)
+    java.util.List<PaymentDue> findCompensableSupplierDues(
+            @org.springframework.data.repository.query.Param("tenantId")
+            Long tenantId,
+            @org.springframework.data.repository.query.Param("companyId")
+            Long companyId,
+            @org.springframework.data.repository.query.Param("supplierId")
+            Long supplierId,
+            @org.springframework.data.repository.query.Param("currencyCode")
+            String currencyCode
+    );
+
 }

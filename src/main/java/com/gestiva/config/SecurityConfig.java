@@ -138,6 +138,15 @@ public class SecurityConfig {
                         ).hasAnyRole("ADMIN", "ACCOUNTING")
                         .requestMatchers("/supplier-invoices/**").hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
 
+
+                        // GESTIVA V2 - PASSO 5.13.2392S
+                        // Compensazioni V10:
+                        // operazione riservata ad ADMIN e ACCOUNTING.
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.POST,
+                                "/supplier-credit-notes/{id}/compensations"
+                        ).hasAnyRole("ADMIN", "ACCOUNTING")
+
                         // Gestiva V2 — SCN: autorizzazioni HTTP.
                         // Nessun controller SCN attivato in questa fase.
                         .requestMatchers(
