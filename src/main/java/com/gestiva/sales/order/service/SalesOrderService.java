@@ -32,7 +32,7 @@ public class SalesOrderService {
     private static final String ORDER_SEQUENCE_CODE = "ORDER";
     private static final String DEFAULT_ORDER_STATUS = "CONFIRMED";
     private static final Set<String> CONVERTIBLE_QUOTE_STATUSES =
-            Set.of("SENT", "ACCEPTED");
+            Set.of("ACCEPTED");
 
     private final SalesOrderRepository salesOrderRepository;
     private final SalesOrderLineRepository salesOrderLineRepository;

@@ -94,7 +94,7 @@ class CustomerCreditNoteDraftServiceTest {
         line.setDiscountPct(BigDecimal.ZERO);
         line.setTaxPct(new BigDecimal("22.00"));
         line.setTaxAmount(new BigDecimal("22.00"));
-        line.setLineTotal(new BigDecimal("122.00"));
+        line.setLineTotal(new BigDecimal("100.00"));
 
         return line;
     }

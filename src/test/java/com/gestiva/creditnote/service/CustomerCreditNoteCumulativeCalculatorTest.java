@@ -18,7 +18,7 @@ class CustomerCreditNoteCumulativeCalculatorTest {
     private InvoiceLine original() {
         InvoiceLine line = new InvoiceLine();
         line.setQuantity(bd("3.000"));
-        line.setLineTotal(bd("122.00"));
+        line.setLineTotal(bd("100.00"));
         line.setTaxAmount(bd("22.00"));
         return line;
     }
@@ -27,6 +27,32 @@ class CustomerCreditNoteCumulativeCalculatorTest {
     previous(String qty, String subtotal, String tax) {
         return new CustomerCreditNoteCumulativeCalculator.PreviousCredits(
                 bd(qty), bd(subtotal), bd(tax));
+    }
+
+    @Test
+    void calculatesRealInvoicePartialCreditWithoutSubtractingTaxTwice() {
+        InvoiceLine original = new InvoiceLine();
+        original.setQuantity(bd("2.000"));
+        original.setLineTotal(bd("153.00"));
+        original.setTaxAmount(bd("33.66"));
+
+        var first = CustomerCreditNoteCumulativeCalculator.calculate(
+                original,
+                previous("0.000", "0.00", "0.00"),
+                bd("1.000"));
+
+        assertEquals(0, bd("76.50").compareTo(first.subtotal()));
+        assertEquals(0, bd("16.83").compareTo(first.tax()));
+        assertEquals(0, bd("93.33").compareTo(first.total()));
+
+        var second = CustomerCreditNoteCumulativeCalculator.calculate(
+                original,
+                previous("1.000", "76.50", "16.83"),
+                bd("1.000"));
+
+        assertEquals(0, bd("76.50").compareTo(second.subtotal()));
+        assertEquals(0, bd("16.83").compareTo(second.tax()));
+        assertEquals(0, bd("93.33").compareTo(second.total()));
     }
 
     @Test

@@ -43,7 +43,7 @@
                             <span>Modifica</span>
                         </a>
 
-                        <form th:if="${!quote.locked}"
+                        <form th:if="${quote.status == 'ACCEPTED' and !quote.locked}"
                               th:action="@{/quotes/{id}/convert(id=${quote.id})}"
                               method="post">
                             <input type="hidden" name="tenantId" th:value="${tenantId}"/>

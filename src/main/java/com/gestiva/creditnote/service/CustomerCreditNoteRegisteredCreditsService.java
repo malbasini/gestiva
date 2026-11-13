@@ -108,8 +108,9 @@ public class CustomerCreditNoteRegisteredCreditsService {
             }
 
             originalQty.put(line.getId(), qty);
+            // InvoiceLine.lineTotal è l'imponibile IVA esclusa.
             originalSubtotal.put(
-                    line.getId(), total.subtract(tax));
+                    line.getId(), total);
             originalTax.put(line.getId(), tax);
         }
 

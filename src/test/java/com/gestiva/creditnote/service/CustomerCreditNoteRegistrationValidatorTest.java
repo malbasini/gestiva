@@ -56,7 +56,7 @@ class CustomerCreditNoteRegistrationValidatorTest {
         value.setTaxPct(bd("22.00"));
 
         value.setTaxAmount(bd("22.00"));
-        value.setLineTotal(bd("122.00"));
+        value.setLineTotal(bd("100.00"));
 
         return value;
     }
@@ -133,6 +133,65 @@ class CustomerCreditNoteRegistrationValidatorTest {
                 lines,
                 previousCredits
         );
+    }
+
+    @Test
+    void rejectsLegacyDraftAmountsAndAcceptsCorrectRealInvoiceAmounts() {
+        InvoiceLine invoiceLine = original();
+        invoiceLine.setQuantity(bd("2.000"));
+        invoiceLine.setUnitPrice(bd("85.00"));
+        invoiceLine.setDiscountPct(bd("10.00"));
+        invoiceLine.setLineTotal(bd("153.00"));
+        invoiceLine.setTaxAmount(bd("33.66"));
+
+        CreditNote note = draft();
+        CreditNoteLine line = draftLine();
+
+        line.setUnitPrice(bd("85.00"));
+        line.setDiscountPct(bd("10.00"));
+        line.setQuantity(bd("1.000"));
+
+        var previousCredits =
+                previous("0.000", "0.00", "0.00");
+
+        // Prima verifica: la rettifica corretta deve essere accettata.
+        note.setSubtotalAmount(bd("76.50"));
+        note.setTaxAmount(bd("16.83"));
+        note.setTotalAmount(bd("93.33"));
+
+        line.setLineSubtotal(bd("76.50"));
+        line.setTaxAmount(bd("16.83"));
+        line.setLineTotal(bd("93.33"));
+
+        assertDoesNotThrow(() ->
+                CustomerCreditNoteRegistrationValidator.validate(
+                        invoice(),
+                        note,
+                        List.of(invoiceLine),
+                        List.of(line),
+                        previousCredits));
+
+        // Seconda verifica: gli importi del vecchio DRAFT
+        // CCN-00001 devono essere rifiutati.
+        note.setSubtotalAmount(bd("59.67"));
+        note.setTaxAmount(bd("16.83"));
+        note.setTotalAmount(bd("76.50"));
+
+        line.setLineSubtotal(bd("59.67"));
+        line.setTaxAmount(bd("16.83"));
+        line.setLineTotal(bd("76.50"));
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> CustomerCreditNoteRegistrationValidator.validate(
+                        invoice(),
+                        note,
+                        List.of(invoiceLine),
+                        List.of(line),
+                        previousCredits));
+
+        assertTrue(exception.getMessage().contains(
+                "Importi della nota cliente non più compatibili"));
     }
 
     @Test

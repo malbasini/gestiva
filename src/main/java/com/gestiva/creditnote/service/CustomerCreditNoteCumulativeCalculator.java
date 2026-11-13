@@ -58,8 +58,8 @@ public final class CustomerCreditNoteCumulativeCalculator {
                     "Riga fattura cliente non valida.");
         }
 
-        BigDecimal originalSubtotal =
-                originalTotal.subtract(originalTax);
+        // InvoiceLine.lineTotal è l'imponibile IVA esclusa.
+        BigDecimal originalSubtotal = originalTotal;
 
         BigDecimal usedQty = previous.quantity();
         BigDecimal usedSubtotal = previous.subtotal();

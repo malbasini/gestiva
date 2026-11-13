@@ -67,7 +67,7 @@ class CustomerCreditNoteRegisteredCreditsServiceTest {
         original.setTenantId(TENANT);
         original.setInvoiceId(INVOICE);
         original.setQuantity(bd("3.000"));
-        original.setLineTotal(bd("122.00"));
+        original.setLineTotal(bd("100.00"));
         original.setTaxAmount(bd("22.00"));
 
         when(invoices.findByTenantIdAndCompanyIdAndIdForUpdate(

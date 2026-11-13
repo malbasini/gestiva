@@ -96,7 +96,7 @@ class SalesOrderPdfServiceIntegrationTest extends AbstractMySqlIntegrationTest {
         update.setCustomerId(customerId);
         update.setQuoteDate(created.getQuoteDate());
         update.setValidUntil(created.getValidUntil());
-        update.setStatus("SENT");
+        update.setStatus("ACCEPTED");
         update.setCurrencyCode(created.getCurrencyCode());
         update.setLines(List.of(line1, line2));
 

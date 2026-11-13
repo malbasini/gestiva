@@ -101,7 +101,7 @@ class CustomerCreditNoteRegistrationPreparationServiceTest {
         value.setDiscountPct(bd("0.00"));
         value.setTaxPct(bd("22.00"));
         value.setTaxAmount(bd("22.00"));
-        value.setLineTotal(bd("122.00"));
+        value.setLineTotal(bd("100.00"));
         return value;
     }
 

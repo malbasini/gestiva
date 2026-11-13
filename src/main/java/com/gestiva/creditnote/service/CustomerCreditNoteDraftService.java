@@ -118,8 +118,11 @@ public class CustomerCreditNoteDraftService {
                         "Riga fattura cliente non valida.");
             }
 
-            BigDecimal lineSubtotal =
-                    lineTotal.subtract(lineTax);
+            // La riga fattura contiene l'imponibile IVA esclusa.
+            BigDecimal lineSubtotal = lineTotal;
+
+            // La riga CCN contiene invece il totale IVA inclusa.
+            lineTotal = lineSubtotal.add(lineTax);
 
             CreditNoteLine line = new CreditNoteLine();
 

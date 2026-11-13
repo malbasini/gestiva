@@ -202,7 +202,7 @@ class SalesOrderSearchIntegrationTest extends AbstractMySqlIntegrationTest {
         updateRequest.setCustomerId(customerId);
         updateRequest.setQuoteDate(created.getQuoteDate());
         updateRequest.setValidUntil(created.getValidUntil());
-        updateRequest.setStatus("SENT");
+        updateRequest.setStatus("ACCEPTED");
         updateRequest.setCurrencyCode(created.getCurrencyCode());
         updateRequest.setLines(List.of(line));
 
