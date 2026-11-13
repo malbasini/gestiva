@@ -1,0 +1,378 @@
+
+<!DOCTYPE html>
+<html lang="it"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8"/>
+
+    <title th:text="'Nota di credito cliente '
+            + ${creditNote.creditNoteNumber}">
+        Nota di credito cliente
+    </title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/app.css}"/>
+</head>
+
+<body>
+
+<div th:replace="~{fragments/layout :: appHeader}"></div>
+
+<main class="container-fluid py-4">
+
+    <div th:replace="~{fragments/layout :: flashMessages}"></div>
+
+    <!-- GESTIVA V2 - PASSO 5.13.2395DG -->
+    <!-- Dettaglio CCN: sola consultazione -->
+
+    <div class="d-flex justify-content-between
+                align-items-center mb-4">
+
+        <div>
+            <h1 class="h3 mb-1">
+                Nota di credito cliente
+            </h1>
+
+            <div class="text-muted"
+                 th:text="${creditNote.creditNoteNumber}">
+                CCN-00001
+            </div>
+        </div>
+
+        <a class="btn btn-outline-secondary"
+           th:href="@{/invoices/{id}(id=${creditNote.originalInvoiceId})}">
+            <i class="bi bi-arrow-left"></i>
+            Torna alla fattura
+        </a>
+
+    </div>
+
+    <!-- Informazioni generali -->
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            <h2 class="h6 mb-0">
+                Dati del documento
+            </h2>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row g-3">
+
+                <div class="col-md-4">
+                    <div class="text-muted small">
+                        Numero
+                    </div>
+
+                    <div class="fw-semibold"
+                         th:text="${creditNote.creditNoteNumber}">
+                        CCN-00001
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="text-muted small">
+                        Data
+                    </div>
+
+                    <div th:text="${creditNote.creditNoteDate != null
+                         ? #temporals.format(
+                             creditNote.creditNoteDate,
+                             'dd/MM/yyyy')
+                         : '-'}">
+                        -
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="text-muted small">
+                        Stato
+                    </div>
+
+                    <span class="badge"
+                          th:classappend="${creditNote.status == 'REGISTERED'}
+                              ? ' bg-success'
+                              : ' bg-secondary'"
+                          th:text="${creditNote.status}">
+                        DRAFT
+                    </span>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="text-muted small">
+                        Fattura originale
+                    </div>
+
+                    <a th:href="@{/invoices/{id}(id=${creditNote.originalInvoiceId})}"
+                       th:text="${creditNote.originalInvoiceId}">
+                        -
+                    </a>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="text-muted small">
+                        Valuta
+                    </div>
+
+                    <div th:text="${creditNote.currencyCode}">
+                        EUR
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="text-muted small">
+                        Causale
+                    </div>
+
+                    <div th:text="${creditNote.reason}">
+                        Rettifica fattura cliente
+                    </div>
+                </div>
+
+                <div class="col-12"
+                     th:if="${creditNote.notes != null
+                         and !#strings.isEmpty(creditNote.notes)}">
+
+                    <div class="text-muted small">
+                        Note
+                    </div>
+
+                    <div th:text="${creditNote.notes}">
+                        -
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Righe nota di credito -->
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            <h2 class="h6 mb-0">
+                Righe rettificate
+            </h2>
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-striped align-middle">
+
+                    <thead>
+                    <tr>
+                        <th>Riga</th>
+                        <th>Descrizione</th>
+                        <th class="text-end">Quantità</th>
+                        <th>UM</th>
+                        <th class="text-end">Prezzo</th>
+                        <th class="text-end">Sconto %</th>
+                        <th class="text-end">IVA %</th>
+                        <th class="text-end">Imponibile</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+
+                    <tr th:if="${#lists.isEmpty(creditNoteLines)}">
+                        <td colspan="8"
+                            class="text-center text-muted">
+                            Nessuna riga disponibile.
+                        </td>
+                    </tr>
+
+                    <tr th:each="line : ${creditNoteLines}">
+
+                        <td th:text="${line.lineNo}">
+                            1
+                        </td>
+
+                        <td th:text="${line.description}">
+                            Articolo
+                        </td>
+
+                        <td class="text-end"
+                            th:text="${line.quantity != null
+                                ? #numbers.formatDecimal(
+                                    line.quantity,
+                                    1, 'POINT', 3, 'COMMA')
+                                : '-'}">
+                            1,000
+                        </td>
+
+                        <td th:text="${line.uomCode != null
+                            ? line.uomCode
+                            : line.unitOfMeasure}">
+                            PZ
+                        </td>
+
+                        <td class="text-end"
+                            th:text="${line.unitPrice != null
+                                ? #numbers.formatDecimal(
+                                    line.unitPrice,
+                                    1, 'POINT', 2, 'COMMA')
+                                : '-'}">
+                            0,00
+                        </td>
+
+                        <td class="text-end"
+                            th:text="${line.discountPct != null
+                                ? #numbers.formatDecimal(
+                                    line.discountPct,
+                                    1, 'POINT', 2, 'COMMA')
+                                : '-'}">
+                            0,00
+                        </td>
+
+                        <td class="text-end"
+                            th:text="${line.taxPct != null
+                                ? #numbers.formatDecimal(
+                                    line.taxPct,
+                                    1, 'POINT', 2, 'COMMA')
+                                : '-'}">
+                            22,00
+                        </td>
+
+                        <td class="text-end"
+                            th:text="${line.lineTotal != null
+                                ? #numbers.formatDecimal(
+                                    line.lineTotal,
+                                    1, 'POINT', 2, 'COMMA')
+                                : '-'}">
+                            0,00
+                        </td>
+
+                    </tr>
+
+                    </tbody>
+
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Totali -->
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            <h2 class="h6 mb-0">
+                Totali nota di credito
+            </h2>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row justify-content-end">
+
+                <div class="col-md-5 col-lg-4">
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Imponibile</span>
+
+                        <span th:text="${creditNote.subtotalAmount != null
+                            ? #numbers.formatDecimal(
+                                creditNote.subtotalAmount,
+                                1, 'POINT', 2, 'COMMA')
+                            : '-'}">
+                            0,00
+                        </span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>IVA</span>
+
+                        <span th:text="${creditNote.taxAmount != null
+                            ? #numbers.formatDecimal(
+                                creditNote.taxAmount,
+                                1, 'POINT', 2, 'COMMA')
+                            : '-'}">
+                            0,00
+                        </span>
+                    </div>
+
+                    <hr/>
+
+                    <div class="d-flex justify-content-between
+                                fw-bold fs-5">
+
+                        <span>Totale</span>
+
+                        <div>
+                            <span th:text="${creditNote.totalAmount != null
+                                ? #numbers.formatDecimal(
+                                    creditNote.totalAmount,
+                                    1, 'POINT', 2, 'COMMA')
+                                : '-'}">
+                                0,00
+                            </span>
+
+                            <span th:text="${creditNote.currencyCode}">
+                                EUR
+                            </span>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- GESTIVA V2 - PASSO 5.13.2395DT -->
+    <!-- Registrazione contabile CCN mediante modale condivisa -->
+
+    <div class="card mb-4"
+         th:if="${canRegisterCreditNote}">
+
+        <div class="card-header">
+            <h2 class="h6 mb-0">
+                Registrazione contabile
+            </h2>
+        </div>
+
+        <div class="card-body">
+
+            <p class="text-muted mb-3">
+                La registrazione conferma definitivamente
+                la nota di credito cliente, genera la scrittura
+                contabile di storno e crea la relativa
+                posizione finanziaria.
+            </p>
+
+            <button type="button"
+                    class="btn btn-success"
+                    th:data-confirm-action="@{/customer-credit-notes/{id}/register(id=${creditNote.id})}"
+                    data-confirm-title="Registra nota di credito cliente"
+                    data-confirm-message="Confermi la registrazione contabile della nota di credito cliente? L'operazione genera la scrittura contabile e la posizione finanziaria."
+                    data-confirm-submit="Registra e contabilizza"
+                    data-confirm-submit-class="btn-success"
+                    data-confirm-method="post"
+                    onclick="openConfirmModal(this)">
+
+                <i class="bi bi-check-circle me-1"></i>
+                Registra e contabilizza
+
+            </button>
+
+        </div>
+    </div>
+
+
+</main>
+
+<div th:replace="~{fragments/layout :: appFooter}"></div>
+
+<div th:replace="~{fragments/layout :: modalFragment}"></div>
+
+</body>
+</html>

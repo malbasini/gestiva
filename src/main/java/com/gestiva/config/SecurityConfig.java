@@ -114,8 +114,48 @@ public class SecurityConfig {
                         .requestMatchers("/orders/**").hasAnyRole("ADMIN", "SALES")
                         .requestMatchers("/sales-orders/**").hasAnyRole("ADMIN", "SALES")
                         .requestMatchers("/delivery-notes/**").hasAnyRole("ADMIN", "SALES", "WAREHOUSE")
+
                         .requestMatchers("/invoices/**").hasAnyRole("ADMIN", "SALES", "ACCOUNTING")
-                         .requestMatchers("/api/invoices/**").hasAnyRole("ADMIN", "SALES", "ACCOUNTING")
+                        .requestMatchers("/api/invoices/**").hasAnyRole("ADMIN", "SALES", "ACCOUNTING")
+
+
+                        // GESTIVA V2 - PASSO 5.13.2395BG
+                        // Customer Credit Notes (CCN).
+                        //
+                        // Tenant e company sono sempre ricavati
+                        // dal contesto autenticato.
+                        //
+                        // Registrazione contabile:
+                        // solo ADMIN e ACCOUNTING.
+
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.POST,
+                                "/customer-credit-notes/{id}/register"
+                        ).hasAnyRole("ADMIN", "ACCOUNTING")
+
+                        // Creazione note clienti DRAFT,
+                        // sia complete sia parziali.
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.POST,
+                                "/customer-credit-notes",
+                                "/customer-credit-notes/partial"
+                        ).hasAnyRole(
+                                "ADMIN", "SALES", "ACCOUNTING")
+
+                        // Consultazione note clienti.
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.GET,
+                                "/customer-credit-notes",
+                                "/customer-credit-notes/**"
+                        ).hasAnyRole(
+                                "ADMIN", "SALES", "ACCOUNTING")
+
+                        // Blocca eventuali altri metodi o
+                        // operazioni CCN non esplicitamente previsti.
+                        .requestMatchers(
+                                "/customer-credit-notes",
+                                "/customer-credit-notes/**"
+                        ).denyAll()
 
                         // ciclo passivo
                         .requestMatchers("/suppliers/**").hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")

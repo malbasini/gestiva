@@ -157,11 +157,290 @@
           <span th:text="${invoice.notes}">Note fattura</span>
         </div>
 
+          <!-- GESTIVA V2 - PASSO 5.13.2395BP -->
+          <!-- Note di credito cliente: consultazione in sola lettura -->
+
+          <section class="mt-4"
+                   aria-labelledby="customer-credit-notes-title">
+              <div class="d-flex justify-content-between
+                      align-items-center mb-3">
+                  <h2 id="customer-credit-notes-title"
+                      class="h5 mb-0">
+                      Note di credito cliente
+                  </h2>
+              </div>
+              <!-- GESTIVA V2 - PASSO 5.13.2395BZ -->
+              <!-- Creazione CCN completa da fattura ISSUED -->
+              <div class="mb-4"
+                   th:if="${canCreateCustomerCreditNote}">
+                  <h3 class="h6 mb-2">
+                      Nuova nota di credito completa
+                  </h3>
+                  <p class="muted">
+                      La nota rettificherà tutte le righe della
+                      fattura, nei limiti degli importi ancora
+                      rettificabili.
+                      Verrà creata in stato DRAFT, senza
+                      registrazione contabile immediata.
+                  </p>
+                  <form method="post"
+                        th:action="@{/customer-credit-notes}">
+                      <input type="hidden"
+                             name="customerInvoiceId"
+                             th:value="${invoice.id}"/>
+                      <div class="mb-3">
+                          <label for="customer-credit-note-reason"
+                                 class="form-label">
+                              Causale della nota di credito
+                          </label>
+                          <textarea
+                                  id="customer-credit-note-reason"
+                                  name="reason"
+                                  class="form-control"
+                                  rows="3"
+                                  maxlength="500"
+                                  required
+                                  placeholder="Indicare il motivo della rettifica"></textarea>
+                      </div>
+                      <button type="submit"
+                              class="btn btn-outline-primary">
+                          <i class="bi bi-file-earmark-plus"></i>
+                          <span>Crea nota di credito completa</span>
+                      </button>
+                  </form>
+              </div>
+
+              <!-- GESTIVA V2 - PASSO 5.13.2395CG -->
+              <!-- Creazione nota di credito cliente parziale -->
+
+              <section class="mt-4 mb-4"
+                       th:if="${canCreateCustomerCreditNote}"
+                       aria-labelledby="customer-partial-credit-title">
+                  <h3 id="customer-partial-credit-title"
+                      class="h6 mb-2">
+                      Nuova nota di credito parziale
+                  </h3>
+                  <p class="muted">
+                      Seleziona le righe da rettificare e indica
+                      la quantità per ciascuna.
+                      La nota verrà creata in stato DRAFT.
+                  </p>
+
+                  <form method="post"
+                        th:action="@{/customer-credit-notes/partial}"
+                        onsubmit="return validateCustomerPartialCreditNote(this);">
+
+                  <input type="hidden"
+                             name="customerInvoiceId"
+                             th:value="${invoice.id}"/>
+                      <div class="table-responsive">
+                          <table class="table">
+                              <thead>
+                              <tr>
+                                  <th>Seleziona</th>
+                                  <th>Riga</th>
+                                  <th>Descrizione</th>
+                                  <th class="text-end">
+                                      Quantità originale
+                                  </th>
+                                  <th>UM</th>
+                                  <th>Quantità da rettificare</th>
+                              </tr>
+                              </thead>
+                              <tbody>
+                              <tr th:each="line : ${invoice.lines}">
+                                  <td>
+                                      <input type="checkbox"
+                                             name="lineIds"
+                                             th:value="${line.id}"
+                                             th:attr="aria-label=|Seleziona riga ${line.lineNo}|"
+                                             onchange="
+                                 const quantity = this.closest('tr')
+                                   .querySelector('input[name=quantities]');
+                                 quantity.disabled = !this.checked;
+                                 quantity.required = this.checked;
+                                 if (!this.checked) quantity.value = '';
+                               "/>
+                                  </td>
+                                  <td th:text="${line.lineNo}">
+                                      1
+                                  </td>
+                                  <td th:text="${line.description}">
+                                      Prodotto
+                                  </td>
+                                  <td class="text-end"
+                                      th:text="${line.formattedQuantity}">
+                                      10
+                                  </td>
+                                  <td th:text="${line.unitOfMeasure}">
+                                      PZ
+                                  </td>
+                                  <td>
+                                      <input type="number"
+                                             name="quantities"
+                                             class="form-control"
+                                             min="0.001"
+                                             step="0.001"
+                                             th:attr="max=${line.quantity}"
+                                             placeholder="0.000"
+                                             aria-label="Quantità da rettificare"
+                                             disabled/>
+                                  </td>
+                              </tr>
+                              </tbody>
+                          </table>
+                      </div>
+                      <div class="mb-3">
+                          <label for="customer-partial-credit-reason"
+                                 class="form-label">
+                              Causale della rettifica parziale
+                          </label>
+                          <textarea
+                                  id="customer-partial-credit-reason"
+                                  name="reason"
+                                  class="form-control"
+                                  rows="3"
+                                  maxlength="500"
+                                  required
+                                  placeholder="Indicare il motivo della rettifica parziale"></textarea>
+                      </div>
+                      <button type="submit"
+                              class="btn btn-outline-primary">
+                          <i class="bi bi-file-earmark-plus"></i>
+                          <span>Crea nota di credito parziale</span>
+                      </button>
+                  </form>
+              </section>
+              <p class="muted"
+                 th:if="${#lists.isEmpty(customerCreditNotes)}">
+                  Nessuna nota di credito associata
+                  a questa fattura.
+              </p>
+              <table class="table"
+                     th:unless="${#lists.isEmpty(customerCreditNotes)}">
+                  <thead>
+                  <tr>
+                      <th>Numero</th>
+                      <th>Data</th>
+                      <th>Causale</th>
+                      <th>Stato</th>
+                      <th class="text-end">Totale</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr th:each="note : ${customerCreditNotes}">
+                      <!-- GESTIVA V2 - PASSO 5.13.2395DK -->
+                      <td>
+                          <a th:href="@{/customer-credit-notes/{id}(id=${note.id})}"
+                             th:text="${note.creditNoteNumber}">
+                              CCN-00001
+                          </a>
+                      </td>
+                      <td th:text="${note.creditNoteDate}">
+                          2026-11-13
+                      </td>
+                      <td th:text="${note.reason}">
+                          Rettifica fattura
+                      </td>
+                      <td>
+                  <span class="badge"
+                        th:classappend="${note.status == 'REGISTERED'}
+                          ? ' badge-confirmed'
+                          : ' badge-cancelled'"
+                        th:text="${note.status}">
+                    DRAFT
+                  </span>
+                      </td>
+                      <td class="text-end"
+                          th:text="${note.totalAmount
+                      + ' ' + note.currencyCode}">
+                          122.00 EUR
+                      </td>
+                  </tr>
+                  </tbody>
+              </table>
+              <!-- I pulsanti di creazione saranno aggiunti
+                   dopo il collaudo dei controller HTTP CCN. -->
+          </section>
       </div>
     </div>
   </main>
   <div th:replace="~{fragments/layout :: appFooter}"></div>
 </div>
 <div th:replace="~{fragments/layout :: modalFragment}"></div>
+<!-- GESTIVA V2 - PASSO 5.13.2395CT -->
+<!-- Validazione CCN parziale con modale condivisa -->
+
+<script>
+    function validateCustomerPartialCreditNote(form) {
+
+        const selected = form.querySelectorAll(
+            'input[name="lineIds"]:checked'
+        );
+
+        if (selected.length > 0) {
+            return true;
+        }
+
+        const modalElement = document.getElementById(
+            'confirmActionModal'
+        );
+
+        const title = document.getElementById(
+            'confirmActionModalTitle'
+        );
+
+        const message = document.getElementById(
+            'confirmActionModalMessage'
+        );
+
+        const icon = document.getElementById(
+            'confirmActionModalIcon'
+        );
+
+        const submit = document.getElementById(
+            'confirmActionModalSubmit'
+        );
+
+        if (!modalElement || !title || !message ||
+            !icon || !submit ||
+            typeof bootstrap === 'undefined') {
+
+            // In caso di errore nel caricamento della UI,
+            // il form rimane bloccato.
+            console.error(
+                'Modale validazione CCN non disponibile'
+            );
+            return false;
+        }
+
+        title.textContent = 'Selezione richiesta';
+
+        message.textContent =
+            'Seleziona almeno una riga della fattura ' +
+            'prima di creare la nota di credito parziale.';
+
+        icon.className =
+            'bi bi-exclamation-circle text-warning me-2';
+
+        // La modale serve solo a informare:
+        // nessun POST dal suo form condiviso.
+        submit.hidden = true;
+
+        modalElement.addEventListener(
+            'hidden.bs.modal',
+            function restoreConfirmButton() {
+                submit.hidden = false;
+            },
+            { once: true }
+        );
+
+        bootstrap.Modal.getOrCreateInstance(
+            modalElement
+        ).show();
+
+        return false;
+    }
+</script>
 </body>
 </html>

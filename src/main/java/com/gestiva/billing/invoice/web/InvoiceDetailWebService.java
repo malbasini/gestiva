@@ -68,6 +68,10 @@ public class InvoiceDetailWebService {
 
         view.setLines(lines.stream().map(line -> {
             InvoiceDetailLineView l = new InvoiceDetailLineView();
+            // GESTIVA V2 - PASSO 5.13.2395CC
+            l.setId(line.getId());
+            // Quantità numerica originale, senza formattazione.
+            l.setQuantity(line.getQuantity());
             l.setLineNo(line.getLineNo());
             l.setDescription(line.getDescription());
             l.setFormattedQuantity(PdfFormatUtils.formatDecimalTrimmed(line.getQuantity(),2));

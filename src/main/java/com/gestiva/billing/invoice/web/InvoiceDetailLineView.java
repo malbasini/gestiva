@@ -2,6 +2,16 @@ package com.gestiva.billing.invoice.web;
 
 public class InvoiceDetailLineView {
 
+    // GESTIVA V2 - PASSO 5.13.2395CC
+    // Identificativo reale della riga fattura.
+
+    private Long id;
+
+    // GESTIVA V2 - PASSO 5.13.2395CE
+    // Quantità numerica originale della riga fattura.
+    // Utilizzata dai form, non per la formattazione UI.
+
+    private java.math.BigDecimal quantity;
     private Integer lineNo;
     private String description;
     private String formattedQuantity;
@@ -10,6 +20,21 @@ public class InvoiceDetailLineView {
     private String formattedDiscountPct;
     private String formattedTaxPct;
     private String formattedLineTotal;
+
+    public java.math.BigDecimal getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(java.math.BigDecimal quantity) {
+        this.quantity = quantity;
+    }
+
+    public Long getId() {
+        return id;
+    }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public Integer getLineNo() {
         return lineNo;
