@@ -173,4 +173,33 @@ public interface PaymentDueRepository extends JpaRepository<PaymentDue, Long>, J
             String currencyCode
     );
 
+
+    // GESTIVA V2 - PASSO 5.13.2395KN
+    // Scadenze cliente eleggibili per compensazione V11.
+    // Lettura isolata per tenant, societa, cliente e valuta.
+    @Query("""
+        select p
+        from PaymentDue p
+        where p.tenantId = :tenantId
+          and p.companyId = :companyId
+          and p.partyType = 'CUSTOMER'
+          and p.partyId = :customerId
+          and p.direction = 'RECEIVABLE'
+          and p.referenceType = 'CUSTOMER_INVOICE'
+          and p.currencyCode = :currencyCode
+          and p.status in ('OPEN', 'PARTIALLY_PAID')
+          and p.openAmount > 0
+        order by p.dueDate asc, p.id asc
+        """)
+    List<PaymentDue> findCompensableCustomerDues(
+            @org.springframework.data.repository.query.Param("tenantId")
+            Long tenantId,
+            @org.springframework.data.repository.query.Param("companyId")
+            Long companyId,
+            @org.springframework.data.repository.query.Param("customerId")
+            Long customerId,
+            @org.springframework.data.repository.query.Param("currencyCode")
+            String currencyCode
+    );
+
 }

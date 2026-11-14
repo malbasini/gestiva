@@ -368,6 +368,160 @@
     </div>
 
 
+
+    <!-- GESTIVA V2 - PASSO 5.13.2395KU -->
+    <!-- Compensazione cliente V11: solo note REGISTERED eleggibili -->
+    <section class="card mb-4"
+             th:if="${canCompensateCreditNote}">
+
+        <div class="card-header">
+            <h2 class="h6 mb-0">
+                Compensazione fattura cliente
+            </h2>
+        </div>
+
+        <div class="card-body">
+
+            <p class="text-muted mb-3">
+                Utilizza il credito disponibile della nota
+                per ridurre una scadenza cliente aperta.
+            </p>
+
+            <div class="row g-3 mb-4">
+
+                <div class="col-md-6">
+                    <div class="text-muted small">
+                        Credito disponibile
+                    </div>
+                    <div class="fw-semibold">
+                        <span th:text="${#numbers.formatDecimal(
+                            compensationPosition.availableAmount,
+                            1, 'POINT', 2, 'COMMA'
+                        )}">0,00</span>
+                        <span th:text="${creditNote.currencyCode}">
+                            EUR
+                        </span>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="text-muted small">
+                        Stato posizione finanziaria
+                    </div>
+                    <div class="fw-semibold"
+                         th:text="${compensationPosition.status}">
+                        OPEN
+                    </div>
+                </div>
+
+            </div>
+
+            <form method="post"
+                  th:action="@{/customer-credit-notes/{id}/compensations(id=${creditNote.id})}">
+
+                <input type="hidden"
+                       th:name="${_csrf.parameterName}"
+                       th:value="${_csrf.token}"/>
+
+                <input type="hidden"
+                       name="operationKey"
+                       th:value="${compensationOperationKey}"/>
+
+                <div class="row g-3">
+
+                    <div class="col-12">
+                        <label class="form-label"
+                               for="customerCompensationDue">
+                            Scadenza cliente
+                        </label>
+
+                        <select class="form-select"
+                                id="customerCompensationDue"
+                                name="paymentDueId"
+                                required>
+
+                            <option value="">
+                                Seleziona una scadenza
+                            </option>
+
+                            <option th:each="due : ${compensableDues}"
+                                    th:value="${due.id}"
+                                    th:text="${due.documentNumber
+                                        + ' | Residuo: '
+                                        + #numbers.formatDecimal(
+                                            due.openAmount,
+                                            1, 'POINT', 2, 'COMMA'
+                                        )
+                                        + ' '
+                                        + due.currencyCode}">
+                                Fattura cliente - Residuo
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label"
+                               for="customerCompensationAmount">
+                            Importo da compensare
+                        </label>
+
+                        <input type="number"
+                               class="form-control"
+                               id="customerCompensationAmount"
+                               name="amount"
+                               min="0.01"
+                               step="0.01"
+                               th:max="${compensationPosition.availableAmount}"
+                               required/>
+
+                        <div class="text-muted small mt-1">
+                            Non superare il credito disponibile
+                            o il residuo della scadenza.
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label"
+                               for="customerCompensationDate">
+                            Data compensazione
+                        </label>
+
+                        <input type="date"
+                               class="form-control"
+                               id="customerCompensationDate"
+                               name="compensationDate"
+                               th:value="${compensationDate}"
+                               required/>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label"
+                               for="customerCompensationNotes">
+                            Note
+                        </label>
+
+                        <textarea class="form-control"
+                                  id="customerCompensationNotes"
+                                  name="notes"
+                                  maxlength="1000"
+                                  rows="2"></textarea>
+                    </div>
+
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit"
+                            class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Conferma compensazione
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </section>
+
 </main>
 
 <div th:replace="~{fragments/layout :: appFooter}"></div>

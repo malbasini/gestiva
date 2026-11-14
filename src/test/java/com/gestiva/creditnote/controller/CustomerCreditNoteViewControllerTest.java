@@ -5,6 +5,7 @@ import com.gestiva.common.exception.NotFoundException;
 import com.gestiva.creditnote.entity.CreditNote;
 import com.gestiva.creditnote.entity.CreditNoteLine;
 import com.gestiva.creditnote.service.CustomerCreditNoteDetailService;
+import com.gestiva.creditnote.service.CustomerCreditNoteCompensationViewService;
 import com.gestiva.security.usercontext.TenantContext;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -21,16 +22,21 @@ class CustomerCreditNoteViewControllerTest {
 
     private TenantContext tenantContext;
     private CustomerCreditNoteDetailService detailService;
+    private CustomerCreditNoteCompensationViewService compensationViewService;
     private CustomerCreditNoteViewController controller;
 
     @BeforeEach
     void setUp() {
         tenantContext = mock(TenantContext.class);
         detailService = mock(CustomerCreditNoteDetailService.class);
+        compensationViewService = mock(
+                CustomerCreditNoteCompensationViewService.class
+        );
 
         controller = new CustomerCreditNoteViewController(
                 tenantContext,
-                detailService
+                detailService,
+                compensationViewService
         );
 
         when(tenantContext.getCurrentTenantId())
@@ -142,6 +148,16 @@ class CustomerCreditNoteViewControllerTest {
     void registeredNoteCannotBeRegisteredAgain() {
         CreditNote note = note("REGISTERED");
         givenDetail(note);
+
+        when(compensationViewService.getView(2L, 50L))
+                .thenReturn(
+                        new CustomerCreditNoteCompensationViewService
+                                .CompensationView(
+                                        null,
+                                        List.of(),
+                                        false
+                                )
+                );
 
         ExtendedModelMap model = new ExtendedModelMap();
 
