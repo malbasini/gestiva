@@ -101,10 +101,11 @@ public class PaymentRegistrationPageController {
         }
     }
 
-    private void enrichFormModel(Model model, Object due, String grossAmount, String paidAmount, String openAmount, Long tenantId) {
+    private void enrichFormModel(Model model, com.gestiva.accounting.due.entity.PaymentDue due, String grossAmount, String paidAmount, String openAmount, Long tenantId) {
         model.addAttribute("due", due);
         model.addAttribute("grossAmount", grossAmount);
         model.addAttribute("paidAmount", paidAmount);
+        model.addAttribute("compensatedAmount", PdfFormatUtils.formatMoney(due.getCompensatedAmount()));
         model.addAttribute("openAmount", openAmount);
         model.addAttribute("financialAccountOptions", accountWebService.findFinancialAccountOptions(tenantId));
         model.addAttribute("activeMenu", "accounting");

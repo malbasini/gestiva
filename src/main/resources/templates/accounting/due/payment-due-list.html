@@ -5,6 +5,111 @@
   <title>Scadenzario</title>
   <link rel="stylesheet" th:href="@{/css/app.css}"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+  <style>
+    /* Stili locali: solo scadenzario Gestiva V2 */
+    .gestiva-due-table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 22px;
+      border: 1px solid #e5eaf0;
+      border-radius: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .gestiva-due-table {
+      width: 100%;
+      min-width: 1320px;
+      margin: 0;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+    }
+
+    .gestiva-due-table th {
+      padding: 15px 12px;
+      background: #f5f7fa;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+      vertical-align: middle;
+      border-bottom: 1px solid #e5eaf0;
+    }
+
+    .gestiva-due-table td {
+      padding: 16px 12px;
+      vertical-align: middle;
+      border-bottom: 1px solid #edf0f4;
+      line-height: 1.5;
+    }
+
+    .gestiva-due-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .gestiva-due-table tbody tr:hover td {
+      background: #f8fafc;
+    }
+
+    .gestiva-due-table .due-money {
+      text-align: right;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .gestiva-due-table .due-residual strong {
+      color: #143b69;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .gestiva-due-table .due-document {
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .gestiva-due-table .due-date {
+      white-space: nowrap;
+    }
+
+    .gestiva-due-table .due-actions {
+      min-width: 160px;
+      white-space: normal;
+    }
+
+    .gestiva-due-table .due-actions a {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 9px;
+      margin: 2px 3px 2px 0;
+      border: 1px solid #dbe4ef;
+      border-radius: 7px;
+      background: #ffffff;
+      color: #215a9b;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .gestiva-due-table .due-actions a:hover {
+      background: #eef5fc;
+      border-color: #aec8e6;
+      text-decoration: none;
+    }
+
+    .gestiva-due-table .badge {
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 900px) {
+      .gestiva-due-table {
+        min-width: 1250px;
+      }
+    }
+  </style>
 </head>
 <body>
 <div class="app-shell">
@@ -89,7 +194,8 @@
             </a>
           </div>
         </form>
-        <table class="table">
+        <div class="gestiva-due-table-wrap">
+        <table class="table gestiva-due-table">
           <thead>
           <tr>
             <th>Tipo</th>
@@ -97,8 +203,9 @@
             <th>Documento</th>
             <th>Data doc.</th>
             <th>Scadenza</th>
-            <th class="text-right">Importo</th>
-            <th class="text-right">Pagato</th>
+            <th class="text-right">Totale fattura</th>
+            <th class="text-right">Incassato / Pagato</th>
+            <th class="text-right">Compensato</th>
             <th class="text-right">Residuo</th>
             <th>Stato</th>
             <th>Azioni</th>
@@ -106,7 +213,7 @@
           </thead>
           <tbody>
           <tr th:if="${#lists.isEmpty(dues)}">
-            <td colspan="10" class="muted">Nessuna scadenza trovata.</td>
+            <td colspan="11" class="muted">Nessuna scadenza trovata.</td>
           </tr>
 
           <tr th:each="due : ${dues}">
@@ -118,15 +225,16 @@
                             </span>
             </td>
             <td th:text="${due.partyName}">Cliente / Fornitore</td>
-            <td th:text="${due.documentNumber}">INV-001</td>
-            <td th:text="${due.formattedDocumentDate}">08/05/2026</td>
+            <td class="due-document" th:text="${due.documentNumber}">INV-001</td>
+            <td class="due-date" th:text="${due.formattedDocumentDate}">08/05/2026</td>
             <td>
               <span th:text="${due.formattedDueDate}">07/06/2026</span>
               <span class="badge badge-cancelled" th:if="${due.overdue}" style="margin-left:6px;">SCADUTA</span>
             </td>
-            <td class="text-right" th:text="${due.formattedGrossAmount}">100,00 €</td>
-            <td class="text-right" th:text="${due.formattedPaidAmount}">0,00 €</td>
-            <td class="text-right" th:text="${due.formattedOpenAmount}">100,00 €</td>
+            <td class="text-right due-money" th:text="${due.formattedGrossAmount}">100,00 €</td>
+            <td class="text-right due-money" th:text="${due.formattedPaidAmount}">0,00 €</td>
+            <td class="text-right due-money" th:text="${due.formattedCompensatedAmount}">0,00 €</td>
+            <td class="text-right due-money due-residual"><strong th:text="${due.formattedOpenAmount}">100,00 €</strong></td>
             <td>
                             <span class="badge"
                                   th:classappend="${due.status == 'OPEN'} ? ' badge-draft' :
@@ -136,7 +244,7 @@
                                 OPEN
                             </span>
             </td>
-            <td class="link-actions">
+            <td class="link-actions due-actions">
               <a th:if="${due.referenceType == 'CUSTOMER_INVOICE'}"
                  th:href="@{/invoices/{id}(id=${due.referenceId})}">
                 <i class="bi bi-receipt"></i>
@@ -160,6 +268,7 @@
           </tr>
           </tbody>
         </table>
+        </div>
       </div>
       <div class="list-summary">
         <div class="muted">

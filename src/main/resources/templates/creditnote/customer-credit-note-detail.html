@@ -240,9 +240,9 @@
                         </td>
 
                         <td class="text-end"
-                            th:text="${line.lineTotal != null
+                            th:text="${line.lineSubtotal != null
                                 ? #numbers.formatDecimal(
-                                    line.lineTotal,
+                                    line.lineSubtotal,
                                     1, 'POINT', 2, 'COMMA')
                                 : '-'}">
                             0,00

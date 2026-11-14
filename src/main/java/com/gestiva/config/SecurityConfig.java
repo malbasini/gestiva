@@ -133,6 +133,14 @@ public class SecurityConfig {
                                 "/customer-credit-notes/{id}/register"
                         ).hasAnyRole("ADMIN", "ACCOUNTING")
 
+                        // GESTIVA V2 - PASSO 5.13.2395LF
+                        // Compensazioni note di credito clienti V11.
+                        // Operazione riservata ad ADMIN e ACCOUNTING.
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.POST,
+                                "/customer-credit-notes/{id}/compensations"
+                        ).hasAnyRole("ADMIN", "ACCOUNTING")
+
                         // Creazione note clienti DRAFT,
                         // sia complete sia parziali.
                         .requestMatchers(

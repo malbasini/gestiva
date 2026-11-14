@@ -3,6 +3,8 @@ package com.gestiva.creditnote.controller;
 
 import com.gestiva.creditnote.entity.CreditNote;
 import com.gestiva.creditnote.entity.CreditNoteLine;
+import com.gestiva.creditnote.entity.CreditNoteFinancialPosition;
+import com.gestiva.accounting.due.entity.PaymentDue;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.StaticApplicationContext;
@@ -69,8 +71,12 @@ class CustomerCreditNoteDetailTemplateTest {
                 .thenReturn(BigDecimal.ZERO);
         when(line.getTaxPct())
                 .thenReturn(new BigDecimal("22.00"));
-        when(line.getLineTotal())
+        when(line.getLineSubtotal())
                 .thenReturn(new BigDecimal("100.00"));
+        when(line.getTaxAmount())
+                .thenReturn(new BigDecimal("22.00"));
+        when(line.getLineTotal())
+                .thenReturn(new BigDecimal("122.00"));
 
         return line;
     }
@@ -88,6 +94,20 @@ class CustomerCreditNoteDetailTemplateTest {
             List<CreditNoteLine> lines,
             boolean canRegister) {
 
+
+        return render(
+                note, lines, canRegister,
+                false, null, List.of()
+        );
+    }
+
+    private String render(
+            CreditNote note,
+            List<CreditNoteLine> lines,
+            boolean canRegister,
+            boolean canCompensate,
+            CreditNoteFinancialPosition position,
+            List<PaymentDue> eligibleDues) {
 
         StaticApplicationContext applicationContext =
                 new StaticApplicationContext();
@@ -137,6 +157,19 @@ class CustomerCreditNoteDetailTemplateTest {
             context.setVariable(
                     "canRegisterCreditNote", canRegister);
             context.setVariable("activeMenu", "invoices");
+
+            context.setVariable(
+                    "canCompensateCreditNote", canCompensate);
+            context.setVariable(
+                    "compensationPosition", position);
+            context.setVariable(
+                    "compensableDues", eligibleDues);
+            context.setVariable(
+                    "compensationOperationKey",
+                    "v11-template-test-operation");
+            context.setVariable(
+                    "compensationDate",
+                    LocalDate.of(2026, 11, 14));
 
             context.setVariable(
                     "tenantSubscriptionActive", false);
@@ -196,6 +229,76 @@ class CustomerCreditNoteDetailTemplateTest {
 
         System.out.println(
                 "CCN_DETAIL_REGISTERED_RENDERING: OK");
+    }
+
+    // GESTIVA V2 - PASSO 5.13.2395MX
+    // L'imponibile della riga esclude l'IVA.
+
+    @Test
+    void creditNoteLineImponibileExcludesVat() {
+
+        String html = render(
+                note("DRAFT"),
+                List.of(line()));
+
+        int descriptionIndex =
+                html.indexOf("Prodotto test CCN");
+
+        assertTrue(
+                descriptionIndex >= 0,
+                "Riga commerciale non trovata");
+
+        int rowStart =
+                html.lastIndexOf("<tr", descriptionIndex);
+
+        int rowEnd =
+                html.indexOf("</tr>", descriptionIndex);
+
+        assertTrue(
+                rowStart >= 0 && rowEnd > rowStart,
+                "Riga HTML non individuata");
+
+        String row = html.substring(
+                rowStart, rowEnd + "</tr>".length());
+
+        var matcher = java.util.regex.Pattern
+                .compile(
+                        "(?s)<td\\b[^>]*>(.*?)</td>")
+                .matcher(row);
+
+        java.util.List<String> cells =
+                new java.util.ArrayList<>();
+
+        while (matcher.find()) {
+            cells.add(
+                    matcher.group(1)
+                            .replaceAll("(?s)<[^>]+>", "")
+                            .trim()
+            );
+        }
+
+        assertEquals(
+                8, cells.size(),
+                "Numero colonne riga inatteso");
+
+        String imponibile = cells.get(7);
+
+        assertEquals(
+                "100,00",
+                imponibile,
+                "L'imponibile deve escludere l'IVA");
+
+        assertNotEquals(
+                "122,00",
+                imponibile,
+                "Non mostrare il totale IVA inclusa");
+
+        assertTrue(
+                html.contains("122,00"),
+                "Il totale della nota deve rimanere visibile");
+
+        System.out.println(
+                "CCN_LINE_SUBTOTAL_EXCLUDES_VAT: VERIFIED");
     }
 
     @Test
@@ -302,5 +405,88 @@ class CustomerCreditNoteDetailTemplateTest {
         System.out.println(
                 "CCN_REGISTER_ALREADY_REGISTERED_HIDDEN: OK"
         );
+    }
+
+    // GESTIVA V2 - PASSO 5.13.2395LB
+    // Rendering reale del form V11 senza database.
+
+    @Test
+    void registeredCompensableNoteRendersV11Form() {
+        CreditNoteFinancialPosition position =
+                mock(CreditNoteFinancialPosition.class);
+        when(position.getAvailableAmount())
+                .thenReturn(new BigDecimal("93.33"));
+        when(position.getStatus()).thenReturn("OPEN");
+
+        PaymentDue due = mock(PaymentDue.class);
+        when(due.getId()).thenReturn(9L);
+        when(due.getDocumentNumber())
+                .thenReturn("INV-TEST-00001");
+        when(due.getOpenAmount())
+                .thenReturn(new BigDecimal("186.66"));
+        when(due.getCurrencyCode()).thenReturn("EUR");
+
+        String html = render(
+                note("REGISTERED"),
+                List.of(line()),
+                false,
+                true,
+                position,
+                List.of(due)
+        );
+
+        assertTrue(html.contains("Compensazione fattura cliente"));
+        assertTrue(html.contains(
+                "action=\"/customer-credit-notes/50/compensations\""));
+        assertTrue(html.contains("INV-TEST-00001"));
+        assertTrue(html.contains("186,66"));
+        assertTrue(html.contains("93,33"));
+        assertTrue(html.contains("v11-template-test-operation"));
+        assertTrue(html.contains("name=\"paymentDueId\""));
+        assertTrue(html.contains("name=\"amount\""));
+        assertTrue(html.contains("name=\"compensationDate\""));
+        assertTrue(html.contains("name=\"operationKey\""));
+        assertTrue(html.contains("name=\"_csrf\""));
+        assertTrue(html.contains("ccn-detail-test-token"));
+        assertTrue(html.contains("2026-11-14"));
+
+        System.out.println("V11_CUSTOMER_COMPENSABLE_RENDERING: VERIFIED");
+    }
+
+    @Test
+    void draftNoteDoesNotRenderV11CompensationForm() {
+        String html = render(
+                note("DRAFT"),
+                List.of(line()),
+                true,
+                false,
+                null,
+                List.of()
+        );
+
+        assertFalse(html.contains(
+                "action=\"/customer-credit-notes/50/compensations\""));
+        assertTrue(html.contains(
+                "data-confirm-action=\"/customer-credit-notes/50/register\""));
+
+        System.out.println("V11_CUSTOMER_DRAFT_COMPENSATION_HIDDEN: VERIFIED");
+    }
+
+    @Test
+    void registeredNotCompensableNoteHidesV11Form() {
+        String html = render(
+                note("REGISTERED"),
+                List.of(line()),
+                false,
+                false,
+                null,
+                List.of()
+        );
+
+        assertFalse(html.contains(
+                "action=\"/customer-credit-notes/50/compensations\""));
+        assertTrue(html.contains("CCN-TEST-00050"));
+
+        System.out.println("V11_CUSTOMER_UNAVAILABLE_FORM_HIDDEN: VERIFIED");
     }
 }

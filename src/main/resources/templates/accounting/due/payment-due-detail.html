@@ -74,8 +74,14 @@
                         <div class="value" th:text="${due.formattedPaidAmount}">0,00 €</div>
                     </div>
                     <div class="info-box">
-                        <div class="label">Residuo</div>
-                        <div class="value" th:text="${due.formattedOpenAmount}">100,00 €</div>
+                        <div class="label">Compensato</div>
+                        <div class="value" th:text="${due.formattedCompensatedAmount}">0,00 €</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">Residuo da incassare / pagare</div>
+                        <div class="value">
+                            <strong th:text="${due.formattedOpenAmount}">100,00 €</strong>
+                        </div>
                     </div>
                     <div class="info-box">
                         <div class="label">Stato</div>

@@ -42,7 +42,7 @@ public class PaymentDueRegistrationService {
             throw new BusinessException("Nessuna società attiva selezionata.");
         }
         var due = paymentDueRepository
-                .findByTenantIdAndCompanyIdAndId(
+                .findByTenantIdAndCompanyIdAndIdForUpdate(
                         tenantId,
                         companyId,
                         paymentDueId
@@ -61,7 +61,22 @@ public class PaymentDueRegistrationService {
             throw new BusinessException("L'importo deve essere maggiore di zero.");
         }
 
-        if (amount.compareTo(due.getOpenAmount()) > 0) {
+        BigDecimal grossAmount = scale(due.getGrossAmount());
+        BigDecimal paidAmount = scale(due.getPaidAmount());
+        BigDecimal compensatedAmount = scale(due.getCompensatedAmount());
+        BigDecimal openAmount = scale(due.getOpenAmount());
+
+        if (grossAmount.compareTo(
+                paidAmount.add(compensatedAmount).add(openAmount)) != 0) {
+            throw new BusinessException(
+                    "Scadenza non quadrata: importi pagati, compensati e residui incoerenti.");
+        }
+
+        if (openAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("La scadenza non ha importo residuo aperto.");
+        }
+
+        if (amount.compareTo(openAmount) > 0) {
             throw new BusinessException("L'importo non può superare il residuo aperto.");
         }
 
@@ -76,15 +91,16 @@ public class PaymentDueRegistrationService {
 
         paymentDueTransactionRepository.save(tx);
 
-        BigDecimal newPaid = scale(due.getPaidAmount().add(amount));
-        BigDecimal newOpen = scale(due.getGrossAmount().subtract(newPaid));
+        BigDecimal newPaid = scale(paidAmount.add(amount));
+        BigDecimal newOpen = scale(
+                grossAmount.subtract(newPaid).subtract(compensatedAmount));
 
         due.setPaidAmount(newPaid);
         due.setOpenAmount(newOpen);
 
         if (newOpen.compareTo(BigDecimal.ZERO) == 0) {
             due.setStatus("PAID");
-        } else if (newPaid.compareTo(BigDecimal.ZERO) > 0) {
+        } else if (newOpen.compareTo(grossAmount) < 0) {
             due.setStatus("PARTIALLY_PAID");
         } else {
             due.setStatus("OPEN");

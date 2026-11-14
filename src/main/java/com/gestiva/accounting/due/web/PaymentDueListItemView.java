@@ -10,6 +10,7 @@ public class PaymentDueListItemView {
     private String formattedDueDate;
     private String formattedGrossAmount;
     private String formattedPaidAmount;
+    private String formattedCompensatedAmount;
     private String formattedOpenAmount;
     private String status;
     private boolean overdue;
@@ -78,6 +79,15 @@ public class PaymentDueListItemView {
 
     public void setFormattedPaidAmount(String formattedPaidAmount) {
         this.formattedPaidAmount = formattedPaidAmount;
+    }
+
+    public String getFormattedCompensatedAmount() {
+        return formattedCompensatedAmount;
+    }
+
+    public void setFormattedCompensatedAmount(
+            String formattedCompensatedAmount) {
+        this.formattedCompensatedAmount = formattedCompensatedAmount;
     }
 
     public String getFormattedOpenAmount() {

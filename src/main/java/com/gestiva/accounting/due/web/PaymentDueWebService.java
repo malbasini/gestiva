@@ -79,6 +79,7 @@ public class PaymentDueWebService {
             v.setFormattedDueDate(PdfFormatUtils.formatDate(due.getDueDate()));
             v.setFormattedGrossAmount(PdfFormatUtils.formatMoney(due.getGrossAmount()));
             v.setFormattedPaidAmount(PdfFormatUtils.formatMoney(due.getPaidAmount()));
+            v.setFormattedCompensatedAmount(PdfFormatUtils.formatMoney(due.getCompensatedAmount()));
             v.setFormattedOpenAmount(PdfFormatUtils.formatMoney(due.getOpenAmount()));
             v.setStatus(due.getStatus());
             v.setOverdue(
@@ -143,6 +144,7 @@ public class PaymentDueWebService {
         v.setFormattedDueDate(PdfFormatUtils.formatDate(due.getDueDate()));
         v.setFormattedGrossAmount(PdfFormatUtils.formatMoney(due.getGrossAmount()));
         v.setFormattedPaidAmount(PdfFormatUtils.formatMoney(due.getPaidAmount()));
+            v.setFormattedCompensatedAmount(PdfFormatUtils.formatMoney(due.getCompensatedAmount()));
         v.setFormattedOpenAmount(PdfFormatUtils.formatMoney(due.getOpenAmount()));
         v.setStatus(due.getStatus());
         v.setOverdue(
@@ -261,6 +263,7 @@ public class PaymentDueWebService {
         v.setFormattedGrossAmount(PdfFormatUtils.formatMoney(entry.getGrossAmount()));
         v.setFormattedOpenAmount(PdfFormatUtils.formatMoney(entry.getOpenAmount()));
         v.setFormattedPaidAmount(PdfFormatUtils.formatMoney(entry.getPaidAmount()));
+        v.setFormattedCompensatedAmount(PdfFormatUtils.formatMoney(entry.getCompensatedAmount()));
         v.setStatus(entry.getStatus());
         return v;
     }

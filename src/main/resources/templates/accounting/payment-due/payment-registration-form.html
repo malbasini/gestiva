@@ -52,11 +52,15 @@
               <div class="value" th:text="${paidAmount}">0,00</div>
             </div>
             <div class="info-box">
-              <div class="label">Residuo aperto</div>
-              <div class="value" th:text="${openAmount}">100,00</div>
+              <div class="label">Compensato</div>
+              <div class="value" th:text="${compensatedAmount}">0,00</div>
             </div>
         </div>
         <div class="info-grid three-cols">
+            <div class="info-box">
+              <div class="label">Residuo massimo incassabile / pagabile</div>
+              <div class="value"><strong th:text="${openAmount}">100,00</strong></div>
+            </div>
             <div class="info-box">
               <div class="label">Scadenza</div>
               <div class="value" th:text="${#temporals.format(due.dueDate, 'dd/MM/yyyy')}">20/05/2026</div>

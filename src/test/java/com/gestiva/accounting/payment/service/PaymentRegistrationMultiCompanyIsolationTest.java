@@ -102,7 +102,7 @@ class PaymentRegistrationMultiCompanyIsolationTest {
     void dueRegistrationRejectsForeignCompanyDueBeforeAnyWrite() {
         when(companyContext.resolveCurrentCompanyId()).thenReturn(COMPANY_ID);
 
-        when(paymentDueRepository.findByTenantIdAndCompanyIdAndId(
+        when(paymentDueRepository.findByTenantIdAndCompanyIdAndIdForUpdate(
                 TENANT_ID, COMPANY_ID, DUE_ID))
                 .thenReturn(Optional.empty());
 
@@ -112,7 +112,7 @@ class PaymentRegistrationMultiCompanyIsolationTest {
                         mock(PaymentDueRegistrationForm.class)));
 
         verify(paymentDueRepository)
-                .findByTenantIdAndCompanyIdAndId(
+                .findByTenantIdAndCompanyIdAndIdForUpdate(
                         TENANT_ID, COMPANY_ID, DUE_ID);
 
         verify(paymentDueRepository, never()).save(any());
