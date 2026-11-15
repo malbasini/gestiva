@@ -211,6 +211,7 @@ public class SecurityConfig {
                         ).hasAnyRole("ADMIN", "PURCHASING", "ACCOUNTING")
 
                         // magazzino
+                        .requestMatchers("/warehouse/locations", "/warehouse/locations/**").hasAnyRole("ADMIN", "WAREHOUSE")
                         .requestMatchers("/warehouse/uoms/**").hasAnyRole("ADMIN", "WAREHOUSE")
                         .requestMatchers("/items/*/uoms", "/items/*/uoms/**").hasAnyRole("ADMIN", "WAREHOUSE")
                         .requestMatchers("/items/**").hasAnyRole("ADMIN", "SALES", "PURCHASING", "WAREHOUSE", "ACCOUNTING")
