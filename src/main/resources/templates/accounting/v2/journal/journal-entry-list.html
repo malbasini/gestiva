@@ -5,6 +5,136 @@
   <title>Scritture contabili V2</title>
   <link rel="stylesheet" th:href="@{/css/app.css}"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+  <style>
+    /* Gestiva V2 - stili locali elenco scritture contabili */
+    .gestiva-journal-table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 22px;
+      border: 1px solid #e5eaf0;
+      border-radius: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .gestiva-journal-table {
+      width: 100%;
+      min-width: 1190px;
+      margin: 0;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+    }
+
+    .gestiva-journal-table th {
+      padding: 14px 12px;
+      background: #f5f7fa;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      vertical-align: middle;
+      border-bottom: 1px solid #e5eaf0;
+    }
+
+    .gestiva-journal-table td {
+      padding: 14px 12px;
+      vertical-align: middle;
+      line-height: 1.45;
+      border-bottom: 1px solid #edf0f4;
+    }
+
+    .gestiva-journal-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .gestiva-journal-table tbody tr:hover td {
+      background: #f8fafc;
+    }
+
+    .gestiva-journal-table .journal-number {
+      white-space: nowrap;
+      font-weight: 700;
+      color: #223b58;
+      min-width: 95px;
+    }
+
+    .gestiva-journal-table .journal-date {
+      white-space: nowrap;
+      min-width: 98px;
+    }
+
+    .gestiva-journal-table .journal-causal {
+      min-width: 155px;
+      overflow-wrap: anywhere;
+    }
+
+    .gestiva-journal-table .journal-description {
+      min-width: 310px;
+      max-width: 520px;
+      overflow-wrap: anywhere;
+      color: #334155;
+    }
+
+    .gestiva-journal-table th.journal-money,
+    .gestiva-journal-table td.journal-money {
+      text-align: right;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .gestiva-journal-table td.journal-money {
+      font-weight: 650;
+      color: #143b69;
+    }
+
+    .gestiva-journal-table .journal-status {
+      white-space: nowrap;
+    }
+
+    .gestiva-journal-table .journal-status-label {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #e8f7ee;
+      color: #187449;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .gestiva-journal-table .journal-status-label.draft {
+      background: #f1f3f6;
+      color: #596579;
+    }
+
+    .gestiva-journal-table td.journal-actions {
+      display: table-cell;
+      width: 115px;
+      min-width: 115px;
+      white-space: nowrap;
+    }
+
+    .gestiva-journal-table .journal-actions a {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 10px;
+      border: 1px solid #dbe4ef;
+      border-radius: 7px;
+      background: #ffffff;
+      color: #215a9b;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .gestiva-journal-table .journal-actions a:hover {
+      background: #eef5fc;
+      border-color: #aec8e6;
+      text-decoration: none;
+    }
+  </style>
 </head>
 <body>
 <div class="app-shell">
@@ -89,15 +219,16 @@
             </a>
           </div>
         </form>
-        <table class="table">
+        <div class="gestiva-journal-table-wrap">
+        <table class="table gestiva-journal-table">
           <thead>
           <tr>
             <th>Numero</th>
             <th>Data</th>
             <th>Causale</th>
             <th>Descrizione</th>
-            <th class="text-right">Dare</th>
-            <th class="text-right">Avere</th>
+            <th class="text-right journal-money">Dare</th>
+            <th class="text-right journal-money">Avere</th>
             <th>Stato</th>
             <th>Azioni</th>
           </tr>
@@ -107,9 +238,9 @@
             <td colspan="8" class="muted">Nessuna scrittura V2 trovata.</td>
           </tr>
           <tr th:each="entry : ${entries}">
-            <td th:text="${entry.entryNumber}">JE-00001</td>
-            <td th:text="${entry.formattedEntryDate}">10/05/2026</td>
-            <td>
+            <td class="journal-number" th:text="${entry.entryNumber}">JE-00001</td>
+            <td class="journal-date" th:text="${entry.formattedEntryDate}">10/05/2026</td>
+            <td class="journal-causal">
                 <span th:switch="${entry.causalCode}">
                   <span th:case="'MANUAL_JOURNAL'">Scrittura manuale</span>
                   <span th:case="'CUSTOMER_RECEIPT'">Incasso cliente</span>
@@ -119,13 +250,15 @@
                   <span th:case="*" th:text="${entry.causalCode}">-</span>
                 </span>
             </td>
-            <td th:text="${entry.description}">Giroconto iniziale</td>
-            <td class="text-right" th:text="${entry.formattedTotalDebit}">100,00 €</td>
-            <td class="text-right" th:text="${entry.formattedTotalCredit}">100,00 €</td>
-            <td>
-              <span th:text="${entry.posted} ? 'Registrata' : 'Bozza'">Registrata</span>
+            <td class="journal-description" th:text="${entry.description}">Giroconto iniziale</td>
+            <td class="text-right journal-money" th:text="${entry.formattedTotalDebit}">100,00 €</td>
+            <td class="text-right journal-money" th:text="${entry.formattedTotalCredit}">100,00 €</td>
+            <td class="journal-status">
+              <span class="journal-status-label"
+                    th:classappend="${entry.posted} ? '' : ' draft'"
+                    th:text="${entry.posted} ? 'Registrata' : 'Bozza'">Registrata</span>
             </td>
-            <td class="link-actions">
+            <td class="journal-actions">
               <a th:href="@{/v2/journal-entries/{id}(id=${entry.id})}">
                 <i class="bi bi-eye"></i>
                 <span>Dettaglio</span>
@@ -134,6 +267,7 @@
           </tr>
           </tbody>
         </table>
+        </div>
       </div>
       <div class="list-summary">
         <div class="muted">
