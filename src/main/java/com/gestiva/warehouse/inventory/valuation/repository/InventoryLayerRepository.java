@@ -75,4 +75,25 @@ public interface InventoryLayerRepository extends JpaRepository<InventoryLayer, 
             @Param("companyId") Long companyId
     );
 
+
+    /**
+     * Verifica se un'ubicazione contiene ancora quantità FIFO residue.
+     * Non considera i layer completamente consumati.
+     */
+    @Query("""
+            select count(l)
+            from InventoryLayer l
+            where l.tenantId = :tenantId
+              and l.companyId = :companyId
+              and l.warehouseId = :warehouseId
+              and l.locationId = :locationId
+              and l.remainingQty > 0
+            """)
+    long countRemainingLayersByLocation(
+            @Param("tenantId") Long tenantId,
+            @Param("companyId") Long companyId,
+            @Param("warehouseId") Long warehouseId,
+            @Param("locationId") Long locationId
+    );
+
 }

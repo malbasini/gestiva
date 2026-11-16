@@ -2,7 +2,7 @@
 <html lang="it" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
-    <title>Nuova ubicazione - Gestiva V2</title>
+    <title th:text="${editMode == true} ? 'Modifica ubicazione - Gestiva V2' : 'Nuova ubicazione - Gestiva V2'">Nuova ubicazione - Gestiva V2</title>
     <link rel="stylesheet" th:href="@{/css/app.css}"/>
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
@@ -21,7 +21,8 @@
 
                 <div class="page-header">
                     <div class="page-header-left">
-                        <h1 class="page-title">Nuova ubicazione</h1>
+                        <h1 class="page-title"
+                         th:text="${editMode == true} ? 'Modifica ubicazione' : 'Nuova ubicazione'">Nuova ubicazione</h1>
                         <div class="muted">
                             Configura un'area o una posizione fisica
                             all'interno del magazzino selezionato.
@@ -42,7 +43,7 @@
                      th:text="${errorMessage}">
                 </div>
 
-                <form th:action="@{/warehouse/locations}"
+                <form th:action="${editMode == true} ? @{/warehouse/locations/{locationId}/edit(locationId=${editingLocationId})} : @{/warehouse/locations}" 
                       th:object="${locationForm}"
                       method="post">
 
@@ -83,7 +84,7 @@
                         <input type="text"
                                id="code"
                                class="form-control"
-                               th:field="*{code}"
+                               th:field="*{code}" th:readonly="${editMode == true}"
                                maxlength="50"
                                placeholder="Es. A-01"
                                required/>
@@ -151,7 +152,7 @@
 
                         <select id="parentLocationId"
                                 class="form-select"
-                                th:field="*{parentLocationId}">
+                                th:field="*{parentLocationId}" th:disabled="${editMode == true}">
 
                             <option value="">
                                 Nessuna - ubicazione di primo livello
@@ -198,7 +199,7 @@
                         <button type="submit"
                                 class="btn btn-outline-primary">
                             <i class="bi bi-check-circle"></i>
-                            Salva ubicazione
+                            <span th:text="${editMode == true} ? 'Salva modifiche' : 'Salva ubicazione'">Salva ubicazione</span>
                         </button>
 
                     </div>

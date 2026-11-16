@@ -295,4 +295,37 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
             @Param("companyId") Long companyId
     );
 
+
+    /**
+     * Restituisce gli articoli con giacenza diversa da zero
+     * nella specifica ubicazione.
+     *
+     * Usa le medesime causali del calcolo giacenze esistente.
+     * Include saldi positivi e negativi.
+     */
+    @Query("""
+            select m.itemId
+            from InventoryMovement m
+            where m.tenantId = :tenantId
+              and m.companyId = :companyId
+              and m.warehouseId = :warehouseId
+              and m.locationId = :locationId
+            group by m.itemId
+            having coalesce(sum(
+                case
+                    when upper(m.movementType) in ('IN', 'ADJUSTMENT_IN')
+                        then m.quantity
+                    when upper(m.movementType) in ('OUT', 'ADJUSTMENT_OUT')
+                        then -m.quantity
+                    else 0
+                end
+            ), 0) <> 0
+            """)
+    List<Long> findItemIdsWithNonZeroBalanceByLocation(
+            @Param("tenantId") Long tenantId,
+            @Param("companyId") Long companyId,
+            @Param("warehouseId") Long warehouseId,
+            @Param("locationId") Long locationId
+    );
+
 }

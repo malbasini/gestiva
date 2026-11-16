@@ -444,4 +444,168 @@ class WarehouseLocationServiceTest {
         assertEquals(1, result.size());
         assertSame(child, result.get(0));
     }
+
+    // =========================================================
+    // MODIFICA DATI DESCRITTIVI UBICAZIONE
+    // =========================================================
+
+    @Test
+    void updateMetadata_shouldUpdateFieldsAndPreserveIdentity() {
+        configureWarehouse();
+        configureSave();
+
+        WarehouseLocation location = createLocationFixture();
+        location.setParentLocation(parent);
+        location.setBarcode("OLD");
+
+        when(locationRepository.findByTenantIdAndWarehouseIdAndId(
+                TENANT_ID, WAREHOUSE_ID, LOCATION_ID
+        )).thenReturn(Optional.of(location));
+
+        WarehouseLocation result = service.updateMetadata(
+                TENANT_ID, COMPANY_ID, WAREHOUSE_ID, LOCATION_ID,
+                "  Scaffale aggiornato  ",
+                WarehouseLocationType.QUARANTINE,
+                "  NEW-123  "
+        );
+
+        assertSame(location, result);
+        assertEquals("Scaffale aggiornato", result.getName());
+        assertEquals(WarehouseLocationType.QUARANTINE, result.getLocationType());
+        assertEquals("NEW-123", result.getBarcode());
+
+        assertEquals("A1", result.getCode());
+        assertSame(warehouse, result.getWarehouse());
+        assertSame(parent, result.getParentLocation());
+        assertEquals(TENANT_ID, result.getTenantId());
+        assertTrue(result.isActive());
+
+        verify(locationRepository).save(same(location));
+    }
+
+    @Test
+    void updateMetadata_shouldClearBlankBarcode() {
+        configureWarehouse();
+        configureSave();
+
+        WarehouseLocation location = createLocationFixture();
+        location.setBarcode("OLD");
+
+        when(locationRepository.findByTenantIdAndWarehouseIdAndId(
+                TENANT_ID, WAREHOUSE_ID, LOCATION_ID
+        )).thenReturn(Optional.of(location));
+
+        WarehouseLocation result = service.updateMetadata(
+                TENANT_ID, COMPANY_ID, WAREHOUSE_ID, LOCATION_ID,
+                "Scaffale A1",
+                WarehouseLocationType.STORAGE,
+                "   "
+        );
+
+        assertNull(result.getBarcode());
+        verify(locationRepository).save(same(location));
+    }
+
+    @Test
+    void updateMetadata_shouldRejectBlankNameWithoutSaving() {
+        configureWarehouse();
+
+        WarehouseLocation location = createLocationFixture();
+
+        when(locationRepository.findByTenantIdAndWarehouseIdAndId(
+                TENANT_ID, WAREHOUSE_ID, LOCATION_ID
+        )).thenReturn(Optional.of(location));
+
+        assertThrows(BusinessException.class, () ->
+                service.updateMetadata(
+                        TENANT_ID, COMPANY_ID, WAREHOUSE_ID, LOCATION_ID,
+                        "  ", WarehouseLocationType.STORAGE, null
+                )
+        );
+
+        assertEquals("Scaffale A1", location.getName());
+        verify(locationRepository, never()).save(any());
+    }
+
+    @Test
+    void updateMetadata_shouldRejectLongNameWithoutSaving() {
+        configureWarehouse();
+
+        WarehouseLocation location = createLocationFixture();
+
+        when(locationRepository.findByTenantIdAndWarehouseIdAndId(
+                TENANT_ID, WAREHOUSE_ID, LOCATION_ID
+        )).thenReturn(Optional.of(location));
+
+        assertThrows(BusinessException.class, () ->
+                service.updateMetadata(
+                        TENANT_ID, COMPANY_ID, WAREHOUSE_ID, LOCATION_ID,
+                        "X".repeat(181),
+                        WarehouseLocationType.STORAGE, null
+                )
+        );
+
+        verify(locationRepository, never()).save(any());
+    }
+
+    @Test
+    void updateMetadata_shouldRejectLongBarcodeWithoutSaving() {
+        configureWarehouse();
+
+        WarehouseLocation location = createLocationFixture();
+
+        when(locationRepository.findByTenantIdAndWarehouseIdAndId(
+                TENANT_ID, WAREHOUSE_ID, LOCATION_ID
+        )).thenReturn(Optional.of(location));
+
+        assertThrows(BusinessException.class, () ->
+                service.updateMetadata(
+                        TENANT_ID, COMPANY_ID, WAREHOUSE_ID, LOCATION_ID,
+                        "Scaffale A1",
+                        WarehouseLocationType.STORAGE,
+                        "B".repeat(101)
+                )
+        );
+
+        verify(locationRepository, never()).save(any());
+    }
+
+    @Test
+    void updateMetadata_shouldRejectNullTypeWithoutSaving() {
+        configureWarehouse();
+
+        WarehouseLocation location = createLocationFixture();
+
+        when(locationRepository.findByTenantIdAndWarehouseIdAndId(
+                TENANT_ID, WAREHOUSE_ID, LOCATION_ID
+        )).thenReturn(Optional.of(location));
+
+        assertThrows(BusinessException.class, () ->
+                service.updateMetadata(
+                        TENANT_ID, COMPANY_ID, WAREHOUSE_ID, LOCATION_ID,
+                        "Scaffale A1", null, null
+                )
+        );
+
+        verify(locationRepository, never()).save(any());
+    }
+
+    @Test
+    void updateMetadata_shouldRejectForeignCompanyWithoutSaving() {
+        assertThrows(BusinessException.class, () ->
+                service.updateMetadata(
+                        TENANT_ID, 999L, WAREHOUSE_ID, LOCATION_ID,
+                        "Modifica vietata",
+                        WarehouseLocationType.STORAGE,
+                        null
+                )
+        );
+
+        verify(warehouseRepository).findByTenantIdAndCompanyIdAndId(
+                TENANT_ID, 999L, WAREHOUSE_ID
+        );
+
+        verifyNoInteractions(locationRepository);
+    }
+
 }

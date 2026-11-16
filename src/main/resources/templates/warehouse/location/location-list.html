@@ -91,20 +91,21 @@
                             <th>Ubicazione padre</th>
                             <th>Barcode</th>
                             <th>Stato</th>
+                            <th>Azioni</th>
                         </tr>
                         </thead>
 
                         <tbody>
 
                         <tr th:if="${selectedWarehouseId == null}">
-                            <td colspan="6" class="muted">
+                            <td colspan="7" class="muted">
                                 Seleziona un magazzino per visualizzare
                                 le relative ubicazioni.
                             </td>
                         </tr>
 
                         <tr th:if="${selectedWarehouseId != null and #lists.isEmpty(locations)}">
-                            <td colspan="6" class="muted">
+                            <td colspan="7" class="muted">
                                 Nessuna ubicazione configurata
                                 per il magazzino selezionato.
                             </td>
@@ -142,6 +143,14 @@
                                 </span>
                             </td>
 
+                            <td>
+                                <a class="btn btn-outline-primary btn-sm"
+                                   th:href="@{/warehouse/locations/{locationId}/edit(locationId=${location.id},warehouseId=${selectedWarehouseId})}">
+                                    <i class="bi bi-pencil-square"></i>
+                                    Modifica
+                                </a>
+                            </td>
+
                         </tr>
 
                         </tbody>
@@ -149,8 +158,8 @@
                 </div>
 
                 <div class="muted" style="margin-top: 16px;">
-                    La modifica delle ubicazioni sarà disponibile
-                    in una fase successiva.
+                    Seleziona Modifica per aggiornare descrizione,
+                    tipo e barcode di un'ubicazione.
                 </div>
 
             </div>

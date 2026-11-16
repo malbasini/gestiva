@@ -167,6 +167,221 @@ public class WarehouseLocationPageController {
     }
 
 
+
+    @GetMapping("/{locationId}/edit")
+    public String editForm(
+            @org.springframework.web.bind.annotation.PathVariable Long locationId,
+            @RequestParam Long warehouseId,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+
+        Long tenantId = tenantContext.getCurrentTenantId();
+        Long companyId;
+
+        try {
+            companyId = companyContext.requireCurrentCompanyId();
+        } catch (IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    "Seleziona una società prima di modificare ubicazioni."
+            );
+            return "redirect:/company/select";
+        }
+
+        var warehouses = warehouseService.findActive(
+                tenantId,
+                companyId
+        );
+
+        boolean allowedWarehouse = warehouses.stream()
+                .anyMatch(w -> warehouseId.equals(w.getId()));
+
+        if (!allowedWarehouse) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    "Magazzino non disponibile per la società corrente."
+            );
+            return "redirect:/warehouse/locations";
+        }
+
+        try {
+            var location = locationService.getById(
+                    tenantId,
+                    companyId,
+                    warehouseId,
+                    locationId
+            );
+
+            var form = new WarehouseLocationForm();
+            form.setWarehouseId(warehouseId);
+            form.setCode(location.getCode());
+            form.setName(location.getName());
+            form.setLocationType(location.getLocationType());
+            form.setBarcode(location.getBarcode());
+
+            if (location.getParentLocation() != null) {
+                form.setParentLocationId(
+                        location.getParentLocation().getId()
+                );
+            }
+
+            model.addAttribute("locationForm", form);
+            model.addAttribute("editMode", true);
+            model.addAttribute("editingLocationId", locationId);
+            model.addAttribute("warehouses", warehouses);
+            model.addAttribute(
+                    "locationTypes",
+                    WarehouseLocationType.values()
+            );
+            model.addAttribute("activeMenu", "locations");
+
+            model.addAttribute(
+                    "parentLocations",
+                    locationService.findAll(
+                            tenantId,
+                            companyId,
+                            warehouseId
+                    ).stream()
+                     .filter(item -> item.isActive())
+                     .filter(item -> !locationId.equals(item.getId()))
+                     .toList()
+            );
+
+            return "warehouse/location/location-form";
+
+        } catch (BusinessException ex) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    ex.getMessage()
+            );
+            redirectAttributes.addAttribute(
+                    "warehouseId",
+                    warehouseId
+            );
+            return "redirect:/warehouse/locations";
+        }
+    }
+
+
+    @PostMapping("/{locationId}/edit")
+    public String update(
+            @org.springframework.web.bind.annotation.PathVariable Long locationId,
+            @Valid @ModelAttribute("locationForm") WarehouseLocationForm form,
+            BindingResult bindingResult,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+
+        Long tenantId = tenantContext.getCurrentTenantId();
+        Long companyId;
+
+        try {
+            companyId = companyContext.requireCurrentCompanyId();
+        } catch (IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    "Seleziona una società prima di modificare ubicazioni."
+            );
+            return "redirect:/company/select";
+        }
+
+        var warehouses = warehouseService.findActive(
+                tenantId,
+                companyId
+        );
+
+        Long warehouseId = form.getWarehouseId();
+
+        boolean allowedWarehouse =
+                warehouseId != null &&
+                warehouses.stream()
+                        .anyMatch(w -> warehouseId.equals(w.getId()));
+
+        if (!allowedWarehouse) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    "Magazzino non disponibile per la società corrente."
+            );
+            return "redirect:/warehouse/locations";
+        }
+
+        model.addAttribute("editMode", true);
+        model.addAttribute("editingLocationId", locationId);
+        model.addAttribute("warehouses", warehouses);
+        model.addAttribute(
+                "locationTypes",
+                WarehouseLocationType.values()
+        );
+        model.addAttribute("activeMenu", "locations");
+
+        try {
+            var existingLocation = locationService.getById(
+                    tenantId,
+                    companyId,
+                    warehouseId,
+                    locationId
+            );
+
+            // Codice e padre provengono sempre dal record esistente,
+            // mai dai valori modificabili della richiesta HTTP.
+            form.setCode(existingLocation.getCode());
+            form.setParentLocationId(
+                    existingLocation.getParentLocation() == null
+                            ? null
+                            : existingLocation.getParentLocation().getId()
+            );
+
+            model.addAttribute(
+                    "parentLocations",
+                    locationService.findAll(
+                            tenantId,
+                            companyId,
+                            warehouseId
+                    ).stream()
+                     .filter(item -> item.isActive())
+                     .filter(item -> !locationId.equals(item.getId()))
+                     .toList()
+            );
+
+            if (bindingResult.hasErrors()) {
+                return "warehouse/location/location-form";
+            }
+
+            locationService.updateMetadata(
+                    tenantId,
+                    companyId,
+                    warehouseId,
+                    locationId,
+                    form.getName(),
+                    form.getLocationType(),
+                    form.getBarcode()
+            );
+
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "Ubicazione modificata correttamente."
+            );
+
+            redirectAttributes.addAttribute(
+                    "warehouseId",
+                    warehouseId
+            );
+
+            return "redirect:/warehouse/locations";
+
+        } catch (BusinessException ex) {
+            model.addAttribute(
+                    "errorMessage",
+                    ex.getMessage()
+            );
+
+            if (!model.containsAttribute("parentLocations")) {
+                model.addAttribute("parentLocations", List.of());
+            }
+
+            return "warehouse/location/location-form";
+        }
+    }
+
     @PostMapping
     public String create(
             @Valid @ModelAttribute("locationForm") WarehouseLocationForm form,

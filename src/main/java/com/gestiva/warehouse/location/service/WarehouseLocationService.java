@@ -153,6 +153,62 @@ public class WarehouseLocationService {
      * Recupera un'ubicazione verificando tenant,
      * azienda e magazzino.
      */
+    /**
+     * Aggiorna i dati descrittivi di un'ubicazione esistente.
+     * Non modifica codice, magazzino o gerarchia.
+     */
+    @Transactional
+    public WarehouseLocation updateMetadata(
+            Long tenantId,
+            Long companyId,
+            Long warehouseId,
+            Long locationId,
+            String name,
+            WarehouseLocationType locationType,
+            String barcode) {
+
+        if (locationId == null) {
+            throw new BusinessException(
+                    "L'ubicazione da modificare è obbligatoria."
+            );
+        }
+
+        WarehouseLocation location = getById(
+                tenantId,
+                companyId,
+                warehouseId,
+                locationId
+        );
+
+        String normalizedName = normalizeName(name);
+        String normalizedBarcode = normalizeBarcode(barcode);
+
+        if (normalizedName.length() > 180) {
+            throw new BusinessException(
+                    "Il nome dell'ubicazione non può superare 180 caratteri."
+            );
+        }
+
+        if (normalizedBarcode != null &&
+                normalizedBarcode.length() > 100) {
+            throw new BusinessException(
+                    "Il barcode non può superare 100 caratteri."
+            );
+        }
+
+        if (locationType == null) {
+            throw new BusinessException(
+                    "Il tipo di ubicazione è obbligatorio."
+            );
+        }
+
+        location.setName(normalizedName);
+        location.setLocationType(locationType);
+        location.setBarcode(normalizedBarcode);
+
+        return locationRepository.save(location);
+    }
+
     public WarehouseLocation getById(
             Long tenantId,
             Long companyId,
