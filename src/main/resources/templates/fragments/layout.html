@@ -130,6 +130,12 @@
 
                             <li th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL' || tenantSubscriptionPlan == 'STARTER')}"
                                 sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
+                                <a class="dropdown-item" th:href="@{/warehouse/locations}">Ubicazioni</a>
+                            </li>
+
+
+                            <li th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL' || tenantSubscriptionPlan == 'STARTER')}"
+                                sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
                                 <a class="dropdown-item"
                                    th:href="@{/warehouse/uoms}">
                                     Unità di misura
