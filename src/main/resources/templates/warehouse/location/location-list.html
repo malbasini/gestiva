@@ -149,6 +149,21 @@
                                     <i class="bi bi-pencil-square"></i>
                                     Modifica
                                 </a>
+
+                                <button th:if="${location.active}"
+                                        type="button"
+                                        class="btn btn-outline-danger btn-sm"
+                                        style="margin-left:6px;"
+                                        data-confirm-title="Disattiva ubicazione"
+                                        th:data-confirm-message="${'Confermi la disattivazione di ' + location.code + '? La ubicazione resterà nello storico. La disattivazione è consentita soltanto in assenza di ubicazioni figlie attive, giacenze e layer FIFO residui.'}"
+                                        th:data-confirm-action="@{/warehouse/locations/{locationId}/deactivate(locationId=${location.id},warehouseId=${selectedWarehouseId})}"
+                                        data-confirm-method="post"
+                                        data-confirm-submit="Conferma disattivazione"
+                                        data-confirm-submit-class="btn-danger"
+                                        onclick="openConfirmModal(this)">
+                                    <i class="bi bi-slash-circle"></i>
+                                    Disattiva
+                                </button>
                             </td>
 
                         </tr>
@@ -169,5 +184,6 @@
     <div th:replace="~{fragments/layout :: appFooter}"></div>
 
 </div>
+<div th:replace="~{fragments/layout :: modalFragment}"></div>
 </body>
 </html>

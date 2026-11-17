@@ -58,6 +58,17 @@ public class InventoryMovementService {
             );
         }
 
+        // Gestiva V2 - Coordinamento con disattivazione ubicazioni.
+        // Il lock del magazzino precede la validazione
+        // e rimane attivo fino alla fine della transazione.
+        warehouseRepository.findByTenantAndCompanyAndIdForUpdate(
+                tenantId,
+                companyId,
+                warehouseId
+        ).orElseThrow(() -> new BusinessException(
+                "Magazzino non trovato nella società attiva."
+        ));
+
         inventoryLocationValidationService.validate(
                 tenantId,
                 companyId,

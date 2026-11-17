@@ -5,6 +5,7 @@ import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.security.usercontext.TenantContext;
 import com.gestiva.warehouse.location.entity.WarehouseLocationType;
 import com.gestiva.warehouse.location.service.WarehouseLocationService;
+import com.gestiva.warehouse.location.service.WarehouseLocationDeactivationService;
 import com.gestiva.warehouse.location.service.WarehouseService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import jakarta.validation.Valid;
@@ -26,17 +27,20 @@ import java.util.List;
 public class WarehouseLocationPageController {
 
     private final WarehouseLocationService locationService;
+    private final WarehouseLocationDeactivationService deactivationService;
     private final WarehouseService warehouseService;
     private final TenantContext tenantContext;
     private final CompanyContext companyContext;
 
     public WarehouseLocationPageController(
             WarehouseLocationService locationService,
+            WarehouseLocationDeactivationService deactivationService,
             WarehouseService warehouseService,
             TenantContext tenantContext,
             CompanyContext companyContext) {
 
         this.locationService = locationService;
+        this.deactivationService = deactivationService;
         this.warehouseService = warehouseService;
         this.tenantContext = tenantContext;
         this.companyContext = companyContext;
@@ -380,6 +384,62 @@ public class WarehouseLocationPageController {
 
             return "warehouse/location/location-form";
         }
+    }
+
+
+    // Gestiva V2 - Disattivazione logica protetta di un'ubicazione.
+    @PostMapping("/{locationId}/deactivate")
+    public String deactivate(
+            @org.springframework.web.bind.annotation.PathVariable Long locationId,
+            @RequestParam Long warehouseId,
+            RedirectAttributes redirectAttributes) {
+
+        Long tenantId = tenantContext.getCurrentTenantId();
+        Long companyId;
+
+        try {
+            companyId = companyContext.requireCurrentCompanyId();
+        } catch (IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    "Seleziona una società prima di disattivare ubicazioni."
+            );
+            return "redirect:/company/select";
+        }
+
+        try {
+            boolean allowedWarehouse = warehouseService.findActive(
+                    tenantId,
+                    companyId
+            ).stream().anyMatch(w -> warehouseId.equals(w.getId()));
+
+            if (!allowedWarehouse) {
+                throw new BusinessException(
+                        "Magazzino non disponibile per la società corrente."
+                );
+            }
+
+            deactivationService.deactivate(
+                    tenantId,
+                    companyId,
+                    warehouseId,
+                    locationId
+            );
+
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "Ubicazione disattivata correttamente."
+            );
+
+        } catch (BusinessException ex) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    ex.getMessage()
+            );
+        }
+
+        redirectAttributes.addAttribute("warehouseId", warehouseId);
+        return "redirect:/warehouse/locations";
     }
 
     @PostMapping

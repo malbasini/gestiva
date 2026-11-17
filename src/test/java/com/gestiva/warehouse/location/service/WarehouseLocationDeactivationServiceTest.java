@@ -5,6 +5,7 @@ import com.gestiva.platform.company.entity.Company;
 import com.gestiva.warehouse.location.entity.Warehouse;
 import com.gestiva.warehouse.location.entity.WarehouseLocation;
 import com.gestiva.warehouse.location.repository.WarehouseLocationRepository;
+import com.gestiva.warehouse.location.repository.WarehouseRepository;
 import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
 import com.gestiva.warehouse.inventory.valuation.repository.InventoryLayerRepository;
 
@@ -15,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -32,6 +34,9 @@ class WarehouseLocationDeactivationServiceTest {
 
     @Mock
     private WarehouseLocationRepository locationRepository;
+
+    @Mock
+    private WarehouseRepository warehouseRepository;
 
     @Mock
     private InventoryMovementRepository movementRepository;
@@ -59,6 +64,10 @@ class WarehouseLocationDeactivationServiceTest {
     }
 
     private void configureLocation(WarehouseLocation location) {
+        when(warehouseRepository.findByTenantAndCompanyAndIdForUpdate(
+                TENANT_ID, COMPANY_ID, WAREHOUSE_ID
+        )).thenReturn(Optional.of(location.getWarehouse()));
+
         when(locationService.getById(
                 TENANT_ID, COMPANY_ID, WAREHOUSE_ID, LOCATION_ID
         )).thenReturn(location);
@@ -182,6 +191,12 @@ class WarehouseLocationDeactivationServiceTest {
 
     @Test
     void foreignLocationIsRejectedWithoutSaving() {
+        Warehouse warehouse = mock(Warehouse.class);
+
+        when(warehouseRepository.findByTenantAndCompanyAndIdForUpdate(
+                TENANT_ID, COMPANY_ID, WAREHOUSE_ID
+        )).thenReturn(Optional.of(warehouse));
+
         when(locationService.getById(
                 TENANT_ID, COMPANY_ID, WAREHOUSE_ID, LOCATION_ID
         )).thenThrow(new BusinessException(

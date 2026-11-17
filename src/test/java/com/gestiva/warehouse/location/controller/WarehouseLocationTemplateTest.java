@@ -157,4 +157,53 @@ class WarehouseLocationTemplateTest {
         assertTrue(html.contains("Attiva"));
     }
 
+
+    @Test
+    void activeLocationShowsDeactivatePostFormWithCsrf() {
+        var location = org.mockito.Mockito.mock(
+                com.gestiva.warehouse.location.entity.WarehouseLocation.class
+        );
+
+        org.mockito.Mockito.when(location.getId()).thenReturn(30L);
+        org.mockito.Mockito.when(location.getCode()).thenReturn("U1-WY-A");
+        org.mockito.Mockito.when(location.getName()).thenReturn("Test attiva");
+        org.mockito.Mockito.when(location.isActive()).thenReturn(true);
+
+        String html = render(10L, List.of(location));
+
+        assertTrue(html.contains("Disattiva"));
+        assertTrue(html.contains("openConfirmModal(this)"));
+        assertTrue(html.contains("data-confirm-title=\"Disattiva ubicazione\""));
+        assertTrue(html.contains("/warehouse/locations/30/deactivate"));
+        assertTrue(html.contains("warehouseId=10"));
+        assertTrue(html.contains("Conferma disattivazione"));
+        assertTrue(html.contains("U1-WY-A"));
+        assertTrue(html.contains("id=\"confirmActionModal\""));
+        assertTrue(html.contains("id=\"confirmActionModalForm\""));
+        assertTrue(html.contains("method=\"post\""));
+        assertTrue(html.contains("name=\"_csrf\""));
+        assertTrue(html.contains("test-rendering-token"));
+        assertTrue(html.contains("Modifica"));
+    }
+
+    @Test
+    void inactiveLocationDoesNotShowDeactivateForm() {
+        var location = org.mockito.Mockito.mock(
+                com.gestiva.warehouse.location.entity.WarehouseLocation.class
+        );
+
+        org.mockito.Mockito.when(location.getId()).thenReturn(31L);
+        org.mockito.Mockito.when(location.getCode()).thenReturn("U1-WY-I");
+        org.mockito.Mockito.when(location.getName()).thenReturn("Test inattiva");
+        org.mockito.Mockito.when(location.isActive()).thenReturn(false);
+
+        String html = render(10L, List.of(location));
+
+        assertTrue(html.contains("Inattiva"));
+        assertTrue(html.contains("Modifica"));
+        assertFalse(html.contains("/warehouse/locations/31/deactivate"));
+        assertFalse(html.contains("data-confirm-title=\"Disattiva ubicazione\""));
+        assertTrue(html.contains("id=\"confirmActionModal\""));
+    }
+
 }

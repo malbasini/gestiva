@@ -3,6 +3,7 @@ package com.gestiva.warehouse.location.service;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.warehouse.location.entity.WarehouseLocation;
 import com.gestiva.warehouse.location.repository.WarehouseLocationRepository;
+import com.gestiva.warehouse.location.repository.WarehouseRepository;
 import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
 import com.gestiva.warehouse.inventory.valuation.repository.InventoryLayerRepository;
 
@@ -14,17 +15,20 @@ public class WarehouseLocationDeactivationService {
 
     private final WarehouseLocationService locationService;
     private final WarehouseLocationRepository locationRepository;
+    private final WarehouseRepository warehouseRepository;
     private final InventoryMovementRepository movementRepository;
     private final InventoryLayerRepository layerRepository;
 
     public WarehouseLocationDeactivationService(
             WarehouseLocationService locationService,
             WarehouseLocationRepository locationRepository,
+            WarehouseRepository warehouseRepository,
             InventoryMovementRepository movementRepository,
             InventoryLayerRepository layerRepository) {
 
         this.locationService = locationService;
         this.locationRepository = locationRepository;
+        this.warehouseRepository = warehouseRepository;
         this.movementRepository = movementRepository;
         this.layerRepository = layerRepository;
     }
@@ -42,6 +46,16 @@ public class WarehouseLocationDeactivationService {
                     "Tenant, società, magazzino e ubicazione sono obbligatori."
             );
         }
+
+        // Il lock del magazzino viene acquisito prima
+        // dei controlli e mantenuto fino al commit.
+        warehouseRepository.findByTenantAndCompanyAndIdForUpdate(
+                tenantId,
+                companyId,
+                warehouseId
+        ).orElseThrow(() -> new BusinessException(
+                "Magazzino non trovato nella società attiva."
+        ));
 
         WarehouseLocation location = locationService.getById(
                 tenantId,

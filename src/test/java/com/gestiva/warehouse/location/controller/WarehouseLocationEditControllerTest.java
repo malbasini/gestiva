@@ -34,6 +34,9 @@ class WarehouseLocationEditControllerTest {
     private WarehouseLocationService locationService;
 
     @Mock
+    private com.gestiva.warehouse.location.service.WarehouseLocationDeactivationService deactivationService;
+
+    @Mock
     private WarehouseService warehouseService;
 
     @Mock
@@ -45,6 +48,7 @@ class WarehouseLocationEditControllerTest {
     private WarehouseLocationPageController controller() {
         return new WarehouseLocationPageController(
                 locationService,
+                deactivationService,
                 warehouseService,
                 tenantContext,
                 companyContext
