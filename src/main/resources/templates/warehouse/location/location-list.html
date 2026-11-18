@@ -80,9 +80,9 @@
                     </div>
                 </form>
 
-                <div class="table-wrap" style="margin-top: 20px;">
+                <div class="table-wrap" style="margin-top: 20px; max-width:100%; overflow-x:auto;">
 
-                    <table class="table">
+                    <table class="table" style="min-width:1160px; width:100%;">
                         <thead>
                         <tr>
                             <th>Codice</th>
@@ -113,7 +113,7 @@
 
                         <tr th:each="location : ${locations}">
 
-                            <td>
+                            <td style="white-space:nowrap;">
                                 <strong th:text="${location.code}">
                                     A-01
                                 </strong>
@@ -127,11 +127,13 @@
                                 STORAGE
                             </td>
 
-                            <td th:text="${location.parentLocation != null ? location.parentLocation.code : '-'}">
+                            <td style="white-space:nowrap;"
+                                th:text="${location.parentLocation != null ? location.parentLocation.code : '-'}">
                                 -
                             </td>
 
-                            <td th:text="${location.barcode != null ? location.barcode : '-'}">
+                            <td style="white-space:nowrap;"
+                                th:text="${location.barcode != null ? location.barcode : '-'}">
                                 -
                             </td>
 
@@ -143,7 +145,7 @@
                                 </span>
                             </td>
 
-                            <td>
+                            <td style="white-space:nowrap;">
                                 <a class="btn btn-outline-primary btn-sm"
                                    th:href="@{/warehouse/locations/{locationId}/edit(locationId=${location.id},warehouseId=${selectedWarehouseId})}">
                                     <i class="bi bi-pencil-square"></i>
