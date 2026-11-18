@@ -245,6 +245,15 @@ public class InventoryValuationService {
                 break;
             }
 
+            // Gestiva V2 - Isolamento FIFO per ubicazione.
+            // Anche locationId null consuma esclusivamente layer null.
+            // I consumi storici già registrati non vengono modificati.
+            Long movementLocationId = movement.getLocationId();
+            if (!java.util.Objects.equals(
+                    movementLocationId, layer.getLocationId())) {
+                continue;
+            }
+
             BigDecimal available = scaleQty(layer.getRemainingQty());
 
             if (available.compareTo(BigDecimal.ZERO) <= 0) {

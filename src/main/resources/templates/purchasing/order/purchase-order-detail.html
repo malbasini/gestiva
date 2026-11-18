@@ -395,5 +395,66 @@
   </div>
 </div>
 
+
+<script>
+(function () {
+    "use strict";
+
+    function connectLocationSelector(warehouseId, locationId) {
+        const warehouse = document.getElementById(warehouseId);
+        const location = document.getElementById(locationId);
+
+        if (!warehouse || !location) {
+            return;
+        }
+
+        function refreshLocations() {
+            const selectedWarehouse = warehouse.value;
+
+            // Il cambio di magazzino azzera l'ubicazione.
+            location.value = "";
+
+            location.querySelectorAll(
+                "option[data-warehouse-id]"
+            ).forEach(function (option) {
+                const available =
+                    selectedWarehouse !== "" &&
+                    option.dataset.warehouseId === selectedWarehouse;
+
+                option.hidden = !available;
+                option.disabled = !available;
+            });
+
+            location.disabled = selectedWarehouse === "";
+        }
+
+        warehouse.addEventListener("change", refreshLocations);
+        refreshLocations();
+    }
+
+    function initializeReceiptLocations() {
+        connectLocationSelector(
+            "receiveWarehouseId",
+            "receiveLocationId"
+        );
+
+        connectLocationSelector(
+            "partialWarehouseId",
+            "partialLocationId"
+        );
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializeReceiptLocations,
+            { once: true }
+        );
+    } else {
+        initializeReceiptLocations();
+    }
+})();
+</script>
+
 </body>
 </html>
