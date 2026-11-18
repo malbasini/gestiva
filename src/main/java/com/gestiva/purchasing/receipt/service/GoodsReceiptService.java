@@ -69,6 +69,20 @@ public class GoodsReceiptService {
             Long purchaseOrderId,
             Long warehouseId) {
 
+        return createFromPurchaseOrder(
+                tenantId,
+                purchaseOrderId,
+                warehouseId,
+                null
+        );
+    }
+
+    public Long createFromPurchaseOrder(
+            Long tenantId,
+            Long purchaseOrderId,
+            Long warehouseId,
+            Long locationId) {
+
         // Ricezione merci abilitabile esclusivamente nei collaudi.
         // In tutti gli altri ambienti resta disabilitata.
         boolean testProfileActive = java.util.Arrays.asList(
@@ -141,7 +155,7 @@ public class GoodsReceiptService {
         receipt.setTenantId(tenantId);
         receipt.setCompanyId(companyId);
         receipt.setWarehouseId(warehouseId);
-        receipt.setLocationId(null);
+        receipt.setLocationId(locationId);
         receipt.setReceiptNumber(nextReceiptNumber(tenantId, companyId));
         receipt.setReceiptDate(LocalDate.now());
         receipt.setPurchaseOrderId(po.getId());

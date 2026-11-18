@@ -54,12 +54,34 @@ public class GoodsReceiptPartialApplicationService {
             Long warehouseId,
             Map<Long, BigDecimal> requestedQuantities) {
 
+        return create(
+                tenantId,
+                purchaseOrderId,
+                warehouseId,
+                null,
+                requestedQuantities
+        );
+    }
+
+    @Transactional(
+            isolation = Isolation.READ_COMMITTED,
+            propagation = Propagation.REQUIRED,
+            rollbackFor = Exception.class
+    )
+    public Long create(
+            Long tenantId,
+            Long purchaseOrderId,
+            Long warehouseId,
+            Long locationId,
+            Map<Long, BigDecimal> requestedQuantities) {
+
         // Nessuna lettura documentale prima del gate.
         gate.requireEnabled();
 
         if (tenantId == null || tenantId <= 0
                 || purchaseOrderId == null || purchaseOrderId <= 0
                 || warehouseId == null || warehouseId <= 0
+                || (locationId != null && locationId <= 0)
                 || requestedQuantities == null
                 || requestedQuantities.isEmpty()) {
 
@@ -86,7 +108,7 @@ public class GoodsReceiptPartialApplicationService {
         header.setPurchaseOrderId(purchaseOrderId);
         header.setSupplierId(order.getSupplierId());
         header.setWarehouseId(warehouseId);
-        header.setLocationId(null);
+        header.setLocationId(locationId);
         header.setReceiptDate(LocalDate.now());
 
         // Planning e scrittura restano nella stessa transazione.

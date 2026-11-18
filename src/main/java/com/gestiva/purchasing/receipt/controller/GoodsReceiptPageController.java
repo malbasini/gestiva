@@ -30,6 +30,7 @@ public class GoodsReceiptPageController {
     public String receive(
             @PathVariable Long id,
             @RequestParam(value = "warehouseId", required = false) Long warehouseId,
+            @RequestParam(value = "locationId", required = false) Long locationId,
             RedirectAttributes redirectAttributes,
             Model model) {
 
@@ -40,13 +41,20 @@ public class GoodsReceiptPageController {
                 );
             }
 
+            if (locationId != null && locationId <= 0) {
+                throw new IllegalArgumentException(
+                        "Ubicazione non valida."
+                );
+            }
+
             Long tenantId = tenantContext.getCurrentTenantId();
 
             // Gestiva V2 - Ricevimento con magazzino di destinazione.
             Long goodsReceiptId = goodsReceiptService.createFromPurchaseOrder(
                     tenantId,
                     id,
-                    warehouseId
+                    warehouseId,
+                    locationId
             );
             redirectAttributes.addFlashAttribute("successMessage", "Ricezione merce creata con successo.");
             model.addAttribute("activeMenu", "goodsReceipts");

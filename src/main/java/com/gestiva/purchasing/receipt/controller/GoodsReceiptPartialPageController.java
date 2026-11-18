@@ -44,6 +44,12 @@ public class GoodsReceiptPartialPageController {
                     "Magazzino non valido."
             );
 
+            Long locationId = optionalPositiveId(
+                    parameters,
+                    "locationId",
+                    "Ubicazione non valida."
+            );
+
             Map<Long, BigDecimal> quantities =
                     parseQuantities(parameters);
 
@@ -59,6 +65,7 @@ public class GoodsReceiptPartialPageController {
                     tenantId,
                     id,
                     warehouseId,
+                    locationId,
                     quantities
             );
 
@@ -147,6 +154,30 @@ public class GoodsReceiptPartialPageController {
         }
 
         return values.getFirst();
+    }
+
+    private static Long optionalPositiveId(
+            MultiValueMap<String, String> parameters,
+            String name,
+            String message) {
+
+        var values = parameters.get(name);
+
+        if (values == null) {
+            return null;
+        }
+
+        if (values.size() != 1) {
+            throw new IllegalArgumentException(message);
+        }
+
+        String raw = values.getFirst();
+
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+
+        return parsePositiveId(raw.trim(), message);
     }
 
     private static Long parsePositiveId(

@@ -43,6 +43,7 @@ class InventoryDocumentPostingCompanyIsolationTest {
     @Mock InventoryAvailabilityService inventoryAvailabilityService;
     @Mock WarehouseRepository warehouseRepository;
     @Mock DeliveryNoteRepository deliveryNoteRepository;
+    @Mock InventoryLocationValidationService inventoryLocationValidationService;
 
     @InjectMocks
     InventoryDocumentPostingService service;

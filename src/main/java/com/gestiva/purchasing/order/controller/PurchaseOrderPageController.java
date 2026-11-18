@@ -6,6 +6,9 @@ import com.gestiva.purchasing.supplier.web.SupplierWebService;
 import com.gestiva.security.usercontext.TenantContext;
 import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.warehouse.location.service.WarehouseService;
+import com.gestiva.warehouse.location.service.WarehouseLocationService;
+import java.util.ArrayList;
+import java.util.List;
 import com.gestiva.warehouse.item.web.ItemWebService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
@@ -23,6 +26,7 @@ public class PurchaseOrderPageController {
     private final ItemWebService itemWebService;
     private final TenantContext tenantContext;
     private final WarehouseService warehouseService;
+    private final WarehouseLocationService warehouseLocationService;
     private final CompanyContext companyContext;
 
     public PurchaseOrderPageController(PurchaseOrderWebService purchaseOrderWebService,
@@ -30,12 +34,14 @@ public class PurchaseOrderPageController {
                                        ItemWebService itemWebService,
                                        TenantContext tenantContext,
                                        WarehouseService warehouseService,
+                                       WarehouseLocationService warehouseLocationService,
                                        CompanyContext companyContext) {
         this.purchaseOrderWebService = purchaseOrderWebService;
         this.supplierWebService = supplierWebService;
         this.itemWebService = itemWebService;
         this.tenantContext = tenantContext;
         this.warehouseService = warehouseService;
+        this.warehouseLocationService = warehouseLocationService;
         this.companyContext = companyContext;
     }
 
@@ -46,9 +52,32 @@ public class PurchaseOrderPageController {
 
         // Gestiva V2 - Magazzini attivi della società corrente.
         Long companyId = companyContext.requireCurrentCompanyId();
+        var warehouses = warehouseService.findActive(
+                tenantId, companyId
+        );
+
+        model.addAttribute("warehouseOptions", warehouses);
+
+        List<LocationOption> locationOptions = new ArrayList<>();
+
+        for (var warehouse : warehouses) {
+            for (var location : warehouseLocationService.findAll(
+                    tenantId, companyId, warehouse.getId())) {
+
+                if (location.isActive()) {
+                    locationOptions.add(new LocationOption(
+                            location.getId(),
+                            warehouse.getId(),
+                            location.getCode(),
+                            location.getName()
+                    ));
+                }
+            }
+        }
+
         model.addAttribute(
-                "warehouseOptions",
-                warehouseService.findActive(tenantId, companyId)
+                "locationOptions",
+                List.copyOf(locationOptions)
         );
 
         model.addAttribute("activeMenu", "purchaseOrders");
@@ -301,5 +330,13 @@ public class PurchaseOrderPageController {
 
 
 
+
+
+    public record LocationOption(
+            Long id,
+            Long warehouseId,
+            String code,
+            String name) {
+    }
 
 }

@@ -33,6 +33,7 @@ public class InventoryDocumentPostingService {
     private final InventoryAvailabilityService inventoryAvailabilityService;
     private final WarehouseRepository warehouseRepository;
     private final DeliveryNoteRepository deliveryNoteRepository;
+    private final InventoryLocationValidationService inventoryLocationValidationService;
 
     public InventoryDocumentPostingService(
             InventoryMovementService inventoryMovementService,
@@ -44,7 +45,8 @@ public class InventoryDocumentPostingService {
             InventoryValuationService inventoryValuationService,
             InventoryAvailabilityService inventoryAvailabilityService,
             WarehouseRepository warehouseRepository,
-            DeliveryNoteRepository deliveryNoteRepository) {
+            DeliveryNoteRepository deliveryNoteRepository,
+            InventoryLocationValidationService inventoryLocationValidationService) {
 
         this.inventoryMovementService = inventoryMovementService;
         this.inventoryMovementRepository = inventoryMovementRepository;
@@ -56,6 +58,7 @@ public class InventoryDocumentPostingService {
         this.warehouseRepository = warehouseRepository;
         this.deliveryNoteLineRepository = deliveryNoteLineRepository;
         this.deliveryNoteRepository = deliveryNoteRepository;
+        this.inventoryLocationValidationService = inventoryLocationValidationService;
     }
 
     // Gestiva V2 - Recupero DDT e blocco del magazzino
@@ -282,14 +285,9 @@ public class InventoryDocumentPostingService {
             );
         }
 
-        // FIFO V2: per ora il carico avviene a livello di magazzino.
-        if (receipt.getLocationId() != null) {
-            throw new BusinessException(
-                    "Il carico merci per ubicazione non è ancora abilitato."
-            );
-        }
-
-        Long locationId = null;
+        // L'ubicazione del ricevimento viene propagata al movimento.
+        // Il valore null resta compatibile con i ricevimenti storici.
+        Long locationId = receipt.getLocationId();
 
         // Blocco transazionale del magazzino.
         var warehouse = warehouseRepository
@@ -321,6 +319,14 @@ public class InventoryDocumentPostingService {
         if (alreadyPosted) {
             return;
         }
+
+        // Validazione sotto il lock del magazzino.
+        // Vale anche per ricevimenti senza articoli tracciati a stock.
+        inventoryLocationValidationService.validateLocation(
+                tenantId,
+                warehouseId,
+                locationId
+        );
 
         var lines = goodsReceiptLineRepository
                 .findByTenantIdAndCompanyIdAndGoodsReceiptIdOrderByLineNoAsc(

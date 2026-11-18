@@ -209,6 +209,30 @@
             </select>
           </div>
 
+          <div class="mb-3">
+            <label for="receiveLocationId" class="form-label">
+              Ubicazione di destinazione
+            </label>
+
+            <select id="receiveLocationId"
+                    name="locationId"
+                    class="form-select"
+                    disabled>
+              <option value="">Nessuna ubicazione specifica</option>
+
+              <option th:each="location : ${locationOptions}"
+                      th:value="${location.id}"
+                      th:attr="data-warehouse-id=${location.warehouseId}"
+                      th:text="${location.code + ' - ' + location.name}">
+                Ubicazione
+              </option>
+            </select>
+
+            <div class="form-text">
+              Seleziona prima un magazzino.
+            </div>
+          </div>
+
           <div class="alert alert-warning"
                th:if="${#lists.isEmpty(warehouseOptions)}">
             Non sono disponibili magazzini attivi
@@ -281,6 +305,30 @@
                 Magazzino
               </option>
             </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="partialLocationId" class="form-label">
+              Ubicazione di destinazione
+            </label>
+
+            <select id="partialLocationId"
+                    name="locationId"
+                    class="form-select"
+                    disabled>
+              <option value="">Nessuna ubicazione specifica</option>
+
+              <option th:each="location : ${locationOptions}"
+                      th:value="${location.id}"
+                      th:attr="data-warehouse-id=${location.warehouseId}"
+                      th:text="${location.code + ' - ' + location.name}">
+                Ubicazione
+              </option>
+            </select>
+
+            <div class="form-text">
+              Seleziona prima un magazzino.
+            </div>
           </div>
 
           <p class="text-muted">
