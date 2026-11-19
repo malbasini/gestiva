@@ -131,14 +131,40 @@ public class InventoryAvailabilityService {
         BigDecimal requested =
                 requiredQty.setScale(3, RoundingMode.HALF_UP);
 
-        BigDecimal available =
-                getAvailableQtyByCompanyAndWarehouse(
-                        tenantId,
-                        companyId,
-                        warehouseId,
-                        itemId,
-                        locationId
+        // La consultazione con locationId null resta aggregata.
+        // La validazione di uno scarico null usa solo stock non ubicato.
+        BigDecimal available;
+
+        if (locationId == null) {
+            if (tenantId == null
+                    || companyId == null
+                    || warehouseId == null
+                    || itemId == null) {
+                throw new BusinessException(
+                        "Tenant, società, magazzino e articolo sono obbligatori."
                 );
+            }
+
+            BigDecimal unlocatedBalance = inventoryMovementRepository
+                    .calculateUnlocatedInventoryBalanceByCompanyAndWarehouse(
+                            tenantId,
+                            companyId,
+                            warehouseId,
+                            itemId
+                    );
+
+            available = unlocatedBalance == null
+                    ? BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP)
+                    : unlocatedBalance.setScale(3, RoundingMode.HALF_UP);
+        } else {
+            available = getAvailableQtyByCompanyAndWarehouse(
+                    tenantId,
+                    companyId,
+                    warehouseId,
+                    itemId,
+                    locationId
+            );
+        }
 
         if (requested.compareTo(available) > 0) {
 
