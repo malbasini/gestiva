@@ -193,4 +193,53 @@ class InventoryDocumentPostingUomTest {
                 lineRepository, availabilityService, movementService
         );
     }
+
+    @Test
+    void ddtLocationMustPropagateToAvailabilityAndOutboundMovement() {
+        prepare(line("3", "1"));
+
+        Long locationId = 102L;
+        when(note.getLocationId()).thenReturn(locationId);
+
+        when(movementService.registerMovement(
+                eq(TENANT), eq(COMPANY), eq(WAREHOUSE),
+                eq(locationId), eq(ITEM_ID), any(),
+                eq("OUT"), eq("SALES_DELIVERY"),
+                eq(new BigDecimal("3.000")), any(),
+                eq("DELIVERY_NOTE"), eq(DDT_ID), any()
+        )).thenReturn(500L);
+
+        service.postSalesDeliveryFromDeliveryNoteV2(
+                TENANT, COMPANY, DDT_ID
+        );
+
+        verify(availabilityService).validateAvailabilityByCompanyAndWarehouse(
+                eq(TENANT),
+                eq(COMPANY),
+                eq(WAREHOUSE),
+                eq(ITEM_ID),
+                eq(locationId),
+                eq(new BigDecimal("3.000"))
+        );
+
+        verify(movementService).registerMovement(
+                eq(TENANT),
+                eq(COMPANY),
+                eq(WAREHOUSE),
+                eq(locationId),
+                eq(ITEM_ID),
+                any(),
+                eq("OUT"),
+                eq("SALES_DELIVERY"),
+                eq(new BigDecimal("3.000")),
+                any(),
+                eq("DELIVERY_NOTE"),
+                eq(DDT_ID),
+                any()
+        );
+
+        verify(valuationService).applyOutboundValuation(
+                TENANT, COMPANY, WAREHOUSE, 500L
+        );
+    }
 }
