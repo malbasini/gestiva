@@ -5,6 +5,9 @@ import com.gestiva.sales.order.web.SalesOrderDetailWebService;
 import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.security.usercontext.TenantContext;
 import com.gestiva.warehouse.location.repository.WarehouseRepository;
+import com.gestiva.warehouse.location.repository.WarehouseLocationRepository;
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -17,17 +20,27 @@ public class SalesOrderDetailPageController {
     private final TenantContext tenantContext;
     private final CompanyContext companyContext;
     private final WarehouseRepository warehouseRepository;
+    private final WarehouseLocationRepository warehouseLocationRepository;
+
+    public record LocationOption(
+            Long id,
+            Long warehouseId,
+            String code,
+            String name
+    ) {}
 
     public SalesOrderDetailPageController(
             SalesOrderDetailWebService salesOrderDetailWebService,
             TenantContext tenantContext,
             CompanyContext companyContext,
-            WarehouseRepository warehouseRepository) {
+            WarehouseRepository warehouseRepository,
+            WarehouseLocationRepository warehouseLocationRepository) {
 
         this.salesOrderDetailWebService = salesOrderDetailWebService;
         this.tenantContext = tenantContext;
         this.companyContext = companyContext;
         this.warehouseRepository = warehouseRepository;
+        this.warehouseLocationRepository = warehouseLocationRepository;
     }
     @GetMapping("/{id}")
     public String detail(
@@ -61,6 +74,30 @@ public class SalesOrderDetailPageController {
                             companyId
                     );
             model.addAttribute("warehouses", warehouses);
+
+            List<LocationOption> locationOptions = new ArrayList<>();
+
+            for (var warehouse : warehouses) {
+                var locations = warehouseLocationRepository
+                        .findByTenantIdAndWarehouseIdAndActiveTrueOrderByCodeAsc(
+                                resolvedTenantId,
+                                warehouse.getId()
+                        );
+
+                for (var location : locations) {
+                    locationOptions.add(new LocationOption(
+                            location.getId(),
+                            warehouse.getId(),
+                            location.getCode(),
+                            location.getName()
+                    ));
+                }
+            }
+
+            model.addAttribute(
+                    "locationOptions",
+                    List.copyOf(locationOptions)
+            );
         }
         return "order/order-detail";
     }

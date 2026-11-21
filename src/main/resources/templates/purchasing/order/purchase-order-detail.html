@@ -218,7 +218,7 @@
                     name="locationId"
                     class="form-select"
                     disabled>
-              <option value="">Nessuna ubicazione specifica</option>
+              <option value="">-- Merce senza ubicazione --</option>
 
               <option th:each="location : ${locationOptions}"
                       th:value="${location.id}"
@@ -316,7 +316,7 @@
                     name="locationId"
                     class="form-select"
                     disabled>
-              <option value="">Nessuna ubicazione specifica</option>
+              <option value="">-- Merce senza ubicazione --</option>
 
               <option th:each="location : ${locationOptions}"
                       th:value="${location.id}"

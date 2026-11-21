@@ -246,11 +246,13 @@
      aria-labelledby="createDeliveryNoteModalLabel"
      aria-hidden="true">
 
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
 
             <form th:action="@{/orders/{id}/delivery-note(id=${order.id})}"
-                  method="post">
+                  method="post"
+                  class="d-flex flex-column w-100"
+                  style="min-height:0; max-height:100%;">
 
                 <input type="hidden"
                        th:name="${_csrf.parameterName}"
@@ -273,8 +275,8 @@
                             aria-label="Chiudi">
                     </button>
                 </div>
-                <div class="modal-body">
-                    <div class="alert alert-info">
+                <div class="modal-body overflow-auto" style="min-height:0; overscroll-behavior:contain;">
+                    <div class="alert alert-info py-2 small">
                         <strong>
                             <i class="bi bi-info-circle"></i>
                             Informazioni sul documento di trasporto
@@ -326,6 +328,34 @@
 
                     </div>
 
+                    <div class="mb-3">
+                        <label for="deliveryNoteLocation"
+                               class="form-label">
+                            Ubicazione di prelievo
+                        </label>
+
+                        <select id="deliveryNoteLocation"
+                                name="locationId"
+                                class="form-select"
+                                disabled>
+                            <option value="">
+                                -- Seleziona prima il magazzino --
+                            </option>
+
+                            <option th:each="location : ${locationOptions}"
+                                    th:value="${location.id}"
+                                    th:attr="data-warehouse-id=${location.warehouseId}"
+                                    th:text="${location.code + ' - ' + location.name}">
+                            </option>
+                        </select>
+
+                        <div class="form-text">
+                            Seleziona l'ubicazione da cui prelevare
+                            la merce. L'opzione senza ubicazione
+                            utilizza soltanto lo stock non ubicato.
+                        </div>
+                    </div>
+
                     <div class="alert alert-warning"
                          th:if="${#lists.isEmpty(warehouses)}">
                         Nessun magazzino attivo disponibile
@@ -356,5 +386,81 @@
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    'use strict';
+
+    function initializeDeliveryNoteLocations() {
+        const warehouseSelect =
+            document.getElementById('deliveryNoteWarehouse');
+        const locationSelect =
+            document.getElementById('deliveryNoteLocation');
+
+        if (!warehouseSelect || !locationSelect) {
+            return;
+        }
+
+        const locations = Array.from(
+            locationSelect.querySelectorAll(
+                'option[data-warehouse-id]'
+            )
+        ).map(option => ({
+            id: option.value,
+            warehouseId: option.dataset.warehouseId,
+            label: option.textContent.trim()
+        }));
+
+        function updateLocations() {
+            const warehouseId = warehouseSelect.value;
+
+            locationSelect.replaceChildren();
+
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.textContent = warehouseId
+                ? '-- Merce senza ubicazione --'
+                : '-- Seleziona prima il magazzino --';
+
+            locationSelect.appendChild(emptyOption);
+            locationSelect.disabled = !warehouseId;
+
+            if (!warehouseId) {
+                return;
+            }
+
+            for (const location of locations) {
+                if (location.warehouseId !== warehouseId) {
+                    continue;
+                }
+
+                const option = document.createElement('option');
+                option.value = location.id;
+                option.textContent = location.label;
+                locationSelect.appendChild(option);
+            }
+
+            locationSelect.value = '';
+        }
+
+        warehouseSelect.addEventListener(
+            'change',
+            updateLocations
+        );
+
+        updateLocations();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener(
+            'DOMContentLoaded',
+            initializeDeliveryNoteLocations
+        );
+    } else {
+        initializeDeliveryNoteLocations();
+    }
+})();
+</script>
+
 </body>
 </html>

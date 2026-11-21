@@ -5,6 +5,66 @@
     <title>Scheda magazzino articolo</title>
     <link rel="stylesheet" th:href="@{/css/app.css}"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+    <style>
+        /* GESTIVA V2 - Scheda movimenti articolo compatta */
+        .inventory-ledger-table {
+            width: 100%;
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .inventory-ledger-table th {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 10px;
+            white-space: nowrap;
+        }
+
+        .inventory-ledger-table td {
+            padding: 9px 10px;
+            vertical-align: middle;
+        }
+
+        .inventory-ledger-table td:nth-child(1),
+        .inventory-ledger-table td:nth-child(2),
+        .inventory-ledger-table td:nth-child(7),
+        .inventory-ledger-table td:nth-child(8),
+        .inventory-ledger-table td:nth-child(9) {
+            white-space: nowrap;
+        }
+
+        .inventory-ledger-table td:nth-child(4) {
+            white-space: nowrap;
+            overflow-wrap: normal;
+        }
+
+        .inventory-ledger-table td:nth-child(5),
+        .inventory-ledger-table td:nth-child(6) {
+            overflow-wrap: normal;
+            word-break: normal;
+        }
+
+        .inventory-ledger-table td:last-child a {
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .inventory-ledger-table th,
+        .inventory-ledger-table td {
+            max-width: 260px;
+        }
+
+        .inventory-ledger-table th:nth-child(5),
+        .inventory-ledger-table th:nth-child(6) {
+            min-width: 145px;
+        }
+
+        @media (max-width: 1200px) {
+            .inventory-ledger-table {
+                min-width: 1200px;
+            }
+        }
+    </style>
 </head>
 <body>
 <div class="app-shell">
@@ -43,13 +103,15 @@
                 </div>
 
                 <div class="table-wrap" style="margin-top:20px;">
-                    <table class="table">
+                    <table class="table inventory-ledger-table">
                         <thead>
                         <tr>
                             <th>Data</th>
                             <th>Tipo</th>
                             <th>Causale</th>
                             <th>Riferimento</th>
+                            <th>Magazzino</th>
+                            <th>Ubicazione</th>
                             <th class="text-right">Entrata</th>
                             <th class="text-right">Uscita</th>
                             <th class="text-right">Saldo</th>
@@ -59,7 +121,7 @@
                         </thead>
                         <tbody>
                         <tr th:if="${#lists.isEmpty(ledger.lines)}">
-                            <td colspan="8" class="muted">Nessun movimento trovato per questo articolo.</td>
+                            <td colspan="11" class="muted">Nessun movimento trovato per questo articolo.</td>
                         </tr>
 
                         <tr th:each="line : ${ledger.lines}">
@@ -67,6 +129,8 @@
                             <td th:text="${line.movementType}">IN</td>
                             <td th:text="${line.causalCode}">PURCHASE_RECEIPT</td>
                             <td th:text="${line.referenceLabel}">GOODS_RECEIPT #12</td>
+                            <td th:text="${line.warehouseLabel != null ? line.warehouseLabel : 'Magazzino non indicato'}">MAG-TEST-001</td>
+                            <td th:text="${line.locationLabel != null ? line.locationLabel : 'Ubicazione non disponibile'}">U1-TEST-A01-01</td>
                             <td class="text-right" th:text="${line.formattedQtyIn}">10,000</td>
                             <td class="text-right" th:text="${line.formattedQtyOut}">0,000</td>
                             <td class="text-right" th:text="${line.formattedRunningBalance}">10,000</td>

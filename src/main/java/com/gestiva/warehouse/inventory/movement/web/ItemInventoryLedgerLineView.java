@@ -11,6 +11,8 @@ public class ItemInventoryLedgerLineView {
     private String formattedQtyOut;
     private String formattedRunningBalance;
     private String notes;
+    private String warehouseLabel;
+    private String locationLabel;
 
     public Long getMovementId() {
         return movementId;
@@ -82,5 +84,21 @@ public class ItemInventoryLedgerLineView {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public String getWarehouseLabel() {
+        return warehouseLabel;
+    }
+
+    public void setWarehouseLabel(String warehouseLabel) {
+        this.warehouseLabel = warehouseLabel;
+    }
+
+    public String getLocationLabel() {
+        return locationLabel;
+    }
+
+    public void setLocationLabel(String locationLabel) {
+        this.locationLabel = locationLabel;
     }
 }
