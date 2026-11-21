@@ -10,6 +10,8 @@ public class RecentInventoryMovementView {
     private String formattedQuantity;
     private String referenceType;
     private String notes;
+    private String warehouseLabel;
+    private String locationLabel;
     private boolean inbound;
 
     public String getFormattedMovementDate() {
@@ -82,5 +84,21 @@ public class RecentInventoryMovementView {
 
     public void setInbound(boolean inbound) {
         this.inbound = inbound;
+    }
+
+    public String getWarehouseLabel() {
+        return warehouseLabel;
+    }
+
+    public void setWarehouseLabel(String warehouseLabel) {
+        this.warehouseLabel = warehouseLabel;
+    }
+
+    public String getLocationLabel() {
+        return locationLabel;
+    }
+
+    public void setLocationLabel(String locationLabel) {
+        this.locationLabel = locationLabel;
     }
 }

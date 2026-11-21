@@ -3,6 +3,10 @@ package com.gestiva.warehouse.item.web;
 import com.gestiva.documents.pdf.PdfFormatUtils;
 import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
+import com.gestiva.warehouse.location.repository.WarehouseRepository;
+import com.gestiva.warehouse.location.repository.WarehouseLocationRepository;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,14 +18,27 @@ public class ItemMovementWebService {
 
     private final CompanyContext companyContext;
     private final InventoryMovementRepository inventoryMovementRepository;
+    private final WarehouseRepository warehouseRepository;
+    private final WarehouseLocationRepository warehouseLocationRepository;
 
-    public ItemMovementWebService(CompanyContext companyContext, InventoryMovementRepository inventoryMovementRepository) {
+    public ItemMovementWebService(
+            CompanyContext companyContext,
+            InventoryMovementRepository inventoryMovementRepository,
+            WarehouseRepository warehouseRepository,
+            WarehouseLocationRepository warehouseLocationRepository) {
         this.companyContext = companyContext;
         this.inventoryMovementRepository = inventoryMovementRepository;
+        this.warehouseRepository = warehouseRepository;
+        this.warehouseLocationRepository = warehouseLocationRepository;
     }
 
     public List<RecentInventoryMovementView> findRecentMovements(Long tenantId, Long itemId) {
         Long companyId = companyContext.requireCurrentCompanyId();
+
+        // Cache locali alla consultazione degli ultimi movimenti.
+        Map<Long, String> warehouseLabels = new HashMap<>();
+        Map<String, String> locationLabels = new HashMap<>();
+
         return inventoryMovementRepository
                 .findTop10ByTenantIdAndCompanyIdAndItemIdOrderByMovementDateDescIdDesc(tenantId, companyId, itemId)
                 .stream()
@@ -36,6 +53,53 @@ public class ItemMovementWebService {
                     v.setReferenceType(m.getReferenceType());
                     v.setNotes(m.getNotes());
                     v.setInbound(isInbound(m.getMovementType()));
+
+                    Long warehouseId = m.getWarehouseId();
+                    Long locationId = m.getLocationId();
+
+                    if (warehouseId == null) {
+                        v.setWarehouseLabel("Magazzino non indicato");
+                        v.setLocationLabel(
+                                locationId == null
+                                        ? "Merce senza ubicazione"
+                                        : "Ubicazione non verificabile"
+                        );
+                    } else {
+                        String warehouseLabel = warehouseLabels.computeIfAbsent(
+                                warehouseId,
+                                key -> warehouseRepository
+                                        .findByTenantIdAndCompanyIdAndId(
+                                                tenantId, companyId, key
+                                        )
+                                        .map(w -> w.getCode() + " - " + w.getName())
+                                        .orElse("Magazzino non disponibile")
+                        );
+
+                        v.setWarehouseLabel(warehouseLabel);
+
+                        if (locationId == null) {
+                            v.setLocationLabel("Merce senza ubicazione");
+                        } else if ("Magazzino non disponibile".equals(warehouseLabel)) {
+                            v.setLocationLabel("Ubicazione non verificabile");
+                        } else {
+                            String locationKey = warehouseId + ":" + locationId;
+
+                            String locationLabel = locationLabels.computeIfAbsent(
+                                    locationKey,
+                                    key -> warehouseLocationRepository
+                                            .findByTenantIdAndWarehouseIdAndId(
+                                                    tenantId,
+                                                    warehouseId,
+                                                    locationId
+                                            )
+                                            .map(l -> l.getCode() + " - " + l.getName())
+                                            .orElse("Ubicazione non disponibile")
+                            );
+
+                            v.setLocationLabel(locationLabel);
+                        }
+                    }
+
                     return v;
                 })
                 .toList();

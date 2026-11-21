@@ -7,6 +7,7 @@ import com.gestiva.warehouse.inventory.movement.service.InventoryAdjustmentServi
 import com.gestiva.warehouse.inventory.movement.web.InventoryAdjustmentForm;
 import com.gestiva.warehouse.item.web.ItemWebService;
 import com.gestiva.warehouse.location.service.WarehouseService;
+import com.gestiva.warehouse.location.service.WarehouseLocationService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,19 +28,22 @@ public class InventoryAdjustmentPageController {
     private final TenantContext tenantContext;
     private final CompanyContext companyContext;
     private final WarehouseService warehouseService;
+    private final WarehouseLocationService warehouseLocationService;
 
     public InventoryAdjustmentPageController(
             InventoryAdjustmentService inventoryAdjustmentService,
             ItemWebService itemWebService,
             TenantContext tenantContext,
             CompanyContext companyContext,
-            WarehouseService warehouseService) {
+            WarehouseService warehouseService,
+            WarehouseLocationService warehouseLocationService) {
 
         this.inventoryAdjustmentService = inventoryAdjustmentService;
         this.itemWebService = itemWebService;
         this.tenantContext = tenantContext;
         this.companyContext = companyContext;
         this.warehouseService = warehouseService;
+        this.warehouseLocationService = warehouseLocationService;
     }
 
     @GetMapping("/new")
@@ -114,10 +118,39 @@ public class InventoryAdjustmentPageController {
                 "itemOptions",
                 itemWebService.findStockManagedOptions(tenantId)
         );
-        model.addAttribute(
-                "warehouseOptions",
-                warehouseService.findActive(tenantId, companyId)
+        // Magazzini attivi autorizzati per la società corrente.
+        var warehouses = warehouseService.findActive(
+                tenantId, companyId
         );
+
+        model.addAttribute("warehouseOptions", warehouses);
+
+        // Solo ubicazioni attive dei magazzini autorizzati.
+        var locationOptions = warehouses.stream()
+                .flatMap(warehouse ->
+                        warehouseLocationService.findAll(
+                                tenantId,
+                                companyId,
+                                warehouse.getId()
+                        ).stream()
+                        .filter(location -> location.isActive())
+                        .map(location -> new LocationOption(
+                                location.getId(),
+                                warehouse.getId(),
+                                location.getCode(),
+                                location.getName()
+                        ))
+                )
+                .toList();
+
+        model.addAttribute("locationOptions", locationOptions);
         model.addAttribute("activeMenu", "items");
+    }
+
+    public record LocationOption(
+            Long id,
+            Long warehouseId,
+            String code,
+            String name) {
     }
 }

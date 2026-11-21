@@ -47,6 +47,35 @@
                                 Errore magazzino
                             </div>
                         </div>
+                        <!-- Gestiva V2 - Ubicazione facoltativa -->
+                        <div class="form-field full">
+                            <label for="locationId">
+                                Ubicazione (facoltativa)
+                            </label>
+                            <select id="locationId"
+                                    th:field="*{locationId}"
+                                    disabled>
+                                <option value="">
+                                    -- Merce senza ubicazione --
+                                </option>
+                                <option th:each="location : ${locationOptions}"
+                                        th:value="${location.id}"
+                                        th:attr="data-warehouse-id=${location.warehouseId}"
+                                        th:text="${location.code + ' - ' + location.name}">
+                                    Ubicazione
+                                </option>
+                            </select>
+                            <div class="muted">
+                                Seleziona prima il magazzino.
+                                Lascia vuoto per una rettifica senza ubicazione.
+                            </div>
+                            <div class="field-error"
+                                 th:if="${#fields.hasErrors('locationId')}"
+                                 th:errors="*{locationId}">
+                                Errore ubicazione
+                            </div>
+                        </div>
+
                         <div class="form-field full">
                             <label for="itemId">Articolo</label>
                             <select id="itemId" th:field="*{itemId}">
@@ -121,5 +150,71 @@
     </main>
     <div th:replace="~{fragments/layout :: appFooter}"></div>
 </div>
+<script>
+(function () {
+    "use strict";
+
+    function initializeAdjustmentLocations() {
+        const warehouse = document.getElementById("warehouseId");
+        const location = document.getElementById("locationId");
+
+        if (!warehouse || !location) {
+            return;
+        }
+
+        // Conserva la scelta restituita da Thymeleaf
+        // quando il form viene ripresentato dopo un errore.
+        const initialLocation = location.value;
+
+        function refreshLocations(preserveSelection) {
+            const selectedWarehouse = warehouse.value;
+            const previousLocation = preserveSelection
+                ? initialLocation
+                : "";
+
+            location.querySelectorAll(
+                "option[data-warehouse-id]"
+            ).forEach(function (option) {
+                const available =
+                    selectedWarehouse !== "" &&
+                    option.dataset.warehouseId === selectedWarehouse;
+
+                option.hidden = !available;
+                option.disabled = !available;
+            });
+
+            location.disabled = selectedWarehouse === "";
+
+            // Mantiene la selezione solo se appartiene
+            // al magazzino attualmente selezionato.
+            const selectedOption = Array.from(location.options)
+                .find(function (option) {
+                    return option.value === previousLocation &&
+                        !option.disabled;
+                });
+
+            location.value = selectedOption
+                ? previousLocation
+                : "";
+        }
+
+        warehouse.addEventListener("change", function () {
+            refreshLocations(false);
+        });
+
+        refreshLocations(true);
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializeAdjustmentLocations,
+            { once: true }
+        );
+    } else {
+        initializeAdjustmentLocations();
+    }
+})();
+</script>
 </body>
 </html>

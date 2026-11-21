@@ -6,6 +6,7 @@ import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.warehouse.inventory.movement.web.InventoryAdjustmentForm;
 import com.gestiva.warehouse.inventory.valuation.service.InventoryAvailabilityService;
 import com.gestiva.warehouse.inventory.valuation.service.InventoryValuationService;
+import com.gestiva.warehouse.location.repository.WarehouseRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -18,17 +19,20 @@ public class InventoryAdjustmentService {
     private final InventoryValuationService inventoryValuationService;
     private final InventoryAvailabilityService inventoryAvailabilityService;
     private final CompanyContext companyContext;
+    private final WarehouseRepository warehouseRepository;
 
     public InventoryAdjustmentService(
             InventoryMovementService inventoryMovementService,
             InventoryValuationService inventoryValuationService,
             InventoryAvailabilityService inventoryAvailabilityService,
-            CompanyContext companyContext) {
+            CompanyContext companyContext,
+            WarehouseRepository warehouseRepository) {
 
         this.inventoryMovementService = inventoryMovementService;
         this.inventoryValuationService = inventoryValuationService;
         this.inventoryAvailabilityService = inventoryAvailabilityService;
         this.companyContext = companyContext;
+        this.warehouseRepository = warehouseRepository;
     }
 
     // Gestiva V2 - Rettifica magazzino multi-società con FIFO
@@ -49,17 +53,11 @@ public class InventoryAdjustmentService {
         Long warehouseId = form.getWarehouseId();
         Long itemId = form.getItemId();
 
-        // Gestiva V2: le rettifiche manuali operano
-        // attualmente a livello di magazzino.
-        // Le ubicazioni saranno gestite quando il FIFO
-        // supporterà la valorizzazione per ubicazione.
-        if (form.getLocationId() != null) {
-            throw new BusinessException(
-                    "Le rettifiche per ubicazione non sono ancora supportate."
-            );
-        }
-
-        Long locationId = null;
+        // Gestiva V2 - Rettifiche positive e negative
+        // con isolamento FIFO per ubicazione.
+        // La disponibilità negativa viene verificata
+        // sotto il lock del magazzino.
+        Long locationId = form.getLocationId();
 
         if (warehouseId == null) {
             throw new BusinessException(
@@ -120,6 +118,16 @@ public class InventoryAdjustmentService {
 
             movementType = "ADJUSTMENT_OUT";
             causalCode = "MANUAL_ADJUSTMENT_OUT";
+
+            // Il lock precede il controllo della disponibilità.
+            // Resta attivo fino alla fine della transazione.
+            warehouseRepository
+                    .findByTenantAndCompanyAndIdForUpdate(
+                            tenantId, companyId, warehouseId
+                    )
+                    .orElseThrow(() -> new BusinessException(
+                            "Magazzino non trovato nella società attiva."
+                    ));
 
             inventoryAvailabilityService
                     .validateAvailabilityByCompanyAndWarehouse(
