@@ -20,6 +20,9 @@ class InventoryLocationTransferInactiveTargetTest {
         com.gestiva.security.usercontext.TenantContext tenantContext =
                 mock(com.gestiva.security.usercontext.TenantContext.class);
 
+        com.gestiva.warehouse.location.repository.WarehouseRepository warehouseRepository =
+                mock(com.gestiva.warehouse.location.repository.WarehouseRepository.class);
+
         CompanyContext companyContext =
                 mock(CompanyContext.class);
 
@@ -37,6 +40,10 @@ class InventoryLocationTransferInactiveTargetTest {
         when(companyContext.requireCurrentCompanyId())
                 .thenReturn(3L);
 
+        when(warehouseRepository.findByTenantAndCompanyAndIdForUpdate(
+                2L, 3L, 2L
+        )).thenReturn(java.util.Optional.of(warehouse));
+
         when(locationValidator.validateWarehouse(2L, 3L, 2L))
                 .thenReturn(warehouse);
 
@@ -50,9 +57,12 @@ class InventoryLocationTransferInactiveTargetTest {
 
         InventoryLocationTransferService service =
                 new InventoryLocationTransferService(
+                        warehouseRepository,
                     tenantContext,
                     companyContext,
-                        locationValidator
+                        locationValidator,
+                        org.mockito.Mockito.mock(
+                                com.gestiva.warehouse.inventory.valuation.service.InventoryAvailabilityService.class)
                 );
 
         BusinessException exception = assertThrows(
@@ -75,10 +85,18 @@ class InventoryLocationTransferInactiveTargetTest {
                 exception.getMessage()
         );
 
-        var order = inOrder(companyContext, locationValidator);
+        var order = inOrder(tenantContext, companyContext, warehouseRepository, locationValidator);
+
+        order.verify(tenantContext)
+                .getCurrentTenantId();
 
         order.verify(companyContext)
                 .requireCurrentCompanyId();
+
+        order.verify(warehouseRepository)
+                .findByTenantAndCompanyAndIdForUpdate(
+                        2L, 3L, 2L
+                );
 
         order.verify(locationValidator)
                 .validateWarehouse(2L, 3L, 2L);

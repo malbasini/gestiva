@@ -15,12 +15,16 @@ class InventoryLocationTransferRequiredContextTest {
 
     private final InventoryLocationTransferService service =
             new InventoryLocationTransferService(
+                        org.mockito.Mockito.mock(
+                                com.gestiva.warehouse.location.repository.WarehouseRepository.class),
                     org.mockito.Mockito.mock(
                             com.gestiva.security.usercontext.TenantContext.class),
                     org.mockito.Mockito.mock(
                             com.gestiva.security.company.context.CompanyContext.class),
                     org.mockito.Mockito.mock(
-                            InventoryLocationValidationService.class)
+                            InventoryLocationValidationService.class),
+                        org.mockito.Mockito.mock(
+                                com.gestiva.warehouse.inventory.valuation.service.InventoryAvailabilityService.class)
             );
 
     private void assertInvalidContext(

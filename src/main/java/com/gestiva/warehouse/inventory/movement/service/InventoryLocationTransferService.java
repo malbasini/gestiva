@@ -3,6 +3,8 @@ package com.gestiva.warehouse.inventory.movement.service;
 import com.gestiva.common.exception.BusinessException;
 import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.security.usercontext.TenantContext;
+import com.gestiva.warehouse.location.repository.WarehouseRepository;
+import com.gestiva.warehouse.inventory.valuation.service.InventoryAvailabilityService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,20 +25,28 @@ import java.time.LocalDate;
 @Transactional
 public class InventoryLocationTransferService {
 
+    private final WarehouseRepository warehouseRepository;
     private final TenantContext tenantContext;
     private final CompanyContext companyContext;
     private final InventoryLocationValidationService locationValidationService;
+    private final InventoryAvailabilityService inventoryAvailabilityService;
 
     public InventoryLocationTransferService(
+            WarehouseRepository warehouseRepository,
             TenantContext tenantContext,
             CompanyContext companyContext,
-            InventoryLocationValidationService locationValidationService) {
+            InventoryLocationValidationService locationValidationService,
+            InventoryAvailabilityService inventoryAvailabilityService) {
+        this.warehouseRepository = java.util.Objects.requireNonNull(
+                warehouseRepository, "warehouseRepository");
         this.tenantContext = java.util.Objects.requireNonNull(
                 tenantContext, "tenantContext");
         this.companyContext = java.util.Objects.requireNonNull(
                 companyContext, "companyContext");
         this.locationValidationService = java.util.Objects.requireNonNull(
                 locationValidationService, "locationValidationService");
+        this.inventoryAvailabilityService = java.util.Objects.requireNonNull(
+                inventoryAvailabilityService, "inventoryAvailabilityService");
     }
 
     public Long transferBetweenLocations(
@@ -105,6 +115,16 @@ public class InventoryLocationTransferService {
             );
         }
 
+        warehouseRepository
+                .findByTenantAndCompanyAndIdForUpdate(
+                        tenantId,
+                        companyId,
+                        warehouseId
+                )
+                .orElseThrow(() -> new BusinessException(
+                        "Magazzino non trovato nella società attiva."
+                ));
+
         locationValidationService.validateWarehouse(
                 tenantId,
                 companyId,
@@ -122,6 +142,16 @@ public class InventoryLocationTransferService {
                 warehouseId,
                 targetLocationId
         );
+
+        inventoryAvailabilityService
+                .validateAvailabilityByCompanyAndWarehouse(
+                        tenantId,
+                        companyId,
+                        warehouseId,
+                        itemId,
+                        sourceLocationId,
+                        quantity
+                );
 
         throw new BusinessException(
                 "Trasferimenti tra ubicazioni non ancora abilitati."

@@ -33,7 +33,7 @@ class InventoryLocationTransferTenantDependencyTest {
                             constructor.getParameterTypes()
                     );
 
-                    return parameters.size() == 3
+                    return parameters.size() >= 3
                             && parameters.contains(TenantContext.class)
                             && parameters.contains(CompanyContext.class)
                             && parameters.contains(

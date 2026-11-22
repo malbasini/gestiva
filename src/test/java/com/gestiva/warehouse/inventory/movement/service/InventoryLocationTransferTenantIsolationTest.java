@@ -30,9 +30,13 @@ class InventoryLocationTransferTenantIsolationTest {
 
         InventoryLocationTransferService service =
                 new InventoryLocationTransferService(
+                        org.mockito.Mockito.mock(
+                                com.gestiva.warehouse.location.repository.WarehouseRepository.class),
                         tenantContext,
                         companyContext,
-                        locationValidator
+                        locationValidator,
+                        org.mockito.Mockito.mock(
+                                com.gestiva.warehouse.inventory.valuation.service.InventoryAvailabilityService.class)
                 );
 
         BusinessException exception = assertThrows(
