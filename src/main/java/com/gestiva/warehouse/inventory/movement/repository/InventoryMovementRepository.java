@@ -122,7 +122,11 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
        from InventoryMovement m
        where m.tenantId = :tenantId
          and (upper(m.movementType) = 'OUT' or upper(m.movementType) = 'ADJUSTMENT_OUT')
-         and (:itemId is null or m.itemId = :itemId)
+         and (
+                m.referenceType is null
+                or upper(m.referenceType) <> 'LOCATION_TRANSFER'
+            )
+            and (:itemId is null or m.itemId = :itemId)
          and (:dateFrom is null or m.movementDate >= :dateFrom)
          and (:dateTo is null or m.movementDate <= :dateTo)
        group by m.itemId
@@ -152,7 +156,11 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
               upper(m.movementType) = 'OUT'
               or upper(m.movementType) = 'ADJUSTMENT_OUT'
           )
-          and (:itemId is null or m.itemId = :itemId)
+          and (
+                m.referenceType is null
+                or upper(m.referenceType) <> 'LOCATION_TRANSFER'
+            )
+            and (:itemId is null or m.itemId = :itemId)
           and (:dateFrom is null or m.movementDate >= :dateFrom)
           and (:dateTo is null or m.movementDate <= :dateTo)
         group by m.itemId

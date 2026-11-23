@@ -330,6 +330,16 @@ public class InventoryMovementService {
             );
         }
 
+        // Gestiva V2 - Un trasferimento tra ubicazioni
+        // è un'operazione indivisibile: lo storno ordinario
+        // non può annullare uno solo dei movimenti collegati.
+        if ("LOCATION_TRANSFER".equals(original.getReferenceType())) {
+            throw new BusinessException(
+                    "Il movimento appartiene a un trasferimento "
+                    + "tra ubicazioni e non può essere stornato singolarmente."
+            );
+        }
+
         // Gestiva V2 - Validazione della data di storno
         if (reversalDate == null) {
             throw new BusinessException(
