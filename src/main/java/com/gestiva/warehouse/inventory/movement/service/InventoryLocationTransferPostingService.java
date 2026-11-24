@@ -87,4 +87,59 @@ public class InventoryLocationTransferPostingService {
                 "Registrazione dei trasferimenti FIFO non ancora abilitata."
         );
     }
+
+    /**
+     * Variante con chiave di idempotenza esplicita.
+     *
+     * La chiave e' stabile tra i tentativi della stessa
+     * operazione e sara' soggetta al vincolo univoco V12.
+     *
+     * Nessuna scrittura viene ancora effettuata.
+     */
+    public Long postTransfer(
+            Long tenantId,
+            Long companyId,
+            Long warehouseId,
+            Long itemId,
+            Long sourceLocationId,
+            Long targetLocationId,
+            BigDecimal quantity,
+            LocalDate movementDate,
+            String notes,
+            String operationKey) {
+
+        if (operationKey == null
+                || operationKey.isBlank()) {
+            throw new BusinessException(
+                    "La chiave di idempotenza e' obbligatoria."
+            );
+        }
+
+        if (operationKey.length() > 120) {
+            throw new BusinessException(
+                    "La chiave di idempotenza non puo' superare 120 caratteri."
+            );
+        }
+
+        if (!operationKey.equals(operationKey.strip())) {
+            throw new BusinessException(
+                    "La chiave di idempotenza non puo' "
+                    + "contenere spazi iniziali o finali."
+            );
+        }
+
+        // Compatibilita' con le validazioni gia' presenti.
+        // La firma originale mantiene il blocco operativo.
+        return postTransfer(
+                tenantId,
+                companyId,
+                warehouseId,
+                itemId,
+                sourceLocationId,
+                targetLocationId,
+                quantity,
+                movementDate,
+                notes
+        );
+    }
 }

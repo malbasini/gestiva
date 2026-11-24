@@ -1,6 +1,8 @@
 package com.gestiva.warehouse.inventory.valuation.repository;
 
 import com.gestiva.warehouse.inventory.valuation.entity.InventoryLayer;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.Query;
@@ -96,4 +98,32 @@ public interface InventoryLayerRepository extends JpaRepository<InventoryLayer, 
             @Param("locationId") Long locationId
     );
 
+
+    /**
+     * Layer FIFO aperti nell'ubicazione sorgente.
+     *
+     * Da chiamare esclusivamente dentro una transazione,
+     * dopo il lock del magazzino tenant/company.
+     *
+     * L'ordine FIFO e' layerDate ASC, id ASC.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select l
+            from InventoryLayer l
+            where l.tenantId = :tenantId
+              and l.companyId = :companyId
+              and l.warehouseId = :warehouseId
+              and l.itemId = :itemId
+              and l.locationId = :sourceLocationId
+              and l.closed = false
+            order by l.layerDate asc, l.id asc
+            """)
+    List<InventoryLayer> findTransferSourceLayersForUpdate(
+            @Param("tenantId") Long tenantId,
+            @Param("companyId") Long companyId,
+            @Param("warehouseId") Long warehouseId,
+            @Param("itemId") Long itemId,
+            @Param("sourceLocationId") Long sourceLocationId
+    );
 }
