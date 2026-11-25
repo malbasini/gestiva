@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="it"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Trasferimenti tra ubicazioni | GESTIVA</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+
+    <style>
+        .transfer-page,
+        .transfer-page .card,
+        .transfer-page .form-grid {
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        .transfer-page .form-grid {
+            display: grid;
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+            width: 100%;
+        }
+
+        .transfer-page .form-field {
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .transfer-page .form-field.full {
+            grid-column: 1 / -1;
+        }
+
+        .transfer-page select,
+        .transfer-page input,
+        .transfer-page textarea {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 680px) {
+            .transfer-page .form-grid {
+                grid-template-columns:
+                    minmax(0, 1fr);
+            }
+
+            .transfer-page .form-field.full {
+                grid-column: auto;
+            }
+        }
+    </style>
+
+</head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+    <main class="app-main">
+        <div class="page transfer-page" style="max-width: 960px;">
+            <div class="card">
+                <div th:replace="~{fragments/layout :: flashMessages}"></div>
+
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1 class="page-title">
+                            Trasferimento tra ubicazioni
+                        </h1>
+                        <div class="muted">
+                            Spostamento interno delle scorte
+                            con valorizzazione FIFO
+                        </div>
+                    </div>
+                    <div class="page-header-right">
+                        <a class="btn btn-outline-secondary"
+                           th:href="@{/warehouse/locations}">
+                            <i class="bi bi-arrow-left"></i>
+                            Torna alle ubicazioni
+                        </a>
+                    </div>
+                </div>
+
+                <div class="alert alert-danger"
+                     th:if="${errorMessage != null}"
+                     th:text="${errorMessage}"
+                     role="alert"></div>
+
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    Trasferimento interno con valorizzazione FIFO.
+                    Verifica articolo, quantità e ubicazioni
+                    prima della conferma.
+                </div>
+
+                <form id="transferForm"
+                      method="post"
+                      th:action="@{/inventory/transfers}">
+
+                    <input type="hidden"
+                           th:if="${_csrf != null}"
+                           th:name="${_csrf.parameterName}"
+                           th:value="${_csrf.token}"/>
+
+                    <input type="hidden"
+                           name="operationKey"
+                           th:value="${operationKey}"/>
+
+                    <div class="form-grid">
+                        <div class="form-field full">
+                            <label for="warehouseId">Magazzino *</label>
+                            <select id="warehouseId"
+                                    name="warehouseId" required>
+                                <option value="">
+                                    -- seleziona magazzino --
+                                </option>
+                                <option th:each="warehouse : ${warehouseOptions}"
+                                        th:value="${warehouse.id}"
+                                        th:selected="${warehouseId != null and warehouseId == warehouse.id}"
+                                        th:text="${warehouse.code + ' - ' + warehouse.name}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-field full">
+                            <label for="itemId">Articolo *</label>
+                            <select id="itemId" name="itemId" required>
+                                <option value="">
+                                    -- seleziona articolo --
+                                </option>
+                                <option th:each="item : ${itemOptions}"
+                                        th:value="${item.id}"
+                                        th:selected="${itemId != null and itemId == item.id}"
+                                        th:text="${item.label}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="sourceLocationId">
+                                Ubicazione di origine *
+                            </label>
+                            <select id="sourceLocationId"
+                                    name="sourceLocationId"
+                                    th:attr="data-initial-value=${sourceLocationId}"
+                                    required disabled>
+                                <option value="">
+                                    -- seleziona prima il magazzino --
+                                </option>
+                                <option th:each="location : ${locationOptions}"
+                                        th:value="${location.id}"
+                                        th:attr="data-warehouse-id=${location.warehouseId}"
+                                        th:text="${location.code + ' - ' + location.name}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="targetLocationId">
+                                Ubicazione di destinazione *
+                            </label>
+                            <select id="targetLocationId"
+                                    name="targetLocationId"
+                                    th:attr="data-initial-value=${targetLocationId}"
+                                    required disabled>
+                                <option value="">
+                                    -- seleziona prima il magazzino --
+                                </option>
+                                <option th:each="location : ${locationOptions}"
+                                        th:value="${location.id}"
+                                        th:attr="data-warehouse-id=${location.warehouseId}"
+                                        th:text="${location.code + ' - ' + location.name}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="quantity">Quantità *</label>
+                            <input id="quantity"
+                                   name="quantity"
+                                   th:value="${quantity}"
+                                   type="text"
+                                   inputmode="decimal"
+                                   autocomplete="off"
+                                   maxlength="17"
+                                   pattern="[0-9]+([.,][0-9]{1,3})?"
+                                   title="Inserisci un numero positivo con massimo tre decimali"
+                                   placeholder="Es. 1 oppure 0,983"
+                                   required/>
+                            <div class="muted">
+                                Massimo tre cifre decimali.
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="movementDate">Data movimento *</label>
+                            <input id="movementDate"
+                                   name="movementDate"
+                                   type="date"
+                                   th:value="${movementDate}"
+                                   required/>
+                        </div>
+
+                        <div class="form-field full">
+                            <label for="notes">Note</label>
+                            <textarea id="notes"
+                                      name="notes"
+                                      rows="3"
+                                      maxlength="1000"
+                                      placeholder="Note facoltative"
+                                      th:text="${notes}"></textarea>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;align-items:center;">
+                        <a class="btn btn-outline-secondary"
+                           th:href="@{/warehouse/locations}">
+                            Annulla
+                        </a>
+                        <button type="submit"
+                                class="btn btn-primary">
+                            <i class="bi bi-arrow-left-right"></i>
+                            Conferma trasferimento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{fragments/layout :: appFooter}"></div>
+</div>
+
+<script>
+(function () {
+    "use strict";
+
+    const warehouse = document.getElementById("warehouseId");
+    const source = document.getElementById("sourceLocationId");
+    const target = document.getElementById("targetLocationId");
+
+    const options = Array.from(
+        source.querySelectorAll("option[data-warehouse-id]")
+    ).map(option => ({
+        id: option.value,
+        warehouseId: option.dataset.warehouseId,
+        label: option.textContent.trim()
+    }));
+
+    function populate(select, warehouseId) {
+        const previous = select.value;
+
+        select.replaceChildren(new Option(
+            warehouseId
+                ? "-- seleziona ubicazione --"
+                : "-- seleziona prima il magazzino --",
+            ""
+        ));
+
+        for (const option of options) {
+            if (option.warehouseId === warehouseId) {
+                select.add(new Option(option.label, option.id));
+            }
+        }
+
+        select.disabled = !warehouseId;
+        if (options.some(option =>
+            option.id === previous &&
+            option.warehouseId === warehouseId
+        )) {
+            select.value = previous;
+        }
+    }
+
+    function refresh() {
+        populate(source, warehouse.value);
+        populate(target, warehouse.value);
+    }
+
+    warehouse.addEventListener("change", () => {
+        source.value = "";
+        target.value = "";
+        refresh();
+    });
+
+    source.addEventListener("change", () => {
+        if (source.value && source.value === target.value) {
+            target.value = "";
+        }
+    });
+
+    target.addEventListener("change", () => {
+        if (target.value && target.value === source.value) {
+            target.value = "";
+        }
+    });
+
+    refresh();
+
+    // Ripristino delle selezioni dopo un errore di validazione.
+    for (const select of [source, target]) {
+        const initial = select.dataset.initialValue;
+        if (initial && Array.from(select.options)
+                .some(option => option.value === initial)) {
+            select.value = initial;
+        }
+    }
+
+    const quantityField =
+        document.getElementById("quantity");
+
+    // Accetta sia 1,250 sia 1.250.
+    // Il server riceve sempre il punto decimale.
+    // Non esegue arrotondamenti.
+    function normalizeQuantity() {
+        const value = quantityField.value.trim();
+
+        if (!/^[0-9]+([.,][0-9]{1,3})?$/.test(value)) {
+            quantityField.setCustomValidity(
+                "Inserisci una quantità valida con massimo tre decimali."
+            );
+            quantityField.reportValidity();
+            return false;
+        }
+
+        const normalized = value.replace(",", ".");
+
+        const amount = Number(normalized);
+
+        if (!Number.isFinite(amount) || amount <= 0 ||
+            amount >= 1000000000000) {
+            quantityField.setCustomValidity(
+                "La quantità deve essere positiva e nei limiti previsti."
+            );
+            quantityField.reportValidity();
+            return false;
+        }
+
+        quantityField.setCustomValidity("");
+        quantityField.value = normalized;
+        return true;
+    }
+
+    quantityField.addEventListener("input", () => {
+        quantityField.setCustomValidity("");
+    });
+
+    // Evita doppi click nella stessa pagina.
+    // In caso di errore di rete la chiave idempotente
+    // rimane comunque associata alla sessione.
+    document.getElementById("transferForm").addEventListener(
+        "submit",
+        function (event) {
+            if (!normalizeQuantity()) {
+                event.preventDefault();
+                return;
+            }
+
+            if (!this.checkValidity()) {
+                return;
+            }
+
+            const button = this.querySelector(
+                'button[type="submit"]'
+            );
+
+            if (button) {
+                button.disabled = true;
+                button.textContent = "Registrazione in corso...";
+            }
+        }
+    );
+})();
+</script>
+</body>
+</html>
