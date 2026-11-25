@@ -110,6 +110,7 @@
                         sec:authorize="hasAnyRole('ADMIN','WAREHOUSE','ACCOUNTING')"
                         th:classappend="${activeMenu == 'items'
                  or activeMenu == 'stockMovements'
+                 or activeMenu == 'inventoryTransfers'
                  or activeMenu == 'inventoryAdjustments'
                  or activeMenu == 'inventoryStockSummary'
                  or activeMenu == 'inventoryOutboundValuations'
@@ -132,6 +133,13 @@
                             <li th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL' || tenantSubscriptionPlan == 'STARTER')}"
                                 sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
                                 <a class="dropdown-item" th:href="@{/warehouse/locations}">Ubicazioni</a>
+                            </li>
+                            <li th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL')}"
+                                sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
+                                <a class="dropdown-item"
+                                   th:href="@{/inventory/transfers/new}">
+                                    Trasferimenti tra ubicazioni
+                                </a>
                             </li>
 
 
@@ -178,7 +186,7 @@
                             <li><a class="dropdown-item" th:href="@{/accounting-entries}">Prima nota</a></li>
                             <li><a class="dropdown-item" th:href="@{/accounting-dashboard}">Dashboard contabile</a></li>
                             <li><a class="dropdown-item" th:href="@{/v2/accounts}">Piano dei conti</a></li>
-                            <li><a class="dropdown-item" th:href="@{/v2/journal-entries}">Scritture V2</a></li>
+                            <li><a class="dropdown-item" th:href="@{/v2/journal-entries}">Scritture contabili</a></li>
                             <li><a class="dropdown-item" th:href="@{/payments}">Incassi e pagamenti</a></li>
                             <li><a class="dropdown-item" th:href="@{/vat-registers/sales}">Registro IVA vendite</a></li>
                             <li><a class="dropdown-item" th:href="@{/vat-registers/purchases}">Registro IVA acquisti</a></li>

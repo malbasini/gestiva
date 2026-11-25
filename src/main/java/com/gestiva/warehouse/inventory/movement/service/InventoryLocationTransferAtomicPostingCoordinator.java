@@ -40,6 +40,7 @@ public class InventoryLocationTransferAtomicPostingCoordinator {
     private final InventoryMovementService movementService;
     private final InventoryValuationService valuationService;
     private final InventoryLocationTransferPostedEvidenceService postedEvidenceService;
+    private final InventoryLocationTransferAtomicPostingWriter postingWriter;
 
     /**
      * Compatibilità con i test esistenti.
@@ -69,7 +70,10 @@ public class InventoryLocationTransferAtomicPostingCoordinator {
         );
     }
 
-    @Autowired
+    /**
+     * Compatibilità con il percorso precedente.
+     * Senza writer il posting rimane fail-closed.
+     */
     public InventoryLocationTransferAtomicPostingCoordinator(
             WarehouseRepository warehouseRepository,
             InventoryLocationTransferRepository transferRepository,
@@ -79,6 +83,35 @@ public class InventoryLocationTransferAtomicPostingCoordinator {
             InventoryMovementService movementService,
             InventoryValuationService valuationService,
             InventoryLocationTransferPostedEvidenceService postedEvidenceService) {
+
+        this(
+                warehouseRepository,
+                transferRepository,
+                allocationRepository,
+                layerRepository,
+                consumptionRepository,
+                movementService,
+                valuationService,
+                postedEvidenceService,
+                null
+        );
+    }
+
+    /**
+     * Costruttore Spring per l'integrazione interna.
+     * Non abilita i servizi applicativi pubblici.
+     */
+    @Autowired
+    public InventoryLocationTransferAtomicPostingCoordinator(
+            WarehouseRepository warehouseRepository,
+            InventoryLocationTransferRepository transferRepository,
+            InventoryLocationTransferAllocationRepository allocationRepository,
+            InventoryLayerRepository layerRepository,
+            InventoryLayerConsumptionRepository consumptionRepository,
+            InventoryMovementService movementService,
+            InventoryValuationService valuationService,
+            InventoryLocationTransferPostedEvidenceService postedEvidenceService,
+            InventoryLocationTransferAtomicPostingWriter postingWriter) {
 
         this.warehouseRepository = java.util.Objects.requireNonNull(
                 warehouseRepository, "warehouseRepository"
@@ -102,9 +135,8 @@ public class InventoryLocationTransferAtomicPostingCoordinator {
                 valuationService, "valuationService"
         );
 
-        // Null ammesso soltanto dal costruttore legacy.
-        // Il ramo POSTED in quel caso rimane fail-closed.
         this.postedEvidenceService = postedEvidenceService;
+        this.postingWriter = postingWriter;
     }
 
     /**
@@ -201,19 +233,50 @@ public class InventoryLocationTransferAtomicPostingCoordinator {
             // completa delle evidenze FIFO persistite.
             postedEvidenceService.verifyPostedCompleteness(existing);
 
-            // Le evidenze coerenti non autorizzano ancora
-            // la restituzione dell'ID del trasferimento.
+            // Le istanze legacy restano fail-closed,
+            // anche dopo la verifica delle evidenze.
+            if (postingWriter == null) {
+                throw new BusinessException(
+                        "Riutilizzo del trasferimento POSTED "
+                        + "non ancora abilitato."
+                );
+            }
+
+            // Un ID mancante o non positivo non può
+            // essere restituito come risultato idempotente.
+            Long existingId = existing.getId();
+            if (existingId == null || existingId <= 0) {
+                throw new BusinessException(
+                        "Il trasferimento POSTED non ha un ID valido."
+                );
+            }
+
+            // Nessuna nuova scrittura FIFO: restituisce
+            // esclusivamente il trasferimento verificato.
+            return existingId;
+        }
+
+        // Le istanze legacy rimangono fail-closed.
+        if (postingWriter == null) {
             throw new BusinessException(
-                    "Riutilizzo del trasferimento POSTED "
-                    + "non ancora abilitato."
+                    "Coordinatore atomico dei trasferimenti FIFO non ancora abilitato."
             );
         }
 
-        // Il coordinatore rimane intenzionalmente
-        // disabilitato: nessun accesso ai repository,
-        // nessun movimento e nessun layer creato.
-        throw new BusinessException(
-                "Coordinatore atomico dei trasferimenti FIFO non ancora abilitato."
+        // Solo integrazione interna: i servizi pubblici
+        // continuano a rifiutare ogni posting.
+        // Il writer partecipa alla transazione REQUIRED.
+        return postingWriter.write(
+                tenantId,
+                companyId,
+                warehouseId,
+                itemId,
+                sourceLocationId,
+                targetLocationId,
+                quantity,
+                movementDate,
+                notes,
+                operationKey
         );
     }
 }

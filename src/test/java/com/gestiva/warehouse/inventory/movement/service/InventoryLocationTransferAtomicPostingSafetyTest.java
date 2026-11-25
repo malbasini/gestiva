@@ -147,7 +147,7 @@ class InventoryLocationTransferAtomicPostingSafetyTest {
                         .getDeclaredFields();
 
         assertEquals(
-                8,
+                9,
                 fields.length,
                 "STOP-AOU-NUMERO-DIPENDENZE-NON-CONFORME"
         );
