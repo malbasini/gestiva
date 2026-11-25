@@ -7,6 +7,7 @@ import com.gestiva.warehouse.inventory.movement.repository.InventoryLocationTran
 import com.gestiva.warehouse.inventory.valuation.repository.InventoryLayerRepository;
 import com.gestiva.warehouse.inventory.valuation.repository.InventoryLayerConsumptionRepository;
 import com.gestiva.warehouse.inventory.valuation.service.InventoryValuationService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +39,15 @@ public class InventoryLocationTransferAtomicPostingCoordinator {
     private final InventoryLayerConsumptionRepository consumptionRepository;
     private final InventoryMovementService movementService;
     private final InventoryValuationService valuationService;
+    private final InventoryLocationTransferPostedEvidenceService postedEvidenceService;
 
+    /**
+     * Compatibilità con i test esistenti.
+     *
+     * Senza il servizio evidenze, il percorso POSTED
+     * resta bloccato: non può restituire un ID.
+     */
+    @Deprecated
     public InventoryLocationTransferAtomicPostingCoordinator(
             WarehouseRepository warehouseRepository,
             InventoryLocationTransferRepository transferRepository,
@@ -47,6 +56,29 @@ public class InventoryLocationTransferAtomicPostingCoordinator {
             InventoryLayerConsumptionRepository consumptionRepository,
             InventoryMovementService movementService,
             InventoryValuationService valuationService) {
+
+        this(
+                warehouseRepository,
+                transferRepository,
+                allocationRepository,
+                layerRepository,
+                consumptionRepository,
+                movementService,
+                valuationService,
+                null
+        );
+    }
+
+    @Autowired
+    public InventoryLocationTransferAtomicPostingCoordinator(
+            WarehouseRepository warehouseRepository,
+            InventoryLocationTransferRepository transferRepository,
+            InventoryLocationTransferAllocationRepository allocationRepository,
+            InventoryLayerRepository layerRepository,
+            InventoryLayerConsumptionRepository consumptionRepository,
+            InventoryMovementService movementService,
+            InventoryValuationService valuationService,
+            InventoryLocationTransferPostedEvidenceService postedEvidenceService) {
 
         this.warehouseRepository = java.util.Objects.requireNonNull(
                 warehouseRepository, "warehouseRepository"
@@ -69,6 +101,10 @@ public class InventoryLocationTransferAtomicPostingCoordinator {
         this.valuationService = java.util.Objects.requireNonNull(
                 valuationService, "valuationService"
         );
+
+        // Null ammesso soltanto dal costruttore legacy.
+        // Il ramo POSTED in quel caso rimane fail-closed.
+        this.postedEvidenceService = postedEvidenceService;
     }
 
     /**
@@ -95,6 +131,83 @@ public class InventoryLocationTransferAtomicPostingCoordinator {
             LocalDate movementDate,
             String notes,
             String operationKey) {
+
+        // Validazione strutturale prima di qualsiasi lock,
+        // accesso ai repository o operazione di persistenza.
+        InventoryLocationTransferPostingRequestValidator.validate(
+                tenantId,
+                companyId,
+                warehouseId,
+                itemId,
+                sourceLocationId,
+                targetLocationId,
+                quantity,
+                movementDate,
+                notes,
+                operationKey
+        );
+
+        // Lock tenant/company/warehouse prima di ogni
+        // eventuale lettura o scrittura FIFO.
+        warehouseRepository.findByTenantAndCompanyAndIdForUpdate(
+                tenantId,
+                companyId,
+                warehouseId
+        ).orElseThrow(() -> new BusinessException(
+                "Magazzino non trovato nella società attiva."
+        ));
+
+        // Lookup idempotenza isolato per tenant e società.
+        // Nessun record viene creato o modificato.
+        var existingTransfer =
+                transferRepository.findByTenantIdAndCompanyIdAndOperationKey(
+                        tenantId,
+                        companyId,
+                        operationKey
+                );
+
+        // Un record esistente non può essere restituito
+        // senza verificare stato e parametri della richiesta.
+        if (existingTransfer.isPresent()) {
+            var existing = existingTransfer.get();
+
+            // Prima confronta il contenuto della richiesta.
+            InventoryLocationTransferIdempotencyVerifier.verifySameRequest(
+                    existing,
+                    tenantId,
+                    companyId,
+                    warehouseId,
+                    itemId,
+                    sourceLocationId,
+                    targetLocationId,
+                    quantity,
+                    movementDate
+            );
+
+            // Poi verifica lo stato strutturale del posting.
+            InventoryLocationTransferPostingStateVerifier.verifyPostedState(
+                    existing
+            );
+
+            // Il costruttore legacy è fail-closed.
+            if (postedEvidenceService == null) {
+                throw new BusinessException(
+                        "Riutilizzo del trasferimento POSTED "
+                        + "non ancora abilitato."
+                );
+            }
+
+            // Recupero tenant/company scoped e riconciliazione
+            // completa delle evidenze FIFO persistite.
+            postedEvidenceService.verifyPostedCompleteness(existing);
+
+            // Le evidenze coerenti non autorizzano ancora
+            // la restituzione dell'ID del trasferimento.
+            throw new BusinessException(
+                    "Riutilizzo del trasferimento POSTED "
+                    + "non ancora abilitato."
+            );
+        }
 
         // Il coordinatore rimane intenzionalmente
         // disabilitato: nessun accesso ai repository,

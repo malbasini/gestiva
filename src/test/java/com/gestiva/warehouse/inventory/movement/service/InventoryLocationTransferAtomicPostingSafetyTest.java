@@ -74,13 +74,16 @@ class InventoryLocationTransferAtomicPostingSafetyTest {
         );
 
         assertEquals(
-                "Coordinatore atomico dei trasferimenti FIFO "
-                + "non ancora abilitato.",
+                "Magazzino non trovato nella società attiva.",
                 exception.getMessage()
         );
 
+        verify(warehouseRepository, times(1))
+                .findByTenantAndCompanyAndIdForUpdate(
+                        2L, 1L, 5L
+                );
+
         verifyNoInteractions(
-                warehouseRepository,
                 transferRepository,
                 allocationRepository,
                 layerRepository,
@@ -144,7 +147,7 @@ class InventoryLocationTransferAtomicPostingSafetyTest {
                         .getDeclaredFields();
 
         assertEquals(
-                7,
+                8,
                 fields.length,
                 "STOP-AOU-NUMERO-DIPENDENZE-NON-CONFORME"
         );
