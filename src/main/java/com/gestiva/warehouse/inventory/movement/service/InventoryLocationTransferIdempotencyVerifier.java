@@ -46,10 +46,12 @@ public final class InventoryLocationTransferIdempotencyVerifier {
         requirePositiveId(companyId);
         requirePositiveId(warehouseId);
         requirePositiveId(itemId);
-        requirePositiveId(sourceLocationId);
+        if (sourceLocationId != null) {
+            requirePositiveId(sourceLocationId);
+        }
         requirePositiveId(targetLocationId);
 
-        if (sourceLocationId.equals(targetLocationId)) {
+        if (targetLocationId.equals(sourceLocationId)) {
             throw new BusinessException(
                     "Le ubicazioni del trasferimento devono essere diverse."
             );

@@ -81,7 +81,7 @@ class InventoryLocationTransferPostingRequestValidatorRobustnessTest {
         });
     }
 
-    // 6 identificativi di contesto.
+    // Identificativi di contesto e ubicazioni V13.
 
     @Test
     void rejectsInvalidTenant() {
@@ -104,8 +104,47 @@ class InventoryLocationTransferPostingRequestValidatorRobustnessTest {
     }
 
     @Test
+    void acceptsUnlocatedSource() {
+        accept(request -> request.sourceLocationId = null);
+    }
+
+    @Test
     void rejectsInvalidSourceLocation() {
-        reject(request -> request.sourceLocationId = null);
+        reject(request -> request.sourceLocationId = 0L);
+    }
+
+    @Test
+    void rejectsNegativeSourceLocation() {
+        reject(request -> request.sourceLocationId = -1L);
+    }
+
+    @Test
+    void rejectsNullTargetLocation() {
+        reject(request -> request.targetLocationId = null);
+    }
+
+    @Test
+    void rejectsBothLocationsNull() {
+        reject(request -> {
+            request.sourceLocationId = null;
+            request.targetLocationId = null;
+        });
+    }
+
+    @Test
+    void rejectsZeroTargetWithUnlocatedSource() {
+        reject(request -> {
+            request.sourceLocationId = null;
+            request.targetLocationId = 0L;
+        });
+    }
+
+    @Test
+    void rejectsNegativeTargetWithUnlocatedSource() {
+        reject(request -> {
+            request.sourceLocationId = null;
+            request.targetLocationId = -1L;
+        });
     }
 
     @Test

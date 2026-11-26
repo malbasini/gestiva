@@ -428,4 +428,231 @@ class InventoryLocationTransferAtomicPostingWriterTest {
         );
     }
 
+
+    private static void prepareUnlocatedSource(Fixture f) {
+
+        f.source.setLocationId(null);
+        f.out.setLocationId(null);
+
+        when(f.layers.findTransferSourceLayersForUpdate(
+                2L, 1L, 5L, 10L, null
+        )).thenReturn(List.of(f.source));
+    }
+
+    private static Long writeUnlocated(Fixture f) {
+        return f.writer.write(
+                2L, 1L, 5L, 10L,
+                null, 200L,
+                bd("7.000"),
+                DATE, "Collaudo V13",
+                "APY-KEY-001"
+        );
+    }
+
+    @Test
+    void unlocatedPostingCreatesMatchingFifoEvidence()
+            throws Exception {
+
+        var f = new Fixture();
+        f.completePosting();
+        prepareUnlocatedSource(f);
+
+        assertEquals(700L, writeUnlocated(f));
+
+        verify(f.layers).findTransferSourceLayersForUpdate(
+                2L, 1L, 5L, 10L, null
+        );
+
+        verify(f.layers, never())
+                .findTransferSourceLayersForUpdate(
+                        2L, 1L, 5L, 10L, 100L
+                );
+
+        assertNull(f.source.getLocationId());
+        assertNull(f.out.getLocationId());
+        assertEquals(200L, f.in.getLocationId());
+
+        assertEquals(
+                bd("2.000"),
+                f.source.getRemainingQty()
+        );
+
+        assertFalse(f.source.isClosed());
+
+        assertEquals(
+                bd("17.5000"),
+                f.out.getTotalCost()
+        );
+
+        assertEquals(
+                bd("17.5000"),
+                f.in.getTotalCost()
+        );
+
+        verify(f.movementService).registerMovement(
+                eq(2L), eq(1L), eq(5L),
+                isNull(), eq(10L), eq(DATE),
+                eq("OUT"), eq("LOCATION_TRANSFER_OUT"),
+                eq(bd("7.000")), isNull(),
+                eq("LOCATION_TRANSFER"), eq(700L),
+                eq("Collaudo V13")
+        );
+
+        verify(f.movementService).registerMovement(
+                eq(2L), eq(1L), eq(5L),
+                eq(200L), eq(10L), eq(DATE),
+                eq("IN"), eq("LOCATION_TRANSFER_IN"),
+                eq(bd("7.000")), eq(bd("2.5000")),
+                eq("LOCATION_TRANSFER"), eq(700L),
+                eq("Collaudo V13")
+        );
+
+        var layerCaptor =
+                org.mockito.ArgumentCaptor.forClass(
+                        InventoryLayer.class
+                );
+
+        verify(f.layers).saveAndFlush(layerCaptor.capture());
+
+        InventoryLayer target = layerCaptor.getValue();
+
+        assertEquals(200L, target.getLocationId());
+        assertEquals(702L, target.getSourceMovementId());
+        assertEquals(bd("7.000"), target.getOriginalQty());
+        assertEquals(bd("7.000"), target.getRemainingQty());
+        assertEquals(bd("2.5000"), target.getUnitCost());
+        assertEquals(f.source.getLayerDate(), target.getLayerDate());
+
+        assertEquals(
+                bd("9.000"),
+                f.source.getRemainingQty()
+                        .add(target.getRemainingQty())
+        );
+
+        assertEquals(
+                bd("22.5000000"),
+                f.source.getRemainingQty()
+                        .multiply(f.source.getUnitCost())
+                        .add(target.getRemainingQty()
+                                .multiply(target.getUnitCost()))
+        );
+
+        var consumptionCaptor =
+                org.mockito.ArgumentCaptor.forClass(
+                        InventoryLayerConsumption.class
+                );
+
+        verify(f.consumptions).save(consumptionCaptor.capture());
+
+        var consumption = consumptionCaptor.getValue();
+
+        assertEquals(800L, consumption.getLayerId());
+        assertEquals(701L, consumption.getOutMovementId());
+        assertEquals(bd("7.000"), consumption.getConsumedQty());
+        assertEquals(bd("2.5000"), consumption.getUnitCost());
+        assertEquals(bd("17.5000"), consumption.getTotalCost());
+
+        var allocationCaptor =
+                org.mockito.ArgumentCaptor.forClass(
+                        InventoryLocationTransferAllocation.class
+                );
+
+        verify(f.allocations).save(allocationCaptor.capture());
+
+        var allocation = allocationCaptor.getValue();
+
+        assertEquals(700L, allocation.getTransferId());
+        assertEquals(800L, allocation.getSourceLayerId());
+        assertEquals(900L, allocation.getTargetLayerId());
+        assertEquals(bd("7.000"), allocation.getAllocatedQty());
+        assertEquals(bd("2.5000"), allocation.getUnitCost());
+        assertEquals(f.source.getLayerDate(), allocation.getLayerDate());
+
+        var transferCaptor =
+                org.mockito.ArgumentCaptor.forClass(
+                        InventoryLocationTransfer.class
+                );
+
+        verify(f.transfers, times(2))
+                .saveAndFlush(transferCaptor.capture());
+
+        var posted = transferCaptor.getAllValues().get(1);
+
+        assertEquals("POSTED", posted.getStatus());
+        assertNull(posted.getSourceLocationId());
+        assertEquals(200L, posted.getTargetLocationId());
+        assertEquals(701L, posted.getOutMovementId());
+        assertEquals(702L, posted.getInMovementId());
+    }
+
+    @Test
+    void insufficientUnlocatedFifoStopsBeforePersistence()
+            throws Exception {
+
+        var f = new Fixture();
+
+        f.warehouseExists();
+        f.prepareSource(bd("3.000"));
+        prepareUnlocatedSource(f);
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> writeUnlocated(f)
+        );
+
+        assertEquals(
+                "Strati FIFO insufficienti nell'ubicazione di origine.",
+                exception.getMessage()
+        );
+
+        assertEquals(
+                bd("3.000"),
+                f.source.getRemainingQty()
+        );
+
+        verify(f.transfers, never()).saveAndFlush(any());
+        verify(f.layers, never()).save(any());
+        verify(f.layers, never()).saveAndFlush(any());
+
+        verifyNoInteractions(
+                f.allocations,
+                f.consumptions,
+                f.movementService,
+                f.movements
+        );
+    }
+
+    @Test
+    void unlocatedAllocationFailurePreventsFinalPosting()
+            throws Exception {
+
+        var f = new Fixture();
+
+        f.completePosting();
+        prepareUnlocatedSource(f);
+
+        when(f.allocations.save(
+                any(InventoryLocationTransferAllocation.class)
+        )).thenThrow(new IllegalStateException(
+                "Errore simulato allocazione V13."
+        ));
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> writeUnlocated(f)
+        );
+
+        assertEquals(
+                "Errore simulato allocazione V13.",
+                exception.getMessage()
+        );
+
+        verify(f.allocations).save(
+                any(InventoryLocationTransferAllocation.class)
+        );
+
+        verify(f.transfers, times(1)).saveAndFlush(
+                any(InventoryLocationTransfer.class)
+        );
+    }
 }

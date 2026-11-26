@@ -20,7 +20,7 @@ public class InventoryLocationTransfer extends TenantAwareEntity {
     @Column(name = "item_id", nullable = false)
     private Long itemId;
 
-    @Column(name = "source_location_id", nullable = false)
+    @Column(name = "source_location_id", nullable = true)
     private Long sourceLocationId;
 
     @Column(name = "target_location_id", nullable = false)

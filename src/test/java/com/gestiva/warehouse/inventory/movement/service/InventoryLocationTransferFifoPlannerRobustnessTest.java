@@ -200,7 +200,7 @@ class InventoryLocationTransferFifoPlannerRobustnessTest {
     }
 
     @Test
-    void missingSourceLocationMustBeRejected() {
+    void unlocatedSourceCannotConsumeLocatedLayers() {
 
         InventoryLayer source =
                 layer(201L, 101L, "5.000", "7.2000", false);
@@ -215,7 +215,182 @@ class InventoryLocationTransferFifoPlannerRobustnessTest {
         );
 
         assertEquals(
-                "Layer FIFO e ubicazione di origine sono obbligatori.",
+                "Strati FIFO insufficienti nell'ubicazione di origine.",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void unlocatedSourceMustPreserveFifoComposition() {
+
+        InventoryLayer first =
+                layer(201L, 101L, "5.000", "7.2000", false);
+
+        InventoryLayer located =
+                layer(202L, 101L, "9.000", "6.0000", false);
+
+        InventoryLayer third =
+                layer(203L, 101L, "8.000", "8.1000", false);
+
+        first.setLocationId(null);
+        third.setLocationId(null);
+
+        first.setLayerDate(LocalDate.of(2026, 10, 1));
+        located.setLayerDate(LocalDate.of(2026, 10, 2));
+        third.setLayerDate(LocalDate.of(2026, 10, 3));
+
+        var allocations = planner.plan(
+                List.of(first, located, third),
+                2L,
+                3L,
+                2L,
+                7L,
+                null,
+                new BigDecimal("7.000")
+        );
+
+        assertEquals(2, allocations.size());
+
+        var a = allocations.get(0);
+        var b = allocations.get(1);
+
+        assertEquals(201L, a.sourceLayerId());
+        assertEquals(new BigDecimal("5.000"), a.quantity());
+        assertEquals(new BigDecimal("7.2000"), a.unitCost());
+        assertEquals(LocalDate.of(2026, 10, 1), a.layerDate());
+
+        assertEquals(203L, b.sourceLayerId());
+        assertEquals(new BigDecimal("2.000"), b.quantity());
+        assertEquals(new BigDecimal("8.1000"), b.unitCost());
+        assertEquals(LocalDate.of(2026, 10, 3), b.layerDate());
+
+        BigDecimal totalCost = a.quantity()
+                .multiply(a.unitCost())
+                .add(b.quantity().multiply(b.unitCost()))
+                .setScale(4);
+
+        assertEquals(new BigDecimal("52.2000"), totalCost);
+
+        assertEquals(
+                new BigDecimal("5.000"),
+                first.getRemainingQty()
+        );
+
+        assertEquals(
+                new BigDecimal("9.000"),
+                located.getRemainingQty()
+        );
+
+        assertEquals(
+                new BigDecimal("8.000"),
+                third.getRemainingQty()
+        );
+
+        assertFalse(first.isClosed());
+        assertFalse(located.isClosed());
+        assertFalse(third.isClosed());
+    }
+
+    @Test
+    void insufficientUnlocatedStockMustNotUseLocatedStock() {
+
+        InventoryLayer unlocated =
+                layer(201L, 101L, "3.000", "7.2000", false);
+
+        unlocated.setLocationId(null);
+
+        InventoryLayer located =
+                layer(202L, 101L, "20.000", "8.1000", false);
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> planner.plan(
+                        List.of(unlocated, located),
+                        null,
+                        new BigDecimal("7.000")
+                )
+        );
+
+        assertEquals(
+                "Strati FIFO insufficienti nell'ubicazione di origine.",
+                exception.getMessage()
+        );
+
+        assertEquals(
+                new BigDecimal("3.000"),
+                unlocated.getRemainingQty()
+        );
+
+        assertEquals(
+                new BigDecimal("20.000"),
+                located.getRemainingQty()
+        );
+    }
+
+    @Test
+    void locatedSourceMustNotConsumeUnlocatedLayers() {
+
+        InventoryLayer unlocated =
+                layer(201L, 101L, "20.000", "7.2000", false);
+
+        unlocated.setLocationId(null);
+
+        InventoryLayer located =
+                layer(202L, 101L, "3.000", "8.1000", false);
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> planner.plan(
+                        List.of(unlocated, located),
+                        101L,
+                        new BigDecimal("7.000")
+                )
+        );
+
+        assertEquals(
+                "Strati FIFO insufficienti nell'ubicazione di origine.",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void invalidSourceIdentifiersMustBeRejected() {
+
+        for (Long source : List.of(0L, -1L)) {
+
+            InventoryLayer invalid =
+                    layer(201L, source, "5.000", "7.2000", false);
+
+            BusinessException exception = assertThrows(
+                    BusinessException.class,
+                    () -> planner.plan(
+                            List.of(invalid),
+                            source,
+                            new BigDecimal("2.000")
+                    )
+            );
+
+            assertEquals(
+                    "Ubicazione di origine non valida.",
+                    exception.getMessage()
+            );
+        }
+    }
+
+    @Test
+    void nullCandidateListMustStillBeRejected() {
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> planner.plan(
+                        null,
+                        null,
+                        new BigDecimal("2.000")
+                )
+        );
+
+        assertEquals(
+                "I layer FIFO sono obbligatori.",
                 exception.getMessage()
         );
     }

@@ -248,4 +248,94 @@ class InventoryLocationTransferIdempotencyVerifierRobustnessTest {
                 request -> request.companyId = 0L
         );
     }
+
+    @Test
+    void acceptsIdenticalUnlocatedRequest() {
+        accept(
+                existing -> existing.setSourceLocationId(null),
+                request -> request.sourceLocationId = null
+        );
+    }
+
+    @Test
+    void rejectsLocatedRequestForUnlocatedTransfer() {
+        reject(
+                existing -> existing.setSourceLocationId(null),
+                request -> {}
+        );
+    }
+
+    @Test
+    void rejectsUnlocatedRequestForLocatedTransfer() {
+        reject(
+                existing -> {},
+                request -> request.sourceLocationId = null
+        );
+    }
+
+    @Test
+    void rejectsMatchingZeroSourceIdentifiers() {
+        reject(
+                existing -> existing.setSourceLocationId(0L),
+                request -> request.sourceLocationId = 0L
+        );
+    }
+
+    @Test
+    void rejectsMatchingNegativeSourceIdentifiers() {
+        reject(
+                existing -> existing.setSourceLocationId(-1L),
+                request -> request.sourceLocationId = -1L
+        );
+    }
+
+    @Test
+    void rejectsUnlocatedRequestWithNullTarget() {
+        reject(
+                existing -> {
+                    existing.setSourceLocationId(null);
+                    existing.setTargetLocationId(null);
+                },
+                request -> {
+                    request.sourceLocationId = null;
+                    request.targetLocationId = null;
+                }
+        );
+    }
+
+    @Test
+    void rejectsUnlocatedRequestWithZeroTarget() {
+        reject(
+                existing -> {
+                    existing.setSourceLocationId(null);
+                    existing.setTargetLocationId(0L);
+                },
+                request -> {
+                    request.sourceLocationId = null;
+                    request.targetLocationId = 0L;
+                }
+        );
+    }
+
+    @Test
+    void rejectsUnlocatedRequestWithDifferentQuantity() {
+        reject(
+                existing -> existing.setSourceLocationId(null),
+                request -> {
+                    request.sourceLocationId = null;
+                    request.quantity = new BigDecimal("8.000");
+                }
+        );
+    }
+
+    @Test
+    void rejectsUnlocatedRequestWithDifferentCompany() {
+        reject(
+                existing -> existing.setSourceLocationId(null),
+                request -> {
+                    request.sourceLocationId = null;
+                    request.companyId = 99L;
+                }
+        );
+    }
 }

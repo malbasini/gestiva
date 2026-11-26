@@ -115,7 +115,13 @@ public interface InventoryLayerRepository extends JpaRepository<InventoryLayer, 
               and l.companyId = :companyId
               and l.warehouseId = :warehouseId
               and l.itemId = :itemId
-              and l.locationId = :sourceLocationId
+              and (
+                  l.locationId = :sourceLocationId
+                  or (
+                      :sourceLocationId is null
+                      and l.locationId is null
+                  )
+              )
               and l.closed = false
             order by l.layerDate asc, l.id asc
             """)

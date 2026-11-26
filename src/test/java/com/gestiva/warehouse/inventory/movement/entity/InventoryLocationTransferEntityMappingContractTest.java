@@ -70,6 +70,36 @@ class InventoryLocationTransferEntityMappingContractTest {
         verifyColumn(allocation, "layerDate", "layer_date");
     }
 
+    @Test
+    void transferLocationsMustRespectV13Nullability()
+            throws Exception {
+
+        Class<?> transfer = requireClass(
+                "InventoryLocationTransfer"
+        );
+
+        Column source = transfer
+                .getDeclaredField("sourceLocationId")
+                .getAnnotation(Column.class);
+
+        Column target = transfer
+                .getDeclaredField("targetLocationId")
+                .getAnnotation(Column.class);
+
+        assertNotNull(source);
+        assertNotNull(target);
+
+        assertTrue(
+                source.nullable(),
+                "V13: l'origine deve ammettere NULL"
+        );
+
+        assertFalse(
+                target.nullable(),
+                "V13: la destinazione deve rimanere obbligatoria"
+        );
+    }
+
     private static Class<?> requireClass(String simpleName)
             throws Exception {
 

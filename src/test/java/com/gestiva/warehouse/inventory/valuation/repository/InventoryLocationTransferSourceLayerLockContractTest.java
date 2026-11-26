@@ -79,4 +79,44 @@ class InventoryLocationTransferSourceLayerLockContractTest {
             );
         }
     }
+
+    @Test
+    void transferSourceLocationMustUseExactNullMatching()
+            throws Exception {
+
+        Method method = InventoryLayerRepository.class.getMethod(
+                "findTransferSourceLayersForUpdate",
+                Long.class,
+                Long.class,
+                Long.class,
+                Long.class,
+                Long.class
+        );
+
+        Query query = method.getAnnotation(Query.class);
+        assertNotNull(query);
+
+        String jpql = query.value()
+                .replaceAll("\\s+", " ")
+                .toLowerCase(Locale.ROOT)
+                .trim();
+
+        String expected =
+                "and l.itemid = :itemid "
+                + "and ( l.locationid = :sourcelocationid "
+                + "or ( :sourcelocationid is null "
+                + "and l.locationid is null ) ) "
+                + "and l.closed = false";
+
+        assertTrue(
+                jpql.contains(expected),
+                "V13: NULL deve selezionare esclusivamente "
+                        + "i layer senza ubicazione."
+        );
+
+        assertEquals(
+                LockModeType.PESSIMISTIC_WRITE,
+                method.getAnnotation(Lock.class).value()
+        );
+    }
 }

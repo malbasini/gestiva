@@ -3313,4 +3313,816 @@ class InventoryLocationTransferAtomicPostingSandboxITTest {
             }
         }
     }
+
+    private Fixture createV13UnlocatedFixture(String suffix) {
+
+        Fixture f = createFixture(suffix);
+
+        assertEquals(2, jdbc.update("""
+                UPDATE inventory_movement
+                SET location_id=NULL
+                WHERE tenant_id=? AND company_id=?
+                  AND warehouse_id=? AND item_id=?
+                  AND id IN (?,?)
+                """,
+                TENANT, COMPANY,
+                f.warehouseId(), f.itemId(),
+                f.movement1(), f.movement2()));
+
+        assertEquals(2, jdbc.update("""
+                UPDATE inventory_layer
+                SET location_id=NULL
+                WHERE tenant_id=? AND company_id=?
+                  AND warehouse_id=? AND item_id=?
+                  AND id IN (?,?)
+                """,
+                TENANT, COMPANY,
+                f.warehouseId(), f.itemId(),
+                f.layer1(), f.layer2()));
+
+        long locatedMovement = createInitialMovement(
+                f.warehouseId(),
+                f.sourceId(),
+                f.itemId(),
+                LocalDate.of(2026, 9, 1),
+                "10.000", "6.0000", "60.0000"
+        );
+
+        createLayer(
+                f.warehouseId(),
+                f.sourceId(),
+                f.itemId(),
+                locatedMovement,
+                LocalDate.of(2026, 9, 1),
+                "10.000", "6.0000"
+        );
+
+        return f;
+    }
+
+    private void assertV13LayerBalance(
+            Fixture f,
+            Long locationId,
+            String quantity,
+            String value) {
+
+        amount(quantity, """
+                SELECT COALESCE(SUM(remaining_qty),0)
+                FROM inventory_layer
+                WHERE tenant_id=? AND company_id=?
+                  AND warehouse_id=? AND item_id=?
+                  AND location_id <=> ?
+                  AND closed=b'0'
+                """,
+                TENANT, COMPANY,
+                f.warehouseId(), f.itemId(), locationId);
+
+        amount(value, """
+                SELECT COALESCE(
+                    SUM(remaining_qty * unit_cost),0
+                )
+                FROM inventory_layer
+                WHERE tenant_id=? AND company_id=?
+                  AND warehouse_id=? AND item_id=?
+                  AND location_id <=> ?
+                  AND closed=b'0'
+                """,
+                TENANT, COMPANY,
+                f.warehouseId(), f.itemId(), locationId);
+    }
+
+    private void assertV13WarehouseBalance(Fixture f) {
+
+        amount("25.000", """
+                SELECT COALESCE(SUM(remaining_qty),0)
+                FROM inventory_layer
+                WHERE tenant_id=? AND company_id=?
+                  AND warehouse_id=? AND item_id=?
+                  AND closed=b'0'
+                """,
+                TENANT, COMPANY,
+                f.warehouseId(), f.itemId());
+
+        amount("184.1000", """
+                SELECT COALESCE(
+                    SUM(remaining_qty * unit_cost),0
+                )
+                FROM inventory_layer
+                WHERE tenant_id=? AND company_id=?
+                  AND warehouse_id=? AND item_id=?
+                  AND closed=b'0'
+                """,
+                TENANT, COMPANY,
+                f.warehouseId(), f.itemId());
+
+        amount("25.000", """
+                SELECT COALESCE(SUM(
+                    CASE
+                        WHEN movement_type IN (
+                            'IN','ADJUSTMENT_IN'
+                        ) THEN quantity
+                        WHEN movement_type IN (
+                            'OUT','ADJUSTMENT_OUT'
+                        ) THEN -quantity
+                        ELSE 0
+                    END
+                ),0)
+                FROM inventory_movement
+                WHERE tenant_id=? AND company_id=?
+                  AND warehouse_id=? AND item_id=?
+                  AND reversed=b'0'
+                """,
+                TENANT, COMPANY,
+                f.warehouseId(), f.itemId());
+    }
+
+    private void cleanupV13Fixture(Fixture f) {
+
+        TransactionTemplate cleanup =
+                new TransactionTemplate(transactionManager);
+
+        cleanup.execute(status -> {
+
+            jdbc.update("""
+                    DELETE a
+                    FROM inventory_location_transfer_allocation a
+                    JOIN inventory_location_transfer t
+                      ON t.id=a.transfer_id
+                    WHERE t.tenant_id=? AND t.company_id=?
+                      AND t.warehouse_id=? AND t.item_id=?
+                    """,
+                    TENANT, COMPANY,
+                    f.warehouseId(), f.itemId());
+
+            jdbc.update("""
+                    DELETE c
+                    FROM inventory_layer_consumption c
+                    JOIN inventory_movement m
+                      ON m.id=c.out_movement_id
+                    WHERE m.tenant_id=? AND m.company_id=?
+                      AND m.warehouse_id=? AND m.item_id=?
+                    """,
+                    TENANT, COMPANY,
+                    f.warehouseId(), f.itemId());
+
+            jdbc.update("""
+                    DELETE FROM inventory_location_transfer
+                    WHERE tenant_id=? AND company_id=?
+                      AND warehouse_id=? AND item_id=?
+                    """,
+                    TENANT, COMPANY,
+                    f.warehouseId(), f.itemId());
+
+            jdbc.update("""
+                    DELETE FROM inventory_layer
+                    WHERE tenant_id=? AND company_id=?
+                      AND warehouse_id=? AND item_id=?
+                    """,
+                    TENANT, COMPANY,
+                    f.warehouseId(), f.itemId());
+
+            jdbc.update("""
+                    DELETE FROM inventory_movement
+                    WHERE tenant_id=? AND company_id=?
+                      AND warehouse_id=? AND item_id=?
+                    """,
+                    TENANT, COMPANY,
+                    f.warehouseId(), f.itemId());
+
+            jdbc.update("""
+                    DELETE FROM warehouse_location
+                    WHERE tenant_id=? AND warehouse_id=?
+                    """,
+                    TENANT, f.warehouseId());
+
+            jdbc.update("""
+                    DELETE FROM warehouse
+                    WHERE tenant_id=? AND company_id=? AND id=?
+                    """,
+                    TENANT, COMPANY, f.warehouseId());
+
+            jdbc.update("""
+                    DELETE FROM item
+                    WHERE tenant_id=? AND id=?
+                    """,
+                    TENANT, f.itemId());
+
+            return null;
+        });
+
+        assertEquals(0L, count(
+                "SELECT COUNT(*) FROM warehouse WHERE id=?",
+                f.warehouseId()));
+
+        assertEquals(0L, count(
+                "SELECT COUNT(*) FROM item WHERE id=?",
+                f.itemId()));
+
+        assertEquals(0L, count(
+                "SELECT COUNT(*) FROM inventory_movement "
+                + "WHERE warehouse_id=?",
+                f.warehouseId()));
+
+        assertEquals(0L, count(
+                "SELECT COUNT(*) FROM inventory_layer "
+                + "WHERE warehouse_id=?",
+                f.warehouseId()));
+
+        assertEquals(0L, count(
+                "SELECT COUNT(*) FROM inventory_location_transfer "
+                + "WHERE warehouse_id=?",
+                f.warehouseId()));
+
+        assertEquals(0L, count(
+                "SELECT COUNT(*) "
+                + "FROM inventory_location_transfer_allocation "
+                + "WHERE warehouse_id=?",
+                f.warehouseId()));
+
+        assertEquals(0L, count(
+                "SELECT COUNT(*) FROM inventory_layer_consumption "
+                + "WHERE warehouse_id=?",
+                f.warehouseId()));
+
+        assertEquals(0L, count(
+                "SELECT COUNT(*) FROM warehouse_location "
+                + "WHERE warehouse_id=?",
+                f.warehouseId()));
+
+        System.out.println("V13_FIXTURE_CLEANUP: PASS");
+    }
+
+    @Test
+    void v13UnlocatedTransferCommitsAndReplaysWithoutDuplicates() {
+
+        assertEquals(33308,
+                jdbc.queryForObject("SELECT @@port", Integer.class));
+
+        assertEquals(DATABASE,
+                jdbc.queryForObject("SELECT DATABASE()", String.class));
+
+        assertEquals("YES", jdbc.queryForObject("""
+                SELECT IS_NULLABLE
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA=DATABASE()
+                  AND TABLE_NAME='inventory_location_transfer'
+                  AND COLUMN_NAME='source_location_id'
+                """, String.class));
+
+        String suffix = "V13-" + UUID.randomUUID()
+                .toString().replace("-", "").substring(0, 12);
+
+        TransactionTemplate tx =
+                new TransactionTemplate(transactionManager);
+
+        Fixture f = tx.execute(
+                status -> createV13UnlocatedFixture(suffix));
+
+        assertNotNull(f);
+
+        try {
+
+            assertV13WarehouseBalance(f);
+
+            assertV13LayerBalance(
+                    f, null, "15.000", "124.1000");
+
+            assertV13LayerBalance(
+                    f, f.sourceId(), "10.000", "60.0000");
+
+            assertV13LayerBalance(
+                    f, f.targetId(), "0.000", "0.0000");
+
+            LocalDate movementDate =
+                    LocalDate.of(2026, 11, 26);
+
+            Long firstId = coordinator.post(
+                    TENANT, COMPANY,
+                    f.warehouseId(), f.itemId(),
+                    null, f.targetId(),
+                    new BigDecimal("12.000"),
+                    movementDate,
+                    "Collaudo V13 origine NULL",
+                    f.operationKey()
+            );
+
+            assertNotNull(firstId);
+
+            assertEquals(1L, count("""
+                    SELECT COUNT(*)
+                    FROM inventory_location_transfer
+                    WHERE id=? AND tenant_id=? AND company_id=?
+                      AND warehouse_id=? AND item_id=?
+                      AND source_location_id IS NULL
+                      AND target_location_id=?
+                      AND status='POSTED'
+                    """,
+                    firstId, TENANT, COMPANY,
+                    f.warehouseId(), f.itemId(), f.targetId()));
+
+            long outId = id(
+                    "SELECT out_movement_id "
+                    + "FROM inventory_location_transfer WHERE id=?",
+                    firstId);
+
+            long inId = id(
+                    "SELECT in_movement_id "
+                    + "FROM inventory_location_transfer WHERE id=?",
+                    firstId);
+
+            assertNotEquals(outId, inId);
+
+            assertEquals(1L, count("""
+                    SELECT COUNT(*) FROM inventory_movement
+                    WHERE id=? AND location_id IS NULL
+                      AND movement_type='OUT'
+                      AND reference_type='LOCATION_TRANSFER'
+                      AND reference_id=?
+                    """, outId, firstId));
+
+            assertEquals(1L, count("""
+                    SELECT COUNT(*) FROM inventory_movement
+                    WHERE id=? AND location_id=?
+                      AND movement_type='IN'
+                      AND reference_type='LOCATION_TRANSFER'
+                      AND reference_id=?
+                    """, inId, f.targetId(), firstId));
+
+            amount("95.6000",
+                    "SELECT total_cost FROM inventory_movement "
+                    + "WHERE id=?", outId);
+
+            amount("95.6000",
+                    "SELECT total_cost FROM inventory_movement "
+                    + "WHERE id=?", inId);
+
+            amount("0.000",
+                    "SELECT remaining_qty FROM inventory_layer "
+                    + "WHERE id=?", f.layer1());
+
+            amount("3.000",
+                    "SELECT remaining_qty FROM inventory_layer "
+                    + "WHERE id=?", f.layer2());
+
+            assertEquals(2L, count("""
+                    SELECT COUNT(*)
+                    FROM inventory_location_transfer_allocation
+                    WHERE transfer_id=?
+                    """, firstId));
+
+            assertEquals(2L, count("""
+                    SELECT COUNT(*)
+                    FROM inventory_location_transfer_allocation a
+                    JOIN inventory_layer s ON s.id=a.source_layer_id
+                    JOIN inventory_layer d ON d.id=a.target_layer_id
+                    JOIN inventory_layer_consumption c
+                      ON c.layer_id=a.source_layer_id
+                     AND c.out_movement_id=?
+                    WHERE a.transfer_id=?
+                      AND s.location_id IS NULL
+                      AND d.location_id=?
+                      AND d.source_movement_id=?
+                      AND s.layer_date=a.layer_date
+                      AND d.layer_date=a.layer_date
+                      AND s.unit_cost=a.unit_cost
+                      AND d.unit_cost=a.unit_cost
+                      AND d.original_qty=a.allocated_qty
+                      AND c.consumed_qty=a.allocated_qty
+                      AND c.unit_cost=a.unit_cost
+                    """,
+                    outId, firstId, f.targetId(), inId));
+
+            assertEquals(1L, count("""
+                    SELECT COUNT(*)
+                    FROM inventory_location_transfer_allocation
+                    WHERE transfer_id=? AND source_layer_id=?
+                      AND allocated_qty=8.000
+                      AND unit_cost=7.2000
+                    """, firstId, f.layer1()));
+
+            assertEquals(1L, count("""
+                    SELECT COUNT(*)
+                    FROM inventory_location_transfer_allocation
+                    WHERE transfer_id=? AND source_layer_id=?
+                      AND allocated_qty=4.000
+                      AND unit_cost=9.5000
+                    """, firstId, f.layer2()));
+
+            assertV13WarehouseBalance(f);
+
+            assertV13LayerBalance(
+                    f, null, "3.000", "28.5000");
+
+            assertV13LayerBalance(
+                    f, f.sourceId(), "10.000", "60.0000");
+
+            assertV13LayerBalance(
+                    f, f.targetId(), "12.000", "95.6000");
+
+            Long secondId = coordinator.post(
+                    TENANT, COMPANY,
+                    f.warehouseId(), f.itemId(),
+                    null, f.targetId(),
+                    new BigDecimal("12.000"),
+                    movementDate,
+                    "Collaudo V13 origine NULL",
+                    f.operationKey()
+            );
+
+            assertEquals(firstId, secondId);
+
+            assertEquals(1L, count("""
+                    SELECT COUNT(*)
+                    FROM inventory_location_transfer
+                    WHERE tenant_id=? AND company_id=?
+                      AND warehouse_id=? AND item_id=?
+                    """,
+                    TENANT, COMPANY,
+                    f.warehouseId(), f.itemId()));
+
+            assertEquals(2L, count("""
+                    SELECT COUNT(*) FROM inventory_movement
+                    WHERE warehouse_id=?
+                      AND reference_type='LOCATION_TRANSFER'
+                    """, f.warehouseId()));
+
+            assertEquals(2L, count("""
+                    SELECT COUNT(*)
+                    FROM inventory_location_transfer_allocation
+                    WHERE transfer_id=?
+                    """, firstId));
+
+            assertEquals(2L, count("""
+                    SELECT COUNT(*)
+                    FROM inventory_layer_consumption
+                    WHERE out_movement_id=?
+                    """, outId));
+
+            assertEquals(2L, count("""
+                    SELECT COUNT(*) FROM inventory_layer
+                    WHERE source_movement_id=?
+                    """, inId));
+
+            assertV13WarehouseBalance(f);
+
+            assertV13LayerBalance(
+                    f, null, "3.000", "28.5000");
+
+            assertV13LayerBalance(
+                    f, f.sourceId(), "10.000", "60.0000");
+
+            assertV13LayerBalance(
+                    f, f.targetId(), "12.000", "95.6000");
+
+            System.out.println("V13_REAL_COMMIT: PASS");
+            System.out.println("V13_FIFO_COMPOSITION: PASS");
+            System.out.println("V13_LOCATION_ISOLATION: PASS");
+            System.out.println("V13_QUANTITY_CONSERVATION: PASS");
+            System.out.println("V13_VALUE_CONSERVATION: PASS");
+            System.out.println("V13_IDEMPOTENT_REPLAY: PASS");
+
+        } finally {
+            cleanupV13Fixture(f);
+        }
+    }
+
+    private void assertV13RollbackRestoredFixture(Fixture f) {
+
+        assertEquals(0L, count("""
+                SELECT COUNT(*)
+                FROM inventory_location_transfer
+                WHERE warehouse_id=?
+                """, f.warehouseId()));
+
+        assertEquals(0L, count("""
+                SELECT COUNT(*)
+                FROM inventory_location_transfer_allocation
+                WHERE warehouse_id=?
+                """, f.warehouseId()));
+
+        assertEquals(0L, count("""
+                SELECT COUNT(*)
+                FROM inventory_layer_consumption
+                WHERE warehouse_id=?
+                """, f.warehouseId()));
+
+        assertEquals(0L, count("""
+                SELECT COUNT(*)
+                FROM inventory_movement
+                WHERE warehouse_id=?
+                  AND reference_type='LOCATION_TRANSFER'
+                """, f.warehouseId()));
+
+        assertEquals(3L, count("""
+                SELECT COUNT(*)
+                FROM inventory_movement
+                WHERE warehouse_id=?
+                """, f.warehouseId()));
+
+        assertEquals(3L, count("""
+                SELECT COUNT(*)
+                FROM inventory_layer
+                WHERE warehouse_id=?
+                """, f.warehouseId()));
+
+        assertEquals(0L, count("""
+                SELECT COUNT(*)
+                FROM inventory_layer
+                WHERE warehouse_id=? AND location_id=?
+                """, f.warehouseId(), f.targetId()));
+
+        assertEquals(2L, count("""
+                SELECT COUNT(*)
+                FROM inventory_layer
+                WHERE warehouse_id=?
+                  AND location_id IS NULL
+                  AND closed=b'0'
+                """, f.warehouseId()));
+
+        assertEquals(1L, count("""
+                SELECT COUNT(*)
+                FROM inventory_layer
+                WHERE id=?
+                  AND tenant_id=? AND company_id=?
+                  AND warehouse_id=? AND item_id=?
+                  AND location_id IS NULL
+                  AND source_movement_id=?
+                  AND layer_date='2026-10-01'
+                  AND original_qty=8.000
+                  AND remaining_qty=8.000
+                  AND unit_cost=7.2000
+                  AND closed=b'0'
+                """,
+                f.layer1(), TENANT, COMPANY,
+                f.warehouseId(), f.itemId(),
+                f.movement1()));
+
+        assertEquals(1L, count("""
+                SELECT COUNT(*)
+                FROM inventory_layer
+                WHERE id=?
+                  AND tenant_id=? AND company_id=?
+                  AND warehouse_id=? AND item_id=?
+                  AND location_id IS NULL
+                  AND source_movement_id=?
+                  AND layer_date='2026-10-10'
+                  AND original_qty=7.000
+                  AND remaining_qty=7.000
+                  AND unit_cost=9.5000
+                  AND closed=b'0'
+                """,
+                f.layer2(), TENANT, COMPANY,
+                f.warehouseId(), f.itemId(),
+                f.movement2()));
+
+        assertEquals(2L, count("""
+                SELECT COUNT(*)
+                FROM inventory_movement
+                WHERE id IN (?,?)
+                  AND tenant_id=? AND company_id=?
+                  AND warehouse_id=? AND item_id=?
+                  AND location_id IS NULL
+                  AND movement_type='IN'
+                  AND reversed=b'0'
+                """,
+                f.movement1(), f.movement2(),
+                TENANT, COMPANY,
+                f.warehouseId(), f.itemId()));
+
+        assertV13WarehouseBalance(f);
+
+        assertV13LayerBalance(
+                f, null, "15.000", "124.1000");
+
+        assertV13LayerBalance(
+                f, f.sourceId(), "10.000", "60.0000");
+
+        assertV13LayerBalance(
+                f, f.targetId(), "0.000", "0.0000");
+    }
+
+    @Test
+    void v13ForcedFailureRollsBackAllUnlocatedWrites() {
+
+        assertEquals(33308,
+                jdbc.queryForObject("SELECT @@port", Integer.class));
+
+        assertEquals(DATABASE,
+                jdbc.queryForObject("SELECT DATABASE()", String.class));
+
+        String suffix = "V13-RB-" + UUID.randomUUID()
+                .toString().replace("-", "").substring(0, 12);
+
+        TransactionTemplate tx =
+                new TransactionTemplate(transactionManager);
+
+        Fixture f = tx.execute(
+                status -> createV13UnlocatedFixture(suffix));
+
+        assertNotNull(f);
+
+        boolean verified = false;
+
+        String marker = "V13_FORCED_ROLLBACK_" + suffix;
+
+        try {
+
+            assertV13RollbackRestoredFixture(f);
+
+            IllegalStateException failure = assertThrows(
+                    IllegalStateException.class,
+                    () -> tx.execute(status -> {
+
+                        Long transferId = writer.write(
+                                TENANT, COMPANY,
+                                f.warehouseId(), f.itemId(),
+                                null, f.targetId(),
+                                new BigDecimal("12.000"),
+                                LocalDate.of(2026, 11, 26),
+                                "Rollback forzato V13",
+                                f.operationKey()
+                        );
+
+                        assertNotNull(transferId);
+
+                        assertEquals(1L, count("""
+                                SELECT COUNT(*)
+                                FROM inventory_location_transfer
+                                WHERE id=?
+                                  AND source_location_id IS NULL
+                                  AND status='POSTED'
+                                """, transferId));
+
+                        assertEquals(2L, count("""
+                                SELECT COUNT(*)
+                                FROM inventory_movement
+                                WHERE warehouse_id=?
+                                  AND reference_type='LOCATION_TRANSFER'
+                                  AND reference_id=?
+                                """,
+                                f.warehouseId(), transferId));
+
+                        assertEquals(2L, count("""
+                                SELECT COUNT(*)
+                                FROM inventory_location_transfer_allocation
+                                WHERE transfer_id=?
+                                """, transferId));
+
+                        assertEquals(2L, count("""
+                                SELECT COUNT(*)
+                                FROM inventory_layer_consumption
+                                WHERE warehouse_id=?
+                                """, f.warehouseId()));
+
+                        assertEquals(2L, count("""
+                                SELECT COUNT(*)
+                                FROM inventory_layer
+                                WHERE warehouse_id=?
+                                  AND location_id=?
+                                """,
+                                f.warehouseId(), f.targetId()));
+
+                        assertV13WarehouseBalance(f);
+
+                        assertV13LayerBalance(
+                                f, null, "3.000", "28.5000");
+
+                        assertV13LayerBalance(
+                                f, f.sourceId(), "10.000", "60.0000");
+
+                        assertV13LayerBalance(
+                                f, f.targetId(), "12.000", "95.6000");
+
+                        System.out.println(
+                                "V13_WRITES_BEFORE_ROLLBACK: PASS");
+
+                        throw new IllegalStateException(marker);
+                    })
+            );
+
+            assertEquals(marker, failure.getMessage());
+
+            // Verifica esterna alla transazione annullata.
+            assertV13RollbackRestoredFixture(f);
+
+            verified = true;
+
+            System.out.println(
+                    "V13_FORCED_REAL_ROLLBACK: PASS");
+
+        } finally {
+
+            if (verified) {
+                cleanupV13Fixture(f);
+            } else {
+                System.out.println(
+                        "STOP: fixture V13 conservata per diagnosi. "
+                        + "warehouseId=" + f.warehouseId()
+                        + ", itemId=" + f.itemId()
+                        + ", operationKey=" + f.operationKey());
+            }
+        }
+    }
+
+    @Test
+    void v13InactiveDestinationRollsBackSpringCoordinator() {
+
+        assertEquals(33308,
+                jdbc.queryForObject("SELECT @@port", Integer.class));
+
+        assertEquals(DATABASE,
+                jdbc.queryForObject("SELECT DATABASE()", String.class));
+
+        String suffix = "V13-ID-" + UUID.randomUUID()
+                .toString().replace("-", "").substring(0, 12);
+
+        TransactionTemplate tx =
+                new TransactionTemplate(transactionManager);
+
+        Fixture f = tx.execute(
+                status -> createV13UnlocatedFixture(suffix));
+
+        assertNotNull(f);
+
+        boolean verified = false;
+
+        try {
+
+            assertV13RollbackRestoredFixture(f);
+
+            tx.execute(status -> {
+
+                assertEquals(1, jdbc.update("""
+                        UPDATE warehouse_location
+                        SET active=0
+                        WHERE id=?
+                          AND tenant_id=?
+                          AND warehouse_id=?
+                          AND active=1
+                        """,
+                        f.targetId(), TENANT, f.warehouseId()));
+
+                return null;
+            });
+
+            assertEquals(1L, count("""
+                    SELECT COUNT(*)
+                    FROM warehouse_location
+                    WHERE id=? AND active=0
+                    """, f.targetId()));
+
+            // Nessuna transazione esterna intorno al coordinatore.
+            com.gestiva.common.exception.BusinessException failure =
+                    assertThrows(
+                            com.gestiva.common.exception.BusinessException.class,
+                            () -> coordinator.post(
+                                    TENANT, COMPANY,
+                                    f.warehouseId(), f.itemId(),
+                                    null, f.targetId(),
+                                    new BigDecimal("12.000"),
+                                    LocalDate.of(2026, 11, 26),
+                                    "Rollback destinazione inattiva V13",
+                                    f.operationKey()
+                            )
+                    );
+
+            assertNotNull(failure.getMessage());
+
+            assertTrue(
+                    failure.getMessage()
+                            .toLowerCase(java.util.Locale.ROOT)
+                            .contains("ubicazione"),
+                    "Errore inatteso: " + failure.getMessage());
+
+            System.out.println(
+                    "V13_INACTIVE_DESTINATION_REJECTED: "
+                    + failure.getMessage());
+
+            // Verifica dopo il rollback del proxy Spring.
+            assertV13RollbackRestoredFixture(f);
+
+            assertEquals(1L, count("""
+                    SELECT COUNT(*)
+                    FROM warehouse_location
+                    WHERE id=? AND active=0
+                    """, f.targetId()));
+
+            verified = true;
+
+            System.out.println(
+                    "V13_SPRING_COORDINATOR_ROLLBACK: PASS");
+
+        } finally {
+
+            if (verified) {
+                cleanupV13Fixture(f);
+            } else {
+                System.out.println(
+                        "STOP: fixture V13 conservata per diagnosi. "
+                        + "warehouseId=" + f.warehouseId()
+                        + ", itemId=" + f.itemId()
+                        + ", operationKey=" + f.operationKey());
+            }
+        }
+    }
 }

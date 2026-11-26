@@ -47,11 +47,13 @@ public final class InventoryLocationTransferPostedCompletenessVerifier {
         positive(transfer.getCompanyId(), "Società");
         positive(transfer.getWarehouseId(), "Magazzino");
         positive(transfer.getItemId(), "Articolo");
-        positive(transfer.getSourceLocationId(), "Ubicazione sorgente");
+        if (transfer.getSourceLocationId() != null) {
+            positive(transfer.getSourceLocationId(), "Ubicazione sorgente");
+        }
         positive(transfer.getTargetLocationId(), "Ubicazione destinazione");
 
-        if (transfer.getSourceLocationId()
-                .equals(transfer.getTargetLocationId())) {
+        if (transfer.getTargetLocationId()
+                .equals(transfer.getSourceLocationId())) {
             fail("Ubicazioni sorgente e destinazione coincidenti.");
         }
 

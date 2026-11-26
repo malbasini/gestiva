@@ -67,7 +67,7 @@ public final class InventoryLocationTransferFifoPlanner {
 
         if (candidates == null) {
             throw new BusinessException(
-                    "Layer FIFO e ubicazione di origine sono obbligatori."
+                    "I layer FIFO sono obbligatori."
             );
         }
 
@@ -103,9 +103,15 @@ public final class InventoryLocationTransferFifoPlanner {
             BigDecimal requestedQuantity
     ) {
 
-        if (candidates == null || sourceLocationId == null) {
+        if (candidates == null) {
             throw new BusinessException(
-                    "Layer FIFO e ubicazione di origine sono obbligatori."
+                    "I layer FIFO sono obbligatori."
+            );
+        }
+
+        if (sourceLocationId != null && sourceLocationId <= 0) {
+            throw new BusinessException(
+                    "Ubicazione di origine non valida."
             );
         }
 

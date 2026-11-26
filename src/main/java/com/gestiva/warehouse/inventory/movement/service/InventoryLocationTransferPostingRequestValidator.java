@@ -40,17 +40,19 @@ public final class InventoryLocationTransferPostingRequestValidator {
         requirePositiveId(warehouseId, "Magazzino");
         requirePositiveId(itemId, "Articolo");
 
-        requirePositiveId(
-                sourceLocationId,
-                "Ubicazione di origine"
-        );
+        if (sourceLocationId != null) {
+            requirePositiveId(
+                    sourceLocationId,
+                    "Ubicazione di origine"
+            );
+        }
 
         requirePositiveId(
                 targetLocationId,
                 "Ubicazione di destinazione"
         );
 
-        if (sourceLocationId.equals(targetLocationId)) {
+        if (targetLocationId.equals(sourceLocationId)) {
             throw new BusinessException(
                     "Le ubicazioni di origine e destinazione "
                     + "devono essere diverse."

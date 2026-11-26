@@ -270,4 +270,95 @@ class InventoryLocationTransferPostedCompletenessVerifierRobustnessTest {
     void rejectsRemainingQuantityGreaterThanOriginal() {
         fails(f -> f.layer.setRemainingQty(bd("8.000")));
     }
+
+    private static void unlocatedSource(Fixture f) {
+        f.transfer.setSourceLocationId(null);
+        f.out.setLocationId(null);
+    }
+
+    @Test
+    void acceptsCompleteUnlocatedTransfer() {
+        passes(f -> unlocatedSource(f));
+    }
+
+    @Test
+    void rejectsLocatedOutForUnlocatedTransfer() {
+        fails(f -> {
+            unlocatedSource(f);
+            f.out.setLocationId(100L);
+        });
+    }
+
+    @Test
+    void rejectsUnlocatedOutForLocatedTransfer() {
+        fails(f -> f.out.setLocationId(null));
+    }
+
+    @Test
+    void rejectsMatchingZeroSourceIdentifiers() {
+        fails(f -> {
+            f.transfer.setSourceLocationId(0L);
+            f.out.setLocationId(0L);
+        });
+    }
+
+    @Test
+    void rejectsMatchingNegativeSourceIdentifiers() {
+        fails(f -> {
+            f.transfer.setSourceLocationId(-1L);
+            f.out.setLocationId(-1L);
+        });
+    }
+
+    @Test
+    void rejectsUnlocatedTransferWithNullTarget() {
+        fails(f -> {
+            unlocatedSource(f);
+            f.transfer.setTargetLocationId(null);
+            f.in.setLocationId(null);
+            f.layer.setLocationId(null);
+        });
+    }
+
+    @Test
+    void rejectsUnlocatedTransferWithZeroTarget() {
+        fails(f -> {
+            unlocatedSource(f);
+            f.transfer.setTargetLocationId(0L);
+            f.in.setLocationId(0L);
+            f.layer.setLocationId(0L);
+        });
+    }
+
+    @Test
+    void rejectsUnlocatedTransferWithCostMismatch() {
+        fails(f -> {
+            unlocatedSource(f);
+            f.in.setTotalCost(bd("16.0000"));
+        });
+    }
+
+    @Test
+    void rejectsUnlocatedTransferWithChangedFifoDate() {
+        fails(f -> {
+            unlocatedSource(f);
+            f.layer.setLayerDate(DATE);
+        });
+    }
+
+    @Test
+    void rejectsUnlocatedTransferWithConsumptionMismatch() {
+        fails(f -> {
+            unlocatedSource(f);
+            f.consumption.setConsumedQty(bd("6.000"));
+        });
+    }
+
+    @Test
+    void rejectsUnlocatedTransferWithForeignCompany() {
+        fails(f -> {
+            unlocatedSource(f);
+            f.out.setCompanyId(99L);
+        });
+    }
 }
