@@ -70,7 +70,11 @@ public class InventoryLocationTransferDetailPageController {
                 t.movement_date,
                 w.code AS warehouse_code,
                 i.code AS item_code,
-                src.code AS source_code,
+                CASE
+                    WHEN t.source_location_id IS NULL
+                        THEN 'Senza ubicazione'
+                    ELSE src.code
+                END AS source_code,
                 dst.code AS target_code,
                 t.quantity,
                 t.status,
@@ -85,7 +89,7 @@ public class InventoryLocationTransferDetailPageController {
             JOIN item i
               ON i.id = t.item_id
              AND i.tenant_id = t.tenant_id
-            JOIN warehouse_location src
+            LEFT JOIN warehouse_location src
               ON src.id = t.source_location_id
              AND src.tenant_id = t.tenant_id
              AND src.warehouse_id = t.warehouse_id
@@ -96,6 +100,10 @@ public class InventoryLocationTransferDetailPageController {
             WHERE t.id = ?
               AND t.tenant_id = ?
               AND t.company_id = ?
+              AND (
+                  t.source_location_id IS NULL
+                  OR src.id IS NOT NULL
+              )
             """;
 
         List<TransferDetail> found = jdbc.query(

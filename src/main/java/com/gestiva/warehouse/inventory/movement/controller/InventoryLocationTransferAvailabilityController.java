@@ -1,5 +1,6 @@
 package com.gestiva.warehouse.inventory.movement.controller;
 
+import com.gestiva.common.exception.BusinessException;
 import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.security.usercontext.TenantContext;
 import com.gestiva.security.tenant.repository.TenantRepository;
@@ -56,7 +57,8 @@ public class InventoryLocationTransferAvailabilityController {
     public Map<String, String> availability(
             @RequestParam Long warehouseId,
             @RequestParam Long itemId,
-            @RequestParam Long sourceLocationId) {
+            @RequestParam(name = "sourceLocationId", required = false)
+            String sourceSelection) {
 
         Long tenantId = tenantContext.getCurrentTenantId();
 
@@ -76,10 +78,21 @@ public class InventoryLocationTransferAvailabilityController {
         Long companyId = companyContext.requireCurrentCompanyId();
 
         if (warehouseId == null || warehouseId <= 0
-                || itemId == null || itemId <= 0
-                || sourceLocationId == null || sourceLocationId <= 0) {
+                || itemId == null || itemId <= 0) {
             throw new ResponseStatusException(
                     BAD_REQUEST, "Selezione non valida."
+            );
+        }
+
+        final Long sourceLocationId;
+
+        try {
+            sourceLocationId =
+                    InventoryLocationTransferSourceSelection
+                            .parse(sourceSelection);
+        } catch (BusinessException ex) {
+            throw new ResponseStatusException(
+                    BAD_REQUEST, ex.getMessage(), ex
             );
         }
 
@@ -93,6 +106,12 @@ public class InventoryLocationTransferAvailabilityController {
             throw new ResponseStatusException(
                     BAD_REQUEST,
                     "Magazzino non disponibile nella società attiva."
+            );
+        }
+
+        if (sourceLocationId == null) {
+            return unlocatedAvailability(
+                    tenantId, companyId, warehouseId, itemId
             );
         }
 
@@ -140,6 +159,57 @@ public class InventoryLocationTransferAvailabilityController {
                 warehouseId,
                 itemId,
                 sourceLocationId
+        );
+
+        if (available == null) {
+            available = BigDecimal.ZERO;
+        }
+
+        return Map.of(
+                "availableQty",
+                available.toPlainString()
+        );
+    }
+
+    /**
+     * Disponibilita FIFO limitata esclusivamente ai layer
+     * privi di ubicazione fisica.
+     *
+     * Il contesto tenant/company/warehouse e gia stato
+     * verificato dall'endpoint chiamante.
+     */
+    private Map<String, String> unlocatedAvailability(
+            Long tenantId,
+            Long companyId,
+            Long warehouseId,
+            Long itemId) {
+
+        String sql = """
+            SELECT COALESCE(SUM(l.remaining_qty), 0)
+            FROM inventory_layer l
+            JOIN warehouse w
+              ON w.id = l.warehouse_id
+             AND w.tenant_id = l.tenant_id
+             AND w.company_id = l.company_id
+            JOIN item i
+              ON i.id = l.item_id
+             AND i.tenant_id = l.tenant_id
+            WHERE l.tenant_id = ?
+              AND l.company_id = ?
+              AND l.warehouse_id = ?
+              AND l.item_id = ?
+              AND l.location_id IS NULL
+              AND l.closed = b'0'
+              AND l.remaining_qty > 0
+            """;
+
+        BigDecimal available = jdbc.queryForObject(
+                sql,
+                BigDecimal.class,
+                tenantId,
+                companyId,
+                warehouseId,
+                itemId
         );
 
         if (available == null) {

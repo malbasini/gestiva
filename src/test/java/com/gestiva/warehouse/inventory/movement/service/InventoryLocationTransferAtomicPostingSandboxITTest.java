@@ -4125,4 +4125,1452 @@ class InventoryLocationTransferAtomicPostingSandboxITTest {
             }
         }
     }
+
+    @Test
+    void v13InsufficientUnlocatedStockCannotConsumeLocatedStock() {
+
+        assertEquals(33308,
+                jdbc.queryForObject("SELECT @@port", Integer.class));
+
+        assertEquals(DATABASE,
+                jdbc.queryForObject("SELECT DATABASE()", String.class));
+
+        String suffix = "V13-IS-" + UUID.randomUUID()
+                .toString().replace("-", "").substring(0, 12);
+
+        TransactionTemplate tx =
+                new TransactionTemplate(transactionManager);
+
+        Fixture f = tx.execute(
+                status -> createV13UnlocatedFixture(suffix));
+
+        assertNotNull(f);
+
+        boolean verified = false;
+
+        try {
+
+            assertV13RollbackRestoredFixture(f);
+
+            // Il magazzino dispone di 25 PZ complessivi,
+            // ma soltanto 15 PZ appartengono all'origine NULL.
+            // La richiesta di 16 PZ deve essere rifiutata.
+
+            com.gestiva.common.exception.BusinessException failure =
+                    assertThrows(
+                            com.gestiva.common.exception.BusinessException.class,
+                            () -> coordinator.post(
+                                    TENANT, COMPANY,
+                                    f.warehouseId(), f.itemId(),
+                                    null, f.targetId(),
+                                    new BigDecimal("16.000"),
+                                    LocalDate.of(2026, 11, 26),
+                                    "Insufficienza origine NULL V13",
+                                    f.operationKey()
+                            )
+                    );
+
+            assertEquals(
+                    "Strati FIFO insufficienti nell'ubicazione di origine.",
+                    failure.getMessage());
+
+            System.out.println(
+                    "V13_INSUFFICIENT_UNLOCATED_STOCK_REJECTED: PASS");
+
+            // Verifica esterna alla transazione fallita:
+            // nessuna giacenza deve essere modificata.
+            assertV13RollbackRestoredFixture(f);
+
+            assertEquals(0L, count("""
+                    SELECT COUNT(*)
+                    FROM inventory_location_transfer
+                    WHERE tenant_id=? AND company_id=?
+                      AND operation_key=?
+                    """,
+                    TENANT, COMPANY, f.operationKey()));
+
+            verified = true;
+
+            System.out.println(
+                    "V13_LOCATED_STOCK_PROTECTED: PASS");
+
+            System.out.println(
+                    "V13_INSUFFICIENT_STOCK_NO_WRITES: PASS");
+
+        } finally {
+
+            if (verified) {
+                cleanupV13Fixture(f);
+            } else {
+                System.out.println(
+                        "STOP: fixture V13 conservata per diagnosi. "
+                        + "warehouseId=" + f.warehouseId()
+                        + ", itemId=" + f.itemId()
+                        + ", operationKey=" + f.operationKey());
+            }
+        }
+    }
+
+    @Autowired
+    private com.gestiva.warehouse.inventory.movement.repository
+            .InventoryMovementRepository v13CogsMovementRepository;
+
+    @Autowired
+    private InventoryMovementService v13CogsMovementService;
+
+    @Autowired
+    private com.gestiva.warehouse.inventory.valuation.service
+            .InventoryValuationService v13CogsValuationService;
+
+    @Autowired
+    private com.gestiva.warehouse.inventory.valuation.service
+            .InventoryAvailabilityService v13CogsAvailabilityService;
+
+    @Autowired
+    private com.gestiva.warehouse.location.repository
+            .WarehouseRepository v13CogsWarehouseRepository;
+
+    private void assertV13CogsEmpty(
+            Fixture f, LocalDate date) {
+
+        assertTrue(
+                v13CogsMovementRepository
+                        .summarizeCostOfGoodsSoldByItem(
+                                TENANT, f.itemId(), date, date)
+                        .isEmpty());
+
+        assertTrue(
+                v13CogsMovementRepository
+                        .summarizeCostOfGoodsSoldByCompanyAndItem(
+                                TENANT, COMPANY,
+                                f.itemId(), date, date)
+                        .isEmpty());
+    }
+
+    private void assertV13CogsRows(
+            java.util.List<
+                    com.gestiva.warehouse.inventory.valuation.web
+                            .CostOfGoodsSoldSummaryRow> rows,
+            Fixture f,
+            String expectedQuantity,
+            String expectedCost) {
+
+        assertEquals(1, rows.size());
+
+        var row = rows.get(0);
+
+        assertEquals(Long.valueOf(f.itemId()), row.getItemId());
+
+        assertNotNull(row.getTotalQuantity());
+        assertNotNull(row.getTotalCost());
+
+        assertEquals(0,
+                new BigDecimal(expectedQuantity)
+                        .compareTo(row.getTotalQuantity()));
+
+        assertEquals(0,
+                new BigDecimal(expectedCost)
+                        .compareTo(row.getTotalCost()));
+    }
+
+    @Test
+    void v13UnlocatedTransferIsCogsNeutralAndOutboundIsIncluded() {
+
+        assertEquals(33308,
+                jdbc.queryForObject("SELECT @@port", Integer.class));
+
+        assertEquals(DATABASE,
+                jdbc.queryForObject("SELECT DATABASE()", String.class));
+
+        String suffix = "V13-CG-" + UUID.randomUUID()
+                .toString().replace("-", "").substring(0, 12);
+
+        LocalDate date = LocalDate.of(2026, 11, 26);
+
+        TransactionTemplate tx =
+                new TransactionTemplate(transactionManager);
+
+        Fixture f = tx.execute(
+                status -> createV13UnlocatedFixture(suffix));
+
+        assertNotNull(f);
+
+        boolean verified = false;
+
+        try {
+
+            // FASE 1: baseline senza movimenti rilevanti COGS.
+
+            assertV13RollbackRestoredFixture(f);
+
+            assertV13CogsEmpty(f, date);
+
+            assertTrue(
+                    v13CogsMovementRepository
+                            .summarizeCostOfGoodsSoldByItem(
+                                    TENANT, f.itemId(), null, null)
+                            .isEmpty());
+
+            assertTrue(
+                    v13CogsMovementRepository
+                            .summarizeCostOfGoodsSoldByCompanyAndItem(
+                                    TENANT, COMPANY,
+                                    f.itemId(), null, null)
+                            .isEmpty());
+
+            System.out.println(
+                    "V13_COGS_BASELINE_EMPTY: PASS");
+
+            // FASE 2: trasferimento reale da origine NULL.
+
+            Long transferId = coordinator.post(
+                    TENANT, COMPANY,
+                    f.warehouseId(), f.itemId(),
+                    null, f.targetId(),
+                    new BigDecimal("12.000"),
+                    date,
+                    "Neutralita COGS V13",
+                    f.operationKey()
+            );
+
+            assertNotNull(transferId);
+
+            assertEquals(1L, count("""
+                    SELECT COUNT(*)
+                    FROM inventory_location_transfer
+                    WHERE id=?
+                      AND source_location_id IS NULL
+                      AND status='POSTED'
+                    """, transferId));
+
+            assertEquals(1L, count("""
+                    SELECT COUNT(*)
+                    FROM inventory_movement
+                    WHERE tenant_id=? AND company_id=?
+                      AND warehouse_id=? AND item_id=?
+                      AND reference_type='LOCATION_TRANSFER'
+                      AND reference_id=?
+                      AND location_id IS NULL
+                      AND movement_type='OUT'
+                      AND quantity=12.000
+                      AND total_cost=95.6000
+                    """,
+                    TENANT, COMPANY,
+                    f.warehouseId(), f.itemId(),
+                    transferId));
+
+            assertV13WarehouseBalance(f);
+
+            assertV13LayerBalance(
+                    f, null, "3.000", "28.5000");
+
+            assertV13LayerBalance(
+                    f, f.sourceId(), "10.000", "60.0000");
+
+            assertV13LayerBalance(
+                    f, f.targetId(), "12.000", "95.6000");
+
+            assertV13CogsEmpty(f, date);
+
+            assertTrue(
+                    v13CogsMovementRepository
+                            .summarizeCostOfGoodsSoldByItem(
+                                    TENANT, f.itemId(), null, null)
+                            .isEmpty());
+
+            assertTrue(
+                    v13CogsMovementRepository
+                            .summarizeCostOfGoodsSoldByCompanyAndItem(
+                                    TENANT, COMPANY,
+                                    f.itemId(), null, null)
+                            .isEmpty());
+
+            System.out.println(
+                    "V13_TRANSFER_COGS_NEUTRAL_TENANT: PASS");
+
+            System.out.println(
+                    "V13_TRANSFER_COGS_NEUTRAL_COMPANY: PASS");
+
+            // FASE 3: controllo positivo con rettifica negativa.
+            // Disponibilita, registrazione e valorizzazione
+            // nella medesima transazione, sotto lock magazzino.
+
+            Long outboundId = tx.execute(status -> {
+
+                assertTrue(
+                        v13CogsWarehouseRepository
+                                .findByTenantAndCompanyAndIdForUpdate(
+                                        TENANT, COMPANY,
+                                        f.warehouseId())
+                                .isPresent());
+
+                v13CogsAvailabilityService
+                        .validateAvailabilityByCompanyAndWarehouse(
+                                TENANT, COMPANY,
+                                f.warehouseId(), f.itemId(),
+                                f.targetId(),
+                                new BigDecimal("2.000"));
+
+                Long movementId =
+                        v13CogsMovementService.registerMovement(
+                                TENANT, COMPANY,
+                                f.warehouseId(), f.targetId(),
+                                f.itemId(), date,
+                                "ADJUSTMENT_OUT",
+                                "MANUAL_ADJUSTMENT_OUT",
+                                new BigDecimal("2.000"),
+                                null,
+                                "MANUAL_INVENTORY",
+                                null,
+                                "Controllo positivo COGS V13"
+                        );
+
+                assertNotNull(movementId);
+
+                var result =
+                        v13CogsValuationService
+                                .applyOutboundValuation(
+                                        TENANT, COMPANY,
+                                        f.warehouseId(),
+                                        movementId);
+
+                assertEquals(0,
+                        new BigDecimal("14.4000")
+                                .compareTo(result.getTotalCost()));
+
+                assertEquals(0,
+                        new BigDecimal("7.2000")
+                                .compareTo(result.getUnitCost()));
+
+                return movementId;
+            });
+
+            assertNotNull(outboundId);
+
+            // Verifiche dopo il commit reale dello scarico.
+
+            assertEquals(1L, count("""
+                    SELECT COUNT(*)
+                    FROM inventory_movement
+                    WHERE id=?
+                      AND tenant_id=? AND company_id=?
+                      AND warehouse_id=? AND item_id=?
+                      AND location_id=?
+                      AND movement_type='ADJUSTMENT_OUT'
+                      AND reference_type='MANUAL_INVENTORY'
+                      AND quantity=2.000
+                      AND unit_cost=7.2000
+                      AND total_cost=14.4000
+                    """,
+                    outboundId, TENANT, COMPANY,
+                    f.warehouseId(), f.itemId(),
+                    f.targetId()));
+
+            assertEquals(1L, count("""
+                    SELECT COUNT(*)
+                    FROM inventory_layer_consumption c
+                    JOIN inventory_layer l ON l.id=c.layer_id
+                    WHERE c.tenant_id=? AND c.company_id=?
+                      AND c.warehouse_id=?
+                      AND c.out_movement_id=?
+                      AND l.item_id=?
+                      AND l.location_id=?
+                      AND l.layer_date='2026-10-01'
+                      AND c.consumed_qty=2.000
+                      AND c.unit_cost=7.2000
+                      AND c.total_cost=14.4000
+                    """,
+                    TENANT, COMPANY,
+                    f.warehouseId(), outboundId,
+                    f.itemId(), f.targetId()));
+
+            assertV13LayerBalance(
+                    f, null, "3.000", "28.5000");
+
+            assertV13LayerBalance(
+                    f, f.sourceId(), "10.000", "60.0000");
+
+            assertV13LayerBalance(
+                    f, f.targetId(), "10.000", "81.2000");
+
+            assertEquals(0,
+                    new BigDecimal("23.000").compareTo(
+                            v13CogsMovementRepository
+                                    .calculateInventoryBalanceByCompanyAndWarehouse(
+                                            TENANT, COMPANY,
+                                            f.warehouseId(),
+                                            f.itemId(), null)));
+
+            assertEquals(0,
+                    new BigDecimal("169.7000").compareTo(
+                            jdbc.queryForObject("""
+                                    SELECT COALESCE(
+                                        SUM(remaining_qty * unit_cost), 0)
+                                    FROM inventory_layer
+                                    WHERE tenant_id=?
+                                      AND company_id=?
+                                      AND warehouse_id=?
+                                      AND item_id=?
+                                      AND closed=b'0'
+                                    """,
+                                    BigDecimal.class,
+                                    TENANT, COMPANY,
+                                    f.warehouseId(), f.itemId())));
+
+            System.out.println(
+                    "V13_ORDINARY_OUTBOUND_FIFO_VALUED: PASS");
+
+            // Interrogazione delle query applicative effettive.
+
+            assertV13CogsRows(
+                    v13CogsMovementRepository
+                            .summarizeCostOfGoodsSoldByItem(
+                                    TENANT, f.itemId(), date, date),
+                    f, "2.000", "14.4000");
+
+            assertV13CogsRows(
+                    v13CogsMovementRepository
+                            .summarizeCostOfGoodsSoldByCompanyAndItem(
+                                    TENANT, COMPANY,
+                                    f.itemId(), date, date),
+                    f, "2.000", "14.4000");
+
+            assertV13CogsRows(
+                    v13CogsMovementRepository
+                            .summarizeCostOfGoodsSoldByItem(
+                                    TENANT, f.itemId(), null, null),
+                    f, "2.000", "14.4000");
+
+            assertV13CogsRows(
+                    v13CogsMovementRepository
+                            .summarizeCostOfGoodsSoldByCompanyAndItem(
+                                    TENANT, COMPANY,
+                                    f.itemId(), null, null),
+                    f, "2.000", "14.4000");
+
+            System.out.println(
+                    "V13_ORDINARY_OUTBOUND_INCLUDED_IN_COGS: PASS");
+
+            // Controllo dei filtri temporali.
+
+            assertV13CogsEmpty(f, date.minusDays(1));
+            assertV13CogsEmpty(f, date.plusDays(1));
+
+            System.out.println(
+                    "V13_COGS_DATE_FILTERS: PASS");
+
+            System.out.println(
+                    "V13_COGS_FIFO_VALUE_RECONCILED: PASS");
+
+            verified = true;
+
+        } finally {
+
+            if (verified) {
+                cleanupV13Fixture(f);
+            } else {
+                System.out.println(
+                        "STOP: fixture V13 conservata per diagnosi. "
+                        + "warehouseId=" + f.warehouseId()
+                        + ", itemId=" + f.itemId()
+                        + ", operationKey=" + f.operationKey());
+            }
+        }
+    }
+
+    private java.util.Map<String,
+            java.util.List<java.util.Map<String, Object>>>
+            snapshotV13IdempotencyFixture(Fixture f) {
+
+        var snapshot = new java.util.LinkedHashMap<
+                String, java.util.List<
+                        java.util.Map<String, Object>>>();
+
+        for (String table : java.util.List.of(
+                "inventory_location_transfer",
+                "inventory_location_transfer_allocation",
+                "inventory_movement",
+                "inventory_layer",
+                "inventory_layer_consumption")) {
+
+            snapshot.put(
+                    table,
+                    jdbc.queryForList(
+                            "SELECT * FROM " + table
+                            + " WHERE tenant_id=?"
+                            + " AND company_id=?"
+                            + " AND warehouse_id=?"
+                            + " ORDER BY id",
+                            TENANT, COMPANY, f.warehouseId())
+            );
+        }
+
+        return snapshot;
+    }
+
+    private void assertV13DiscordantReplayRejected(
+            Fixture f,
+            Long sourceLocationId,
+            Long targetLocationId,
+            BigDecimal quantity,
+            LocalDate movementDate) {
+
+        var failure = assertThrows(
+                com.gestiva.common.exception.BusinessException.class,
+                () -> coordinator.post(
+                        TENANT, COMPANY,
+                        f.warehouseId(), f.itemId(),
+                        sourceLocationId, targetLocationId,
+                        quantity, movementDate,
+                        "Replay discordante V13",
+                        f.operationKey()
+                )
+        );
+
+        assertEquals(
+                "La chiave di idempotenza è già associata "
+                + "a un trasferimento con parametri differenti.",
+                failure.getMessage());
+    }
+
+    @Test
+    void v13DiscordantReplayPreservesOriginalPostedTransfer() {
+
+        assertEquals(33308,
+                jdbc.queryForObject("SELECT @@port", Integer.class));
+
+        assertEquals(DATABASE,
+                jdbc.queryForObject("SELECT DATABASE()", String.class));
+
+        String suffix = "V13-IR-" + UUID.randomUUID()
+                .toString().replace("-", "").substring(0, 12);
+
+        LocalDate date = LocalDate.of(2026, 11, 26);
+
+        TransactionTemplate tx =
+                new TransactionTemplate(transactionManager);
+
+        Fixture f = tx.execute(
+                status -> createV13UnlocatedFixture(suffix));
+
+        assertNotNull(f);
+
+        boolean verified = false;
+
+        try {
+
+            assertV13RollbackRestoredFixture(f);
+
+            // Registrazione originale da origine NULL.
+
+            Long firstId = coordinator.post(
+                    TENANT, COMPANY,
+                    f.warehouseId(), f.itemId(),
+                    null, f.targetId(),
+                    new BigDecimal("12.000"),
+                    date,
+                    "Replay discordante V13",
+                    f.operationKey()
+            );
+
+            assertNotNull(firstId);
+            assertTrue(firstId > 0);
+
+            assertEquals(1L, count("""
+                    SELECT COUNT(*)
+                    FROM inventory_location_transfer
+                    WHERE id=?
+                      AND tenant_id=? AND company_id=?
+                      AND warehouse_id=? AND item_id=?
+                      AND operation_key=?
+                      AND source_location_id IS NULL
+                      AND target_location_id=?
+                      AND quantity=12.000
+                      AND movement_date='2026-11-26'
+                      AND status='POSTED'
+                    """,
+                    firstId, TENANT, COMPANY,
+                    f.warehouseId(), f.itemId(),
+                    f.operationKey(), f.targetId()));
+
+            assertV13WarehouseBalance(f);
+
+            assertV13LayerBalance(
+                    f, null, "3.000", "28.5000");
+
+            assertV13LayerBalance(
+                    f, f.sourceId(), "10.000", "60.0000");
+
+            assertV13LayerBalance(
+                    f, f.targetId(), "12.000", "95.6000");
+
+            var baseline = snapshotV13IdempotencyFixture(f);
+
+            assertEquals(1,
+                    baseline.get(
+                            "inventory_location_transfer").size());
+
+            assertEquals(2,
+                    baseline.get(
+                            "inventory_location_transfer_allocation").size());
+
+            assertEquals(5,
+                    baseline.get("inventory_movement").size());
+
+            assertEquals(5,
+                    baseline.get("inventory_layer").size());
+
+            assertEquals(2,
+                    baseline.get(
+                            "inventory_layer_consumption").size());
+
+            System.out.println(
+                    "V13_IDEMPOTENCY_ORIGINAL_POSTED: PASS");
+
+            // Caso 1: stessa chiave, quantita differente.
+
+            assertV13DiscordantReplayRejected(
+                    f, null, f.targetId(),
+                    new BigDecimal("13.000"), date);
+
+            assertEquals(
+                    baseline,
+                    snapshotV13IdempotencyFixture(f),
+                    "Il replay con quantita discordante "
+                    + "ha modificato le evidenze persistite.");
+
+            System.out.println(
+                    "V13_IDEMPOTENCY_QUANTITY_MISMATCH_REJECTED: PASS");
+
+            // Caso 2: stessa chiave, origine fisica anziche NULL.
+
+            assertV13DiscordantReplayRejected(
+                    f, f.sourceId(), f.targetId(),
+                    new BigDecimal("12.000"), date);
+
+            assertEquals(
+                    baseline,
+                    snapshotV13IdempotencyFixture(f),
+                    "Il replay con origine discordante "
+                    + "ha modificato le evidenze persistite.");
+
+            System.out.println(
+                    "V13_IDEMPOTENCY_SOURCE_MISMATCH_REJECTED: PASS");
+
+            // Caso 3: stessa chiave, destinazione differente.
+
+            assertV13DiscordantReplayRejected(
+                    f, null, f.sourceId(),
+                    new BigDecimal("12.000"), date);
+
+            assertEquals(
+                    baseline,
+                    snapshotV13IdempotencyFixture(f),
+                    "Il replay con destinazione discordante "
+                    + "ha modificato le evidenze persistite.");
+
+            System.out.println(
+                    "V13_IDEMPOTENCY_TARGET_MISMATCH_REJECTED: PASS");
+
+            // Caso 4: stessa chiave, data differente.
+
+            assertV13DiscordantReplayRejected(
+                    f, null, f.targetId(),
+                    new BigDecimal("12.000"),
+                    date.plusDays(1));
+
+            assertEquals(
+                    baseline,
+                    snapshotV13IdempotencyFixture(f),
+                    "Il replay con data discordante "
+                    + "ha modificato le evidenze persistite.");
+
+            System.out.println(
+                    "V13_IDEMPOTENCY_DATE_MISMATCH_REJECTED: PASS");
+
+            // La richiesta originale deve restare riutilizzabile.
+
+            Long replayId = coordinator.post(
+                    TENANT, COMPANY,
+                    f.warehouseId(), f.itemId(),
+                    null, f.targetId(),
+                    new BigDecimal("12.000"),
+                    date,
+                    "Replay discordante V13",
+                    f.operationKey()
+            );
+
+            assertEquals(firstId, replayId);
+
+            System.out.println(
+                    "V13_IDEMPOTENCY_VALID_REPLAY_AFTER_REJECTIONS: PASS");
+
+            assertEquals(
+                    baseline,
+                    snapshotV13IdempotencyFixture(f),
+                    "Le evidenze originali devono restare immutate.");
+
+            assertV13WarehouseBalance(f);
+
+            assertV13LayerBalance(
+                    f, null, "3.000", "28.5000");
+
+            assertV13LayerBalance(
+                    f, f.sourceId(), "10.000", "60.0000");
+
+            assertV13LayerBalance(
+                    f, f.targetId(), "12.000", "95.6000");
+
+            System.out.println(
+                    "V13_IDEMPOTENCY_PERSISTED_EVIDENCE_UNCHANGED: PASS");
+
+            System.out.println(
+                    "V13_IDEMPOTENCY_FIFO_BALANCES_PRESERVED: PASS");
+
+            verified = true;
+
+        } finally {
+
+            if (verified) {
+                cleanupV13Fixture(f);
+            } else {
+                System.out.println(
+                        "STOP: fixture V13 conservata per diagnosi. "
+                        + "warehouseId=" + f.warehouseId()
+                        + ", itemId=" + f.itemId()
+                        + ", operationKey=" + f.operationKey());
+            }
+        }
+    }
+
+    private void assertV13ControllerAvailability(
+            com.gestiva.warehouse.inventory.movement.controller
+                    .InventoryLocationTransferAvailabilityController
+                    controller,
+            Fixture f,
+            String selection,
+            String expected) {
+
+        var response = controller.availability(
+                f.warehouseId(),
+                f.itemId(),
+                selection
+        );
+
+        assertEquals(
+                java.util.Set.of("availableQty"),
+                response.keySet());
+
+        assertEquals(
+                0,
+                new BigDecimal(expected).compareTo(
+                        new BigDecimal(
+                                response.get("availableQty")))
+        );
+    }
+
+    @Test
+    void v13RealControllerQueriesMustPreserveStockAndTraceability() {
+
+        assertEquals(
+                33308,
+                jdbc.queryForObject("SELECT @@port", Integer.class));
+
+        assertEquals(
+                DATABASE,
+                jdbc.queryForObject("SELECT DATABASE()", String.class));
+
+        assertEquals("YES", jdbc.queryForObject("""
+                SELECT IS_NULLABLE
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA=DATABASE()
+                  AND TABLE_NAME='inventory_location_transfer'
+                  AND COLUMN_NAME='source_location_id'
+                """, String.class));
+
+        for (String table : java.util.List.of(
+                "inventory_location_transfer",
+                "inventory_location_transfer_allocation",
+                "inventory_movement",
+                "inventory_layer",
+                "inventory_layer_consumption",
+                "warehouse",
+                "warehouse_location",
+                "item")) {
+
+            assertEquals(
+                    0L,
+                    count("SELECT COUNT(*) FROM " + table),
+                    "Record residui prima del collaudo: " + table
+            );
+        }
+
+        String suffix = "V13-" + UUID.randomUUID()
+                .toString().replace("-", "").substring(0, 12);
+
+        TransactionTemplate tx =
+                new TransactionTemplate(transactionManager);
+
+        Fixture f = tx.execute(
+                status -> createV13UnlocatedFixture(suffix));
+
+        assertNotNull(f);
+
+        boolean passed = false;
+
+        try {
+
+            // JDBC reale. Soltanto i contesti autorizzativi
+            // vengono simulati mediante Mockito.
+
+            var tenantContext = org.mockito.Mockito.mock(
+                    com.gestiva.security.usercontext
+                            .TenantContext.class);
+
+            var companyContext = org.mockito.Mockito.mock(
+                    com.gestiva.security.company.context
+                            .CompanyContext.class);
+
+            var tenantRepository = org.mockito.Mockito.mock(
+                    com.gestiva.security.tenant.repository
+                            .TenantRepository.class);
+
+            var tenant = org.mockito.Mockito.mock(
+                    com.gestiva.security.tenant.entity
+                            .Tenant.class);
+
+            var warehouseService = org.mockito.Mockito.mock(
+                    com.gestiva.warehouse.location.service
+                            .WarehouseService.class);
+
+            var locationService = org.mockito.Mockito.mock(
+                    com.gestiva.warehouse.location.service
+                            .WarehouseLocationService.class);
+
+            org.mockito.Mockito.when(
+                    tenantContext.getCurrentTenantId()
+            ).thenReturn(TENANT);
+
+            org.mockito.Mockito.when(
+                    companyContext.requireCurrentCompanyId()
+            ).thenReturn(COMPANY);
+
+            org.mockito.Mockito.when(
+                    tenantRepository.findById(TENANT)
+            ).thenReturn(java.util.Optional.of(tenant));
+
+            org.mockito.Mockito.when(
+                    tenant.isSubscriptionActive()
+            ).thenReturn(true);
+
+            org.mockito.Mockito.when(
+                    tenant.getSubscriptionPlan()
+            ).thenReturn("PROFESSIONAL");
+
+            var warehouse = org.mockito.Mockito.mock(
+                    com.gestiva.warehouse.location.entity
+                            .Warehouse.class);
+
+            org.mockito.Mockito.when(
+                    warehouse.getId()
+            ).thenReturn(f.warehouseId());
+
+            org.mockito.Mockito.when(
+                    warehouseService.findActive(TENANT, COMPANY)
+            ).thenReturn(java.util.List.of(warehouse));
+
+            var physicalSource = org.mockito.Mockito.mock(
+                    com.gestiva.warehouse.location.entity
+                            .WarehouseLocation.class);
+
+            org.mockito.Mockito.when(
+                    physicalSource.getId()
+            ).thenReturn(f.sourceId());
+
+            org.mockito.Mockito.when(
+                    physicalSource.isActive()
+            ).thenReturn(true);
+
+            var physicalTarget = org.mockito.Mockito.mock(
+                    com.gestiva.warehouse.location.entity
+                            .WarehouseLocation.class);
+
+            org.mockito.Mockito.when(
+                    physicalTarget.getId()
+            ).thenReturn(f.targetId());
+
+            org.mockito.Mockito.when(
+                    physicalTarget.isActive()
+            ).thenReturn(true);
+
+            org.mockito.Mockito.when(
+                    locationService.findAll(
+                            TENANT, COMPANY, f.warehouseId())
+            ).thenReturn(java.util.List.of(
+                    physicalSource, physicalTarget));
+
+            var availability =
+                    new com.gestiva.warehouse.inventory.movement
+                            .controller
+                            .InventoryLocationTransferAvailabilityController(
+                                    jdbc,
+                                    tenantContext,
+                                    companyContext,
+                                    tenantRepository,
+                                    warehouseService,
+                                    locationService
+                            );
+
+            var history =
+                    new com.gestiva.warehouse.inventory.movement
+                            .controller
+                            .InventoryLocationTransferHistoryPageController(
+                                    jdbc,
+                                    tenantContext,
+                                    companyContext,
+                                    tenantRepository
+                            );
+
+            var detail =
+                    new com.gestiva.warehouse.inventory.movement
+                            .controller
+                            .InventoryLocationTransferDetailPageController(
+                                    jdbc,
+                                    tenantContext,
+                                    companyContext,
+                                    tenantRepository
+                            );
+
+            String sourceCode = jdbc.queryForObject("""
+                    SELECT code FROM warehouse_location
+                    WHERE id=? AND tenant_id=? AND warehouse_id=?
+                    """,
+                    String.class,
+                    f.sourceId(), TENANT, f.warehouseId());
+
+            String targetCode = jdbc.queryForObject("""
+                    SELECT code FROM warehouse_location
+                    WHERE id=? AND tenant_id=? AND warehouse_id=?
+                    """,
+                    String.class,
+                    f.targetId(), TENANT, f.warehouseId());
+
+            assertNotNull(sourceCode);
+            assertNotNull(targetCode);
+            assertNotEquals(sourceCode, targetCode);
+
+            String sourceSelection =
+                    Long.toString(f.sourceId());
+
+            String targetSelection =
+                    Long.toString(f.targetId());
+
+            // Disponibilita reale prima dei trasferimenti.
+
+            assertV13ControllerAvailability(
+                    availability, f, "UNLOCATED", "15.000");
+
+            assertV13ControllerAvailability(
+                    availability, f, sourceSelection, "10.000");
+
+            assertV13ControllerAvailability(
+                    availability, f, targetSelection, "0.000");
+
+            System.out.println(
+                    "V13_REAL_AVAILABILITY_BEFORE: PASS");
+
+            var emptyHistory =
+                    new org.springframework.ui.ExtendedModelMap();
+
+            assertEquals(
+                    "warehouse/inventory/inventory-transfer-history",
+                    history.history(
+                            emptyHistory,
+                            new org.springframework.web.servlet
+                                    .mvc.support
+                                    .RedirectAttributesModelMap()));
+
+            assertEquals(
+                    java.util.List.of(),
+                    emptyHistory.get("rows"));
+
+            assertV13WarehouseBalance(f);
+
+            LocalDate movementDate =
+                    LocalDate.of(2026, 11, 26);
+
+            // Il posting reale prepara le evidenze
+            // che saranno lette dai controller.
+
+            Long unlocatedId = coordinator.post(
+                    TENANT, COMPANY,
+                    f.warehouseId(), f.itemId(),
+                    null, f.targetId(),
+                    new BigDecimal("12.000"),
+                    movementDate,
+                    "Collaudo query controller origine NULL",
+                    f.operationKey()
+            );
+
+            assertNotNull(unlocatedId);
+
+            Long physicalId = coordinator.post(
+                    TENANT, COMPANY,
+                    f.warehouseId(), f.itemId(),
+                    f.sourceId(), f.targetId(),
+                    new BigDecimal("2.000"),
+                    movementDate,
+                    "Collaudo query controller origine fisica",
+                    UUID.randomUUID().toString()
+            );
+
+            assertNotNull(physicalId);
+            assertNotEquals(unlocatedId, physicalId);
+
+            // Disponibilita reale dopo entrambi i trasferimenti.
+
+            assertV13ControllerAvailability(
+                    availability, f, "UNLOCATED", "3.000");
+
+            assertV13ControllerAvailability(
+                    availability, f, sourceSelection, "8.000");
+
+            assertV13ControllerAvailability(
+                    availability, f, targetSelection, "14.000");
+
+            System.out.println(
+                    "V13_REAL_AVAILABILITY_AFTER: PASS");
+
+            // Storico reale: entrambe le tipologie.
+
+            var historyModel =
+                    new org.springframework.ui.ExtendedModelMap();
+
+            assertEquals(
+                    "warehouse/inventory/inventory-transfer-history",
+                    history.history(
+                            historyModel,
+                            new org.springframework.web.servlet
+                                    .mvc.support
+                                    .RedirectAttributesModelMap()));
+
+            assertEquals(
+                    "inventoryTransfers",
+                    historyModel.get("activeMenu"));
+
+            var rows = (java.util.List<?>)
+                    historyModel.get("rows");
+
+            assertNotNull(rows);
+            assertEquals(2, rows.size());
+
+            var physicalRow =
+                    (com.gestiva.warehouse.inventory.movement
+                            .controller
+                            .InventoryLocationTransferHistoryPageController
+                            .TransferRow) rows.get(0);
+
+            var unlocatedRow =
+                    (com.gestiva.warehouse.inventory.movement
+                            .controller
+                            .InventoryLocationTransferHistoryPageController
+                            .TransferRow) rows.get(1);
+
+            assertEquals(physicalId, physicalRow.id());
+            assertEquals(unlocatedId, unlocatedRow.id());
+
+            assertEquals(
+                    "Senza ubicazione",
+                    unlocatedRow.sourceCode());
+
+            assertEquals(
+                    sourceCode,
+                    physicalRow.sourceCode());
+
+            assertEquals(
+                    targetCode,
+                    unlocatedRow.targetCode());
+
+            assertEquals(
+                    targetCode,
+                    physicalRow.targetCode());
+
+            assertEquals("POSTED", unlocatedRow.status());
+            assertEquals("POSTED", physicalRow.status());
+
+            assertEquals(movementDate, unlocatedRow.movementDate());
+            assertEquals(movementDate, physicalRow.movementDate());
+
+            assertEquals(
+                    0,
+                    new BigDecimal("12.000")
+                            .compareTo(unlocatedRow.quantity()));
+
+            assertEquals(
+                    0,
+                    new BigDecimal("2.000")
+                            .compareTo(physicalRow.quantity()));
+
+            assertNotNull(unlocatedRow.outMovementId());
+            assertNotNull(unlocatedRow.inMovementId());
+
+            assertNotNull(physicalRow.outMovementId());
+            assertNotNull(physicalRow.inMovementId());
+
+            System.out.println(
+                    "V13_REAL_HISTORY_MIXED_ORIGINS: PASS");
+
+            // Dettaglio reale del trasferimento NULL.
+
+            var unlocatedModel =
+                    new org.springframework.ui.ExtendedModelMap();
+
+            assertEquals(
+                    "warehouse/inventory/inventory-transfer-detail",
+                    detail.detail(unlocatedId, unlocatedModel));
+
+            var unlocatedDetail =
+                    (com.gestiva.warehouse.inventory.movement
+                            .controller
+                            .InventoryLocationTransferDetailPageController
+                            .TransferDetail)
+                            unlocatedModel.get("transfer");
+
+            assertNotNull(unlocatedDetail);
+
+            assertEquals(
+                    unlocatedId, unlocatedDetail.id());
+
+            assertEquals(
+                    "Senza ubicazione",
+                    unlocatedDetail.sourceCode());
+
+            assertEquals(
+                    targetCode,
+                    unlocatedDetail.targetCode());
+
+            assertEquals(
+                    unlocatedRow.outMovementId(),
+                    unlocatedDetail.outMovementId());
+
+            assertEquals(
+                    unlocatedRow.inMovementId(),
+                    unlocatedDetail.inMovementId());
+
+            assertEquals(
+                    "POSTED",
+                    unlocatedDetail.status());
+
+            assertEquals(
+                    "Collaudo query controller origine NULL",
+                    unlocatedDetail.notes());
+
+            assertEquals(
+                    0,
+                    new BigDecimal("12.000").compareTo(
+                            (BigDecimal)
+                                    unlocatedModel.get("allocatedQty")));
+
+            assertEquals(
+                    0,
+                    new BigDecimal("95.6000").compareTo(
+                            (BigDecimal)
+                                    unlocatedModel.get("totalValue")));
+
+            var allocations = (java.util.List<?>)
+                    unlocatedModel.get("allocations");
+
+            assertNotNull(allocations);
+            assertEquals(2, allocations.size());
+
+            var first =
+                    (com.gestiva.warehouse.inventory.movement
+                            .controller
+                            .InventoryLocationTransferDetailPageController
+                            .AllocationRow) allocations.get(0);
+
+            var second =
+                    (com.gestiva.warehouse.inventory.movement
+                            .controller
+                            .InventoryLocationTransferDetailPageController
+                            .AllocationRow) allocations.get(1);
+
+            assertEquals(
+                    Long.valueOf(f.layer1()),
+                    first.sourceLayerId());
+
+            assertEquals(
+                    Long.valueOf(f.layer2()),
+                    second.sourceLayerId());
+
+            assertNotNull(first.targetLayerId());
+            assertNotNull(second.targetLayerId());
+
+            assertNotEquals(
+                    first.targetLayerId(),
+                    second.targetLayerId());
+
+            assertEquals(
+                    LocalDate.of(2026, 10, 1),
+                    first.layerDate());
+
+            assertEquals(
+                    LocalDate.of(2026, 10, 10),
+                    second.layerDate());
+
+            assertEquals(
+                    0,
+                    new BigDecimal("8.000")
+                            .compareTo(first.quantity()));
+
+            assertEquals(
+                    0,
+                    new BigDecimal("4.000")
+                            .compareTo(second.quantity()));
+
+            assertEquals(
+                    0,
+                    new BigDecimal("7.2000")
+                            .compareTo(first.unitCost()));
+
+            assertEquals(
+                    0,
+                    new BigDecimal("9.5000")
+                            .compareTo(second.unitCost()));
+
+            assertEquals(
+                    0,
+                    new BigDecimal("57.6000")
+                            .compareTo(first.value()));
+
+            assertEquals(
+                    0,
+                    new BigDecimal("38.0000")
+                            .compareTo(second.value()));
+
+            System.out.println(
+                    "V13_REAL_DETAIL_UNLOCATED: PASS");
+
+            System.out.println(
+                    "V13_REAL_FIFO_ALLOCATIONS: PASS");
+
+            // Dettaglio reale del trasferimento fisico.
+
+            var physicalModel =
+                    new org.springframework.ui.ExtendedModelMap();
+
+            assertEquals(
+                    "warehouse/inventory/inventory-transfer-detail",
+                    detail.detail(physicalId, physicalModel));
+
+            var physicalDetail =
+                    (com.gestiva.warehouse.inventory.movement
+                            .controller
+                            .InventoryLocationTransferDetailPageController
+                            .TransferDetail)
+                            physicalModel.get("transfer");
+
+            assertNotNull(physicalDetail);
+
+            assertEquals(physicalId, physicalDetail.id());
+
+            assertEquals(
+                    sourceCode,
+                    physicalDetail.sourceCode());
+
+            assertEquals(
+                    targetCode,
+                    physicalDetail.targetCode());
+
+            assertEquals(
+                    "POSTED",
+                    physicalDetail.status());
+
+            assertEquals(
+                    0,
+                    new BigDecimal("2.000").compareTo(
+                            (BigDecimal)
+                                    physicalModel.get("allocatedQty")));
+
+            assertEquals(
+                    0,
+                    new BigDecimal("12.0000").compareTo(
+                            (BigDecimal)
+                                    physicalModel.get("totalValue")));
+
+            var physicalAllocations = (java.util.List<?>)
+                    physicalModel.get("allocations");
+
+            assertEquals(1, physicalAllocations.size());
+
+            var physicalAllocation =
+                    (com.gestiva.warehouse.inventory.movement
+                            .controller
+                            .InventoryLocationTransferDetailPageController
+                            .AllocationRow)
+                            physicalAllocations.get(0);
+
+            assertEquals(
+                    LocalDate.of(2026, 9, 1),
+                    physicalAllocation.layerDate());
+
+            assertEquals(
+                    0,
+                    new BigDecimal("6.0000")
+                            .compareTo(
+                                    physicalAllocation.unitCost()));
+
+            assertNotNull(physicalAllocation.targetLayerId());
+
+            System.out.println(
+                    "V13_REAL_DETAIL_PHYSICAL: PASS");
+
+            // Verifica isolamento company mediante query reali.
+            // Non vengono creati record appartenenti ad altre societa.
+
+            Long foreignCompany = 999999L;
+
+            assertNotEquals(COMPANY, foreignCompany);
+
+            org.mockito.Mockito.when(
+                    companyContext.requireCurrentCompanyId()
+            ).thenReturn(foreignCompany);
+
+            var foreignModel =
+                    new org.springframework.ui.ExtendedModelMap();
+
+            assertEquals(
+                    "warehouse/inventory/inventory-transfer-history",
+                    history.history(
+                            foreignModel,
+                            new org.springframework.web.servlet
+                                    .mvc.support
+                                    .RedirectAttributesModelMap()));
+
+            assertEquals(
+                    java.util.List.of(),
+                    foreignModel.get("rows"));
+
+            var foreignFailure = assertThrows(
+                    org.springframework.web.server
+                            .ResponseStatusException.class,
+                    () -> detail.detail(
+                            unlocatedId,
+                            new org.springframework.ui
+                                    .ExtendedModelMap()));
+
+            assertEquals(
+                    org.springframework.http.HttpStatus.NOT_FOUND,
+                    foreignFailure.getStatusCode());
+
+            org.mockito.Mockito.when(
+                    companyContext.requireCurrentCompanyId()
+            ).thenReturn(COMPANY);
+
+            System.out.println(
+                    "V13_REAL_COMPANY_ISOLATION: PASS");
+
+            // Verifica isolamento tenant mediante query reali.
+
+            Long foreignTenant = 999999L;
+
+            assertNotEquals(TENANT, foreignTenant);
+
+            org.mockito.Mockito.when(
+                    tenantContext.getCurrentTenantId()
+            ).thenReturn(foreignTenant);
+
+            org.mockito.Mockito.when(
+                    tenantRepository.findById(foreignTenant)
+            ).thenReturn(java.util.Optional.of(tenant));
+
+            var foreignTenantModel =
+                    new org.springframework.ui.ExtendedModelMap();
+
+            assertEquals(
+                    "warehouse/inventory/inventory-transfer-history",
+                    history.history(
+                            foreignTenantModel,
+                            new org.springframework.web.servlet
+                                    .mvc.support
+                                    .RedirectAttributesModelMap()));
+
+            assertEquals(
+                    java.util.List.of(),
+                    foreignTenantModel.get("rows"));
+
+            var foreignTenantFailure = assertThrows(
+                    org.springframework.web.server
+                            .ResponseStatusException.class,
+                    () -> detail.detail(
+                            unlocatedId,
+                            new org.springframework.ui
+                                    .ExtendedModelMap()));
+
+            assertEquals(
+                    org.springframework.http.HttpStatus.NOT_FOUND,
+                    foreignTenantFailure.getStatusCode());
+
+            org.mockito.Mockito.when(
+                    tenantContext.getCurrentTenantId()
+            ).thenReturn(TENANT);
+
+            System.out.println(
+                    "V13_REAL_TENANT_ISOLATION: PASS");
+
+            // Conservazione complessiva e isolamento ubicazioni.
+
+            assertV13LayerBalance(
+                    f, null, "3.000", "28.5000");
+
+            assertV13LayerBalance(
+                    f, f.sourceId(), "8.000", "48.0000");
+
+            assertV13LayerBalance(
+                    f, f.targetId(), "14.000", "107.6000");
+
+            assertV13WarehouseBalance(f);
+
+            assertEquals(2L, count("""
+                    SELECT COUNT(*)
+                    FROM inventory_location_transfer
+                    WHERE tenant_id=? AND company_id=?
+                      AND warehouse_id=? AND item_id=?
+                    """,
+                    TENANT, COMPANY,
+                    f.warehouseId(), f.itemId()));
+
+            assertEquals(3L, count("""
+                    SELECT COUNT(*)
+                    FROM inventory_location_transfer_allocation a
+                    JOIN inventory_location_transfer t
+                      ON t.id=a.transfer_id
+                     AND t.tenant_id=a.tenant_id
+                     AND t.company_id=a.company_id
+                     AND t.warehouse_id=a.warehouse_id
+                    WHERE t.tenant_id=? AND t.company_id=?
+                      AND t.warehouse_id=? AND t.item_id=?
+                    """,
+                    TENANT, COMPANY,
+                    f.warehouseId(), f.itemId()));
+
+            System.out.println(
+                    "V13_REAL_CONTROLLER_QUANTITY_CONSERVATION: PASS");
+
+            System.out.println(
+                    "V13_REAL_CONTROLLER_VALUE_CONSERVATION: PASS");
+
+            passed = true;
+
+        } finally {
+
+            if (passed) {
+                cleanupV13Fixture(f);
+            } else {
+                System.out.println(
+                        "V13_CONTROLLER_FIXTURE_PRESERVED_FOR_DIAGNOSTICS");
+            }
+        }
+    }
+
 }

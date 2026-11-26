@@ -262,6 +262,9 @@
     const source = document.getElementById("sourceLocationId");
     const target = document.getElementById("targetLocationId");
 
+    // Token HTTP V13: non rappresenta una ubicazione fisica.
+    const UNLOCATED = "UNLOCATED";
+
     const options = Array.from(
         source.querySelectorAll("option[data-warehouse-id]")
     ).map(option => ({
@@ -280,6 +283,15 @@
             ""
         ));
 
+        // Le scorte senza ubicazione sono selezionabili
+        // esclusivamente come origine e dopo la scelta del magazzino.
+        if (select === source && warehouseId) {
+            select.add(new Option(
+                "Senza ubicazione",
+                UNLOCATED
+            ));
+        }
+
         for (const option of options) {
             if (option.warehouseId === warehouseId) {
                 select.add(new Option(option.label, option.id));
@@ -287,10 +299,12 @@
         }
 
         select.disabled = !warehouseId;
-        if (options.some(option =>
-            option.id === previous &&
-            option.warehouseId === warehouseId
-        )) {
+        // Ripristina soltanto una selezione ancora disponibile
+        // nel selettore ricostruito, incluso UNLOCATED per l'origine.
+        if (warehouseId && previous &&
+                Array.from(select.options).some(option =>
+                    option.value === previous
+                )) {
             select.value = previous;
         }
     }

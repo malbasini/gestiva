@@ -112,7 +112,8 @@ public class InventoryLocationTransferPageController {
     public String postTransfer(
             @RequestParam(required = false) Long warehouseId,
             @RequestParam(required = false) Long itemId,
-            @RequestParam(required = false) Long sourceLocationId,
+            @RequestParam(name = "sourceLocationId", required = false)
+            String sourceSelection,
             @RequestParam(required = false) Long targetLocationId,
             @RequestParam(required = false) BigDecimal quantity,
             @RequestParam(required = false)
@@ -148,12 +149,16 @@ public class InventoryLocationTransferPageController {
                     || warehouseId <= 0
                     || itemId == null
                     || itemId <= 0
-                    || sourceLocationId == null
-                    || targetLocationId == null) {
+                    || targetLocationId == null
+                    || targetLocationId <= 0) {
                 throw new BusinessException(
                         "Magazzino, articolo e ubicazioni sono obbligatori."
                 );
             }
+
+            Long sourceLocationId =
+                    InventoryLocationTransferSourceSelection
+                            .parse(sourceSelection);
 
             var warehouses = warehouseService.findActive(
                     tenantId, companyId
@@ -174,8 +179,9 @@ public class InventoryLocationTransferPageController {
                     tenantId, companyId, warehouseId
             ).stream().filter(l -> l.isActive()).toList();
 
-            boolean validSource = allowedLocations.stream()
-                    .anyMatch(l -> sourceLocationId.equals(l.getId()));
+            boolean validSource = sourceLocationId == null
+                    || allowedLocations.stream()
+                            .anyMatch(l -> sourceLocationId.equals(l.getId()));
 
             boolean validTarget = allowedLocations.stream()
                     .anyMatch(l -> targetLocationId.equals(l.getId()));
@@ -217,7 +223,7 @@ public class InventoryLocationTransferPageController {
             model.addAttribute("errorMessage", ex.getMessage());
             model.addAttribute("warehouseId", warehouseId);
             model.addAttribute("itemId", itemId);
-            model.addAttribute("sourceLocationId", sourceLocationId);
+            model.addAttribute("sourceLocationId", sourceSelection);
             model.addAttribute("targetLocationId", targetLocationId);
             model.addAttribute("quantity", quantity);
             model.addAttribute("movementDate", movementDate);
