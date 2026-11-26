@@ -77,6 +77,11 @@
                         </div>
                     </div>
                     <div class="page-header-right">
+                        <a class="btn btn-outline-primary"
+                           th:href="@{/inventory/transfers}">
+                            <i class="bi bi-clock-history"></i>
+                            Storico trasferimenti
+                        </a>
                         <a class="btn btn-outline-secondary"
                            th:href="@{/warehouse/locations}">
                             <i class="bi bi-arrow-left"></i>
@@ -157,6 +162,20 @@
                                         th:text="${location.code + ' - ' + location.name}">
                                 </option>
                             </select>
+                        </div>
+
+                        <div class="form-field full">
+                            <div id="fifoAvailability"
+                                 class="alert alert-info"
+                                 role="status"
+                                 aria-live="polite"
+                                 th:attr="data-availability-url=@{/inventory/transfers/availability}">
+                                <i class="bi bi-box-seam"></i>
+                                <strong>Disponibilità FIFO all'origine:</strong>
+                                <span id="fifoAvailableQty">
+                                    Seleziona magazzino, articolo e ubicazione.
+                                </span>
+                            </div>
                         </div>
 
                         <div class="form-field">
@@ -309,6 +328,112 @@
             select.value = initial;
         }
     }
+
+    // Disponibilità informativa: il coordinatore FIFO
+    // esegue la validazione definitiva al momento del POST.
+    const item = document.getElementById("itemId");
+    const availabilityBox =
+        document.getElementById("fifoAvailability");
+    const availabilityText =
+        document.getElementById("fifoAvailableQty");
+
+    let availabilityRequest = null;
+    let availabilityVersion = 0;
+
+    async function refreshAvailability() {
+        const version = ++availabilityVersion;
+
+        if (availabilityRequest) {
+            availabilityRequest.abort();
+            availabilityRequest = null;
+        }
+
+        const warehouseId = warehouse.value;
+        const itemId = item.value;
+        const locationId = source.value;
+
+        if (!warehouseId || !itemId || !locationId) {
+            availabilityText.textContent =
+                "Seleziona magazzino, articolo e ubicazione.";
+            return;
+        }
+
+        availabilityText.textContent = "Caricamento...";
+
+        const controller = new AbortController();
+        availabilityRequest = controller;
+
+        const url = new URL(
+            availabilityBox.dataset.availabilityUrl,
+            window.location.origin
+        );
+
+        url.searchParams.set("warehouseId", warehouseId);
+        url.searchParams.set("itemId", itemId);
+        url.searchParams.set("sourceLocationId", locationId);
+
+        try {
+            const response = await fetch(url.toString(), {
+                method: "GET",
+                credentials: "same-origin",
+                headers: {
+                    "Accept": "application/json"
+                },
+                signal: controller.signal
+            });
+
+            if (!response.ok) {
+                throw new Error(
+                    "Disponibilità non consultabile."
+                );
+            }
+
+            const result = await response.json();
+
+            if (version !== availabilityVersion) {
+                return;
+            }
+
+            const qty = Number(result.availableQty);
+
+            if (!Number.isFinite(qty) || qty < 0) {
+                throw new Error("Quantità non valida.");
+            }
+
+            availabilityText.textContent =
+                new Intl.NumberFormat("it-IT", {
+                    minimumFractionDigits: 3,
+                    maximumFractionDigits: 3
+                }).format(qty) + " PZ";
+
+        } catch (error) {
+            if (version !== availabilityVersion ||
+                    error.name === "AbortError") {
+                return;
+            }
+
+            availabilityText.textContent =
+                "Disponibilità non consultabile. " +
+                "Il trasferimento resta soggetto " +
+                "alla verifica del server.";
+        } finally {
+            if (version === availabilityVersion) {
+                availabilityRequest = null;
+            }
+        }
+    }
+
+    warehouse.addEventListener(
+        "change", refreshAvailability
+    );
+    item.addEventListener(
+        "change", refreshAvailability
+    );
+    source.addEventListener(
+        "change", refreshAvailability
+    );
+
+    refreshAvailability();
 
     const quantityField =
         document.getElementById("quantity");

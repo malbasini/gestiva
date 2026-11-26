@@ -141,6 +141,13 @@
                                     Trasferimenti tra ubicazioni
                                 </a>
                             </li>
+<li th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL')}"
+                                sec:authorize="hasAnyRole('ADMIN','WAREHOUSE')">
+                                <a class="dropdown-item"
+                                   th:href="@{/inventory/transfers}">
+                                    Storico trasferimenti
+                                </a>
+                            </li>
 
 
                             <li th:if="${tenantSubscriptionActive and (tenantSubscriptionPlan == 'PROFESSIONAL' || tenantSubscriptionPlan == 'STARTER')}"

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Dettaglio trasferimento | GESTIVA</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+</head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/layout :: appHeader}"></div>
+
+    <main class="app-main">
+        <div class="page">
+            <div class="card">
+
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1 class="page-title">
+                            Dettaglio trasferimento
+                            <span th:text="${'#' + transfer.id}">#1</span>
+                        </h1>
+                        <div class="muted">
+                            Movimentazione interna con valorizzazione FIFO
+                        </div>
+                    </div>
+                    <div class="page-header-right">
+                        <a class="btn btn-outline-secondary"
+                           th:href="@{/inventory/transfers}">
+                            <i class="bi bi-arrow-left"></i>
+                            Torna allo storico
+                        </a>
+                    </div>
+                </div>
+
+                <h3 style="margin-top:28px;">Dati del trasferimento</h3>
+
+                <div class="table-wrap">
+                    <table class="table">
+                        <tbody>
+                        <tr>
+                            <th>Data</th>
+                            <td th:text="${#temporals.format(transfer.movementDate, 'dd/MM/yyyy')}">
+                                25/11/2026
+                            </td>
+                            <th>Stato</th>
+                            <td th:text="${transfer.status}">POSTED</td>
+                        </tr>
+                        <tr>
+                            <th>Magazzino</th>
+                            <td th:text="${transfer.warehouseCode}">MAG-TEST-001</td>
+                            <th>Articolo</th>
+                            <td th:text="${transfer.itemCode}">TEST-ART-001</td>
+                        </tr>
+                        <tr>
+                            <th>Ubicazione origine</th>
+                            <td th:text="${transfer.sourceCode}">U1-TEST-A01</td>
+                            <th>Ubicazione destinazione</th>
+                            <td th:text="${transfer.targetCode}">U1-TEST-A01-01</td>
+                        </tr>
+                        <tr>
+                            <th>Quantità trasferita</th>
+                            <td th:text="${#numbers.formatDecimal(transfer.quantity, 1, 3)}">
+                                1,000
+                            </td>
+                            <th>Movimenti</th>
+                            <td>
+                                OUT #<span th:text="${transfer.outMovementId}">34</span>
+                                /
+                                IN #<span th:text="${transfer.inMovementId}">35</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Note</th>
+                            <td colspan="3"
+                                th:text="${#strings.isEmpty(transfer.notes) ? 'Nessuna nota' : transfer.notes}">
+                                Primo trasferimento FIFO V12
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 style="margin-top:30px;">Allocazioni FIFO</h3>
+
+                <p class="muted">
+                    Layer di origine e destinazione, quantità e costo
+                    effettivamente utilizzati nella registrazione.
+                </p>
+
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Allocazione</th>
+                            <th>Layer origine</th>
+                            <th>Layer destinazione</th>
+                            <th>Data layer</th>
+                            <th class="text-right">Quantità</th>
+                            <th class="text-right">Costo unitario</th>
+                            <th class="text-right">Valore</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(allocations)}">
+                            <td colspan="7" class="muted">
+                                Nessuna allocazione FIFO registrata.
+                            </td>
+                        </tr>
+                        <tr th:each="a : ${allocations}">
+                            <td th:text="${a.id}">1</td>
+                            <td th:text="${a.sourceLayerId}">1</td>
+                            <td th:text="${a.targetLayerId == null ? '—' : a.targetLayerId}">
+                                2
+                            </td>
+                            <td th:text="${#temporals.format(a.layerDate, 'dd/MM/yyyy')}">
+                                25/11/2026
+                            </td>
+                            <td class="text-right"
+                                th:text="${#numbers.formatDecimal(a.quantity, 1, 3)}">
+                                1,000
+                            </td>
+                            <td class="text-right"
+                                th:text="${#numbers.formatDecimal(a.unitCost, 1, 4)}">
+                                10,0000
+                            </td>
+                            <td class="text-right"
+                                th:text="${#numbers.formatDecimal(a.value, 1, 4)}">
+                                10,0000
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top:24px;">
+                    <strong>Totale quantità allocata:</strong>
+                    <span th:text="${#numbers.formatDecimal(allocatedQty, 1, 3)}">
+                        1,000
+                    </span>
+                    <span style="margin-left:28px;">
+                        <strong>Valore FIFO trasferito:</strong>
+                        € <span th:text="${#numbers.formatDecimal(totalValue, 1, 4)}">
+                            10,0000
+                        </span>
+                    </span>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{fragments/layout :: appFooter}"></div>
+</div>
+</body>
+</html>

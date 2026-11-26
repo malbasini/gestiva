@@ -30,6 +30,67 @@
         .recent-inventory-movements td:nth-child(4) {
             white-space: nowrap;
         }
+    
+        /* FASE 5.15 - Barra comandi scheda articolo */
+
+        .item-detail-page .item-detail-actions-header {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0;
+        }
+
+        .item-detail-page .item-detail-actions-header
+        .page-header-left {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .item-detail-page .item-detail-actions-header
+        .page-title {
+            margin-bottom: 6px;
+            overflow-wrap: anywhere;
+        }
+
+        .item-detail-page .item-detail-actions-header
+        .page-header-right {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            width: 100%;
+            margin-top: 22px;
+        }
+
+        .item-detail-page .item-detail-actions-header
+        .page-header-right .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            white-space: nowrap;
+            margin: 0;
+            min-height: 42px;
+            padding: 9px 14px;
+            font-size: 14px;
+            line-height: 1.35;
+        }
+
+        @media (max-width: 680px) {
+            .item-detail-page .item-detail-actions-header
+            .page-header-right {
+                gap: 8px;
+            }
+
+            .item-detail-page .item-detail-actions-header
+            .page-header-right .btn {
+                width: 100%;
+                white-space: normal;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -37,12 +98,12 @@
   <div th:replace="~{fragments/layout :: appHeader}"></div>
 
   <main class="app-main">
-    <div class="page">
+    <div class="page item-detail-page">
       <div class="card">
 
         <div th:replace="~{fragments/layout :: flashMessages}"></div>
 
-        <div class="page-header">
+        <div class="page-header item-detail-actions-header">
           <div class="page-header-left">
             <h1 class="page-title" th:text="${item.name}">Articolo</h1>
             <div class="muted" th:text="${item.code}">ART-001</div>
@@ -55,6 +116,12 @@
             <a class="btn btn-outline-primary" th:href="@{/items/{id}/edit(id=${item.id})}">
               <i class="bi bi-pencil-square"></i>
               <span>Modifica</span>
+            </a>
+            <a class="btn btn-outline-primary"
+               th:if="${item.stockManaged}"
+               th:href="@{/items/{id}/locations(id=${item.id})}">
+              <i class="bi bi-geo-alt"></i>
+              <span>Ubicazioni e disponibilità</span>
             </a>
             <a class="btn btn-outline-success" th:href="@{/items/{id}/inventory(id=${item.id})}">
               <i class="bi bi-box-seam"></i>
