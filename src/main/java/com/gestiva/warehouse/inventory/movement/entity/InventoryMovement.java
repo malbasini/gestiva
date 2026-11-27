@@ -28,6 +28,9 @@ public class InventoryMovement extends TenantAwareEntity {
     @Column(name = "item_id", nullable = false)
     private Long itemId;
 
+    @Column(name = "lot_id")
+    private Long lotId;
+
     @Column(name = "warehouse_id")
     private Long warehouseId;
 
@@ -73,6 +76,14 @@ public class InventoryMovement extends TenantAwareEntity {
 
     public void setItemId(Long itemId) {
         this.itemId = itemId;
+    }
+
+    public Long getLotId() {
+        return lotId;
+    }
+
+    public void setLotId(Long lotId) {
+        this.lotId = lotId;
     }
 
     public LocalDate getMovementDate() {

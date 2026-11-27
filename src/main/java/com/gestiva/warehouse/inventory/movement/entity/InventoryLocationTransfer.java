@@ -20,6 +20,9 @@ public class InventoryLocationTransfer extends TenantAwareEntity {
     @Column(name = "item_id", nullable = false)
     private Long itemId;
 
+    @Column(name = "lot_id")
+    private Long lotId;
+
     @Column(name = "source_location_id", nullable = true)
     private Long sourceLocationId;
 
@@ -72,6 +75,14 @@ public class InventoryLocationTransfer extends TenantAwareEntity {
 
     public void setItemId(Long itemId) {
         this.itemId = itemId;
+    }
+
+    public Long getLotId() {
+        return lotId;
+    }
+
+    public void setLotId(Long lotId) {
+        this.lotId = lotId;
     }
 
     public Long getSourceLocationId() {

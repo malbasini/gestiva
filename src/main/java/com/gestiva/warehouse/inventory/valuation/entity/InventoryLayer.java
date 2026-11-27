@@ -51,6 +51,9 @@ public class InventoryLayer extends TenantAwareEntity {
     @Column(name = "item_id", nullable = false)
     private Long itemId;
 
+    @Column(name = "lot_id")
+    private Long lotId;
+
     @Column(name = "source_movement_id", nullable = false)
     private Long sourceMovementId;
 
@@ -75,6 +78,14 @@ public class InventoryLayer extends TenantAwareEntity {
 
     public void setItemId(Long itemId) {
         this.itemId = itemId;
+    }
+
+    public Long getLotId() {
+        return lotId;
+    }
+
+    public void setLotId(Long lotId) {
+        this.lotId = lotId;
     }
 
     public Long getSourceMovementId() {
