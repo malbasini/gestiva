@@ -15,6 +15,7 @@ import com.gestiva.sales.order.repository.SalesOrderLineRepository;
 import com.gestiva.sales.quote.repository.QuoteLineRepository;
 import com.gestiva.warehouse.inventory.movement.repository.InventoryMovementRepository;
 import com.gestiva.warehouse.inventory.movement.web.InventoryLedgerWebService;
+import jakarta.persistence.Convert;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
