@@ -364,4 +364,165 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
             @Param("locationId") Long locationId
     );
 
+
+
+    // =====================================================
+    // GESTIVA V2 - MOVIMENTAZIONE PER LOTTO V14
+    // =====================================================
+
+    /**
+     * Giacenza fisica per contesto esatto.
+     *
+     * NULL locationId identifica esclusivamente i movimenti
+     * senza ubicazione.
+     *
+     * NULL lotId identifica esclusivamente i movimenti
+     * senza lotto.
+     *
+     * Include movimenti originali e compensativi secondo
+     * la semantica delle giacenze gia esistente.
+     */
+    @Query("""
+            select coalesce(sum(
+                case
+                    when upper(m.movementType)
+                         in ('IN', 'ADJUSTMENT_IN')
+                        then m.quantity
+                    when upper(m.movementType)
+                         in ('OUT', 'ADJUSTMENT_OUT')
+                        then -m.quantity
+                    else 0
+                end
+            ), 0)
+            from InventoryMovement m
+            where m.tenantId = :tenantId
+              and m.companyId = :companyId
+              and m.warehouseId = :warehouseId
+              and m.itemId = :itemId
+              and (
+                  m.locationId = :locationId
+                  or (
+                      :locationId is null
+                      and m.locationId is null
+                  )
+              )
+              and (
+                  m.lotId = :lotId
+                  or (
+                      :lotId is null
+                      and m.lotId is null
+                  )
+              )
+            """)
+    BigDecimal calculateInventoryBalanceByExactLotContext(
+            @Param("tenantId") Long tenantId,
+            @Param("companyId") Long companyId,
+            @Param("warehouseId") Long warehouseId,
+            @Param("locationId") Long locationId,
+            @Param("itemId") Long itemId,
+            @Param("lotId") Long lotId
+    );
+
+    /**
+     * Storico societario dei movimenti del lotto.
+     *
+     * Include anche i movimenti originali stornati
+     * e i relativi movimenti compensativi.
+     *
+     * NULL lotId identifica lo storico senza lotto.
+     */
+    List<InventoryMovement>
+    findByTenantIdAndCompanyIdAndItemIdAndLotIdOrderByMovementDateAscIdAsc(
+            Long tenantId,
+            Long companyId,
+            Long itemId,
+            Long lotId
+    );
+
+    /**
+     * Protezione anagrafica del lotto condiviso.
+     *
+     * Verifica lo storico in tutte le societa del tenant.
+     * Non esclude movimenti stornati.
+     */
+    boolean existsByTenantIdAndItemIdAndLotId(
+            Long tenantId,
+            Long itemId,
+            Long lotId
+    );
+
+    /**
+     * Proiezione del saldo di un lotto in uno specifico
+     * contesto societario e fisico.
+     *
+     * Warehouse e location possono essere NULL nei dati
+     * storici: tali gruppi non devono essere nascosti.
+     */
+    interface LotPhysicalBalance {
+
+        Long getCompanyId();
+
+        Long getWarehouseId();
+
+        Long getLocationId();
+
+        BigDecimal getBalance();
+    }
+
+    /**
+     * Saldi non nulli in tutti i contesti fisici del tenant.
+     *
+     * Necessario per impedire compensazioni tra giacenze
+     * positive e negative appartenenti a contesti diversi.
+     *
+     * lotId obbligatorio: NULL non seleziona alcun gruppo.
+     *
+     * Contratto destinato alle verifiche anagrafiche
+     * tenant-wide, non alle consultazioni societarie.
+     */
+    @Query("""
+            select
+                m.companyId as companyId,
+                m.warehouseId as warehouseId,
+                m.locationId as locationId,
+                coalesce(sum(
+                    case
+                        when upper(m.movementType)
+                             in ('IN', 'ADJUSTMENT_IN')
+                            then m.quantity
+                        when upper(m.movementType)
+                             in ('OUT', 'ADJUSTMENT_OUT')
+                            then -m.quantity
+                        else 0
+                    end
+                ), 0) as balance
+            from InventoryMovement m
+            where m.tenantId = :tenantId
+              and m.itemId = :itemId
+              and m.lotId = :lotId
+            group by
+                m.companyId,
+                m.warehouseId,
+                m.locationId
+            having coalesce(sum(
+                case
+                    when upper(m.movementType)
+                         in ('IN', 'ADJUSTMENT_IN')
+                        then m.quantity
+                    when upper(m.movementType)
+                         in ('OUT', 'ADJUSTMENT_OUT')
+                        then -m.quantity
+                    else 0
+                end
+            ), 0) <> 0
+            order by
+                m.companyId asc,
+                m.warehouseId asc,
+                m.locationId asc
+            """)
+    List<LotPhysicalBalance> findNonZeroLotBalancesByPhysicalContext(
+            @Param("tenantId") Long tenantId,
+            @Param("itemId") Long itemId,
+            @Param("lotId") Long lotId
+    );
 }

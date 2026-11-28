@@ -49,8 +49,10 @@ public class TrialBalanceWebService {
     }
 
     public TrialBalanceView build(Long tenantId, LocalDate dateFrom, LocalDate dateTo) {
+        Long companyId = requireCompanyId();
+
         List<JournalEntry> entries = journalEntryRepository
-                .findByTenantIdAndEntryDateBetweenOrderByEntryDateAscIdAsc(tenantId, dateFrom, dateTo);
+                .findByTenantIdAndCompanyIdAndEntryDateBetweenOrderByEntryDateAscIdAsc(tenantId, companyId, dateFrom, dateTo);
 
         TrialBalanceView view = new TrialBalanceView();
         view.setFormattedDateFrom(PdfFormatUtils.formatDate(dateFrom));
@@ -66,9 +68,9 @@ public class TrialBalanceWebService {
                 .map(JournalEntry::getId)
                 .toList();
 
-        List<JournalEntryLine> lines = journalEntryLineRepository.findByTenantIdAndCompanyIdAndJournalEntryIdIn(tenantId,requireCompanyId(), entryIds);
+        List<JournalEntryLine> lines = journalEntryLineRepository.findByTenantIdAndCompanyIdAndJournalEntryIdIn(tenantId, companyId, entryIds);
 
-        Map<Long, Account> accountsById = accountRepository.findByTenantIdAndCompanyIdOrderByCodeAsc(tenantId,requireCompanyId()).stream()
+        Map<Long, Account> accountsById = accountRepository.findByTenantIdAndCompanyIdOrderByCodeAsc(tenantId, companyId).stream()
                 .collect(Collectors.toMap(Account::getId, a -> a));
 
         Map<Long, BalanceBucket> bucketsByAccountId = new TreeMap<>();

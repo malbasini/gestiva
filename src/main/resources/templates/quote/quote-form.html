@@ -323,6 +323,30 @@
       syncCode();
     }
 
+    // Formato monetario italiano per prezzi canonici API.
+    // Nessuna conversione floating-point o arrotondamento.
+    function formatUnitPriceItalian(value) {
+      if (value == null) {
+        return '';
+      }
+
+      const text = String(value).trim();
+
+      if (!/^[0-9]+(?:\.[0-9]{1,2})?$/.test(text)) {
+        return text;
+      }
+
+      const parts = text.split('.');
+      const whole = parts[0]
+        .replace(/^0+(?=\d)/, '')
+        .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+      const fraction = (parts[1] || '')
+        .padEnd(2, '0');
+
+      return whole + ',' + fraction;
+    }
+
     function fillRowFromItem(rowIndex, item) {
       const descriptionInput = findRowField('.js-line-description', rowIndex);
       const unitPriceInput = findRowField('.js-line-unit-price', rowIndex);
@@ -336,7 +360,7 @@
       }
 
       if (unitPriceInput) {
-        unitPriceInput.value = item.basePrice != null ? item.basePrice : 0;
+        unitPriceInput.value = formatUnitPriceItalian(item.basePrice != null ? item.basePrice : 0);
       }
 
       if (taxPctInput) {

@@ -1177,4 +1177,1107 @@ class InventoryLotV14JpaSandboxITTest {
             assertFixtureAbsent(marker);
         }
     }
+
+
+    // =================================================
+    // V14: fixture documentali GR e DDT
+    // =================================================
+
+    private record DocumentFixture(
+            InventoryFixture inventory,
+            long secondLotId,
+            long receiptId,
+            long receiptLineId,
+            long deliveryId,
+            long deliveryLineId
+    ) {}
+
+    private static final String[] DOCUMENT_TEST_TABLES = {
+            "supplier",
+            "purchase_order",
+            "purchase_order_line",
+            "goods_receipt",
+            "goods_receipt_line",
+            "goods_receipt_line_lot",
+            "customer",
+            "sales_order",
+            "sales_order_line",
+            "delivery_note",
+            "delivery_note_line",
+            "delivery_note_line_lot",
+            "item",
+            "inventory_lot",
+            "inventory_serial",
+            "inventory_movement",
+            "inventory_layer",
+            "inventory_layer_consumption",
+            "inventory_average_balance",
+            "inventory_location_transfer",
+            "inventory_location_transfer_allocation",
+            "warehouse",
+            "warehouse_location",
+            "invoice",
+            "invoice_line",
+            "quote"
+    };
+
+    private void assertDocumentFixturesAbsent() {
+
+        readOnlyTransaction().executeWithoutResult(
+                status -> {
+
+                    assertSandboxConnection();
+
+                    for (String table : DOCUMENT_TEST_TABLES) {
+
+                        Long count = jdbc.queryForObject(
+                                "SELECT COUNT(*) FROM " + table,
+                                Long.class
+                        );
+
+                        assertNotNull(count);
+
+                        assertEquals(
+                                0L,
+                                count.longValue(),
+                                "Fixture residua: " + table
+                        );
+                    }
+
+                    status.setRollbackOnly();
+                }
+        );
+    }
+
+    private DocumentFixture createDocumentFixture(
+            String marker
+    ) {
+
+        assertWritableSandbox();
+
+        InventoryFixture inventory =
+                createInventoryFixture(marker, true);
+
+        assertNotNull(inventory.lotId());
+
+        String secondCode = marker + "-B";
+
+        assertEquals(1, jdbc.update("""
+                INSERT INTO inventory_lot (
+                    tenant_id, item_id, lot_code,
+                    production_date, expiration_date,
+                    notes, active, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
+                """,
+                TENANT, inventory.itemId(), secondCode,
+                LocalDate.of(2026, 11, 2),
+                LocalDate.of(2027, 11, 2),
+                marker
+        ));
+
+        long secondLotId = requiredId("""
+                SELECT id FROM inventory_lot
+                WHERE tenant_id=? AND item_id=?
+                  AND lot_code=?
+                """,
+                TENANT, inventory.itemId(), secondCode
+        );
+
+        assertNotEquals(
+                inventory.lotId().longValue(),
+                secondLotId
+        );
+
+        LocalDate date = LocalDate.of(2026, 11, 27);
+
+        // ---------------------------------------------
+        // Fornitore e ordine di acquisto
+        // ---------------------------------------------
+
+        assertEquals(1, jdbc.update("""
+                INSERT INTO supplier (
+                    tenant_id, code, name, active,
+                    created_at, updated_at
+                )
+                VALUES (?, ?, ?, 1, NOW(), NOW())
+                """, TENANT, marker, marker));
+
+        long supplierId = requiredId("""
+                SELECT id FROM supplier
+                WHERE tenant_id=? AND code=?
+                """, TENANT, marker);
+
+        assertEquals(1, jdbc.update("""
+                INSERT INTO purchase_order (
+                    tenant_id, company_id, order_number,
+                    order_date, supplier_id, status,
+                    currency_code, subtotal_amount,
+                    tax_amount, total_amount,
+                    created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, 'CONFIRMED',
+                        'EUR', 720.00, 158.40, 878.40,
+                        NOW(), NOW())
+                """,
+                TENANT, COMPANY, marker, date, supplierId
+        ));
+
+        long purchaseId = requiredId("""
+                SELECT id FROM purchase_order
+                WHERE tenant_id=? AND company_id=?
+                  AND order_number=?
+                """, TENANT, COMPANY, marker);
+
+        assertEquals(1, jdbc.update("""
+                INSERT INTO purchase_order_line (
+                    tenant_id, purchase_order_id, line_no,
+                    item_id, uom_id, conversion_factor,
+                    description, quantity, unit_price,
+                    discount_pct, tax_pct, line_subtotal,
+                    tax_amount, line_total,
+                    created_at, updated_at
+                )
+                VALUES (?, ?, 1, ?, ?, 1.000000,
+                        ?, 100.000, 7.20,
+                        0.00, 22.00, 720.00,
+                        158.40, 878.40, NOW(), NOW())
+                """,
+                TENANT, purchaseId,
+                inventory.itemId(), BASE_UOM, marker
+        ));
+
+        long purchaseLineId = requiredId("""
+                SELECT id FROM purchase_order_line
+                WHERE tenant_id=? AND purchase_order_id=?
+                  AND line_no=1
+                """, TENANT, purchaseId);
+
+        // ---------------------------------------------
+        // Ricevimento merci e riga commerciale
+        // ---------------------------------------------
+
+        assertEquals(1, jdbc.update("""
+                INSERT INTO goods_receipt (
+                    tenant_id, company_id, receipt_number,
+                    receipt_date, purchase_order_id,
+                    supplier_id, warehouse_id, location_id,
+                    created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+                """,
+                TENANT, COMPANY, marker, date,
+                purchaseId, supplierId,
+                inventory.warehouseId(),
+                inventory.sourceLocationId()
+        ));
+
+        long receiptId = requiredId("""
+                SELECT id FROM goods_receipt
+                WHERE tenant_id=? AND company_id=?
+                  AND receipt_number=?
+                """, TENANT, COMPANY, marker);
+
+        assertEquals(1, jdbc.update("""
+                INSERT INTO goods_receipt_line (
+                    tenant_id, goods_receipt_id, line_no,
+                    purchase_order_line_id, item_id,
+                    description, quantity_received,
+                    unit_cost, total_cost,
+                    created_at, updated_at
+                )
+                VALUES (?, ?, 1, ?, ?, ?, 100.000,
+                        7.2000, 720.0000, NOW(), NOW())
+                """,
+                TENANT, receiptId, purchaseLineId,
+                inventory.itemId(), marker
+        ));
+
+        long receiptLineId = requiredId("""
+                SELECT id FROM goods_receipt_line
+                WHERE tenant_id=? AND goods_receipt_id=?
+                  AND line_no=1
+                """, TENANT, receiptId);
+
+        // ---------------------------------------------
+        // Cliente e ordine di vendita
+        // ---------------------------------------------
+
+        assertEquals(1, jdbc.update("""
+                INSERT INTO customer (
+                    tenant_id, name,
+                    created_at, updated_at
+                )
+                VALUES (?, ?, NOW(), NOW())
+                """, TENANT, marker));
+
+        long customerId = requiredId("""
+                SELECT id FROM customer
+                WHERE tenant_id=? AND name=?
+                """, TENANT, marker);
+
+        assertEquals(1, jdbc.update("""
+                INSERT INTO sales_order (
+                    tenant_id, company_id, customer_id,
+                    order_number, order_date, status,
+                    currency_code, subtotal_amount,
+                    tax_amount, total_amount,
+                    created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, 'FULFILLED',
+                        'EUR', 840.00, 184.80, 1024.80,
+                        NOW(), NOW())
+                """,
+                TENANT, COMPANY, customerId, marker, date
+        ));
+
+        long salesId = requiredId("""
+                SELECT id FROM sales_order
+                WHERE tenant_id=? AND company_id=?
+                  AND order_number=?
+                """, TENANT, COMPANY, marker);
+
+        assertEquals(1, jdbc.update("""
+                INSERT INTO sales_order_line (
+                    tenant_id, company_id, sales_order_id,
+                    line_no, description, item_id,
+                    quantity, unit_of_measure, uom_id,
+                    base_uom_code, conversion_factor,
+                    unit_price, discount_pct, tax_pct,
+                    tax_amount, line_total,
+                    created_at, updated_at
+                )
+                VALUES (?, ?, ?, 1, ?, ?,
+                        70.000, 'PZ', ?,
+                        'PZ', 1.000000,
+                        12.00, 0.00, 22.00,
+                        184.80, 1024.80, NOW(), NOW())
+                """,
+                TENANT, COMPANY, salesId, marker,
+                inventory.itemId(), BASE_UOM
+        ));
+
+        long salesLineId = requiredId("""
+                SELECT id FROM sales_order_line
+                WHERE tenant_id=? AND company_id=?
+                  AND sales_order_id=? AND line_no=1
+                """, TENANT, COMPANY, salesId);
+
+        // ---------------------------------------------
+        // DDT e riga commerciale
+        // ---------------------------------------------
+
+        assertEquals(1, jdbc.update("""
+                INSERT INTO delivery_note (
+                    tenant_id, company_id, sales_order_id,
+                    customer_id, ddt_number, ddt_date,
+                    status, currency_code,
+                    subtotal_amount, tax_amount, total_amount,
+                    warehouse_id, location_id,
+                    created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, 'ISSUED',
+                        'EUR', 840.00, 184.80, 1024.80,
+                        ?, ?, NOW(), NOW())
+                """,
+                TENANT, COMPANY, salesId, customerId,
+                marker, date, inventory.warehouseId(),
+                inventory.sourceLocationId()
+        ));
+
+        long deliveryId = requiredId("""
+                SELECT id FROM delivery_note
+                WHERE tenant_id=? AND company_id=?
+                  AND ddt_number=?
+                """, TENANT, COMPANY, marker);
+
+        assertEquals(1, jdbc.update("""
+                INSERT INTO delivery_note_line (
+                    tenant_id, company_id, delivery_note_id,
+                    sales_order_line_id, line_no, description,
+                    item_id, quantity, unit_of_measure,
+                    uom_id, base_uom_code, conversion_factor,
+                    unit_price, discount_pct, tax_pct,
+                    tax_amount, line_total
+                )
+                VALUES (?, ?, ?, ?, 1, ?, ?,
+                        70.000, 'PZ', ?, 'PZ', 1.000000,
+                        12.00, 0.00, 22.00, 184.80, 1024.80)
+                """,
+                TENANT, COMPANY, deliveryId, salesLineId,
+                marker, inventory.itemId(), BASE_UOM
+        ));
+
+        long deliveryLineId = requiredId("""
+                SELECT id FROM delivery_note_line
+                WHERE tenant_id=? AND company_id=?
+                  AND delivery_note_id=? AND line_no=1
+                """, TENANT, COMPANY, deliveryId);
+
+        return new DocumentFixture(
+                inventory, secondLotId,
+                receiptId, receiptLineId,
+                deliveryId, deliveryLineId
+        );
+    }
+
+    private Long persistDocumentMovement(
+            DocumentFixture fixture,
+            long lotId,
+            String quantity,
+            boolean inbound
+    ) {
+
+        InventoryFixture inventory = fixture.inventory();
+
+        InventoryMovement movement =
+                new InventoryMovement();
+
+        movement.setTenantId(TENANT);
+        movement.setCompanyId(COMPANY);
+        movement.setItemId(inventory.itemId());
+        movement.setWarehouseId(inventory.warehouseId());
+        movement.setLocationId(inventory.sourceLocationId());
+        movement.setLotId(lotId);
+
+        movement.setMovementDate(
+                LocalDate.of(2026, 11, 27)
+        );
+
+        movement.setMovementType(
+                inbound ? "IN" : "OUT"
+        );
+
+        movement.setCausalCode(
+                inbound ? "PURCHASE_RECEIPT" : "SALES_DELIVERY"
+        );
+
+        movement.setReferenceType(
+                inbound ? "GOODS_RECEIPT" : "DELIVERY_NOTE"
+        );
+
+        movement.setReferenceId(
+                inbound
+                        ? fixture.receiptId()
+                        : fixture.deliveryId()
+        );
+
+        movement.setQuantity(decimal(quantity));
+        movement.setUnitCost(decimal("7.2000"));
+
+        movement.setTotalCost(
+                decimal(quantity)
+                        .multiply(decimal("7.2000"))
+                        .setScale(4)
+        );
+
+        movement.setNotes(inventory.marker());
+
+        entityManager.persist(movement);
+        entityManager.flush();
+
+        assertGeneratedIdentity(movement);
+
+        return movement.getId();
+    }
+
+    private Long persistReceiptLot(
+            DocumentFixture fixture,
+            long lotId,
+            String quantity,
+            Long movementId
+    ) {
+
+        GoodsReceiptLineLot allocation =
+                new GoodsReceiptLineLot();
+
+        allocation.setTenantId(TENANT);
+        allocation.setCompanyId(COMPANY);
+
+        allocation.setGoodsReceiptLineId(
+                fixture.receiptLineId()
+        );
+
+        allocation.setItemId(
+                fixture.inventory().itemId()
+        );
+
+        allocation.setLotId(lotId);
+        allocation.setQuantity(decimal(quantity));
+        allocation.setUnitCost(decimal("7.2000"));
+
+        allocation.setTotalCost(
+                decimal(quantity)
+                        .multiply(decimal("7.2000"))
+                        .setScale(4)
+        );
+
+        allocation.setMovementId(movementId);
+
+        entityManager.persist(allocation);
+        entityManager.flush();
+
+        assertGeneratedIdentity(allocation);
+
+        return allocation.getId();
+    }
+
+    private Long persistDeliveryLot(
+            DocumentFixture fixture,
+            long lotId,
+            String quantity,
+            Long movementId
+    ) {
+
+        DeliveryNoteLineLot allocation =
+                new DeliveryNoteLineLot();
+
+        allocation.setTenantId(TENANT);
+        allocation.setCompanyId(COMPANY);
+
+        allocation.setDeliveryNoteLineId(
+                fixture.deliveryLineId()
+        );
+
+        allocation.setItemId(
+                fixture.inventory().itemId()
+        );
+
+        allocation.setLotId(lotId);
+        allocation.setQuantity(decimal(quantity));
+        allocation.setMovementId(movementId);
+
+        entityManager.persist(allocation);
+        entityManager.flush();
+
+        assertGeneratedIdentity(allocation);
+
+        return allocation.getId();
+    }
+
+    private void assertDocumentMovement(
+            DocumentFixture fixture,
+            Long movementId,
+            long lotId,
+            String quantity,
+            boolean inbound
+    ) {
+
+        if (movementId == null) {
+            return;
+        }
+
+        InventoryMovement movement =
+                entityManager.find(
+                        InventoryMovement.class, movementId
+                );
+
+        assertNotNull(movement);
+        assertEquals(TENANT, movement.getTenantId());
+        assertEquals(COMPANY, movement.getCompanyId());
+
+        assertEquals(
+                fixture.inventory().itemId(),
+                movement.getItemId()
+        );
+
+        assertEquals(lotId, movement.getLotId());
+
+        assertEquals(
+                fixture.inventory().warehouseId(),
+                movement.getWarehouseId()
+        );
+
+        assertEquals(
+                fixture.inventory().sourceLocationId(),
+                movement.getLocationId()
+        );
+
+        assertEquals(
+                inbound ? "IN" : "OUT",
+                movement.getMovementType()
+        );
+
+        assertEquals(
+                inbound
+                        ? "PURCHASE_RECEIPT"
+                        : "SALES_DELIVERY",
+                movement.getCausalCode()
+        );
+
+        assertEquals(
+                inbound
+                        ? "GOODS_RECEIPT"
+                        : "DELIVERY_NOTE",
+                movement.getReferenceType()
+        );
+
+        assertEquals(
+                inbound
+                        ? fixture.receiptId()
+                        : fixture.deliveryId(),
+                movement.getReferenceId()
+        );
+
+        assertDecimalValue(
+                quantity, movement.getQuantity(), 3
+        );
+    }
+
+    private GoodsReceiptLineLot assertReceiptLotRoundTrip(
+            DocumentFixture fixture,
+            Long id,
+            long lotId,
+            String quantity,
+            Long movementId,
+            LocalDateTime lower
+    ) {
+
+        entityManager.clear();
+
+        GoodsReceiptLineLot allocation =
+                entityManager.find(
+                        GoodsReceiptLineLot.class, id
+                );
+
+        assertNotNull(allocation);
+
+        assertEquals(id, allocation.getId());
+        assertEquals(TENANT, allocation.getTenantId());
+        assertEquals(COMPANY, allocation.getCompanyId());
+
+        assertEquals(
+                fixture.receiptLineId(),
+                allocation.getGoodsReceiptLineId()
+        );
+
+        assertEquals(
+                fixture.inventory().itemId(),
+                allocation.getItemId()
+        );
+
+        assertEquals(lotId, allocation.getLotId());
+        assertEquals(movementId, allocation.getMovementId());
+
+        assertDecimalValue(
+                quantity, allocation.getQuantity(), 3
+        );
+
+        assertDecimalValue(
+                "7.2000", allocation.getUnitCost(), 4
+        );
+
+        assertDecimalValue(
+                decimal(quantity)
+                        .multiply(decimal("7.2000"))
+                        .setScale(4).toPlainString(),
+                allocation.getTotalCost(),
+                4
+        );
+
+        assertStoredTimestamps(
+                allocation, lower, LocalDateTime.now()
+        );
+
+        assertDocumentMovement(
+                fixture, movementId, lotId, quantity, true
+        );
+
+        return allocation;
+    }
+
+    private DeliveryNoteLineLot assertDeliveryLotRoundTrip(
+            DocumentFixture fixture,
+            Long id,
+            long lotId,
+            String quantity,
+            Long movementId,
+            LocalDateTime lower
+    ) {
+
+        entityManager.clear();
+
+        DeliveryNoteLineLot allocation =
+                entityManager.find(
+                        DeliveryNoteLineLot.class, id
+                );
+
+        assertNotNull(allocation);
+
+        assertEquals(id, allocation.getId());
+        assertEquals(TENANT, allocation.getTenantId());
+        assertEquals(COMPANY, allocation.getCompanyId());
+
+        assertEquals(
+                fixture.deliveryLineId(),
+                allocation.getDeliveryNoteLineId()
+        );
+
+        assertEquals(
+                fixture.inventory().itemId(),
+                allocation.getItemId()
+        );
+
+        assertEquals(lotId, allocation.getLotId());
+        assertEquals(movementId, allocation.getMovementId());
+
+        assertDecimalValue(
+                quantity, allocation.getQuantity(), 3
+        );
+
+        assertStoredTimestamps(
+                allocation, lower, LocalDateTime.now()
+        );
+
+        assertDocumentMovement(
+                fixture, movementId, lotId, quantity, false
+        );
+
+        return allocation;
+    }
+
+    @FunctionalInterface
+    private interface DocumentScenario {
+
+        void execute(
+                DocumentFixture fixture,
+                LocalDateTime lower
+        );
+    }
+
+    private void runDocumentScenario(
+            DocumentScenario scenario
+    ) {
+
+        assertDocumentFixturesAbsent();
+
+        try {
+
+            writableTransaction().executeWithoutResult(
+                    status -> {
+
+                        status.setRollbackOnly();
+
+                        LocalDateTime lower =
+                                LocalDateTime.now();
+
+                        DocumentFixture fixture =
+                                createDocumentFixture(marker());
+
+                        scenario.execute(fixture, lower);
+
+                        entityManager.flush();
+                    }
+            );
+
+        } finally {
+
+            assertDocumentFixturesAbsent();
+        }
+    }
+
+    // TEST 10
+
+    @Test
+    void receiptLotAllocationMustSurviveJpaRoundTrip() {
+
+        runDocumentScenario((fixture, lower) -> {
+
+            long lotId = fixture.inventory().lotId();
+
+            Long movementId = persistDocumentMovement(
+                    fixture, lotId, "100.000", true
+            );
+
+            Long allocationId = persistReceiptLot(
+                    fixture, lotId, "100.000", movementId
+            );
+
+            assertReceiptLotRoundTrip(
+                    fixture, allocationId, lotId,
+                    "100.000", movementId, lower
+            );
+        });
+    }
+
+    // TEST 11
+
+    @Test
+    void deliveryLotAllocationMustSurviveJpaRoundTrip() {
+
+        runDocumentScenario((fixture, lower) -> {
+
+            long lotId = fixture.inventory().lotId();
+
+            Long movementId = persistDocumentMovement(
+                    fixture, lotId, "70.000", false
+            );
+
+            Long allocationId = persistDeliveryLot(
+                    fixture, lotId, "70.000", movementId
+            );
+
+            assertDeliveryLotRoundTrip(
+                    fixture, allocationId, lotId,
+                    "70.000", movementId, lower
+            );
+        });
+    }
+
+    // TEST 12
+
+    @Test
+    void receiptLineMustSupportMultipleLotAllocations() {
+
+        runDocumentScenario((fixture, lower) -> {
+
+            long firstLot = fixture.inventory().lotId();
+            long secondLot = fixture.secondLotId();
+
+            Long firstMovement = persistDocumentMovement(
+                    fixture, firstLot, "60.000", true
+            );
+
+            Long secondMovement = persistDocumentMovement(
+                    fixture, secondLot, "40.000", true
+            );
+
+            Long firstId = persistReceiptLot(
+                    fixture, firstLot, "60.000", firstMovement
+            );
+
+            Long secondId = persistReceiptLot(
+                    fixture, secondLot, "40.000", secondMovement
+            );
+
+            assertNotEquals(firstId, secondId);
+            assertNotEquals(firstMovement, secondMovement);
+
+            var first = assertReceiptLotRoundTrip(
+                    fixture, firstId, firstLot,
+                    "60.000", firstMovement, lower
+            );
+
+            var second = assertReceiptLotRoundTrip(
+                    fixture, secondId, secondLot,
+                    "40.000", secondMovement, lower
+            );
+
+            assertDecimalValue(
+                    "100.000",
+                    first.getQuantity()
+                            .add(second.getQuantity()),
+                    3
+            );
+
+            assertDecimalValue(
+                    "720.0000",
+                    first.getTotalCost()
+                            .add(second.getTotalCost()),
+                    4
+            );
+
+            Number allocations = (Number) entityManager
+                    .createNativeQuery("""
+                        SELECT COUNT(*)
+                        FROM goods_receipt_line_lot
+                        WHERE tenant_id=:tenant
+                          AND company_id=:company
+                          AND goods_receipt_line_id=:line
+                        """)
+                    .setParameter("tenant", TENANT)
+                    .setParameter("company", COMPANY)
+                    .setParameter(
+                            "line", fixture.receiptLineId()
+                    )
+                    .getSingleResult();
+
+            assertEquals(2L, allocations.longValue());
+
+            assertEquals(
+                    1L,
+                    jdbc.queryForObject("""
+                        SELECT COUNT(*)
+                        FROM goods_receipt_line
+                        WHERE tenant_id=?
+                          AND goods_receipt_id=?
+                        """,
+                        Long.class,
+                        TENANT, fixture.receiptId()
+                    ).longValue()
+            );
+
+            assertDecimalValue(
+                    "100.000",
+                    jdbc.queryForObject("""
+                        SELECT quantity_received
+                        FROM goods_receipt_line
+                        WHERE id=?
+                        """,
+                        BigDecimal.class,
+                        fixture.receiptLineId()
+                    ),
+                    3
+            );
+
+            assertDecimalValue(
+                    "720.0000",
+                    jdbc.queryForObject("""
+                        SELECT total_cost
+                        FROM goods_receipt_line
+                        WHERE id=?
+                        """,
+                        BigDecimal.class,
+                        fixture.receiptLineId()
+                    ),
+                    4
+            );
+        });
+    }
+
+    // TEST 13
+
+    @Test
+    void deliveryLineMustSupportMultipleLotAllocations() {
+
+        runDocumentScenario((fixture, lower) -> {
+
+            long firstLot = fixture.inventory().lotId();
+            long secondLot = fixture.secondLotId();
+
+            Long firstMovement = persistDocumentMovement(
+                    fixture, firstLot, "50.000", false
+            );
+
+            Long secondMovement = persistDocumentMovement(
+                    fixture, secondLot, "20.000", false
+            );
+
+            Long firstId = persistDeliveryLot(
+                    fixture, firstLot, "50.000", firstMovement
+            );
+
+            Long secondId = persistDeliveryLot(
+                    fixture, secondLot, "20.000", secondMovement
+            );
+
+            assertNotEquals(firstId, secondId);
+            assertNotEquals(firstMovement, secondMovement);
+
+            var first = assertDeliveryLotRoundTrip(
+                    fixture, firstId, firstLot,
+                    "50.000", firstMovement, lower
+            );
+
+            var second = assertDeliveryLotRoundTrip(
+                    fixture, secondId, secondLot,
+                    "20.000", secondMovement, lower
+            );
+
+            assertDecimalValue(
+                    "70.000",
+                    first.getQuantity()
+                            .add(second.getQuantity()),
+                    3
+            );
+
+            Number allocations = (Number) entityManager
+                    .createNativeQuery("""
+                        SELECT COUNT(*)
+                        FROM delivery_note_line_lot
+                        WHERE tenant_id=:tenant
+                          AND company_id=:company
+                          AND delivery_note_line_id=:line
+                        """)
+                    .setParameter("tenant", TENANT)
+                    .setParameter("company", COMPANY)
+                    .setParameter(
+                            "line", fixture.deliveryLineId()
+                    )
+                    .getSingleResult();
+
+            assertEquals(2L, allocations.longValue());
+
+            assertEquals(
+                    1L,
+                    jdbc.queryForObject("""
+                        SELECT COUNT(*)
+                        FROM delivery_note_line
+                        WHERE tenant_id=? AND company_id=?
+                          AND delivery_note_id=?
+                        """,
+                        Long.class,
+                        TENANT, COMPANY, fixture.deliveryId()
+                    ).longValue()
+            );
+
+            assertDecimalValue(
+                    "70.000",
+                    jdbc.queryForObject("""
+                        SELECT quantity
+                        FROM delivery_note_line
+                        WHERE id=?
+                        """,
+                        BigDecimal.class,
+                        fixture.deliveryLineId()
+                    ),
+                    3
+            );
+        });
+    }
+
+    // TEST 14
+
+    @Test
+    void documentAllocationsMustAcceptDeferredMovementLink() {
+
+        runDocumentScenario((fixture, lower) -> {
+
+            long lotId = fixture.inventory().lotId();
+
+            Long receiptAllocationId = persistReceiptLot(
+                    fixture, lotId, "100.000", null
+            );
+
+            Long deliveryAllocationId = persistDeliveryLot(
+                    fixture, lotId, "70.000", null
+            );
+
+            var initialReceipt = assertReceiptLotRoundTrip(
+                    fixture, receiptAllocationId, lotId,
+                    "100.000", null, lower
+            );
+
+            LocalDateTime receiptCreatedAt =
+                    initialReceipt.getCreatedAt();
+
+            var initialDelivery = assertDeliveryLotRoundTrip(
+                    fixture, deliveryAllocationId, lotId,
+                    "70.000", null, lower
+            );
+
+            LocalDateTime deliveryCreatedAt =
+                    initialDelivery.getCreatedAt();
+
+            Long in = persistDocumentMovement(
+                    fixture, lotId, "100.000", true
+            );
+
+            Long out = persistDocumentMovement(
+                    fixture, lotId, "70.000", false
+            );
+
+            assertNotEquals(in, out);
+
+            GoodsReceiptLineLot receipt =
+                    entityManager.find(
+                            GoodsReceiptLineLot.class,
+                            receiptAllocationId
+                    );
+
+            DeliveryNoteLineLot delivery =
+                    entityManager.find(
+                            DeliveryNoteLineLot.class,
+                            deliveryAllocationId
+                    );
+
+            assertNotNull(receipt);
+            assertNotNull(delivery);
+
+            receipt.setMovementId(in);
+            delivery.setMovementId(out);
+
+            entityManager.flush();
+            entityManager.clear();
+
+            var finalReceipt = assertReceiptLotRoundTrip(
+                    fixture, receiptAllocationId, lotId,
+                    "100.000", in, lower
+            );
+
+            assertEquals(
+                    receiptCreatedAt,
+                    finalReceipt.getCreatedAt()
+            );
+
+            var finalDelivery = assertDeliveryLotRoundTrip(
+                    fixture, deliveryAllocationId, lotId,
+                    "70.000", out, lower
+            );
+
+            assertEquals(
+                    deliveryCreatedAt,
+                    finalDelivery.getCreatedAt()
+            );
+        });
+    }
+
+    // TEST 15
+
+    @Test
+    void forcedFailureMustRollbackAllDocumentFixtures() {
+
+        assertDocumentFixturesAbsent();
+
+        try {
+
+            assertThrows(
+                    ExpectedRollback.class,
+                    () -> writableTransaction()
+                            .executeWithoutResult(status -> {
+
+                                LocalDateTime lower =
+                                        LocalDateTime.now();
+
+                                DocumentFixture fixture =
+                                        createDocumentFixture(marker());
+
+                                long lotId =
+                                        fixture.inventory().lotId();
+
+                                Long in = persistDocumentMovement(
+                                        fixture, lotId,
+                                        "100.000", true
+                                );
+
+                                Long out = persistDocumentMovement(
+                                        fixture, lotId,
+                                        "70.000", false
+                                );
+
+                                Long receiptAllocation =
+                                        persistReceiptLot(
+                                                fixture, lotId,
+                                                "100.000", in
+                                        );
+
+                                Long deliveryAllocation =
+                                        persistDeliveryLot(
+                                                fixture, lotId,
+                                                "70.000", out
+                                        );
+
+                                assertReceiptLotRoundTrip(
+                                        fixture, receiptAllocation,
+                                        lotId, "100.000",
+                                        in, lower
+                                );
+
+                                assertDeliveryLotRoundTrip(
+                                        fixture, deliveryAllocation,
+                                        lotId, "70.000",
+                                        out, lower
+                                );
+
+                                entityManager.flush();
+
+                                throw new ExpectedRollback();
+                            })
+            );
+
+        } finally {
+
+            assertDocumentFixturesAbsent();
+        }
+    }
 }

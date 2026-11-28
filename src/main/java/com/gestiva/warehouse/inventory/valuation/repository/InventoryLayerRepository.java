@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.Query;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -131,5 +132,167 @@ public interface InventoryLayerRepository extends JpaRepository<InventoryLayer, 
             @Param("warehouseId") Long warehouseId,
             @Param("itemId") Long itemId,
             @Param("sourceLocationId") Long sourceLocationId
+    );
+
+
+    // =====================================================
+    // GESTIVA V2 - STRATI FIFO PER LOTTO V14
+    // =====================================================
+
+    /**
+     * Strati FIFO aperti con residuo positivo appartenenti
+     * esclusivamente al contesto operativo richiesto.
+     *
+     * NULL locationId e NULL lotId sono valori esatti:
+     * non rimuovono i rispettivi filtri.
+     *
+     * Lettura senza lock, destinata alla consultazione.
+     */
+    @Query("""
+            select l
+            from InventoryLayer l
+            where l.tenantId = :tenantId
+              and l.companyId = :companyId
+              and l.warehouseId = :warehouseId
+              and l.itemId = :itemId
+              and (
+                  l.locationId = :locationId
+                  or (
+                      :locationId is null
+                      and l.locationId is null
+                  )
+              )
+              and (
+                  l.lotId = :lotId
+                  or (
+                      :lotId is null
+                      and l.lotId is null
+                  )
+              )
+              and l.closed = false
+              and l.remainingQty > 0
+            order by l.layerDate asc, l.id asc
+            """)
+    List<InventoryLayer> findOpenLayersByExactLotContext(
+            @Param("tenantId") Long tenantId,
+            @Param("companyId") Long companyId,
+            @Param("warehouseId") Long warehouseId,
+            @Param("locationId") Long locationId,
+            @Param("itemId") Long itemId,
+            @Param("lotId") Long lotId
+    );
+
+    /**
+     * Strati FIFO del contesto esatto con lock pessimistico.
+     *
+     * Da invocare esclusivamente dentro una transazione,
+     * dopo il lock del magazzino e nel rispetto del
+     * protocollo applicativo di acquisizione dei lock.
+     *
+     * Non modifica gli strati selezionati.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select l
+            from InventoryLayer l
+            where l.tenantId = :tenantId
+              and l.companyId = :companyId
+              and l.warehouseId = :warehouseId
+              and l.itemId = :itemId
+              and (
+                  l.locationId = :locationId
+                  or (
+                      :locationId is null
+                      and l.locationId is null
+                  )
+              )
+              and (
+                  l.lotId = :lotId
+                  or (
+                      :lotId is null
+                      and l.lotId is null
+                  )
+              )
+              and l.closed = false
+              and l.remainingQty > 0
+            order by l.layerDate asc, l.id asc
+            """)
+    List<InventoryLayer> findOpenLayersByExactLotContextForUpdate(
+            @Param("tenantId") Long tenantId,
+            @Param("companyId") Long companyId,
+            @Param("warehouseId") Long warehouseId,
+            @Param("locationId") Long locationId,
+            @Param("itemId") Long itemId,
+            @Param("lotId") Long lotId
+    );
+
+    /**
+     * Somma delle quantita residue nel contesto esatto.
+     *
+     * Include anche eventuali residui anomali su strati
+     * chiusi, per non nascondere incoerenze durante
+     * la riconciliazione con i movimenti.
+     *
+     * Non costituisce autonomamente una verifica
+     * della disponibilita operativa.
+     */
+    @Query("""
+            select coalesce(sum(l.remainingQty), 0)
+            from InventoryLayer l
+            where l.tenantId = :tenantId
+              and l.companyId = :companyId
+              and l.warehouseId = :warehouseId
+              and l.itemId = :itemId
+              and (
+                  l.locationId = :locationId
+                  or (
+                      :locationId is null
+                      and l.locationId is null
+                  )
+              )
+              and (
+                  l.lotId = :lotId
+                  or (
+                      :lotId is null
+                      and l.lotId is null
+                  )
+              )
+            """)
+    BigDecimal sumRemainingQuantityByExactLotContext(
+            @Param("tenantId") Long tenantId,
+            @Param("companyId") Long companyId,
+            @Param("warehouseId") Long warehouseId,
+            @Param("locationId") Long locationId,
+            @Param("itemId") Long itemId,
+            @Param("lotId") Long lotId
+    );
+
+    /**
+     * Verifica dello storico degli strati FIFO del lotto
+     * in tutte le societa del tenant.
+     *
+     * Include anche gli strati completamente consumati.
+     */
+    boolean existsByTenantIdAndItemIdAndLotId(
+            Long tenantId,
+            Long itemId,
+            Long lotId
+    );
+
+    /**
+     * Verifica delle quantita residue del lotto
+     * indipendentemente da societa, magazzino e ubicazione.
+     *
+     * Per la protezione anagrafica utilizzare
+     * BigDecimal.ZERO come soglia.
+     *
+     * Non esclude gli strati chiusi con residui anomali.
+     * Non sostituisce le verifiche di coerenza dei saldi.
+     */
+    boolean existsByTenantIdAndItemIdAndLotIdAndRemainingQtyGreaterThan(
+            Long tenantId,
+            Long itemId,
+            Long lotId,
+            BigDecimal remainingQty
     );
 }
