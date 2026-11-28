@@ -6,7 +6,9 @@ import com.gestiva.accounting.v2.journal.entity.JournalEntry;
 import com.gestiva.accounting.v2.journal.entity.JournalEntryLine;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryLineRepository;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryRepository;
+import com.gestiva.common.exception.BusinessException;
 import com.gestiva.documents.pdf.PdfFormatUtils;
+import com.gestiva.security.company.context.CompanyContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,18 +26,32 @@ public class BalanceSheetWebService {
     private final JournalEntryRepository journalEntryRepository;
     private final JournalEntryLineRepository journalEntryLineRepository;
     private final AccountRepository accountRepository;
+    private final CompanyContext companyContext;
 
     public BalanceSheetWebService(JournalEntryRepository journalEntryRepository,
                                   JournalEntryLineRepository journalEntryLineRepository,
-                                  AccountRepository accountRepository) {
+                                  AccountRepository accountRepository,
+                                  CompanyContext companyContext) {
         this.journalEntryRepository = journalEntryRepository;
         this.journalEntryLineRepository = journalEntryLineRepository;
         this.accountRepository = accountRepository;
+        this.companyContext = companyContext;
+    }
+
+
+    private Long requireCompanyId() {
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        return companyId;
     }
 
     public BalanceSheetView build(Long tenantId, LocalDate dateFrom, LocalDate dateTo) {
         List<JournalEntry> entries = journalEntryRepository
-                .findByTenantIdAndEntryDateBetweenOrderByEntryDateAscIdAsc(tenantId, dateFrom, dateTo);
+                .findByTenantIdAndCompanyIdAndEntryDateBetweenOrderByEntryDateAscIdAsc(tenantId, requireCompanyId(), dateFrom, dateTo);
 
         BalanceSheetView view = new BalanceSheetView();
         view.setFormattedDateFrom(PdfFormatUtils.formatDate(dateFrom));
@@ -50,8 +66,8 @@ public class BalanceSheetWebService {
             return view;
         }
         List<Long> entryIds = entries.stream().map(JournalEntry::getId).toList();
-        List<JournalEntryLine> lines = journalEntryLineRepository.findByTenantIdAndJournalEntryIdIn(tenantId, entryIds);
-        List<Account> orderedAccounts = accountRepository.findByTenantIdOrderByCodeAsc(tenantId);
+        List<JournalEntryLine> lines = journalEntryLineRepository.findByTenantIdAndCompanyIdAndJournalEntryIdIn(tenantId,requireCompanyId(), entryIds);
+        List<Account> orderedAccounts = accountRepository.findByTenantIdAndCompanyIdOrderByCodeAsc(tenantId,requireCompanyId());
 
         Map<Long, BigDecimal> balancesByAccountId = new HashMap<>();
 

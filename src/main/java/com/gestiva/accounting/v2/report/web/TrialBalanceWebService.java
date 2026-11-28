@@ -6,7 +6,9 @@ import com.gestiva.accounting.v2.journal.entity.JournalEntry;
 import com.gestiva.accounting.v2.journal.entity.JournalEntryLine;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryLineRepository;
 import com.gestiva.accounting.v2.journal.repository.JournalEntryRepository;
+import com.gestiva.common.exception.BusinessException;
 import com.gestiva.documents.pdf.PdfFormatUtils;
+import com.gestiva.security.company.context.CompanyContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,13 +25,27 @@ public class TrialBalanceWebService {
     private final JournalEntryRepository journalEntryRepository;
     private final JournalEntryLineRepository journalEntryLineRepository;
     private final AccountRepository accountRepository;
+    private final CompanyContext companyContext;
 
     public TrialBalanceWebService(JournalEntryRepository journalEntryRepository,
                                   JournalEntryLineRepository journalEntryLineRepository,
-                                  AccountRepository accountRepository) {
+                                  AccountRepository accountRepository,
+                                  CompanyContext companyContext) {
+
         this.journalEntryRepository = journalEntryRepository;
         this.journalEntryLineRepository = journalEntryLineRepository;
         this.accountRepository = accountRepository;
+        this.companyContext = companyContext;
+    }
+
+    private Long requireCompanyId() {
+        Long companyId = companyContext.resolveCurrentCompanyId();
+        if (companyId == null) {
+            throw new BusinessException(
+                    "Nessuna società attiva selezionata."
+            );
+        }
+        return companyId;
     }
 
     public TrialBalanceView build(Long tenantId, LocalDate dateFrom, LocalDate dateTo) {
@@ -50,9 +66,9 @@ public class TrialBalanceWebService {
                 .map(JournalEntry::getId)
                 .toList();
 
-        List<JournalEntryLine> lines = journalEntryLineRepository.findByTenantIdAndJournalEntryIdIn(tenantId, entryIds);
+        List<JournalEntryLine> lines = journalEntryLineRepository.findByTenantIdAndCompanyIdAndJournalEntryIdIn(tenantId,requireCompanyId(), entryIds);
 
-        Map<Long, Account> accountsById = accountRepository.findByTenantIdOrderByCodeAsc(tenantId).stream()
+        Map<Long, Account> accountsById = accountRepository.findByTenantIdAndCompanyIdOrderByCodeAsc(tenantId,requireCompanyId()).stream()
                 .collect(Collectors.toMap(Account::getId, a -> a));
 
         Map<Long, BalanceBucket> bucketsByAccountId = new TreeMap<>();

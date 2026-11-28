@@ -4,6 +4,7 @@ import com.gestiva.accounting.v2.report.web.FinancialPositionDetailCsvExportServ
 import com.gestiva.accounting.v2.report.web.FinancialPositionDetailView;
 import com.gestiva.accounting.v2.report.web.FinancialPositionDetailWebService;
 import com.gestiva.accounting.v2.report.web.FinancialPositionDetailXlsxExportService;
+import com.gestiva.security.company.context.CompanyContext;
 import com.gestiva.security.usercontext.TenantContext;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
@@ -23,16 +24,11 @@ public class FinancialPositionDetailPageController {
     private final FinancialPositionDetailCsvExportService financialPositionDetailCsvExportService;
     private final FinancialPositionDetailXlsxExportService financialPositionDetailXlsxExportService;
 
-
-
-
-
-
-
     public FinancialPositionDetailPageController(TenantContext tenantContext,
                                                  FinancialPositionDetailWebService financialPositionDetailWebService,
                                                  FinancialPositionDetailXlsxExportService financialPositionDetailXlsxExportService,
-                                                 FinancialPositionDetailCsvExportService financialPositionDetailCsvExportService) {
+                                                 FinancialPositionDetailCsvExportService financialPositionDetailCsvExportService
+                                                ) {
 
 
         this.tenantContext = tenantContext;
