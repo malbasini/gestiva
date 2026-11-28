@@ -313,7 +313,7 @@ public class ItemWebService {
         v.setActive(item.isActive());
         v.setTrackStock(item.isTrackStock());
         v.setStockManaged(item.isTrackStock());
-        v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatDecimal(item.getBasePrice(),2) : "-");
+        v.setFormattedBasePrice(item.getBasePrice() != null ? PdfFormatUtils.formatDecimal(item.getBasePrice(),2) + " €" : "-");
         v.setFormattedPurchasePrice(
                 item.getPurchasePrice() != null
                         ? PdfFormatUtils.formatDecimal(item.getPurchasePrice(), 2) + " €"
